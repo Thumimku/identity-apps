@@ -184,7 +184,6 @@ export class ApplicationManagementConstants {
     public static readonly HIDDEN_GRANT_TYPES: string[] = [ "account_switch" ];
 
     public static readonly AUTHORIZATION_CODE_GRANT: string = "authorization_code";
-    public static readonly CLIENT_CREDENTIALS_GRANT: string = "client_credentials";
     public static readonly REFRESH_TOKEN_GRANT: string = "refresh_token";
     public static readonly IMPLICIT_GRANT: string = "implicit";
     public static readonly PASSWORD: string = "password";
@@ -200,13 +199,14 @@ export class ApplicationManagementConstants {
      */
     public static readonly IS_REFRESH_TOKEN_GRANT_TYPE_ALLOWED = [
             ApplicationManagementConstants.AUTHORIZATION_CODE_GRANT,
+            ApplicationManagementConstants.IMPLICIT_GRANT,
             ApplicationManagementConstants.PASSWORD,
             ApplicationManagementConstants.SAML2_BEARER,
             ApplicationManagementConstants.IWA_NTLM,
             ApplicationManagementConstants.JWT_BEARER,
             ApplicationManagementConstants.UMA_TICKET
     ];
-    
+
     /**
      * Set of grant types allowed for certain templates.
      * @constant
@@ -217,13 +217,6 @@ export class ApplicationManagementConstants {
             ApplicationManagementConstants.AUTHORIZATION_CODE_GRANT,
             ApplicationManagementConstants.REFRESH_TOKEN_GRANT,
             ApplicationManagementConstants.IMPLICIT_GRANT,
-        ],
-        ["b9c5e11e-fc78-484b-9bec-015d247561b8"]: [
-            ApplicationManagementConstants.AUTHORIZATION_CODE_GRANT,
-            ApplicationManagementConstants.IMPLICIT_GRANT,
-            ApplicationManagementConstants.PASSWORD,
-            ApplicationManagementConstants.CLIENT_CREDENTIALS_GRANT,
-            ApplicationManagementConstants.REFRESH_TOKEN_GRANT,
         ]
     };
 
@@ -239,15 +232,8 @@ export class ApplicationManagementConstants {
     public static readonly TEMPLATE_WISE_ALLOWED_GRANT_TYPE_ARRANGE_ORDER: { [ key: string ]: Map<string, number> } = {
         [ "6a90e4b0-fbff-42d7-bfde-1efd98f07cd7" ]: new Map<string, number>([
             [ ApplicationManagementConstants.AUTHORIZATION_CODE_GRANT, 0 ],
-            [ ApplicationManagementConstants.IMPLICIT_GRANT, 1 ],
-            [ ApplicationManagementConstants.REFRESH_TOKEN_GRANT, 2 ],
-        ]),
-        [ "b9c5e11e-fc78-484b-9bec-015d247561b8" ]: new Map<string, number>([
-            [ ApplicationManagementConstants.AUTHORIZATION_CODE_GRANT, 0 ],
-            [ ApplicationManagementConstants.IMPLICIT_GRANT, 1 ],
-            [ ApplicationManagementConstants.PASSWORD, 2 ],
-            [ ApplicationManagementConstants.CLIENT_CREDENTIALS_GRANT, 3 ],
-            [ ApplicationManagementConstants.REFRESH_TOKEN_GRANT, 4 ],
+            [ ApplicationManagementConstants.REFRESH_TOKEN_GRANT, 1 ],
+            [ ApplicationManagementConstants.IMPLICIT_GRANT, 2 ],
         ])
     }
 
@@ -338,7 +324,6 @@ export class ApplicationManagementConstants {
      * @type {{APP_NAME_MAX_LENGTH: number}}
      */
     public static readonly FORM_FIELD_CONSTRAINTS = {
-        APP_NAME_MAX_LENGTH: 50,
-        APP_NAME_PATTERN: new RegExp("^[a-zA-Z0-9._-]+(?: [a-zA-Z0-9._-]+)*$")
+        APP_NAME_MAX_LENGTH: 50
     }
 }
