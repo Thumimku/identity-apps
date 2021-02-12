@@ -31,6 +31,7 @@ const getItemFromSessionStorage = (key: string): string => {
 
 if (!window["AppUtils"] || !window["AppUtils"]?.getConfig()) {
     AppUtils.init({
+        contextPath: contextPathGlobal,
         serverOrigin: serverOriginGlobal,
         superTenant: superTenantGlobal,
         tenantPrefix: tenantPrefixGlobal
@@ -67,8 +68,7 @@ function sendPromptNoneRequest() {
         "&state=Y2hlY2tTZXNzaW9u" +
         "&prompt=none" +
         "&code_challenge_method=S256&code_challenge=" +
-        getRandomPKCEChallenge() +
-        "&t=" + config.tenant;
+        getRandomPKCEChallenge();
 }
 
 const config = window["AppUtils"]?.getConfig();

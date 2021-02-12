@@ -113,7 +113,8 @@ export const setInitialized = (flag: boolean): AuthAction => ({
 /**
  * Get SCIM2 schemas
  */
-export const getScimSchemas = (profileInfo: BasicProfileInterface = null) => (dispatch): void => {
+export const getScimSchemas = (profileInfo: BasicProfileInterface = null,
+                               isReadOnlyUser: boolean) => (dispatch): void => {
     dispatch(setProfileSchemaLoader(true));
 
     getProfileSchemas()
@@ -122,7 +123,7 @@ export const getScimSchemas = (profileInfo: BasicProfileInterface = null) => (di
             dispatch(setScimSchemas(response));
 
             if (profileInfo) {
-                dispatch(getProfileCompletion(profileInfo, response));
+                dispatch(getProfileCompletion(profileInfo, response, isReadOnlyUser));
             }
         })
         .catch(() => {
@@ -156,7 +157,8 @@ export const getProfileInformation = (updateProfileCompletion = false) => (dispa
                         // If the schemas in the redux store is empty, fetch the SCIM schemas from the API.
                         if (_.isEmpty(store.getState().authenticationInformation.profileSchemas)) {
                             isCompletionCalculated = true;
-                            dispatch(getScimSchemas(infoResponse));
+                            dispatch(getScimSchemas(infoResponse,
+                                response["urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"]?.isReadOnlyUser));
                         }
 
                         // If `updateProfileCompletion` flag is enabled, update the profile completion.
@@ -164,7 +166,9 @@ export const getProfileInformation = (updateProfileCompletion = false) => (dispa
                             try {
                                 getProfileCompletion(
                                     infoResponse,
-                                    store.getState().authenticationInformation.profileSchemas
+                                    store.getState().authenticationInformation.profileSchemas,
+                                    response["urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"]
+                                        ?.isReadOnlyUser
                                 );
                             } catch (e) {
                                 dispatch(
@@ -338,9 +342,15 @@ export const initializeAuthentication = () =>(dispatch)=> {
     };
 
     if (process.env.NODE_ENV === "production") {
-        axios.get(window[ "AppUtils" ].getAppBase() + "/auth").then((response) => {
-            initialize(response);
-        });
+
+        const contextPath: string = window[ "AppUtils" ].getConfig().appBase
+            ? `/${ window[ "AppUtils" ].getConfig().appBase }`
+            : "";
+
+        axios.get(contextPath + "/auth")
+            .then((response) => {
+                initialize(response);
+            });
     } else {
         initialize();
     }
@@ -366,8 +376,17 @@ export const initializeAuthentication = () =>(dispatch)=> {
 
         // Update post_logout_redirect_uri of logout_url with tenant qualified url
         if (sessionStorage.getItem(LOGOUT_URL)) {
+
             let logoutUrl = sessionStorage.getItem(LOGOUT_URL);
-            logoutUrl = logoutUrl.replace(window["AppUtils"].getAppBase() , window["AppUtils"].getAppBaseWithTenant());
+
+            // If there is a base name, replace the `post_logout_redirect_uri` with the tenanted base name.
+            if (window["AppUtils"].getConfig().appBase) {
+                logoutUrl = logoutUrl.replace(window["AppUtils"].getAppBase(),
+                    window["AppUtils"].getAppBaseWithTenant());
+            } else {
+                logoutUrl = logoutUrl.replace(window["AppUtils"].getConfig().logoutCallbackURL,
+                    (window["AppUtils"].getConfig().clientOrigin + window["AppUtils"].getConfig().routes.login));
+            }
 
             // If an override URL is defined in config, use that instead.
             if (window["AppUtils"].getConfig().idpConfigs?.logoutEndpointURL) {
@@ -442,15 +461,21 @@ export const initializeAuthentication = () =>(dispatch)=> {
  */
 export const resolveIdpURLSAfterTenantResolves = (originalURL: string, overriddenURL: string): string => {
 
-    const parsedURL: URL = new URL(originalURL);
+    const parsedOriginalURL: URL = new URL(originalURL);
     const parsedOverrideURL: URL = new URL(overriddenURL);
 
-    // If the override URL has search params, adjust the params of the original URL accordingly.
-    if (parsedOverrideURL.search) {
-        return overriddenURL + parsedURL.search.replace(parsedURL.search.charAt(0), "&");
+    // If the override URL & original URL has search params, try to moderate the URL.
+    if (parsedOverrideURL.search && parsedOriginalURL.search) {
+        for (const [ key, value ] of parsedOriginalURL.searchParams.entries()) {
+            if (!parsedOverrideURL.searchParams.has(key)) {
+                parsedOverrideURL.searchParams.append(key, value);
+            }
+        }
+
+        return parsedOverrideURL.toString();
     }
 
-    return overriddenURL + parsedURL.search;
+    return overriddenURL + parsedOriginalURL.search;
 };
 
 /**

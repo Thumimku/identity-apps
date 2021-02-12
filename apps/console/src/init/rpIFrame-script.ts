@@ -97,19 +97,18 @@ function receiveMessage(e) {
     } else {
         // [RP] session state has changed. Sending prompt=none request...
         const promptNoneIFrame: HTMLIFrameElement = document.getElementById("promptNoneIFrame") as HTMLIFrameElement;
-        const tenantName = window.parent["AppUtils"]?.getTenantName();
-        promptNoneIFrame.src =
-            getItemFromSessionStorage("authorization_endpoint") +
-            "?response_type=code" +
-            "&client_id=" +
-            clientId +
-            "&scope=openid" +
-            "&redirect_uri=" +
-            redirectUri +
-            "&state=Y2hlY2tTZXNzaW9u" +
-            "&prompt=none" +
-            "&code_challenge_method=S256&code_challenge=" +
-            getRandomPKCEChallenge() +
-            "&t=" + tenantName;
+
+        const parsedAuthorizationEndpointURL: URL = new URL(getItemFromSessionStorage("authorization_endpoint"));
+
+        parsedAuthorizationEndpointURL.searchParams.append("response_type", "code");
+        parsedAuthorizationEndpointURL.searchParams.append("client_id", clientId);
+        parsedAuthorizationEndpointURL.searchParams.append("scope", "openid");
+        parsedAuthorizationEndpointURL.searchParams.append("redirect_uri", redirectUri);
+        parsedAuthorizationEndpointURL.searchParams.append("state", "Y2hlY2tTZXNzaW9u");
+        parsedAuthorizationEndpointURL.searchParams.append("prompt", "none");
+        parsedAuthorizationEndpointURL.searchParams.append("code_challenge_method", "S256");
+        parsedAuthorizationEndpointURL.searchParams.append("code_challenge", getRandomPKCEChallenge());
+
+        promptNoneIFrame.src = parsedAuthorizationEndpointURL.toString();
     }
 }

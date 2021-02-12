@@ -57,6 +57,7 @@ const UserEditPage = (): ReactElement => {
     const [ readOnlyUserStoresList, setReadOnlyUserStoresList ] = useState<string[]>(undefined);
     const [ showEditAvatarModal, setShowEditAvatarModal ] = useState<boolean>(false);
     const [ connectorProperties, setConnectorProperties ] = useState<ConnectorPropertyInterface[]>(undefined);
+    const [ isReadOnlyUserStoresLoading, setReadOnlyUserStoresLoading ] = useState<boolean>(false);
 
     useEffect(() => {
         const properties: ConnectorPropertyInterface[] = [];
@@ -98,8 +99,11 @@ const UserEditPage = (): ReactElement => {
     }, []);
 
     useEffect(() => {
+        setReadOnlyUserStoresLoading(true);
         SharedUserStoreUtils.getReadOnlyUserStores().then((response) => {
             setReadOnlyUserStoresList(response);
+        }).finally(() => {
+            setReadOnlyUserStoresLoading(false);
         });
     }, [ user ]);
 
@@ -170,7 +174,7 @@ const UserEditPage = (): ReactElement => {
 
                     dispatch(addAlert<AlertInterface>({
                         description: error.response.data.description || error.response.data.detail,
-                        level: AlertLevels.SUCCESS,
+                        level: AlertLevels.ERROR,
                         message: t(
                             "console:manage.features.user.profile.notifications.updateProfileInfo.error.message"
                         )
@@ -183,7 +187,7 @@ const UserEditPage = (): ReactElement => {
                     description: t(
                         "console:manage.features.user.profile.notifications.updateProfileInfo.genericError.description"
                     ),
-                    level: AlertLevels.SUCCESS,
+                    level: AlertLevels.ERROR,
                     message: t(
                         "console:manage.features.user.profile.notifications.updateProfileInfo.genericError.message"
                     )
@@ -237,6 +241,7 @@ const UserEditPage = (): ReactElement => {
                 handleUserUpdate={ handleUserUpdate }
                 readOnlyUserStores={ readOnlyUserStoresList }
                 connectorProperties={ connectorProperties }
+                isReadOnlyUserStoresLoading={ isReadOnlyUserStoresLoading }
             />
             {
                 showEditAvatarModal && (

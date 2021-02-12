@@ -245,9 +245,15 @@ export const initializeAuthentication = () => (dispatch) => {
     };
 
     if (process.env.NODE_ENV === "production") {
-        axios.get(window["AppUtils"].getAppBase() + "/auth").then((response) => {
-            initialize(response);
-        });
+
+        const contextPath: string = window[ "AppUtils" ].getConfig().appBase
+            ? `/${ window[ "AppUtils" ].getConfig().appBase }`
+            : "";
+
+        axios.get(contextPath + "/auth")
+            .then((response) => {
+                initialize(response);
+            });
     } else {
         initialize();
     }
@@ -272,10 +278,16 @@ export const initializeAuthentication = () => (dispatch) => {
 
         // Update post_logout_redirect_uri of logout_url with tenant qualified url
         if (sessionStorage.getItem(LOGOUT_URL)) {
+
             let logoutUrl = sessionStorage.getItem(LOGOUT_URL);
-            if (!window["AppUtils"].getConfig().accountApp.commonPostLogoutUrl) {
+
+            // If there is a base name, replace the `post_logout_redirect_uri` with the tenanted base name.
+            if (window["AppUtils"].getConfig().appBase) {
                 logoutUrl = logoutUrl.replace(window["AppUtils"].getAppBase(),
                     window["AppUtils"].getAppBaseWithTenant());
+            } else {
+                logoutUrl = logoutUrl.replace(window["AppUtils"].getConfig().logoutCallbackURL,
+                    (window["AppUtils"].getConfig().clientOrigin + window["AppUtils"].getConfig().routes.login));
             }
 
             // If an override URL is defined in config, use that instead.
@@ -359,15 +371,21 @@ export const initializeAuthentication = () => (dispatch) => {
  */
 export const resolveIdpURLSAfterTenantResolves = (originalURL: string, overriddenURL: string): string => {
 
-    const parsedURL: URL = new URL(originalURL);
+    const parsedOriginalURL: URL = new URL(originalURL);
     const parsedOverrideURL: URL = new URL(overriddenURL);
 
-    // If the override URL has search params, adjust the params of the original URL accordingly.
-    if (parsedOverrideURL.search) {
-        return overriddenURL + parsedURL.search.replace(parsedURL.search.charAt(0), "&");
+    // If the override URL & original URL has search params, try to moderate the URL.
+    if (parsedOverrideURL.search && parsedOriginalURL.search) {
+        for (const [ key, value ] of parsedOriginalURL.searchParams.entries()) {
+            if (!parsedOverrideURL.searchParams.has(key)) {
+                parsedOverrideURL.searchParams.append(key, value);
+            }
+        }
+
+        return parsedOverrideURL.toString();
     }
 
-    return overriddenURL + parsedURL.search;
+    return overriddenURL + parsedOriginalURL.search;
 };
 
 /**

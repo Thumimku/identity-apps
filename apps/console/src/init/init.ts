@@ -32,6 +32,7 @@ const getItemFromSessionStorage = (key: string): string => {
 if (!window["AppUtils"] || !window["AppUtils"]?.getConfig()) {
     AppUtils.init({
         accountAppOrigin: process.env.NODE_ENV === "production" ? undefined : "https://localhost:9000",
+        contextPath: contextPathGlobal,
         serverOrigin: serverOriginGlobal,
         superTenant: superTenantGlobal,
         tenantPrefix: tenantPrefixGlobal
@@ -57,7 +58,6 @@ function sendPromptNoneRequest() {
         "promptNoneIFrame"
     ) as HTMLIFrameElement;
     const config = window.parent["AppUtils"].getConfig();
-    const tenantName = window.parent["AppUtils"]?.getTenantName();
     promptNoneIFrame.src =
         getItemFromSessionStorage("authorization_endpoint") +
         "?response_type=code" +
@@ -69,8 +69,7 @@ function sendPromptNoneRequest() {
         "&state=Y2hlY2tTZXNzaW9u" +
         "&prompt=none" +
         "&code_challenge_method=S256&code_challenge=" +
-        getRandomPKCEChallenge() +
-        "&t=" + tenantName;
+        getRandomPKCEChallenge();
 }
 
 const config = window["AppUtils"]?.getConfig();
