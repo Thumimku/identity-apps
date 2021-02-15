@@ -113,11 +113,14 @@ export const console: ConsoleNS = {
                 secondaryButton: "Cancel"
             },
             sessionTimeoutModal: {
-                description: "You will be logged out of the current session due to inactivity." +
+                description: "You will be logged out of the current session due to inactivity. " +
                     "Please choose Stay logged in if you would like to continue the session.",
                 heading: "You will be logged out in <1>{{ time }}</1>.",
                 primaryButton: "Stay logged in",
-                secondaryButton: "Logout"
+                secondaryButton: "Logout",
+                loginAgainButton: "Login again",
+                sessionTimedOutHeading: "Your session has expired due to inactivity.",
+                sessionTimedOutDescription: "Please log in again to continue from where you left off."
             }
         },
         notifications: {
@@ -805,6 +808,12 @@ export const console: ConsoleNS = {
                                     sections: {
                                         scriptBased: {
                                             editor: {
+                                                resetConfirmation: {
+                                                    content: "This action will reset the adaptive authentication" +
+                                                        " script back to default. Click 'Confirm' to proceed.",
+                                                    heading: "Are you sure?",
+                                                    message: "This action is irreversible."
+                                                },
                                                 templates: {
                                                     darkMode: "Dark Mode",
                                                     heading: "Templates"
@@ -1142,6 +1151,10 @@ export const console: ConsoleNS = {
                                     "please regenerate the secret again.",
                                 hideSecret: "Hide secret",
                                 label: "Client secret",
+                                message: "{{productName}} does not issue a <1>client_secret</1> " +
+                                    "to native " +
+                                    "applications or web browser-based applications for the purpose " +
+                                    "of client authentication.",
                                 placeholder: "Enter Client Secret",
                                 showSecret: "Show secret",
                                 validations: {

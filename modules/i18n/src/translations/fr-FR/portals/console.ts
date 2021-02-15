@@ -117,7 +117,10 @@ export const console: ConsoleNS = {
                     "Veuillez choisir 'Rester connecté' si vous souhaitez poursuivre la session.",
                 heading: "Vous serez déconnecté(e) dans <1>{{ time }}</1>.",
                 primaryButton: "Rester connecté",
-                secondaryButton: "Déconnexion"
+                secondaryButton: "Déconnexion",
+                loginAgainButton: "Connectez-vous à nouveau",
+                sessionTimedOutHeading: "Votre session a expiré en raison d'une inactivité.",
+                sessionTimedOutDescription: "Veuillez vous reconnecter pour reprendre là où vous vous étiez arrêté."
             }
         },
         notifications: {
@@ -806,6 +809,13 @@ export const console: ConsoleNS = {
                                     sections: {
                                         scriptBased: {
                                             editor: {
+                                                resetConfirmation: {
+                                                    content: "Cette action réinitialisera le script d'authentification" +
+                                                        " adaptative par défaut. Cliquez sur «Confirmer» pour" +
+                                                        " continuer.",
+                                                    heading: "Êtes-vous sûr?",
+                                                    message: "Cette action est irréversible."
+                                                },
                                                 templates: {
                                                     darkMode: "Mode sombre",
                                                     heading: "Modèles"
@@ -1146,6 +1156,9 @@ export const console: ConsoleNS = {
                                     "veuillez régénérer à nouveau le secret.",
                                 hideSecret: "Cacher le secret",
                                 label: "Secret du client",
+                                message: "{{productName}} n'émet pas de <1>client_secret</1>" +
+                                    " aux applications natives ou aux applications basées sur un navigateur " +
+                                    "Web à des fins d'authentification client.",
                                 placeholder: "Saisir le secret du client",
                                 showSecret: "Montrez le secret",
                                 validations: {

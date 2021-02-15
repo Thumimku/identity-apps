@@ -117,7 +117,10 @@ export const console: ConsoleNS = {
                     "කරුණාකර ඔබ සැසිය දිගටම කරගෙන යාමට කැමති නම් ලොග් වී සිටින්න තෝරන්න.",
                 heading: "ඔබ <1>{{ time }}</1> න් ඉවත් වනු ඇත.",
                 primaryButton: "පුරනය වී සිටින්න",
-                secondaryButton: "ඉවත් වන්න"
+                secondaryButton: "ඉවත් වන්න",
+                loginAgainButton: "නැවත පුරනය වන්න",
+                sessionTimedOutHeading: "අක්‍රියතාවය හේතුවෙන් ඔබගේ සැසිය කල් ඉකුත්වී ඇත.",
+                sessionTimedOutDescription: "ඔබ නතර කළ ස්ථානයෙන් ඉදිරියට යාමට කරුණාකර නැවත ලොග් වන්න."
             }
         },
         notifications: {
@@ -808,6 +811,13 @@ export const console: ConsoleNS = {
                                     sections: {
                                         scriptBased: {
                                             editor: {
+                                                resetConfirmation: {
+                                                    content: "මෙම ක්‍රියාව අනුවර්තී සත්‍යාපන ස්ක්‍රිප්ට් නැවත" +
+                                                        " පෙරනිමියට යලි " +
+                                                        "සකසනු ඇත. ඉදිරියට යාමට 'තහවුරු කරන්න' ක්ලික් කරන්න.",
+                                                    heading: "ඔයාට විශ්වාස ද?",
+                                                    message: "මෙම ක්‍රියාව ආපසු හැරවිය නොහැක."
+                                                },
                                                 templates: {
                                                     darkMode: "අඳුරු ප්‍රකාරය",
                                                     heading: "සැකිලි"
@@ -1148,6 +1158,9 @@ export const console: ConsoleNS = {
                                     "ගැනීමට අවශ්‍ය නම්, කරුණාකර රහස නැවත ප්‍රතිනිර්මාණය කරන්න.",
                                 hideSecret: "රහස සඟවන්න",
                                 label: "සේවාලාභී රහස",
+                                message: "{{productName}} විසින් ග්‍රාහක සත්‍යාපනය සඳහා" +
+                                    " දේශීය යෙදුම් හෝ වෙබ් බ්‍රව්සර්" +
+                                    " මත පදනම් වූ යෙදුම් සඳහා <1>client_secret</1> නිකුත් නොකරයි.",
                                 placeholder: "සේවාලාභී රහස ඇතුළත් කරන්න",
                                 showSecret: "රහස පෙන්වන්න",
                                 validations: {
