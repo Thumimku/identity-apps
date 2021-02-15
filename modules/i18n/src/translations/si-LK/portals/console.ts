@@ -549,6 +549,12 @@ export const console: ConsoleNS = {
                     placeholder: "යෙදුම් නාමයෙන් සොයන්න"
                 },
                 confirmations: {
+                    addSocialLogin: {
+                        content : "නව සමාජ පිවිසුමක් එක් කිරීම සඳහා අපි ඔබව වෙනත් පිටුවකට යොමු කළ යුතු අතර මෙම පිටුවෙහි " +
+                            "කිසියම් සුරකින ලද වෙනස්කම් නැති වනු ඇත. කරුණාකර තහවුරු කරන්න.",
+                        header: "ඔබේ ක්‍රියාව තහවුරු කරන්න",
+                        subHeader: "මෙම ක්‍රියාව ආපසු හැරවිය නොහැක."
+                    },
                     clientSecretHashDisclaimer: {
                         forms: {
                             clientIdSecretForm: {
@@ -759,7 +765,8 @@ export const console: ConsoleNS = {
                                         confirmationMessage: "මෙම ක්‍රියාව මඟින් සිතියම්ගත කළ අගයන් පෙරනිමි අගයන් වෙත ආපසු හරවනු ඇත"
                                     },
                                     searchPlaceholder: "පරිශීලක ගුණාංග සොයන්න"
-                                }
+                                },
+                                selectAll: "සියලුම ගුණාංග තෝරන්න"
                             },
                             tabName: "පරිශීලක ගුණාංග"
                         },
@@ -1184,9 +1191,10 @@ export const console: ConsoleNS = {
                                                 label: "SSO-session"
                                             }
                                         },
-                                        description: "{{productName} ට <1>ප්‍රවේශවීමේ ටෝකනය</1> බැඳ තැබිය හැකි අතර " +
-                                            "පිවිසුම් සැසියට <3>ටෝකනය නැවුම්</3> කළ හැකිය. මෙම සැකසුම මඟින් ටෝකනය " +
-                                            "පිවිසුම් සැසියට බැඳී තිබිය යුතුද නැද්ද යන්න තීරණය කරයි.",
+                                        description: "<1>ප්‍රවේශවීමේ ටෝකනය</1> බැඳීමට සහ පිවිසුම් සැසියට " +
+                                            "<3>ටෝකනය නැවුම්</3> කිරීමට සහ සැසියකට නව ටෝකනයක් නිකුත් කිරීමට " +
+                                            "{{productName} ට ඉඩ දීම සඳහා <5>SSO- සැසිය</5> ටයිප් කරන්න. යෙදුම් සැසිය " +
+                                            "අවසන් වූ විට, ටෝකන ද අවලංගු වේ.",
                                         label: "ටෝකන් බන්ධන වර්ගය",
                                         valueDescriptions: {
                                             cookie: "ආරක්ෂිත සහ httpOnly පරාමිතීන් සහිත කුකියකට ප්‍රවේශ " +
@@ -3344,6 +3352,19 @@ export const console: ConsoleNS = {
     },
     manage: {
         features: {
+            businessGroups: {
+                fields: {
+                    groupName: {
+                        label: "{{type}} නම",
+                        placeholder: "Enter {{type}} නම ඇතුළත් කරන්න",
+                        validations: {
+                            duplicate: "දී ඇති {{type}} with නම සමඟ {{type}} දැනටමත් පවතී.",
+                            empty: "ඉදිරියට යාමට {{type}} නම අවශ්‍ය වේ.",
+                            invalid: "{{type}} නමෙහි දිග 3-30 විය යුතු අතර හිස් තැන් අඩංගු විය නොහැක."
+                        }
+                    }
+                }
+            },
             approvals: {
                 list: {
                     columns: {
@@ -5085,6 +5106,7 @@ export const console: ConsoleNS = {
                                 }
                             },
                             roleName: {
+                                hint: "පරිශීලක කණ්ඩායම සඳහා නමක්.",
                                 label: "{{type}} නම",
                                 placeholder: "Enter {{type}} නම ඇතුළත් කරන්න",
                                 validations: {
@@ -5119,6 +5141,7 @@ export const console: ConsoleNS = {
                     users: {
                         assignUserModal: {
                             heading: "යාවත්කාලීන කරන්න {{type}} පරිශීලකයින්",
+                            hint: "පරිශීලක කණ්ඩායමට එකතු කිරීමට පරිශීලකයින් තෝරන්න.",
                             list: {
                                 listHeader: "නම",
                                 searchPlaceholder: "පරිශීලකයින් සොයන්න"

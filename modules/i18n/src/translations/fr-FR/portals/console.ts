@@ -541,6 +541,13 @@ export const console: ConsoleNS = {
                     placeholder: "Chercher par nom d'application"
                 },
                 confirmations: {
+                    addSocialLogin: {
+                        content : "Pour ajouter une nouvelle connexion sociale, nous devrons vous diriger " +
+                            "vers une autre page et toutes les modifications non enregistrées de cette page " +
+                            "seront perdues. Veuillez confirmer.",
+                        header: "Confirmez votre action",
+                        subHeader: "Cette action est irréversible."
+                    },
                     clientSecretHashDisclaimer: {
                         forms: {
                             clientIdSecretForm: {
@@ -757,7 +764,8 @@ export const console: ConsoleNS = {
                                             "valeurs par défaut."
                                     },
                                     searchPlaceholder: "Attributs de recherche"
-                                }
+                                },
+                                selectAll: "Sélectionnez tous les attributs"
                             },
                             tabName: "Attributs"
                         },
@@ -856,7 +864,8 @@ export const console: ConsoleNS = {
                                             }
                                         }
                                     },
-                                    subTitle: "Les authentificateurs locaux pour l'authentification par chemin de requête.",
+                                    subTitle: "Les authentificateurs locaux pour l'authentification par chemin de " +
+                                        "requête.",
                                     title: "Authentification du chemin de requête"
                                 },
                                 templateDescription: {
@@ -881,8 +890,8 @@ export const console: ConsoleNS = {
                             role: {
                                 fields: {
                                     role: {
-                                        hint: "Cette option ajoutera au rôle le domaine de l'annuaire dans lequel l'utilisateur " +
-                                            "réside",
+                                        hint: "Cette option ajoutera au rôle le domaine de l'annuaire dans lequel " +
+                                            "l'utilisateur réside",
                                         label: "Inclure le domaine utilisateur",
                                         validations: {
                                             empty: "Sélectionner l'attribut de rôle"
@@ -1189,9 +1198,11 @@ export const console: ConsoleNS = {
                                                 label: "SSO-session"
                                             }
                                         },
-                                        description: "Lie le <1>jeton_d'accès</1> à la session de connexion. " +
-                                            "{{productName}} émettra un nouveau <3>jeton_d'accès</3> pour chaque " +
-                                            "nouvelle connexion et le révoquera lors de la déconnexion.",
+                                        description: "Sélectionnez le type <1>SSO-session</1> pour permettre à " +
+                                            "{{productName}} de lier le <3>jeton_d'accès</3> et <5>d'actualiser " +
+                                            "le jeton</5> à la session de connexion et d'émettre un nouveau jeton " +
+                                            "par session. À la fin de la session d'application, les jetons seront " +
+                                            "également révoqués.",
                                         label: "Type de liaison de jeton",
                                         valueDescriptions: {
                                             cookie: "Liez le jeton d'accès à un cookie avec les paramètres Secure " +
@@ -1887,31 +1898,31 @@ export const console: ConsoleNS = {
                             message: "Erreur de création"
                         },
                         genericError: {
-                            description: "Echec de la création de l'application",
+                            description: "Echec de la création de l'application.",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
-                            description: "Création avec succès de l'application",
+                            description: "Création avec succès de l'application.",
                             message: "Création réussie"
                         }
                     },
                     authenticationStepDeleteErrorDueToSecondFactors: {
                         genericError: {
-                            description: "Second factor authenticators need basic authenticator or identifier " +
-                                "first in a prior step.",
-                            message: "Step Delete error"
+                            description: "Les authentificateurs de second facteur nécessitent d'avoir" +
+                                "un authentificateur de base ou identifiant-d'abord dans une étape préalable.",
+                            message: "Erreur de suppression"
                         }
                     },
                     authenticationStepMin: {
                         genericError: {
                             description: "Au moins une étape d'authentification est requise.",
-                            message: "Erreur de retrait"
+                            message: "Erreur de suppression"
                         }
                     },
                     deleteApplication: {
                         error: {
                             description: "{{description}}",
-                            message: "Erreur de retrait"
+                            message: "Erreur de suppression"
                         },
                         genericError: {
                             description: "N'a pas réussi à supprimer l'application",
@@ -1919,7 +1930,7 @@ export const console: ConsoleNS = {
                         },
                         success: {
                             description: "Suppression avec succès de l'application.",
-                            message: "Suppression réussie"
+                            message: "Application supprimée"
                         }
                     },
                     deleteProtocolConfig: {
@@ -1928,17 +1939,17 @@ export const console: ConsoleNS = {
                             message: "Erreur de suppression"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la suppression des configurations de protocoles entrants.",
+                            description: "Une erreur s'est produite lors de la suppression des configurations de protocole entrant.",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
                             description: "Suppression avec succés des configurations du protocole {{protocol}}.",
-                            message: "Suppression réussie"
+                            message: "Configurations supprimées"
                         }
                     },
                     duplicateAuthenticationStep: {
                         genericError: {
-                            description: "Le même authentificateur ne peut être utilisé deux fois au sein d'une même étape.",
+                            description: "Le même authentificateur n'est pas autorisé plus d'une fois en une seule étape.",
                             message: "Non autorisé"
                         }
                     },
@@ -2011,7 +2022,7 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite en récupérant les protocoles entrants disponibles.",
+                            description: "Une erreur s'est produite lors de la récupération des protocoles entrants disponibles.",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2025,7 +2036,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des configurations IDP pour l'application OIDC.",
+                            description: "Une erreur s'est produite lors de la récupération des configurations IDP " +
+                                 "pour l'application OIDC.",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2193,11 +2205,11 @@ export const console: ConsoleNS = {
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour de la configuration de la demande",
+                            description: "Une erreur s'est produite lors de la mise à jour des paramètres d'attribut.",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
-                            description: "Mise à jour réussie de la configuration des demandes",
+                            description: "Mise à jour réussie des paramètres d'attribut.",
                             message: "Mise à jour réussie"
                         }
                     },
@@ -2929,7 +2941,7 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "An error occurred while retrieving roles",
+                            description: "An error occurred while retrieving roles.",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -3358,6 +3370,19 @@ export const console: ConsoleNS = {
     },
     manage: {
         features: {
+            businessGroups: {
+                fields: {
+                    groupName: {
+                        label: "Nome de {{type}}",
+                        placeholder: "Saisir un nom de {{type}}",
+                        validations: {
+                            duplicate: "Un {{type}} avec ce nom existe déjà.",
+                            empty: "Le nom de {{type}} est obligatoire",
+                            invalid: "Vle nom du {{type}} doit avoir une longueur de 3 à 30 et ne peut pas contenir d'espaces."
+                        }
+                    }
+                }
+            },
             approvals: {
                 list: {
                     columns: {
@@ -3720,7 +3745,7 @@ export const console: ConsoleNS = {
                     pageLayout: {
                         edit: {
                             back: "Retournez aux attributs des dialectes",
-                            description: "Modifier le dialecte externe et ses attributs",
+                            description: "Modifier le dialecte externe et ses attributs.",
                             updateDialectURI: "Mettre à jour l'URI du dialecte",
                             updateExternalAttributes: "Mettre à jour les attributs externes"
                         },
@@ -5098,6 +5123,7 @@ export const console: ConsoleNS = {
                                 }
                             },
                             roleName: {
+                                hint: "Un nom pour le groupe d'utilisateurs.",
                                 label: "Nome de {{type}}",
                                 placeholder: "Saisir un nom de {{type}}",
                                 validations: {
@@ -5132,6 +5158,7 @@ export const console: ConsoleNS = {
                     users: {
                         assignUserModal: {
                             heading: "Mettre à jour le {{type}} d'utilisateurs",
+                            hint: "Sélectionnez des utilisateurs pour les ajouter au groupe d'utilisateurs.",
                             list: {
                                 listHeader: "Nom",
                                 searchPlaceholder: "Rechercher des utilisateurs"
