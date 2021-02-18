@@ -723,8 +723,9 @@ export const console: ConsoleNS = {
                                     subHeading: "Select which user attributes you want to share with the application."
                                 },
                                 heading: "User Attribute Selection",
-                                attributeComponentHint: "Manage the user attributes you want to share with this" +
-                                    " application.",
+                                attributeComponentHint: "Manage the user attributes you want to share with " +
+                                    "this application. You can configure additional <1>OIDC attribute mappings</1> " +
+                                    "and request them via <3>OIDC Scopes.</3>",
                                 mandatoryAttributeHint: "Mark which attributes are mandatory for a user to share" +
                                     " with the application. When logging in, Asgardeo prompts the user to enter the" +
                                     " attribute value if it is not already provided in the user's profile.",
@@ -1080,7 +1081,7 @@ export const console: ConsoleNS = {
                                 validations: {
                                     duplicate: "There is already an application with this name. " +
                                         "Please enter a different name.",
-                                    empty: "This is a required field."
+                                    empty: "Application name is required."
                                 }
                             }
                         }
@@ -1306,7 +1307,7 @@ export const console: ConsoleNS = {
                                 fields: {
                                     back: {
                                         hint: "{{productName}} will directly communicate the logout requests to this " +
-                                            "client URL(s), so that clients can invalidate the user session.",
+                                            "client URL, so that clients can invalidate the user session.",
                                         label: "Back channel logout URL",
                                         placeholder: "https://myapp.io/logout",
                                         validations: {
@@ -1372,16 +1373,16 @@ export const console: ConsoleNS = {
                                 heading: "Refresh Token"
                             },
                             requestObjectSignature: {
-                                heading: "Request Object",
-                                description: "{{productName}} supports receiving OIDC authentication request " +
-                                    "parameters from clients in a `request object`. Enable signature " +
-                                    "validation to accept only signed request objects in the" +
-                                    " authorization request.",
+                                description: "{{productName}} supports receiving an OIDC authentication request as " +
+                                    "a request object that is passed in a single, self-contained <1>request</1> " +
+                                    "parameter. Enable signature validation to accept only signed request objects " +
+                                    "in the authorization request.",
                                 fields: {
                                     signatureValidation: {
                                         label: "Enable signature validation",
                                     }
                                 },
+                                heading: "Request Object"
                             },
                             scopeValidators: {
                                 fields: {
@@ -1769,6 +1770,16 @@ export const console: ConsoleNS = {
                             userstoreDomain: {
                                 hint: "Select userstore domain name to provision users and groups.",
                                 label: "Provisioning userstore domain"
+                            }
+                        }
+                    },
+                    spaProtocolSettingsWizard:{
+                        fields: {
+                            callBackUrls: {
+                                label: "Authorized URLs",
+                                validations: {
+                                    invalid: "The entered URL is neither HTTP nor HTTPS. Please add a valid URL."
+                                }
                             }
                         }
                     }
@@ -4248,7 +4259,8 @@ export const console: ConsoleNS = {
                         validations: {
                             duplicate: "A {{type}} already exists with the given {{type}} name.",
                             empty: "{{type}} Name is required to proceed.",
-                            invalid: "{{type}} name must be of length 3-30 and cannot contain spaces."
+                            invalid: "A {{type}} name can only contain alphanumeric characters, -, and _. "
+                                + "And must be of length between 3 to 30 characters."
                         }
                     }
                 }
@@ -4522,7 +4534,7 @@ export const console: ConsoleNS = {
                     scim: {
                         description: "The SCIM2 protocol representation for user "
                             + "attributes that will be used in the SCIM2 API.",
-                        heading: "System for Cross-Domain Identity Management"
+                        heading: "SCIM 2.0"
                     }
                 },
                 dialects: {
@@ -4640,7 +4652,7 @@ export const console: ConsoleNS = {
                             updateExternalAttributes: "Update {{type}} Attribute Mapping"
                         },
                         list: {
-                            description: "View and manage how user attributes in are mapped and " +
+                            description: "View and manage how user attributes are mapped and " +
                                 "transformed when interacting with APIs or your applications.",
                             primaryAction: "New Attribute Mapping",
                             title: "Attributes and Mappings",
@@ -4653,7 +4665,7 @@ export const console: ConsoleNS = {
                                 description: "Communicate information about the user via custom mappings.",
                                 heading: "Custom Attribute Mapping"
                             },
-                            description: "View and manage how attributes in are mapped and transformed "
+                            description: "View and manage how attributes are mapped and transformed "
                                 + "when interacting with APIs or your applications.",
                             heading: "Manage Attribute Mappings",
                             oidc: {
@@ -4664,15 +4676,15 @@ export const console: ConsoleNS = {
                             scim: {
                                 description: "Communicate information about the user via the API "
                                     + "compliance with SCIM2 standards.",
-                                heading: "System for Cross-Domain Identity Management "
+                                heading: "SCIM 2.0"
                             }
                         },
                         manageAttributes: {
                             attributes: {
-                                description: "Each attribute contains a piece of user data stored within {{productName}}.",
+                                description: "Each attribute contains a piece of user data stored.",
                                 heading: "Attributes"
                             },
-                            description: "View and manage attributes native to {{productName}}.",
+                            description: "View and manage attributes.",
                             heading: "Manage Attributes"
                         }
                     },
@@ -5424,7 +5436,7 @@ export const console: ConsoleNS = {
                         fields: {
                             groupName: {
                                 name: "Group Name",
-                                placeholder: "Enter your group name",
+                                placeholder: "Enter group name",
                                 required: "Group name is required"
                             }
                         }
@@ -5441,8 +5453,8 @@ export const console: ConsoleNS = {
                 list: {
                     columns: {
                         actions: "Actions",
-                        lastModified: "Last Modified",
-                        name: "Name"
+                        lastModified: "Modified Time",
+                        name: "Group"
                     },
                     storeOptions: "Select User Store"
                 },
@@ -5537,6 +5549,9 @@ export const console: ConsoleNS = {
                 }
             },
             oidcScopes: {
+                addAttributes: {
+                    description: "Select which user attributes you want to associate with the scope {{name}}.",
+                },
                 buttons: {
                     addScope: "New OIDC Scope"
                 },
@@ -5550,7 +5565,7 @@ export const console: ConsoleNS = {
                     },
                     deleteScope: {
                         assertionHint: "Please type <1>{{ name }}</1> to confirm.",
-                        content: "If you delete this scope, you will not be able to get it back." +
+                        content: "If you delete this scope, you will not be able to get it back. " +
                             "Please proceed with caution.",
                         header: "Are you sure?",
                         message: "This action is irreversible and will permanently delete the OIDC scope."
@@ -6041,9 +6056,9 @@ export const console: ConsoleNS = {
                                 }
                             },
                             roleName: {
-                                hint: "A name for the user group.",
+                                hint: "A name for the {{type}}.",
                                 label: "{{type}} Name",
-                                placeholder: "Enter {{type}} Name",
+                                placeholder: "Enter {{type}} name",
                                 validations: {
                                     duplicate: "A {{type}} already exists with the given {{type}} name.",
                                     empty: "{{type}} Name is required to proceed.",
@@ -6075,7 +6090,7 @@ export const console: ConsoleNS = {
                     },
                     users: {
                         assignUserModal: {
-                            heading: "Update {{type}} Users",
+                            heading: "Manage Users",
                             hint: "Select users to add them to the user group.",
                             list: {
                                 listHeader: "Name",
@@ -6125,12 +6140,12 @@ export const console: ConsoleNS = {
                         dangerZone: {
                             actionTitle: "Delete {{type}}",
                             header: "Delete {{type}}",
-                            subheader: "Once you delete the {{type}}, there is no going back. Please be certain."
+                            subheader: "Once you delete the {{type}}, it cannot be recovered."
                         },
                         fields: {
                             roleName: {
                                 name: "Role Name",
-                                placeholder: "Enter your role name",
+                                placeholder: "Enter role name",
                                 required: "Role name is required"
                             }
                         }
@@ -6160,7 +6175,7 @@ export const console: ConsoleNS = {
                         list: {
                             emptyPlaceholder: {
                                 action: "Assign User",
-                                subtitles: "There are no Users assigned to the {{type}} at the moment.",
+                                subtitles: "There are no users assigned to the {{type}} at the moment.",
                                 title: "No Users Assigned"
                             },
                             header: "Users"
@@ -6174,8 +6189,8 @@ export const console: ConsoleNS = {
                     },
                     columns: {
                         actions: "Actions",
-                        lastModified: "Last Modified",
-                        name: "Name"
+                        lastModified: "Modified Time",
+                        name: "Role"
                     },
                     confirmations: {
                         deleteItem: {
@@ -7481,7 +7496,7 @@ export const console: ConsoleNS = {
                             message: "Something went wrong"
                         },
                         success: {
-                            description: "Successfully deleted the invitation.",
+                            description: "Successfully deleted the user's association to your organization.",
                             message: "Invitation deletion successful"
                         }
                     },

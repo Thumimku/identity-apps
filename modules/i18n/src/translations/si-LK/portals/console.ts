@@ -1766,6 +1766,16 @@ export const console: ConsoleNS = {
                                 label: "පරිශීලක වෙළඳසැල් වසම සැපයීම"
                             }
                         }
+                    },
+                    spaProtocolSettingsWizard:{
+                        fields: {
+                            callBackUrls: {
+                                label: "බලයලත් URL",
+                                validations: {
+                                    invalid: "ඇතුළත් කළ URL එක HTTP හෝ HTTPS නොවේ. කරුණාකර වලංගු URI එකක් එක් කරන්න."
+                                }
+                            }
+                        }
                     }
                 },
                 helpPanel: {
@@ -3372,9 +3382,10 @@ export const console: ConsoleNS = {
                         label: "{{type}} නම",
                         placeholder: "Enter {{type}} නම ඇතුළත් කරන්න",
                         validations: {
-                            duplicate: "දී ඇති {{type}} with නම සමඟ {{type}} දැනටමත් පවතී.",
+                            duplicate: "දී ඇති {{type}} නම සමඟ {{type}} දැනටමත් පවතී.",
                             empty: "ඉදිරියට යාමට {{type}} නම අවශ්‍ය වේ.",
-                            invalid: "{{type}} නමෙහි දිග 3-30 විය යුතු අතර හිස් තැන් අඩංගු විය නොහැක."
+                            invalid: "{{type}} නමක අඩංගු විය හැක්කේ අක්ෂර සංඛ්‍යා, -, සහ _ පමණි. "
+                                +"අක්ෂර 3 ත් 30 ත් අතර දිගකින් යුක්ත විය යුතුය."
                         }
                     }
                 }
@@ -4657,6 +4668,9 @@ export const console: ConsoleNS = {
                 }
             },
             oidcScopes: {
+                addAttributes: {
+                    description: "ඔබට {{name}} විෂය පථය සමඟ සම්බන්ධ වීමට අවශ්‍ය පරිශීලක ගුණාංග තෝරන්න.",
+                },
                 buttons: {
                     addScope: "නව OIDC විෂය පථය"
                 },

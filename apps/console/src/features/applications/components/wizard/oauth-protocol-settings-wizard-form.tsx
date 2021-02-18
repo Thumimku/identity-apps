@@ -25,7 +25,7 @@ import isEmpty from "lodash/isEmpty";
 import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Grid, Icon, Label, Message } from "semantic-ui-react";
+import { Grid, Icon, Message } from "semantic-ui-react";
 import { AppState, ConfigReducerStateInterface } from "../../../../features/core";
 import { getAuthProtocolMetadata } from "../../api";
 import SinglePageApplicationTemplate
@@ -134,7 +134,7 @@ export const OauthProtocolSettingsWizardForm: FunctionComponent<OAuthProtocolSet
 
     // Maintain the state if the user allowed the CORS for the
     // origin of the configured callback URL(s).
-    const [ allowCORSUrls, setAllowCORSUrls ] = useState<string[]>([]);
+    const [ allowCORSUrls, setAllowCORSUrls ] = useState<string[]>(allowedOrigins ? allowedOrigins: []);
 
     /**
      * Show the grant types only for the custom protocol template.
@@ -436,12 +436,12 @@ export const OauthProtocolSettingsWizardForm: FunctionComponent<OAuthProtocolSet
                                         handleAddAllowedOrigin={ (url) => handleAddAllowOrigin(url) }
                                         handleRemoveAllowedOrigin={ (url) => handleRemoveAllowOrigin(url) }
                                         tenantDomain={ tenantDomain }
-                                        allowedOrigins={ allowedOrigins }
+                                        allowedOrigins={ allowCORSUrls }
                                         urlState={ callBackUrls }
                                         setURLState={ setCallBackUrls }
                                         labelName={
-                                            t("console:develop.features.applications.forms.inboundOIDC." +
-                                                "fields.callBackUrls.label")
+                                            t("console:develop.features.applications.forms." +
+                                                "spaProtocolSettingsWizard.fields.callBackUrls.label")
                                         }
                                         placeholder={
                                             t("console:develop.features.applications.forms.inboundOIDC." +
@@ -449,26 +449,21 @@ export const OauthProtocolSettingsWizardForm: FunctionComponent<OAuthProtocolSet
                                                 ".placeholder")
                                         }
                                         validationErrorMsg={
-                                            t("console:develop.features.applications.forms.inboundOIDC." +
-                                                "fields.callBackUrls.validations.empty")
+                                            t("console:develop.features.applications.forms." +
+                                                "spaProtocolSettingsWizard.fields.callBackUrls.validations.invalid")
                                         }
                                         validation={ (value: string) => {
+                                            if (!(URLUtils.isURLValid(value, true) && (URLUtils.isHttpUrl(value) ||
+                                                URLUtils.isHttpsUrl(value)))) {
 
-                                            let label: ReactElement = null;
-
-                                            if (!URLUtils.isHttpsOrHttpUrl(value)) {
-                                                label = (
-                                                    <Label basic color="orange" className="mt-2">
-                                                        { t("console:common.validations.unrecognizedURL.description") }
-                                                    </Label>
-                                                );
+                                                return false;
                                             }
 
                                             if (!URLUtils.isMobileDeepLink(value)) {
                                                 return false;
                                             }
 
-                                            setCallbackURLsErrorLabel(label);
+                                            setCallbackURLsErrorLabel(null);
 
                                             return true;
                                         } }
@@ -512,6 +507,8 @@ export const OauthProtocolSettingsWizardForm: FunctionComponent<OAuthProtocolSet
                                                                 className={ "m-1 p-1 with-no-border orange" }
                                                                 onClick={ (e) => {
                                                                     e.preventDefault();
+                                                                    const host = new URL(callBackURLFromTemplate);
+                                                                    handleAddAllowOrigin(host.origin);
                                                                     setCallBackUrls(callBackURLFromTemplate);
                                                                 } }>
                                                                 <span style={ { fontWeight: "bold" } }>Add Now</span>
