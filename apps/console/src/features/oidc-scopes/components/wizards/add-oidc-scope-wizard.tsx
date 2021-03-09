@@ -278,10 +278,24 @@ export const OIDCScopeCreateWizard: FunctionComponent<OIDCScopeCreateWizardProps
             content: (
                 <AttributeSelectList
                     availableExternalClaims={ OIDCAttributes }
-                    setAvailableExternalClaims={ setSelectedAttributes }
+                    setAvailableExternalClaims={ () => null }
                     setInitialSelectedExternalClaims={ (response: ExternalClaim[]) => {
                         const claimURIs: string[] = response?.map((claim: ExternalClaim) => claim.claimURI);
-                        handleWizardFormFinish(claimURIs);
+                        if (claimURIs?.length > 0) {
+                            handleWizardFormFinish(claimURIs);
+                        } else {
+                            setAlert({
+                                description: t(
+                                    "console:manage.features.oidcScopes.notifications.claimsMandatory"
+                                    + ".error.description"
+                                ),
+                                level: AlertLevels.ERROR,
+                                message: t(
+                                    "console:manage.features.oidcScopes.notifications.claimsMandatory.error"
+                                    + ".message"
+                                )
+                            });
+                        }
                     } }
                     onUpdate={ () => null }
                     selectedExternalClaims={ selectedAttributes }

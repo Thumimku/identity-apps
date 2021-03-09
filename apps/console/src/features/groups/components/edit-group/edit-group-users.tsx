@@ -31,7 +31,7 @@ import {
     UserAvatar,
     useWizardAlert
 } from "@wso2is/react-components";
-import _ from "lodash";
+import escapeRegExp from "lodash/escapeRegExp";
 import isEmpty from "lodash/isEmpty";
 import React, {
     Dispatch,
@@ -113,8 +113,8 @@ export const GroupUsersList: FunctionComponent<GroupUsersListProps> = (props: Gr
         let isMatch: boolean = false;
         const filteredRoleList: UserBasicInterface[] = [];
 
-        if (!_.isEmpty(query)) {
-            const regExp = new RegExp(_.escapeRegExp(query), "i");
+        if (!isEmpty(query)) {
+            const regExp = new RegExp(escapeRegExp(query), "i");
 
             list && list.map((user: UserBasicInterface) => {
                 isMatch = regExp.test(user.userName);
@@ -331,31 +331,31 @@ export const GroupUsersList: FunctionComponent<GroupUsersListProps> = (props: Gr
 
         return (
             <Table.Row key={ user.id }>
-                <Table.Cell collapsing>
-                    <UserAvatar
-                        data-testid={
-                            `${ testId }-users-list-${
-                                user.userName }-avatar`
-                        }
-                        name={ resolvedUsername }
-                        size="mini"
-                        floated="left"
-                        image={ user.profileUrl }
-                    />
-                </Table.Cell>
                 <Table.Cell>
-                    <div>{ resolvedGivenName ?? resolvedUsername }</div>
-                    {
-                        resolvedGivenName && (
-                            <Header as="h6">
-                                <Header.Content>
-                                    <Header.Subheader data-testid={ `${ testId }-item-sub-heading` }>
-                                        { resolvedUsername }
-                                    </Header.Subheader>
-                                </Header.Content>
-                            </Header>
-                        )
-                    }
+                    <Header
+                        image
+                        as="h6"
+                        className="header-with-icon"
+                        data-testid={ `${ testId }-item-heading` }
+                    >
+                        <UserAvatar
+                            data-testid={
+                                `${ testId }-users-list-${
+                                    user.userName }-avatar`
+                            }
+                            name={ resolvedUsername }
+                            spaced="right"
+                            size="mini"
+                            floated="left"
+                            image={ user.profileUrl }
+                        />
+                        <Header.Content>
+                            { resolvedGivenName ?? resolvedUsername }
+                            <Header.Subheader data-testid={ `${ testId }-item-sub-heading` }>
+                                { resolvedGivenName && resolvedUsername }
+                            </Header.Subheader>
+                        </Header.Content>
+                    </Header>
                 </Table.Cell>
             </Table.Row>
         );

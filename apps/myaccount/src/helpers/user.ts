@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { isEmpty } from "lodash";
 import { getUserNameWithoutDomain } from "@wso2is/core/helpers";
+import isEmpty from "lodash/isEmpty";
 import { AppConstants } from "../constants";
 import { AuthStateInterface } from "../models";
 
@@ -45,6 +45,25 @@ export const resolveUserDisplayName = (state: AuthStateInterface): string => {
 
     return null;
 };
+
+/**
+ * Resolves the user's profile name.
+ *
+ * @param {AuthStateInterface} state - auth state.
+ * @param isProfileInfoLoading - SCIM user profile loader status.
+ * @return {string} - Resolved profile name.
+ */
+export const resolveUserProfileName = (state: AuthStateInterface, isProfileInfoLoading: boolean): string => {
+
+    if (state.profileInfo.name.givenName || state.profileInfo.name.familyName) {
+        const givenName = isEmpty(state.profileInfo.name.givenName) ? "" : state.profileInfo.name.givenName + " ";
+        const familyName = isEmpty(state.profileInfo.name.familyName) ? "" : state.profileInfo.name.familyName;
+        return givenName + familyName;
+    } else if (!isProfileInfoLoading) {
+        return resolveUserDisplayName(state);
+    }
+    return null;
+}
 
 /**
  * Same username can exist in two different user stores. This function

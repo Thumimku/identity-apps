@@ -62,6 +62,9 @@ export const console: ConsoleNS = {
             },
             resultsIndicator: "Showing results for the query \"{{query}}\""
         },
+        header: {
+            tenantSwitchHeader: "Switch Tenant"
+        },
         modals: {
             editAvatarModal: {
                 content: {
@@ -447,23 +450,23 @@ export const console: ConsoleNS = {
             URLInput: {
                 withLabel: {
                     negative: {
-                        content: "You need to enable CORS for this origin in order to make API requests" +
-                            " to {{productName}} from a Browser.",
+                        content: "You need to enable CORS for the origin of this URL to make requests" +
+                            " to {{productName}} from a browser.",
                         detailedContent: {
                             0: "",
                             1: ""
                         },
-                        header: "Allow CORS",
+                        header: "CORS is not Allowed for",
                         leftAction: "Allow"
                     },
                     positive: {
-                        content: "The origin of the redirect URL {{urlLink}} is allowed to make CORS requests to " +
-                            "{{productName}} APIs.",
+                        content: "The origin of this URL is allowed to make requests to " +
+                            "{{productName}} APIs from a browser.",
                         detailedContent: {
                             0: "",
                             1: ""
                         },
-                        header: "CORS is Allowed"
+                        header: "CORS is Allowed for"
                     }
                 }
             },
@@ -549,9 +552,9 @@ export const console: ConsoleNS = {
                 },
                 confirmations: {
                     addSocialLogin: {
-                        content : "To add a new social login we will need to route you to a different page and " +
+                        content : "To add a new social login, we will need to route you to a different page and " +
                             "any unsaved changes in this page will be lost. Please confirm.",
-                        header: "Confirm Your Action",
+                        header: "Are you sure?",
                         subHeader: "This action is irreversible."
                     },
                     clientSecretHashDisclaimer: {
@@ -587,8 +590,8 @@ export const console: ConsoleNS = {
                     },
                     deleteApplication: {
                         assertionHint: "Please type <1>{{ name }}</1> to confirm.",
-                        content: "If you delete this application, you will not be able to get it back. All the " +
-                            "applications depending on this also might stop working. Please proceed with caution.",
+                        content: "All the applications depending on this also might stop working. " +
+                            "Please proceed with caution.",
                         header: "Are you sure?",
                         message: "This action is irreversible and will permanently delete the application."
                     },
@@ -620,18 +623,41 @@ export const console: ConsoleNS = {
                         message: "Please double check your values."
                     },
                     regenerateSecret: {
-                        assertionHint: "Please type <1>{{ id }}</1> to confirm.",
-                        content: "If you regenerate this application, All the applications depending on this also " +
-                            "might stop working. Please proceed with caution.",
+                        assertionHint: "Please type <1>{{ id }}</1> to regenerate the client secret.",
+                        content: "If you regenerate the client secret, authentication flows using old client secret " +
+                            "for this application will stop working. Please update the application client secret on " +
+                            "your client application.",
                         header: "Are you sure?",
-                        message: "This action is irreversible and permanently change the client secret."
+                        message: "This action is irreversible and permanently changes the client secret. " +
+                            "Please proceed with caution."
+                    },
+                    reactivateSPA: {
+                        assertionHint: "Please type <1>{{ id }}</1> to reactivate the application.",
+                        content: "If you reactivate the application, authentication flows for this " +
+                            "application will start working. Please proceed with caution.",
+                        header: "Are you sure?",
+                        message: "This action can be reversed by revoking the client id later."
+                    },
+                    reactivateOIDC: {
+                        assertionHint: "Please type <1>{{ id }}</1> to reactivate the application.",
+                        content: "If you reactivate the application, a new client secret will be generated. " +
+                            "Please update the application client secret on your client application.",
+                        header: "Are you sure?",
+                        message: ""
+                    },
+                    removeApplicationUserAttribute: {
+                        content : "If you confirm this action, the subject attribute will be set to the default " +
+                            "attribute: <1>{{ default }}</1>",
+                        header: "Are you sure?",
+                        subHeader: "The attribute you are trying to remove is currently selected as the subject " +
+                            "attribute."
                     },
                     revokeApplication: {
                         assertionHint: "Please type <1>{{ id }}</1> to confirm.",
-                        content: "If you Revoke this application, All the applications depending on this also might" +
-                            " stop working. Please proceed with caution.",
+                        content: "This action can be reversed by activating the application later.",
                         header: "Are you sure?",
-                        message: "This action is can be reversed by regenerating client secret."
+                        message: "If you revoke this application, authentication flows for this application will " +
+                            "stop working. Please proceed with caution."
                     }
                 },
                 dangerZoneGroup: {
@@ -723,9 +749,9 @@ export const console: ConsoleNS = {
                                     subHeading: "Select which user attributes you want to share with the application."
                                 },
                                 heading: "User Attribute Selection",
-                                attributeComponentHint: "Manage the user attributes you want to share with " +
-                                    "this application. You can configure additional <1>OIDC attribute mappings</1> " +
-                                    "and request them via <3>OIDC Scopes.</3>",
+                                attributeComponentHint: "Manage the user attributes you want to share with this " +
+                                    "application via <1>OpenID Connect Scopes.</1> You can map additional attributes " +
+                                    "by navigating to <3>Attribute Mappings.</3>",
                                 mandatoryAttributeHint: "Mark which attributes are mandatory for a user to share" +
                                     " with the application. When logging in, Asgardeo prompts the user to enter the" +
                                     " attribute value if it is not already provided in the user's profile.",
@@ -846,9 +872,8 @@ export const console: ConsoleNS = {
                                             heading: "Step-based configuration",
                                             hint: "Create a user login flow by dragging authenticators on to the " +
                                                 "relevant steps.",
-                                            secondFactorDisabled: "The second-factor authenticators can be used " +
-                                                "only if a basic authenticator or identifier-first authenticator " +
-                                                "has been added in a previous step."
+                                            secondFactorDisabled: "The second-factor authenticators can only be used " +
+                                                "if the <1>basic</1> authenticator has been added in a previous step."
                                         }
                                     }
                                 },
@@ -1062,8 +1087,8 @@ export const console: ConsoleNS = {
                                 placeholder: "Enter a description for the application"
                             },
                             discoverable: {
-                                hint: "Enable to make the application visible to end-users on their My Account " +
-                                    "application catalog.",
+                                hint: "Enable to make the application visible to end-users on their " +
+                                    "<1>{{ myAccount }}</1> application catalog.",
                                 label: "Discoverable application"
                             },
                             imageUrl: {
@@ -1128,21 +1153,21 @@ export const console: ConsoleNS = {
                                 }
                             },
                             callBackUrls: {
-                                hint: "The redirect URI determines where the authorization code is sent to upon " +
-                                    "user authentication, and where the user is redirected to upon user logout." +
-                                    "The client app should specify the redirect URI in the authorization or logout " +
-                                    "request and {{productName}} will validate it against the redirect URIs " +
-                                    "entered here.",
-                                label: "Authorized URIs",
+                                hint: "The authorized redirect URL determines where the authorization code is sent " +
+                                    "to upon user authentication, and where the user is redirected to upon user " +
+                                    "logout. The client app should specify the authorized redirect URL in the " +
+                                    "authorization or logout request and {{productName}} will validate it against the " +
+                                    "authorized redirect URLs entered here.",
+                                label: "Authorized redirect URLs",
                                 placeholder: "https://myapp.io/login",
                                 validations: {
-                                    empty: "Please add a valid URI.",
+                                    empty: "Please add a valid URL.",
                                     required: "This field is required for a functional app. " +
                                         "However, if you are planning to try the sample app, " +
                                         "this field can be ignored."
                                 },
-                                info: "This field is required for a functional app. However, if you are"  +
-                                "planning to try out the sample app, you can use {{callBackURLFromTemplate}}."
+                                info: "Don’t have an app? Try out a sample app using {{callBackURLFromTemplate}} " +
+                                "as the authorized redirect URL. (You can download and run a sample at a later step.)"
                             },
                             clientID: {
                                 label: "Client ID"
@@ -1191,9 +1216,9 @@ export const console: ConsoleNS = {
                         },
                         messages: {
                             revokeDisclaimer: {
-                                content: "The application has been revoked. Please regenrate the secret if you wish " +
-                                    "to reactivate the application.",
-                                heading: "Application is Revoked"
+                                content: "The application has been revoked. Reactivate the application to allow " +
+                                    "users to log in.",
+                                heading: "Application is inactive"
                             }
                         },
                         sections: {
@@ -1776,9 +1801,18 @@ export const console: ConsoleNS = {
                     spaProtocolSettingsWizard:{
                         fields: {
                             callBackUrls: {
-                                label: "Authorized URLs",
+                                label: "Authorized redirect URLs",
                                 validations: {
+                                    empty: "This is a required field.",
                                     invalid: "The entered URL is neither HTTP nor HTTPS. Please add a valid URL."
+                                }
+                            },
+                            name: {
+                                label: "Name",
+                                validations: {
+                                    invalid: "{{appName}} is not a valid name. It can contain up to " +
+                                        "{{characterLimit}} characters, including alphanumerics, periods (.), " +
+                                        "dashes (-), underscores (_) and spaces."
                                 }
                             }
                         }
@@ -2276,7 +2310,7 @@ export const console: ConsoleNS = {
                 placeholders: {
                     emptyAttributesList: {
                         action: "Add User Attribute",
-                        subtitles: "There are no user attributes selected to the application at the moment.",
+                        subtitles: "There are no user attributes selected for the application at the moment.",
                         title: "No user attributes added"
                     },
                     emptyAuthenticatorStep: {
@@ -2293,7 +2327,7 @@ export const console: ConsoleNS = {
                     emptyList: {
                         action: "New Application",
                         subtitles: {
-                            0: "Currently there are no applications available.",
+                            0: "There are no applications available at the moment.",
                             1: "You can add a new application easily by following the",
                             2: "steps in the application creation wizard."
                         },
@@ -2421,10 +2455,15 @@ export const console: ConsoleNS = {
                     deleteIDP: {
                         assertionHint: "Please type <1>{{ name }}</1> to confirm.",
                         content: "If you delete this identity provider, you will not be able to recover it. " +
-                            "All the applications using this identity provider might stop working. " +
                             "Please proceed with caution.",
                         header: "Are you sure?",
                         message: "This action is irreversible and will permanently delete the identity provider."
+                    },
+                    deleteIDPWithConnectedApps: {
+                        assertionHint: "",
+                        content: "Remove the associations from these applications before deleting:",
+                        header: "Unable to Delete",
+                        message: "There are applications using this identity provider."
                     }
                 },
                 dangerZoneGroup: {
@@ -3134,7 +3173,7 @@ export const console: ConsoleNS = {
                     },
                     emptyIDPList: {
                         subtitles: {
-                            0: "Currently there are no identity providers available.",
+                            0: "There are no identity providers at the moment.",
                             1: "You can add a new identity provider by following",
                             2: "the steps in the identity provider creation wizard."
                         },
@@ -3271,17 +3310,15 @@ export const console: ConsoleNS = {
                     deleteIDP: {
                         assertionHint: "Please type <1>{{ name }}</1> to confirm.",
                         content: "If you delete this identity provider, you will not be able to recover it. " +
-                            "All the applications using this identity provider might stop working. " +
                             "Please proceed with caution.",
                         header: "Are you sure?",
                         message: "This action is irreversible and will permanently delete the identity provider."
                     },
                     deleteIDPWithConnectedApps: {
                         assertionHint: "",
-                        content: "This identity provider has been used in the following applications.",
-                        contentLine2: "Please make sure to remove these associations before deleting.",
-                        header: "Unable to Delete the Identity Provider",
-                        message: "Cannot delete an identity provider that contains connected applications."
+                        content: "Remove the associations from these applications before deleting:",
+                        header: "Unable to Delete",
+                        message: "There are applications using this identity provider. "
                     }
                 },
                 dangerZoneGroup: {
@@ -3975,7 +4012,7 @@ export const console: ConsoleNS = {
                     },
                     emptyIDPList: {
                         subtitles: {
-                            0: "Currently there are no identity providers available.",
+                            0: "There are no identity providers available at the moment.",
                             1: "You can add a new identity provider easily by following the",
                             2: "steps in the identity provider creation wizard."
                         },
@@ -4116,8 +4153,8 @@ export const console: ConsoleNS = {
                 identityProviderEdit: "Identity Providers Edit",
                 identityProviderTemplates: "Identity Provider Templates",
                 identityProviders: "Identity Providers",
-                oidcScopes: "OIDC Scopes",
-                oidcScopesEdit: "OIDC Scopes Edit",
+                oidcScopes: "Scopes",
+                oidcScopesEdit: "Scopes Edit",
                 overview: "Overview",
                 remoteRepo: "Remote Repo Config",
                 remoteRepoEdit: "Remote Repo Config Edit"
@@ -4177,11 +4214,11 @@ export const console: ConsoleNS = {
         pages: {
             applicationTemplate: {
                 backButton: "Go back to applications",
-                subTitle: "Choose one of the predefined application types to connect quickly.",
+                subTitle: "Choose one of the predefined types to onboard an application.",
                 title: "Select Application Type"
             },
             applications: {
-                subTitle: "Create and manage applications based on templates and configure authentication.",
+                subTitle: "Manage applications using templates, and configure authentication.",
                 title: "Applications"
             },
             applicationsEdit: {
@@ -4190,12 +4227,12 @@ export const console: ConsoleNS = {
                 title: null
             },
             authenticationProvider: {
-                subTitle: "Manage identity providers to allow social login to applications.",
+                subTitle: "Manage identity providers to allow users to log in to your application through them.",
                 title: "Identity Providers"
             },
             authenticationProviderTemplate: {
                 backButton: "Go back to Identity Providers",
-                subTitle: "Choose one of the following identity provider types.",
+                subTitle: "Choose one of the following identity providers.",
                 supportServices: {
                     authenticationDisplayName: "Authentication",
                     provisioningDisplayName: "Provisioning"
@@ -4203,12 +4240,12 @@ export const console: ConsoleNS = {
                 title: "Select Identity Provider"
             },
             idp: {
-                subTitle: "Manage identity providers to allow social login to applications.",
+                subTitle: "Manage identity providers to allow users to log in to your application through them.",
                 title: "Identity Providers"
             },
             idpTemplate: {
                 backButton: "Go back to Identity Providers",
-                subTitle: "Choose one of the following identity provider types.",
+                subTitle: "Choose one of the following identity providers.",
                 supportServices: {
                     authenticationDisplayName: "Authentication",
                     provisioningDisplayName: "Provisioning"
@@ -4523,12 +4560,12 @@ export const console: ConsoleNS = {
                 attributeMappings: {
                     custom: {
                         description: "The custom protocol representation for user "
-                            + "attributes that will be used in custom API.",
+                            + "attributes.",
                         heading: "Custom Attributes"
                     },
                     oidc: {
-                        description: "The OpenID Connect protocol representation for user "
-                            + "attributes that will be used in the OpenID Connect API.",
+                        description: "The OpenID Connect (OIDC) protocol representation for user "
+                            + "attributes.",
                         heading: "OpenID Connect"
                     },
                     scim: {
@@ -4681,7 +4718,7 @@ export const console: ConsoleNS = {
                         },
                         manageAttributes: {
                             attributes: {
-                                description: "Each attribute contains a piece of user data stored.",
+                                description: "Each attribute contains a piece of stored user data.",
                                 heading: "Attributes"
                             },
                             description: "View and manage attributes.",
@@ -4730,7 +4767,9 @@ export const console: ConsoleNS = {
                             placeholder: "Enter {{type}} attribute",
                             requiredErrorMessage: "{{type}} Attribute is required",
                             validationErrorMessages: {
-                                duplicateName: "The {{type}} attribute already exists."
+                                duplicateName: "The {{type}} attribute already exists.",
+                                invalidName: "The name you entered contains illegal characters. " +
+                                    "Only alphabets, numbers, `#`, and `_` are allowed."
                             }
                         },
                         localAttribute: {
@@ -4796,7 +4835,7 @@ export const console: ConsoleNS = {
                     pageLayout: {
                         edit: {
                             header: "Add {{type}} Attribute",
-                            primaryAction: "New {{type}} Attribute"
+                            primaryAction: "New Attribute"
                         }
                     },
                     placeholders: {
@@ -4929,7 +4968,12 @@ export const console: ConsoleNS = {
                         name: {
                             label: "Name",
                             placeholder: "Enter a name for the attribute",
-                            requiredErrorMessage: "Name is required"
+                            requiredErrorMessage: "Name is required",
+                            validationErrorMessages: {
+                                invalidName: "The name you entered contains disallowed characters. It can only" +
+                                    " contain up to 30 characters, including alphanumerics, periods (.), dashes (-)," +
+                                    " underscores (_), plus signs (+), and spaces."
+                            }
                         },
                         nameHint: "Name of the attribute that will be shown on the user profile "
                             + "and user registration page",
@@ -5205,7 +5249,7 @@ export const console: ConsoleNS = {
                     emptyList: {
                         action: "New Template Type",
                         subtitles: {
-                            0: "Currently there are no templates types available.",
+                            0: "There are no templates types available at the moment.",
                             1: "You can add a new template type by ",
                             2: "clicking on the button below."
                         },
@@ -5342,8 +5386,8 @@ export const console: ConsoleNS = {
                     emptyList: {
                         action: "New Template",
                         subtitles: {
-                            0: "Currently there are no templates available for the selected",
-                            1: "email template type. You can add a new template by ",
+                            0: "There are no templates available for the selected",
+                            1: "email template type at the moment. You can add a new template by ",
                             2: "clicking on the button below."
                         },
                         title: "Add Template"
@@ -5550,7 +5594,7 @@ export const console: ConsoleNS = {
             },
             oidcScopes: {
                 addAttributes: {
-                    description: "Select which user attributes you want to associate with the scope {{name}}.",
+                    description: "Select which user attributes you want to associate with the scope {{name}}."
                 },
                 buttons: {
                     addScope: "New OIDC Scope"
@@ -5657,6 +5701,13 @@ export const console: ConsoleNS = {
                             message: "Creation successful"
                         }
                     },
+                    claimsMandatory: {
+                        error: {
+                            description: "To add a scope, you need to make sure that the scope " +
+                                "has at least one attribute.",
+                            message: "You need to select at least one attribute."
+                        }
+                    },
                     deleteOIDCScope: {
                         error: {
                             description: "{{description}}",
@@ -5746,7 +5797,7 @@ export const console: ConsoleNS = {
                     emptyList: {
                         action: "New OIDC Scope",
                         subtitles: {
-                            0: "Currently there are no OIDC scopes.",
+                            0: "There are no OIDC scopes at the moment.",
                             1: "You can add a new OIDC scope easily by following the",
                             2: "steps in the creation wizard."
                         },
@@ -5781,8 +5832,8 @@ export const console: ConsoleNS = {
                             basicDetails: "Basic Details",
                             claims: "Add Attributes"
                         },
-                        subTitle: "Create a new OIDC scope with required attributes",
-                        title: "Create OIDC Scope"
+                        subTitle: "Create a new OpenID Connect (OIDC) scope with required attributes",
+                        title: "Create OpenID Connect Scope"
                     }
                 }
             },
@@ -6062,7 +6113,8 @@ export const console: ConsoleNS = {
                                 validations: {
                                     duplicate: "A {{type}} already exists with the given {{type}} name.",
                                     empty: "{{type}} Name is required to proceed.",
-                                    invalid: "Please enter a valid {{type}} name."
+                                    invalid: "A {{type}} name can only contain alphanumeric characters, -, and _. "
+                                        + "And must be of length between 3 to 30 characters."
                                 }
                             }
                         }
@@ -6501,23 +6553,23 @@ export const console: ConsoleNS = {
                             },
                             firstName: {
                                 label: "First Name",
-                                placeholder: "Enter your first name",
+                                placeholder: "Enter the first name",
                                 validations: {
                                     empty: "First name is a required field"
                                 }
                             },
                             lastName: {
                                 label: "Last Name",
-                                placeholder: "Enter your last name",
+                                placeholder: "Enter the last name",
                                 validations: {
                                     empty: "Last name is a required field"
                                 }
                             },
                             newPassword: {
-                                label: "New Password",
-                                placeholder: "Enter the new password",
+                                label: "Password",
+                                placeholder: "Enter the password",
                                 validations: {
-                                    empty: "New password is a required field",
+                                    empty: "Password is a required field",
                                     regExViolation: "Please enter a valid password"
                                 }
                             },
@@ -6528,7 +6580,8 @@ export const console: ConsoleNS = {
                                     empty: "Username is a required field",
                                     invalid: "A user already exists with this username.",
                                     invalidCharacters: "Username seems to contain invalid characters.",
-                                    regExViolation: "Please enter a valid username."
+                                    regExViolation: "Username is invalid. It should be a valid email that contains " +
+                                        "between 3-30 alphanumeric characters with no whitespaces."
                                 }
                             }
                         },
@@ -6600,6 +6653,12 @@ export const console: ConsoleNS = {
                         header: "Reset User Password",
                         message: "NOTE: Please note that after changing the password the user will no longer be " +
                             "able to log into any application using the current password.",
+                        hint: {
+                            forceReset: "NOTE: Please note that after inviting the user to change the password " +
+                                "the user will no longer be able to log into any application using the current password.",
+                            setPassword: "NOTE: Please note that after changing the password the user will no longer be " +
+                                "able to log into any application using the current password."
+                        },
                         passwordOptions: {
                             forceReset: "Invite user to reset the password",
                             setPassword: "Set a new password for the user"
@@ -7064,7 +7123,8 @@ export const console: ConsoleNS = {
                 },
                 forms: {
                     validation: {
-                        formatError: "The format of the {{field}} entered is incorrect."
+                        formatError: "The format of the {{field}} entered is incorrect.",
+                        dateFormatError: "The format of the {{field}} entered is incorrect. Valid format is YYYY-MM-DD."
                     }
                 },
                 list: {
@@ -7700,8 +7760,8 @@ export const console: ConsoleNS = {
                 title: "Groups"
             },
             oidcScopes: {
-                subTitle: "Create and manage OIDC scopes and the attributes bound to the scopes.",
-                title: "OIDC Scopes"
+                subTitle: "Create and manage OpenID Connect (OIDC) scopes and the attributes bound to the scopes.",
+                title: "OpenID Connect Scopes"
             },
             oidcScopesEdit: {
                 backButton: "Go back to scopes",

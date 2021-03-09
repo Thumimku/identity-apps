@@ -71,6 +71,10 @@ export interface HeaderPropsInterface extends TestableComponentInterface {
     userDropdownLinks?: HeaderLinkInterface[];
     tenantAssociations?: TenantAssociationsInterface;
     onTenantSwitch?: (tenant: string | string[]) => void;
+    /**
+     * Heading for the tenant switcher.
+     */
+    tenantSwitchHeader?: ReactNode;
     tenantIcon?: any;
 }
 
@@ -149,6 +153,7 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
         showSidePanelToggle,
         showUserDropdown,
         tenantIcon,
+        tenantSwitchHeader,
         onLinkedAccountSwitch,
         onSidePanelToggleClick,
         onTenantSwitch,
@@ -210,14 +215,20 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
     };
 
     const resolveAuthenticatedUserEmail = (): string => {
-        if (!profileInfo || !profileInfo.emails || !profileInfo.emails.length || profileInfo.emails.length < 1) {
+        if (!profileInfo || !profileInfo.userName) {
             return null;
         }
 
-        if (typeof profileInfo.emails[ 0 ] === "string") {
-            return profileInfo.emails[ 0 ];
-        } else if (typeof profileInfo.emails[ 0 ] === "object") {
-            return profileInfo.emails[ 0 ].value;
+        if (typeof profileInfo.userName === "string") {
+            const userName = profileInfo?.userName?.split("/").length > 1
+            ? profileInfo.userName.split("/")[1]
+            : profileInfo.userName;
+            return userName;
+        } else if (typeof profileInfo.userName === "object") {
+            const userName = profileInfo?.userName?.value.split("/").length > 1
+            ? profileInfo.userName.value.split("/")[1]
+            : profileInfo.userName.value;
+            return userName;
         }
 
         return null;
@@ -505,7 +516,7 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
                                                                   className="link-icon"
                                                                   name="exchange"
                                                               />
-                                                              Switch Organization
+                                                              { tenantSwitchHeader }
                                                           </Dropdown.Item>
                                                       )
                                                       : null
@@ -527,7 +538,7 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
                                                                   key={ index }
                                                                   className="action-panel"
                                                                   onClick={ onClick }
-                                                                  data-testid={ `${ testId }-dropdown-link-${ name }` }
+                                                                  data-testid={ `${ testId }-dropdown-link-${ name.replace(" ", "-") }` }
                                                               >
                                                                   {
                                                                       icon &&
@@ -563,7 +574,7 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
                                                                   />
                                                               </Grid.Column>
                                                               <Grid.Column width={ 12 }>
-                                                                  Switch Organization
+                                                                  { tenantSwitchHeader }
                                                               </Grid.Column>
                                                           </Grid.Row>
                                                       </Grid>
@@ -599,5 +610,6 @@ Header.defaultProps = {
     onSidePanelToggleClick: () => null,
     showSidePanelToggle: true,
     showUserDropdown: true,
+    tenantSwitchHeader: "Switch Tenant",
     userDropdownIcon: null
 };

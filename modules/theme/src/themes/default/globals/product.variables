@@ -155,6 +155,10 @@
 ------------------------------*/
 
 @emptyPlaceholderActionMargin: 15px 0 0 0;
+@emptyPlaceholderImageMarginBottom: 25px;
+@emptyPlaceholderSubtitleMarginTop: 25px;
+@emptyPlaceholderActionMarginTop: 25px;
+@listPlaceholderMarginRight: 150px;
 
 /*-----------------------------
         Pagination Bar
@@ -174,6 +178,7 @@
 @listLayoutActionPanelMarginRight: 0;
 @listLayoutActionPanelMarginLeft: 0;
 @listLayoutActionPanelBorder: @defaultBorderWidth solid @lightBorderColor;
+@listLayoutActionPanelBorderRadius: @defaultBorderRadius;
 @listLayoutActionPanelBorderRadius: @defaultBorderRadius;
 @listLayoutActionPanelPadding: 8px 0;
 
@@ -205,3 +210,10 @@
 @inlineCodeBlockColor: #5c666f;
 @inlineCodeBlockBgColor: #eef0f1;
 @inlineCodeBlockBorder: 1px solid #c7ced1;
+
+/*-------------------------------
+        Preloader
+--------------------------------*/
+
+@preLoaderWrapperBackgroundColor: @white;
+@preLoaderWrapperBackgroundImage: none;

@@ -18,6 +18,7 @@
 
 import { TestableComponentInterface } from "@wso2is/core/models";
 import { ImageUtils, URLUtils } from "@wso2is/core/utils";
+import classNames from "classnames";
 import get from "lodash/get";
 import take from "lodash/take";
 import React, { ReactElement, ReactNode, SyntheticEvent, useEffect, useState } from "react";
@@ -31,6 +32,10 @@ import { Heading } from "../typography";
  * Proptypes for the template grid component.
  */
 export interface TemplateGridPropsInterface<T> extends TestableComponentInterface {
+    /**
+     * Additional CSS classes.
+     */
+    className?: string;
     /**
      * Empty placeholder
      */
@@ -56,6 +61,10 @@ export interface TemplateGridPropsInterface<T> extends TestableComponentInterfac
      */
     onSecondaryTemplateSelect?: (e: SyntheticEvent, { id }: { id: string }) => void;
     /**
+     * Opacity for the overlay.
+     */
+    overlayOpacity?: TemplateCardPropsInterface["overlayOpacity"];
+    /**
      * Enable/ Disable pagination.
      */
     paginate?: boolean;
@@ -67,6 +76,10 @@ export interface TemplateGridPropsInterface<T> extends TestableComponentInterfac
      * Grid pagination options.
      */
     paginationOptions?: TemplateGridPaginationOptionsInterface;
+    /**
+     * Display disabled items as grayscale.
+     */
+    renderDisabledItemsAsGrayscale?: TemplateCardPropsInterface["renderDisabledItemsAsGrayscale"];
     /**
      * Show/Hide tags section.
      */
@@ -186,12 +199,15 @@ export const TemplateGrid = <T extends WithPropertiesInterface>(
 ): ReactElement => {
 
     const {
+        className,
         emptyPlaceholder,
         heading,
         onTemplateSelect,
+        overlayOpacity,
         paginate,
         paginationLimit,
         paginationOptions,
+        renderDisabledItemsAsGrayscale,
         showTags,
         showTagIcon,
         subHeading,
@@ -210,6 +226,11 @@ export const TemplateGrid = <T extends WithPropertiesInterface>(
         useNameInitialAsImage,
         [ "data-testid" ]: testId
     } = props;
+
+    const classes = classNames(
+        "template-grid",
+        className
+    );
 
     const [templateList, setTemplateList] = useState<T[]>([]);
     const [secondaryTemplateList, setSecondaryTemplateList] = useState<T[]>([]);
@@ -314,9 +335,9 @@ export const TemplateGrid = <T extends WithPropertiesInterface>(
                         data-testid={ `${ testId }-selection-card` }
                     />
                 )
-            )
+            );
         }
-        return null
+        return null;
     });
 
     /**
@@ -326,21 +347,21 @@ export const TemplateGrid = <T extends WithPropertiesInterface>(
         let exceeded = false;
         let length = 0;
         if (secondaryTemplates && secondaryTemplates instanceof Array) {
-            length += secondaryTemplates.length
+            length += secondaryTemplates.length;
         }
         if (templates && templates instanceof Array) {
-            length += templates.length
+            length += templates.length;
         }
 
         if (length > paginationLimit) {
-            exceeded = true
+            exceeded = true;
         }
 
         return exceeded;
     });
 
     return (
-        <Grid data-testid={ testId }>
+        <Grid className={ classes } data-testid={ testId }>
             {
                 (heading || subHeading)
                     ? (
@@ -435,7 +456,9 @@ export const TemplateGrid = <T extends WithPropertiesInterface>(
                                                 name={ template.name }
                                                 id={ template.id }
                                                 onClick={ template.disabled ? null : onTemplateSelect }
+                                                overlayOpacity={ overlayOpacity }
                                                 imageSize={ templateIconSize }
+                                                renderDisabledItemsAsGrayscale={ renderDisabledItemsAsGrayscale }
                                                 tagSize={ tagSize }
                                                 data-testid={ template.id }
                                                 disabled={ template.disabled }

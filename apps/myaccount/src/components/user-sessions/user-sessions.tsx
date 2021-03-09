@@ -17,7 +17,8 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
-import _ from "lodash";
+import reverse from "lodash/reverse";
+import sortBy from "lodash/sortBy";
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Container, Modal } from "semantic-ui-react";
@@ -68,7 +69,7 @@ export const UserSessionsComponent: FunctionComponent<UserSessionsComponentProps
                     let sessions = [...response.sessions];
 
                     // Sort the array by last access time
-                    sessions = _.reverse(_.sortBy(sessions, (session) => session.lastAccessTime));
+                    sessions = reverse(sortBy(sessions, (session) => session.lastAccessTime));
 
                     setUserSessions({
                         ...response,
@@ -305,10 +306,12 @@ export const UserSessionsComponent: FunctionComponent<UserSessionsComponentProps
                 <p>{ t("myAccount:components.userSessions.modals.terminateUserSessionModal.message") }</p>
             </Modal.Content>
             <Modal.Actions data-testid={ `${testId}-termination-modal-actions` }>
-                <Button className="link-button" onClick={ handleTerminateUserSessionModalClose }>
+                <Button className="link-button" onClick={ handleTerminateUserSessionModalClose }
+                 data-testid={ `${testId}-termination-modal-actions-cancel-button` }>
                     { t("common:cancel") }
                 </Button>
-                <Button primary={ true } onClick={ handleTerminateUserSession }>
+                <Button primary={ true } onClick={ handleTerminateUserSession }
+                 data-testid={ `${testId}-termination-modal-actions-terminate-button` }>
                     { t("common:terminate") }
                 </Button>
             </Modal.Actions>
@@ -333,6 +336,7 @@ export const UserSessionsComponent: FunctionComponent<UserSessionsComponentProps
                             basic={ true }
                             color="red"
                             onClick={ handleTerminateAllUserSessionsClick }
+                            data-testid={ `${testId}-settings-section-user-sessions-terminate-all-button` }
                         >
                             { t("common:terminateAll") }
                         </Button>

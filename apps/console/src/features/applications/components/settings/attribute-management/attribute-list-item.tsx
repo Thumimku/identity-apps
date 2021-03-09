@@ -18,11 +18,11 @@
 
 import { TestableComponentInterface } from "@wso2is/core/models";
 import { Code } from "@wso2is/react-components";
-import _ from "lodash";
-import React, { FunctionComponent, ReactElement, ReactNode, useEffect, useState } from "react";
+import isEmpty from "lodash/isEmpty";
+import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { Checkbox, Input, Label, Popup, Table } from "semantic-ui-react";
+import { Checkbox, Icon, Input, Label, Popup, Table } from "semantic-ui-react";
 import { ExtendedClaimMappingInterface } from "./attribute-settings";
 
 interface AttributeListItemPropInterface extends TestableComponentInterface {
@@ -41,6 +41,7 @@ interface AttributeListItemPropInterface extends TestableComponentInterface {
     initialRequested?: boolean;
     claimMappingOn?: boolean;
     claimMappingError?: boolean;
+    deleteAttribute?: () => void;
     /**
      * Make the form read only.
      */
@@ -74,6 +75,7 @@ export const AttributeListItem: FunctionComponent<AttributeListItemPropInterface
         claimMappingOn,
         claimMappingError,
         readOnly,
+        deleteAttribute,
         [ "data-testid" ]: testId
     } = props;
 
@@ -100,10 +102,10 @@ export const AttributeListItem: FunctionComponent<AttributeListItemPropInterface
 
     const handleClaimMapping = (e) => {
         const mappingValue = e.target.value;
-            
+
         setMappedAttribute(mappingValue);
         updateMapping(claimURI, mappingValue);
-        if (claimMappingError && !_.isEmpty(mappingValue)) {
+        if (claimMappingError && !isEmpty(mappingValue)) {
             setErrorInClaimMapping(false);
         }
         isDefaultMappingChanged(true);
@@ -118,7 +120,7 @@ export const AttributeListItem: FunctionComponent<AttributeListItemPropInterface
     }, [initialRequested]);
 
     useEffect(() => {
-        if (_.isEmpty(mapping?.applicationClaim)) {
+        if (isEmpty(mapping?.applicationClaim)) {
             setErrorInClaimMapping(claimMappingError);
         }
     }, [claimMappingError]);
@@ -202,13 +204,32 @@ export const AttributeListItem: FunctionComponent<AttributeListItemPropInterface
                     inverted
                     disabled={
                         readOnly
-                            ? false
+                            ? true
                             : mappingOn
                                 ? !requested
                                 : false
                     }
                 />
             </Table.Cell>
+            { deleteAttribute ? (
+                <Table.Cell textAlign="right">
+                    <Popup
+                        trigger={ (
+                            <Icon
+                                link={ true }
+                                className="list-icon pr-4"
+                                size="large"
+                                color="grey"
+                                name="trash alternate"
+                                onClick={ deleteAttribute }
+                            />
+                        ) }
+                        position="top right"
+                        content={ t("common:remove") }
+                        inverted
+                    />
+                </Table.Cell>
+            ) : null }
         </Table.Row>
     );
 };

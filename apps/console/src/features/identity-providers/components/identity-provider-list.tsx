@@ -248,6 +248,7 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
         if (list?.totalResults === 0) {
             return (
                 <EmptyPlaceholder
+                    className="list-placeholder"
                     action={ onEmptyListPlaceholderActionClick && (
                         <PrimaryButton
                             onClick={ onEmptyListPlaceholderActionClick }
@@ -258,11 +259,8 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
                     ) }
                     image={ getEmptyPlaceholderIllustrations().newList }
                     imageSize="tiny"
-                    title={ t("console:develop.features.idp.placeHolders.emptyIDPList.title") }
                     subtitle={ [
-                        t("console:develop.features.idp.placeHolders.emptyIDPList.subtitles.0"),
-                        t("console:develop.features.idp.placeHolders.emptyIDPList.subtitles.1"),
-                        t("console:develop.features.idp.placeHolders.emptyIDPList.subtitles.2")
+                        t("console:develop.features.idp.placeHolders.emptyIDPList.subtitles.0")
                     ] }
                     data-testid={ `${ testId }-empty-placeholder` }
                 />
@@ -470,8 +468,6 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
                                         })
                                 }
                             </List>
-                            <Divider hidden />
-                            { t("console:develop.features.idp.confirmations.deleteIDPWithConnectedApps.contentLine2") }
                         </ConfirmationModal.Content>
                     </ConfirmationModal>
                 )

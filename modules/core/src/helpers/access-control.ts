@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import _ from "lodash";
+import isEmpty from "lodash/isEmpty";
 import { FeatureAccessConfigInterface } from "../models";
 import { AuthenticateUtils } from "../utils";
 
@@ -29,7 +29,7 @@ import { AuthenticateUtils } from "../utils";
  * @return {boolean} True is feature is enabled and false if not.
  */
 export const isFeatureEnabled = (feature: FeatureAccessConfigInterface, key: string | string[]): boolean => {
-    const isDefined = feature?.disabledFeatures && !_.isEmpty(feature.disabledFeatures);
+    const isDefined = feature?.disabledFeatures && !isEmpty(feature.disabledFeatures);
 
     if (!isDefined) {
         return true;
@@ -58,7 +58,7 @@ export const isFeatureEnabled = (feature: FeatureAccessConfigInterface, key: str
 export const hasRequiredScopes = (
     feature: FeatureAccessConfigInterface, scopes: string[], allowedScopes: string
 ): boolean => {
-    const isDefined = feature?.scopes && !_.isEmpty(feature.scopes) && scopes && !_.isEmpty(scopes);
+    const isDefined = feature?.scopes && !isEmpty(feature.scopes) && scopes && !isEmpty(scopes);
 
     if (!isDefined) {
         return true;
@@ -82,7 +82,7 @@ export const hasRequiredScopes = (
  * @return {boolean} True is access is granted, false if not.
  */
 export const isPortalAccessGranted = <T = {}>(featureConfig: T, allowedScopes: string): boolean => {
-    const isDefined = featureConfig && !_.isEmpty(featureConfig);
+    const isDefined = featureConfig && !isEmpty(featureConfig);
 
     if (!isDefined) {
         return true;
@@ -101,4 +101,63 @@ export const isPortalAccessGranted = <T = {}>(featureConfig: T, allowedScopes: s
     }
 
     return isAllowed;
+};
+
+/**
+ * This is a temporary util method added to conditionally render the manage tab depending on the
+ * scopes of the user.
+ *
+ * Git issue to track - https://github.com/wso2/product-is/issues/11319
+ *
+ * @param featureConfig
+ * @param allowedScopes
+ */
+export const hasRequiredScopesForAdminView = (featureConfig: any, allowedScopes: string): boolean => {
+
+    let feature = null;
+    let isAllowed = null;
+
+    for (const [ key, value ] of Object.entries(featureConfig)) {
+        feature = value;
+
+        if (value) {
+
+            if (key === "attributeDialects" || key === "userStores" || key === "roles") {
+
+                const hasReadAccess = hasRequiredManageScopes(feature, feature.scopes?.read, allowedScopes);
+                const hasUpdateAccess = hasRequiredManageScopes(feature, feature.scopes?.update, allowedScopes);
+
+                if (!(hasReadAccess && hasUpdateAccess)) {
+                    isAllowed = false;
+                }
+            }
+
+            isAllowed = hasRequiredManageScopes(feature, feature.scopes?.read, allowedScopes);
+        }
+    }
+
+    return isAllowed;
+};
+
+/**
+ * This is a temporary util method added to specially handle the scopes of
+ * "Application Developer" role.
+ *
+ * Git issue to track - https://github.com/wso2/product-is/issues/11319
+ *
+ * @param feature
+ * @param scopes
+ * @param allowedScopes
+ */
+export const hasRequiredManageScopes = (
+    feature: FeatureAccessConfigInterface, scopes: string[], allowedScopes: string
+): boolean => {
+
+    let hasScope = true;
+
+    if (scopes instanceof Array) {
+        hasScope = scopes.every((scope) => AuthenticateUtils.hasScope(scope, allowedScopes));
+    }
+
+    return hasScope;
 };

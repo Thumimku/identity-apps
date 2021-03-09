@@ -27,7 +27,7 @@ import {
     HeaderPropsInterface as ReusableHeaderPropsInterface,
     ThemeContext
 } from "@wso2is/react-components";
-import _ from "lodash";
+import isEmpty from "lodash/isEmpty";
 import React, {
     FunctionComponent,
     ReactElement,
@@ -53,6 +53,10 @@ interface HeaderPropsInterface extends Omit<ReusableHeaderPropsInterface, "basic
      * Active view.
      */
     activeView?: "ADMIN" | "DEVELOPER";
+    /**
+     * Flag to show/hide manage view.
+     */
+    isManageViewAllowed?: boolean;
 }
 
 /**
@@ -66,6 +70,7 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
 ): ReactElement => {
 
     const {
+        isManageViewAllowed,
         activeView,
         fluid,
         onSidePanelToggleClick,
@@ -91,7 +96,7 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
     const [ tenantAssociations, setTenantAssociations ] = useState<TenantAssociationsInterface>(undefined);
 
     useEffect(() => {
-        if (_.isEmpty(config)) {
+        if (isEmpty(config)) {
             return;
         }
 
@@ -221,35 +226,40 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
             showUserDropdown={ true }
             onSidePanelToggleClick={ onSidePanelToggleClick }
             tenantAssociations={ tenantAssociations }
+            tenantSwitchHeader={ t("console:common.header.tenantSwitchHeader") }
             tenantIcon={ getMiscellaneousIcons().tenantIcon }
             onTenantSwitch={ handleTenantSwitch }
             data-testid={ testId }
             { ...rest }
         >
-            <div className="secondary-panel" data-testid={ `${ testId }-secondary-panel` }>
-                <Container fluid={ fluid }>
-                    <Menu className="inner-menu">
-                        <Menu.Item
-                            name={ config.deployment.developerApp.displayName }
-                            active={ activeView === "DEVELOPER" }
-                            className="portal-switch"
-                            onClick={ () => {
-                                history.push(config.deployment.developerApp.path);
-                            } }
-                            data-testid={ `${ testId }-developer-portal-switch` }
-                        />
-                        <Menu.Item
-                            name={ config.deployment.adminApp.displayName }
-                            active={ activeView === "ADMIN" }
-                            className="portal-switch"
-                            onClick={ () => {
-                                history.push(config.deployment.adminApp.path);
-                            } }
-                            data-testid={ `${ testId }-admin-portal-switch` }
-                        />
-                    </Menu>
-                </Container>
-            </div>
+            {
+                isManageViewAllowed && (
+                    <div className="secondary-panel" data-testid={ `${ testId }-secondary-panel` }>
+                        <Container fluid={ fluid }>
+                            <Menu className="inner-menu">
+                                <Menu.Item
+                                    name={ config.deployment.developerApp.displayName }
+                                    active={ activeView === "DEVELOPER" }
+                                    className="portal-switch"
+                                    onClick={ () => {
+                                        history.push(config.deployment.developerApp.path);
+                                    } }
+                                    data-testid={ `${ testId }-developer-portal-switch` }
+                                />
+                                <Menu.Item
+                                    name={ config.deployment.adminApp.displayName }
+                                    active={ activeView === "ADMIN" }
+                                    className="portal-switch"
+                                    onClick={ () => {
+                                        history.push(config.deployment.adminApp.path);
+                                    } }
+                                    data-testid={ `${ testId }-admin-portal-switch` }
+                                />
+                            </Menu>
+                        </Container>
+                    </div>
+                )
+            }
         </ReusableHeader>
     );
 };

@@ -82,6 +82,9 @@ export interface ConsoleNS {
             };
             resultsIndicator: string;
         };
+        header: {
+            tenantSwitchHeader: string;
+        };
         modals: {
             editAvatarModal: ModalInterface;
             sessionTimeoutModal: {
@@ -379,6 +382,9 @@ export interface ConsoleNS {
                     handlerAuthenticatorAddition: Confirmation;
                     lowOIDCExpiryTimes: Confirmation;
                     regenerateSecret: Confirmation;
+                    reactivateSPA: Confirmation;
+                    reactivateOIDC: Confirmation;
+                    removeApplicationUserAttribute: Popup;
                     revokeApplication: Confirmation;
                     clientSecretHashDisclaimer: {
                         modal: Confirmation;
@@ -810,6 +816,7 @@ export interface ConsoleNS {
                     spaProtocolSettingsWizard: {
                         fields: {
                             callBackUrls: FormAttributes;
+                            name: FormAttributes;
                         };
                     };
                 };
@@ -915,6 +922,7 @@ export interface ConsoleNS {
                 };
                 confirmations: {
                     deleteIDP: Confirmation;
+                    deleteIDPWithConnectedApps: Confirmation;
                     deleteAuthenticator: Confirmation;
                     deleteConnector: Confirmation;
                 };
@@ -1732,6 +1740,7 @@ export interface ConsoleNS {
                 forms: {
                     validation: {
                         formatError: string;
+                        dateFormatError: string;
                     };
                 };
                 list: {
@@ -2518,6 +2527,7 @@ export interface ConsoleNS {
                     deleteOIDCScope: Notification;
                     deleteOIDClaim: Notification;
                     updateOIDCScope: Notification;
+                    claimsMandatory: Notification;
                 };
                 placeholders: {
                     emptyList: {
@@ -3016,6 +3026,10 @@ export interface ConsoleNS {
                     changePasswordModal: {
                         header: string;
                         message: string;
+                        hint: {
+                            setPassword: string;
+                            forceReset: string;
+                        };
                         passwordOptions: {
                             setPassword: string;
                             forceReset: string;

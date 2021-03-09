@@ -15,11 +15,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 import { TestableComponentInterface } from "@wso2is/core/models";
 import { Field, Forms, Validation } from "@wso2is/forms";
 import { GenericIcon } from "@wso2is/react-components";
 import { FormValidation } from "@wso2is/validation";
-import { isEmpty } from "lodash";
+import isEmpty from "lodash/isEmpty";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -295,6 +296,7 @@ export const EmailRecovery: React.FunctionComponent<EmailRecoveryProps> = (props
                                     <Icon
                                         link={ true }
                                         onClick={ handleEdit }
+                                        data-testid={`${testId}-edit-button`}
                                         className="list-icon"
                                         size="small"
                                         color="grey"
@@ -305,6 +307,7 @@ export const EmailRecovery: React.FunctionComponent<EmailRecoveryProps> = (props
                                             link={ true }
                                             onClick={ handleEdit }
                                             className="list-icon"
+                                            data-testid={`${testId}-edit-button`}
                                             size="small"
                                             color="grey"
                                             name="plus"
@@ -380,6 +383,7 @@ export const EmailRecovery: React.FunctionComponent<EmailRecoveryProps> = (props
                                                     size="small"
                                                     type="submit"
                                                     value={ t("common:update").toString() }
+                                                    data-testid={`${testId}--edit-section-form-sumbit-button`}
                                                 />
                                                 <Field
                                                     className="link-button"
@@ -387,6 +391,7 @@ export const EmailRecovery: React.FunctionComponent<EmailRecoveryProps> = (props
                                                     size="small"
                                                     type="button"
                                                     value={ t("common:cancel").toString() }
+                                                    data-testid={`${testId}--edit-section-form-cancel-button`}
                                                 />
                                             </Form.Group>
                                         </Forms>

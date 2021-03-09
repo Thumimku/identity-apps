@@ -28,6 +28,7 @@ import { Hint } from "../typography";
 export interface URLInputPropsInterface extends TestableComponentInterface {
     addURLTooltip?: string;
     duplicateURLErrorMessage: string;
+    emptyErrorMessage?: string;
     urlState: string;
     setURLState: any;
     placeholder?: string;
@@ -123,6 +124,7 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
         restrictSecondaryContent,
         customLabel,
         duplicateURLErrorMessage,
+        emptyErrorMessage,
         isAllowEnabled,
         allowedOrigins,
         handleAddAllowedOrigin,
@@ -405,8 +407,8 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
                 }
                 popupSubHeader={
                     <React.Fragment>
-                        <Icon name="building outline"/>
-                        { tenantDomain }
+                        <Icon name={ positive ? "check" : "times" } color={ positive ? "green" : "red" }/>
+                        { origin }
                     </React.Fragment>
                 }
                 popupContent={
@@ -458,13 +460,7 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
 
                     </React.Fragment>
                 }
-                popupFooterLeftContent={
-                    <React.Fragment>
-                        <Icon name={ positive ? "check" : "times" } color={ positive ? "green" : "red" }/>
-                        { onlyOrigin ? origin : href }
-                    </React.Fragment>
-                }
-                popupOptions={ { basic: true, on: "click" } }
+                popupOptions={ { basic: true, on: "hover" } }
                 labelColor={ positive ? "green" : "red" }
             />
         );
@@ -476,9 +472,17 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
      * @return {React.ReactElement | React.ReactNode}
      */
     const resolveValidationLabel = (): ReactElement | ReactNode => {
+        if(!validURL && !changeUrl && emptyErrorMessage) {
+            return (
+                <Label className="prompt" basic color="red" pointing>
+                    { emptyErrorMessage }
+                </Label>
+            );
+        }
+
         if (!validURL) {
             return (
-                <Label basic color="red" pointing>
+                <Label basic className="prompt" color="red" pointing>
                     { validationErrorMsg }
                 </Label>
             );
@@ -486,7 +490,7 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
 
         if (duplicateURL) {
             return (
-                <Label basic color="red" pointing>
+                <Label basic className="prompt" color="red" pointing>
                     { duplicateURLErrorMessage }
                 </Label>
             );
@@ -607,7 +611,7 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
                         {/*Below is the static label text that get rendered*/ }
                         {/*when the url is not allowed in cors list.*/ }
                         { shouldShowAllowOriginAction(origin) &&
-                        <span className={ "grey" }>&nbsp;<em>CORS not allowed for this domain</em></span>
+                        <span className={ "grey" }>&nbsp;<em>CORS not allowed for origin of this URL.</em></span>
                         }
 
                         {/*Below is the `Allow` button that gets rendered when*/ }
@@ -617,7 +621,9 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
                                 className={ "m-1 p-1 with-no-border orange" }
                                 onClick={ (e) => {
                                     onAllowOriginClick(e, origin);
-                                } }>
+                                } }
+                                data-testid={ `${ testId }-${ url }-allow-button`}
+                            >
                                 <span style={ { fontWeight: "bold" } }>Allow</span>
                             </LinkButton>
                         ) }

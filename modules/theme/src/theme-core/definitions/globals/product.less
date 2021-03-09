@@ -524,6 +524,7 @@ body {
                 margin-right: @listLayoutActionPanelMarginRight;
                 margin-left: @listLayoutActionPanelMarginLeft;
                 border: @listLayoutActionPanelBorder;
+                border-radius: @listLayoutActionPanelBorderRadius;
 
                 .row {
                     padding: @listLayoutActionPanelPadding;
@@ -1142,13 +1143,23 @@ body {
     text-align: center;
     padding: 2em;
 
+    &.list-placeholder {
+        margin-right: @listPlaceholderMarginRight;
+    }
+
+    .image-container {
+        margin-bottom: @emptyPlaceholderImageMarginBottom;
+    }
+
     .subtitle {
         margin: 0 auto;
         max-width: 400px;
         color: @lightTextColor;
     }
+
     .action-container {
         margin: @emptyPlaceholderActionMargin;
+        margin-top: @emptyPlaceholderActionMarginTop;
     }
 }
 
@@ -1568,6 +1579,10 @@ body {
         &.with-image {
             display: flex;
 
+            .theme-icon {
+                flex-shrink: 0;
+            }
+
             .page-header {
                 margin: 0 0 0 10px;
 
@@ -1893,6 +1908,20 @@ code {
             padding: @codeEditorOneLinerPadding;
         }
     }
+}
+
+/*-------------------------------
+          Pre-Loader
+--------------------------------*/
+.pre-loader-wrapper {
+    background-color: @preLoaderWrapperBackgroundColor;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background-image: @preLoaderWrapperBackgroundImage;
 }
 
 .loadUIOverrides();

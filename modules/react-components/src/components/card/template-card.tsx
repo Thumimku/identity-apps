@@ -18,9 +18,9 @@
 
 import { TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
-import React, { FunctionComponent, MouseEvent, ReactElement, ReactNode } from "react";
+import React, { FunctionComponent, MouseEvent, ReactElement, ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardProps, Icon, Label, Popup } from "semantic-ui-react";
+import { Card, CardProps, Dimmer, Icon, Label, Popup } from "semantic-ui-react";
 import { GenericIcon, GenericIconProps, GenericIconSizes } from "../icon";
 
 /**
@@ -81,6 +81,14 @@ export interface TemplateCardPropsInterface extends TestableComponentInterface {
      * @param {CardProps} data - Card data.
      */
     onClick: (e: MouseEvent<HTMLAnchorElement>, data: CardProps) => void;
+    /**
+     * Display disabled items as grayscale.
+     */
+    renderDisabledItemsAsGrayscale?: boolean;
+    /**
+     * Opacity for the overlay.
+     */
+    overlayOpacity?: number;
     /**
      * Selected mode flag.
      */
@@ -143,6 +151,8 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
         imageOptions,
         imageSize,
         onClick,
+        overlayOpacity,
+        renderDisabledItemsAsGrayscale,
         selected,
         showTags,
         showTagIcon,
@@ -158,6 +168,7 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
         "template-card",
         {
             disabled,
+            grayscale : disabled && renderDisabledItemsAsGrayscale,
             inline,
             selected,
             [ "with-image" ]: image
@@ -166,6 +177,8 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
     );
 
     const { t } = useTranslation();
+
+    const [ dimmerState, setDimmerState ] = useState<boolean>(false);
 
     /**
      * Renders the tag based on render type.
@@ -229,66 +242,88 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
         </span>;
     };
 
+    /**
+     * Inline styles for image container.
+     */
+    const imageContainerStyles = (): object => {
+
+        return {
+            opacity: disabled ? overlayOpacity : 1
+        };
+    };
+
+    /**
+     * Inline styles for text container.
+     */
+    const textContainerStyles = (): object => {
+
+        return {
+            textAlign
+        };
+    };
+
     return (
-        <Popup
-            trigger={
-                <Card
-                    id={ id }
-                    className={ classes }
-                    onClick={ onClick }
-                    link={ false }
-                    as="div"
-                    data-testid={ testId }
-                >
-                    {
-                        image && (
-                            <Card.Content className="card-image-container">
-                                <GenericIcon
-                                    square
-                                    transparent
-                                    className="card-image"
-                                    size={ imageSize }
-                                    icon={ image }
-                                    data-testid={ `${ testId }-image` }
-                                    { ...imageOptions }
-                                />
-                            </Card.Content>
-                        )
-                    }
-                    <Card.Content className="card-text-container" style={ { textAlign } }>
-                        <Card.Header data-testid={ `${ testId }-header` }>{ name }</Card.Header>
-                        <Card.Description data-testid={ `${ testId }-description` }>{ description }</Card.Description>
-                        {
-                            (showTags && tags && tags instanceof Array && tags.length > 0)
-                                ? (
-                                    <div className="tags-container" data-testid={ `${ testId }-tags-container` }>
-                                        { tagsSectionTitle && (
-                                            <div className="title" data-testid={ `${ testId }-tags-title` }>
-                                                { tagsSectionTitle }
-                                            </div>
-                                        ) }
-                                        <div className="tags" data-testid={ `${ testId }-tags` }>
-                                            { showTagIcon && <Icon name="tag" className="tag-icon" size="tiny" color="grey" /> }
-                                            {
-                                                (tags as Array<TemplateCardTagInterface|string>)
-                                                    .map((tag, index) => renderTag(tag, tagsAs, index))
-                                            }
-                                        </div>
-                                    </div>
-                                )
-                                : null
-                        }
+        <Card
+            id={ id }
+            className={ classes }
+            onClick={ onClick }
+            link={ false }
+            as="div"
+            data-testid={ testId }
+            onMouseEnter={ () => setDimmerState(true) }
+            onMouseLeave={ () => setDimmerState(false) }
+        >
+            {
+                // TODO: This should pass as prop, where this component is used,
+                disabled && (
+                    <Dimmer className="lighter" active={ dimmerState }>
+                        { t("common:featureAvailable" ) }
+                    </Dimmer>
+                )
+            }
+            {
+                image && (
+                    <Card.Content
+                        style={ imageContainerStyles() }
+                        className="card-image-container"
+                    >
+                        <GenericIcon
+                            square
+                            transparent
+                            className="card-image"
+                            size={ imageSize }
+                            icon={ image }
+                            data-testid={ `${ testId }-image` }
+                            { ...imageOptions }
+                        />
                     </Card.Content>
-                </Card>
+                )
             }
-            content={
-                t("common:comingSoon" )
-            }
-            inverted
-            position="top center"
-            size="mini"
-            disabled={ !disabled }
-        />
+            <Card.Content className="card-text-container" style={ textContainerStyles() }>
+                <Card.Header data-testid={ `${ testId }-header` }>{ name }</Card.Header>
+                <Card.Description data-testid={ `${ testId }-description` }>{ description }</Card.Description>
+                {
+                    (showTags && tags && tags instanceof Array && tags.length > 0)
+                        ? (
+                            <div className="tags-container" data-testid={ `${ testId }-tags-container` }>
+                                { tagsSectionTitle && (
+                                    <div className="title" data-testid={ `${ testId }-tags-title` }>
+                                        { tagsSectionTitle }
+                                    </div>
+                                ) }
+                                <div className="tags" data-testid={ `${ testId }-tags` }>
+                                    { showTagIcon && <Icon name="tag" className="tag-icon" size="tiny" color="grey" /> }
+                                    {
+                                        (tags as Array<TemplateCardTagInterface|string>)
+                                            .map((tag, index) => renderTag(tag, tagsAs, index))
+                                    }
+                                </div>
+                            </div>
+                        )
+                        : null
+                }
+            </Card.Content>
+        </Card>
     );
 };
 
@@ -299,6 +334,7 @@ TemplateCard.defaultProps = {
     "data-testid": "template-card",
     imageSize: "tiny",
     inline: true,
+    renderDisabledItemsAsGrayscale: true,
     tagSize: "x22",
     tagsAs: "label",
     textAlign: "center"

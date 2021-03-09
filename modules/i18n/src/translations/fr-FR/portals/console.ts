@@ -62,6 +62,9 @@ export const console: ConsoleNS = {
             },
             resultsIndicator: "Afficher les résultats de la requête \"{{query}}\""
         },
+        header: {
+            tenantSwitchHeader: "Changer de locataire"
+        },
         modals: {
             editAvatarModal: {
                 content: {
@@ -443,23 +446,23 @@ export const console: ConsoleNS = {
             URLInput: {
                 withLabel: {
                     negative: {
-                        content: "Vous devez activer CORS pour cette origine afin de faire des requêtes API " +
-                            "à {{productName}} à partir d'un navigateur.",
+                        content: "Vous devez activer CORS pour l'origine de cette URL pour envoyer des requêtes à "+
+                            "{{productName}} à partir d'un navigateur.",
                         detailedContent: {
                             0: "",
                             1: ""
                         },
-                        header: "Autoriser CORS",
+                        header: "CORS n'est pas autorisé pour",
                         leftAction: "Autoriser"
                     },
                     positive: {
-                        content: "L'origine de l'URL de redirection {{urlLink}} est autorisée à envoyer des " +
-                            "requêtes CORS aux API {{productName}}.",
+                        content: "L'origine de cette URL est autorisée à envoyer des requêtes aux API " +
+                        "{{productName}} à partir d'un navigateur.",
                         detailedContent: {
                             0: "",
                             1: ""
                         },
-                        header: "CORS est autorisé"
+                        header: "CORS est autorisé pour"
                     }
                 }
             },
@@ -548,7 +551,7 @@ export const console: ConsoleNS = {
                         content : "Pour ajouter une nouvelle connexion sociale, nous devrons vous diriger " +
                             "vers une autre page et toutes les modifications non enregistrées de cette page " +
                             "seront perdues. Veuillez confirmer.",
-                        header: "Confirmez votre action",
+                        header: "Êtes-vous sûr?",
                         subHeader: "Cette action est irréversible."
                     },
                     clientSecretHashDisclaimer: {
@@ -585,8 +588,8 @@ export const console: ConsoleNS = {
                     },
                     deleteApplication: {
                         assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
-                        content: "Si vous supprimez cette application, vous ne pourrez pas la récupérer. Toutes les " +
-                            "applications qui en dépendent risquent également de ne plus fonctionner. Veuillez procéder avec prudence.",
+                        content: "Toutes les applications qui en dépendent risquent également " +
+                            "de ne plus fonctionner. Veuillez procéder avec prudence.",
                         header: "Etes-vous sûr ?",
                         message: "Cette action est irréversible et supprimera définitivement l'application."
                     },
@@ -619,18 +622,44 @@ export const console: ConsoleNS = {
                         message: "Veuillez vérifier vos valeurs."
                     },
                     regenerateSecret: {
-                        assertionHint: "Veuillez taper <1>{{ id }}</1> pour confirmer.",
-                        content: "Si vous régénérez le secret, toutes les applications qui en dépendent pourraient également " +
-                            "cesser de fonctionner. Veuillez procéder avec prudence.",
+                        assertionHint: "Veuillez saisir <1> {{id}} </1> pour régénérer le secret client.",
+                        content: "Si vous régénérez le secret client, les flux d'authentification " +
+                                 "utilisant l'ancien secret client pour cette application cesseront " +
+                                 "de fonctionner. Veuillez mettre à jour le secret du client " +
+                                 "d'application sur votre application cliente.",
+                        header: "Êtes-vous sûr?",
+                        message: "Cette action est irréversible et modifie définitivement " +
+                                 "le secret client. Veuillez procéder avec prudence."
+                    },
+                    reactivateSPA: {
+                        assertionHint: "Veuillez saisir <1> {{id}} </1> pour réactiver l'application.",
+                        content: "Si vous réactivez l'application, les flux d'authentification pour " +
+                                 "cette application commenceront à fonctionner. Veuillez procéder " +
+                                 "avec prudence.",
+                        header: "Êtes-vous sûr?",
+                        message: "Cette action peut être annulée en révoquant l'ID client ultérieurement."
+                    },
+                    reactivateOIDC: {
+                        assertionHint: "Veuillez saisir <1> {{id}} </1> pour réactiver l'application.",
+                        content: "Si vous réactivez l'application, un nouveau secret client sera " +
+                                 "généré. Veuillez mettre à jour le secret du client d'application " +
+                                 "sur votre application cliente.",
+                        header: "Êtes-vous sûr?",
+                        message: ""
+                    },
+                    removeApplicationUserAttribute: {
+                        content : "Si vous supprimez cela, l'attribut d'objet sera défini sur " +
+                            "<1>{{ default }}</1>",
                         header: "Etes-vous sûr ?",
-                        message: "Cette action est irréversible et modifie de façon permanente le secret du client."
+                        subHeader: "Vous essayez de supprimer l'attribut d'objet"
                     },
                     revokeApplication: {
-                        assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
-                        content: "Si vous révoquez cette application, toutes les applications qui en dépendent pourraient également " +
-                            "cesser de fonctionner. Veuillez procéder avec prudence.",
-                        header: "Etes-vous sûr ?",
-                        message: "Cette action peut être inversée en régénérant le secret du client."
+                        assertionHint: "Veuillez saisir <1> {{id}} </1> pour confirmer.",
+                        content: "Cette action peut être annulée en activant l'application ultérieurement.",
+                        header: "Êtes-vous sûr?",
+                        message: "Si vous révoquez cette application, les flux d'authentification " +
+                                 "pour cette application cesseront de fonctionner. Veuillez " +
+                                 "procéder avec prudence."
                     }
                 },
                 dangerZoneGroup: {
@@ -848,11 +877,9 @@ export const console: ConsoleNS = {
                                             heading: "Configuration par étapes",
                                             hint: "Créez des étapes d'authentification en faisant glisser les authentificateurs " +
                                                 "locaux/fédérés vers les étapes correspondantes.",
-                                            secondFactorDisabled: "Les authentificateurs du second facteur " +
-                                                "ne peuvent être utilisés que dans une étape autre que la " +
-                                                "première, et si un authentificateur de base ou un " +
-                                                "identificateur-premier authentificateur a été ajouté à " +
-                                                "la première étape."
+                                            secondFactorDisabled: "Les authentificateurs de second facteur ne peuvent " +
+                                                "être utilisés que si l'authentificateur de base a été ajouté à une" +
+                                                " étape précédente."
                                         }
                                     }
                                 },
@@ -1067,7 +1094,7 @@ export const console: ConsoleNS = {
                             },
                             discoverable: {
                                 hint: "Activez pour rendre l'application visible aux utilisateurs finaux sur " +
-                                    "leur catalogue d'applications My Account.",
+                                    "leur catalogue d'applications <1>{{ myAccount }}</1>.",
                                 label: "Application découvrable"
                             },
                             imageUrl: {
@@ -1144,9 +1171,8 @@ export const console: ConsoleNS = {
                                         "Toutefois, si vous prévoyez d'essayer l'exemple d'application, " +
                                         "ce champ peut être ignoré."
                                 },
-                                info: "Ce champ est obligatoire pour une application fonctionnelle. Cependant, si " +
-                                "vous prévoyez d'essayer l'exemple d'application, vous pouvez utiliser " +
-                                "{{callBackURLFromTemplate}}."
+                                info: "Vous n’avez pas d’application? Essayez un exemple d'application " +
+                                "en utilisant {{callBackURLFromTemplate}} comme URL autorisée."
                             },
                             clientID: {
                                 label: "Identifiant du client"
@@ -1791,7 +1817,14 @@ export const console: ConsoleNS = {
                             callBackUrls: {
                                 label: "URL autorisées",
                                 validations: {
+                                    empty: "Ceci est un champ obligatoire",
                                     invalid: "L'URL saisie n'est ni HTTP ni HTTPS. Veuillez ajouter un URI valide."
+                                }
+                            },
+                            name: {
+                                label: "Name",
+                                validations: {
+                                    invalid: "The application name should contain letters, numbers."
                                 }
                             }
                         }
@@ -2434,17 +2467,16 @@ export const console: ConsoleNS = {
                     },
                     deleteIDP: {
                         assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
-                        content: "Si vous supprimez ce fournisseur d'identité, vous ne pourrez pas le récupérer. Toutes les applications " +
-                            "qui en dépendent risquent également de ne plus fonctionner. Veuillez procéder avec prudence.",
+                        content: "Si vous supprimez ce fournisseur d'identité, vous ne pourrez pas le récupérer. " +
+                            "Veuillez procéder avec prudence.",
                         header: "Etes-vous sûr ?",
                         message: "Cette action est irréversible et supprimera définitivement l'IDP."
                     },
                     deleteIDPWithConnectedApps: {
                         assertionHint: "",
-                        content: "Ce fournisseur d'identité a été utilisé dans les applications suivantes.",
-                        contentLine2: "Veuillez vous assurer de supprimer ces associations avant de les supprimer.",
-                        header: "Impossible de supprimer le fournisseur d'identité",
-                        message: "Impossible de supprimer un fournisseur d'identité contenant des applications connectées."
+                        content: "Supprimez les associations de ces applications avant de supprimer:",
+                        header: "Impossible de supprimer",
+                        message: "Il existe des applications utilisant ce fournisseur d'identité."
                     }
                 },
                 dangerZoneGroup: {
@@ -3272,8 +3304,8 @@ export const console: ConsoleNS = {
                 identityProviderEdit: "Edition des fournisseurs d'identité",
                 identityProviderTemplates: "Modèles de fournisseurs d'identités",
                 identityProviders: "Fournisseurs d'identité",
-                oidcScopes: "Scopes OIDC",
-                oidcScopesEdit: "Édition des scopes OIDC",
+                oidcScopes: "Scopes",
+                oidcScopesEdit: "Édition des scopes",
                 overview: "Vue d'ensemble",
                 remoteRepo: "Configuration de dépôts distants",
                 remoteRepoEdit: "Édition des configurations des dépôts distants"
@@ -3333,11 +3365,11 @@ export const console: ConsoleNS = {
         pages: {
             applicationTemplate: {
                 backButton: "Retour aux applications",
-                subTitle: "Choisissez l'un des types d'application prédéfinis pour vous connecter rapidement.",
+                subTitle: "Choisissez l'un des types prédéfinis pour intégrer une application.",
                 title: "Choisissez le type d'application"
             },
             applications: {
-                subTitle: "Créer et gérer des applications basées sur des modèles et configurer l'authentification.",
+                subTitle: "Gérez les applications à l'aide de modèles et configurez l'authentification.",
                 title: "Applications"
             },
             applicationsEdit: {
@@ -3346,17 +3378,18 @@ export const console: ConsoleNS = {
                 title: null
             },
             idp: {
-                subTitle: "Créer et gérer des fournisseurs d'identités sur la base de modèles et configurer l'authentification",
+                subTitle: "Gérez les fournisseurs d'identité pour permettre aux utilisateurs de se connecter à " +
+                    "votre application via eux.",
                 title: "Fournisseurs d'identités"
             },
             idpTemplate: {
                 backButton: "Retourner aux fournisseurs d'identité",
-                subTitle: "Veuillez choisir l'un des types de fournisseurs d'identité suivants.",
+                subTitle: "Choisissez l'un des fournisseurs d'identité suivants.",
                 supportServices: {
                     authenticationDisplayName: "Authentification",
                     provisioningDisplayName: "Approvisionnement"
                 },
-                title: "Sélectionner le type de fournisseur d'identité"
+                title: "Sélectionnez le fournisseur d'identité"
             },
             overview: {
                 subTitle: "Configurer et gérer les applications, les fournisseurs d'identité, les utilisateurs et les rôles, les dialectes d'attributs, " +
@@ -3872,7 +3905,9 @@ export const console: ConsoleNS = {
                             placeholder: "Saisissez l'URI de l'attribut {{type}}",
                             requiredErrorMessage: "Une URI d'attribut {{type}} est requis.",
                             validationErrorMessages: {
-                                duplicateName: "L'URI de l'attribut {{type}} existe déjà."
+                                duplicateName: "L'URI de l'attribut {{type}} existe déjà.",
+                                invalidName: "Le nom que vous avez entré contient des caractères non autorisés. " +
+                                    "Seuls les alphabets, les nombres, «#», «_» sont autorisés."
                             }
                         },
                         localAttribute: {
@@ -4069,7 +4104,13 @@ export const console: ConsoleNS = {
                         name: {
                             label: "Nom",
                             placeholder: "Saisir un nom pour l'attribut",
-                            requiredErrorMessage: "Un nom est requis"
+                            requiredErrorMessage: "Un nom est requis",
+                            validationErrorMessages: {
+                                invalidName: "Le nom que vous avez entré contient des caractères non autorisés. Il" +
+                                    " ne peut contenir que 30 caractères, y compris les caractères alphanumériques," +
+                                    " les points (.), les tirets (-), les traits de soulignement (_), signes plus" +
+                                    " (+) et espaces."
+                            }
                         },
                         nameHint: "Nom de l'attribut qui figurera sur le profil de l'utilisateur "
                             + "et la page d'enregistrement de l'utilisateur",
@@ -4799,6 +4840,13 @@ export const console: ConsoleNS = {
                             message: "Création réussie"
                         }
                     },
+                    claimsMandatory: {
+                        error: {
+                            description: "Pour ajouter une étendue, vous devez vous assurer que " +
+                                "la portée a au moins un attribut.",
+                            message: "Vous devez sélectionner au moins un attribut."
+                        }
+                    },
                     deleteOIDCScope: {
                         error: {
                             description: "{{description}}",
@@ -5211,7 +5259,8 @@ export const console: ConsoleNS = {
                                 validations: {
                                     duplicate: "Un {{type}} avec ce nom existe déjà.",
                                     empty: "Le nom de {{type}} est obligatoire",
-                                    invalid: "Veuillez saisir un nom de {{type}} valide."
+                                    invalid: "Un nom {{type}} ne peut contenir que des caractères alphanumériques, - et _. "+
+                                        "Et doit avoir une longueur comprise entre 3 et 30 caractères."
                                 }
                             }
                         }
@@ -5653,21 +5702,21 @@ export const console: ConsoleNS = {
                             },
                             firstName: {
                                 label: "Prénom",
-                                placeholder: "Veuillez saisir un prénom",
+                                placeholder: "Entrez le prénom",
                                 validations: {
                                     empty: "Le prénom est obligatoire"
                                 }
                             },
                             lastName: {
                                 label: "Nom de famille",
-                                placeholder: "Veuillez saisir un nom de famille",
+                                placeholder: "Entrez le nom de famille",
                                 validations: {
                                     empty: "Le nom de famille est obligatoire"
                                 }
                             },
                             newPassword: {
-                                label: "Nouveau mot de passe",
-                                placeholder: "Veuillez saisir un mot de passe",
+                                label: "Mot de passe",
+                                placeholder: "Entrer le mot de passe",
                                 validations: {
                                     empty: "Le mot de passe est obligatoire",
                                     regExViolation: "Le mot de passe saisi est invalide"
@@ -5680,7 +5729,8 @@ export const console: ConsoleNS = {
                                     empty: "Le nom d'utilisateur est obligatoire",
                                     invalid: "Ce nom d'utilisateur n'est pas disponible.",
                                     invalidCharacters: "Le nom d'utilisateur semble contenir des caractères non valides.",
-                                    regExViolation: "Ce nom d'utilisateur est invalide"
+                                    regExViolation: "Nom d'utilisateur invalide. Il doit s'agir d'un e-mail valide " +
+                                        "contenant entre 3 et 30 caractères alphanumériques sans espaces."
                                 }
                             }
                         },
@@ -5753,6 +5803,13 @@ export const console: ConsoleNS = {
                         header: "Réinitialiser le mot de passe de l'utilisateur",
                         message: "REMARQUE: veuillez noter qu'après avoir modifié le mot de passe, l'utilisateur ne " +
                             "pourra plus se connecter à aucune application en utilisant le mot de passe actuel.",
+                        hint: {
+                            forceReset: "REMARQUE: Veuillez noter qu'après avoir invité l'utilisateur à réinitialiser " +
+                                "le mot de passe, l'utilisateur ne pourra plus se connecter à aucune application en " +
+                                "utilisant le mot de passe actuel.",
+                            setPassword: "REMARQUE: veuillez noter qu'après avoir modifié le mot de passe, l'utilisateur ne " +
+                                "pourra plus se connecter à aucune application en utilisant le mot de passe actuel."
+                        },
                         passwordOptions: {
                             forceReset: "Inviter l'utilisateur à réinitialiser le mot de passe",
                             setPassword: "Définir un nouveau mot de passe pour l'utilisateur"
@@ -6239,7 +6296,8 @@ export const console: ConsoleNS = {
 
                 forms: {
                     validation: {
-                        formatError: "Le format du {{field}} saisi est incorrect."
+                        formatError: "Le format du {{field}} saisi est incorrect.",
+                        dateFormatError: "Le format du {{field}} saisi est incorrect. Le format valide est YYYY-MM-DD."
                     }
                 },
                 list: {

@@ -26,8 +26,8 @@ import {
 } from "@wso2is/core/store";
 import { LocalStorageUtils } from "@wso2is/core/utils";
 import { I18n, I18nModuleOptionsInterface } from "@wso2is/i18n";
-import { ContentLoader, SessionManagementProvider, ThemeContext } from "@wso2is/react-components";
-import _ from "lodash";
+import { SessionManagementProvider, ThemeContext } from "@wso2is/react-components";
+import isEmpty from "lodash/isEmpty";
 import React, { FunctionComponent, ReactElement, Suspense, useContext, useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
 import { I18nextProvider } from "react-i18next";
@@ -35,6 +35,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Redirect, Route, Router, Switch } from "react-router-dom";
 import { initializeAuthentication } from "./features/authentication";
 import { AuthenticateUtils } from "./features/authentication/utils";
+import { PreLoader } from "./features/core"
 import { ProtectedRoute } from "./features/core/components";
 import { Config, getBaseRoutes } from "./features/core/configs";
 import { AppConstants } from "./features/core/constants";
@@ -173,12 +174,12 @@ export const App: FunctionComponent<{}> = (): ReactElement => {
     return (
         <>
             {
-                (!_.isEmpty(config?.deployment) && !_.isEmpty(config?.endpoints))
+                (!isEmpty(config?.deployment) && !isEmpty(config?.endpoints))
                     ? (
                         <Router history={ history }>
                             <div className="container-fluid">
                                 <I18nextProvider i18n={ I18n.instance }>
-                                    <Suspense fallback={ <ContentLoader dimmer/> }>
+                                    <Suspense fallback={ <PreLoader /> }>
                                         <SessionManagementProvider
                                             onSessionTimeoutAbort={ handleSessionTimeoutAbort }
                                             onSessionLogout={ handleSessionLogout }
@@ -264,7 +265,7 @@ export const App: FunctionComponent<{}> = (): ReactElement => {
                             </div>
                         </Router>
                     )
-                    : <ContentLoader dimmer/>
+                    : <PreLoader />
             }
         </>
     );
