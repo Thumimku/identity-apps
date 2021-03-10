@@ -190,7 +190,7 @@ export const myAccount: MyAccountNS = {
                             placeholder: "E.g. Starts with etc."
                         },
                         filterValue: {
-                            placeholder: "E.g. Zoom, Salesforce etc."
+                            placeholder: "Enter value to search"
                         }
                     }
                 },
@@ -1273,7 +1273,7 @@ export const myAccount: MyAccountNS = {
             primaryButton: "Stay logged in",
             secondaryButton: "Logout",
             loginAgainButton: "Login again",
-            sessionTimedOutHeading: "Your session has expired due to inactivity.",
+            sessionTimedOutHeading: "User session has expired due to inactivity.",
             sessionTimedOutDescription: "Please log in again to continue from where you left off."
         }
     },

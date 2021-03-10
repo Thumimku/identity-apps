@@ -190,7 +190,7 @@ export const myAccount: MyAccountNS = {
                             placeholder: "எ.கா.: தொடங்குவது"
                         },
                         filterValue: {
-                            placeholder: "எ.கா.: Zoom, Salesforce போன்றவை"
+                            placeholder: "தேட மதிப்பை உள்ளிடவும்"
                         }
                     }
                 },
@@ -1302,7 +1302,7 @@ export const myAccount: MyAccountNS = {
             primaryButton: "உள்நுழைந்திருங்கள்",
             secondaryButton: "வெளியேறு",
             loginAgainButton: "மீண்டும் உள்நுழைக",
-            sessionTimedOutHeading: "செயலற்ற தன்மை காரணமாக உங்கள் அமர்வு காலாவதியானது.",
+            sessionTimedOutHeading: "செயலற்ற தன்மை காரணமாக பயனர் அமர்வு காலாவதியானது.",
             sessionTimedOutDescription: "நீங்கள் நிறுத்திய இடத்திலிருந்து தொடர தயவுசெய்து மீண்டும் உள்நுழைக."
         }
     },

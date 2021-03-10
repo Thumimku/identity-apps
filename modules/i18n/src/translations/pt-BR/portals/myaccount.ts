@@ -156,7 +156,7 @@ export const myAccount: MyAccountNS = {
                     },
                     filterValue: {
                         label: "Valor do filtro",
-                        placeholder: "ex: admin, wso2 etc.",
+                        placeholder: "Insira o valor para pesquisar",
                         validations: {
                             empty: "O valor do filtro é um campo obrigatório"
                         }
@@ -1255,7 +1255,7 @@ export const myAccount: MyAccountNS = {
             primaryButton: "Permaneça logado",
             secondaryButton: "Sair",
             loginAgainButton: "Entrar novamente",
-            sessionTimedOutHeading: "Sua sessão expirou devido à inatividade.",
+            sessionTimedOutHeading: "A sessão do usuário expirou devido à inatividade.",
             sessionTimedOutDescription: "Faça login novamente para continuar de onde parou."
         }
     },

@@ -190,7 +190,7 @@ export const myAccount: MyAccountNS = {
                             placeholder: "Ex. Commence par, etc."
                         },
                         filterValue: {
-                            placeholder: "Ex. Zoom, Salesforce, etc."
+                            placeholder: "Entrez la valeur à rechercher"
                         }
                     }
                 },
@@ -1276,7 +1276,7 @@ export const myAccount: MyAccountNS = {
             primaryButton: "Rester connecté",
             secondaryButton: "Se déconnecter",
             loginAgainButton: "Connectez-vous à nouveau",
-            sessionTimedOutHeading: "Votre session a expiré en raison d'une inactivité.",
+            sessionTimedOutHeading: "La session utilisateur a expiré en raison d'une inactivité.",
             sessionTimedOutDescription: "Veuillez vous reconnecter pour reprendre là où vous vous étiez arrêté."
         }
     },
