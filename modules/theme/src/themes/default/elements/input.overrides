@@ -91,3 +91,26 @@
         }
     }
 }
+
+/*-------------------------------
+         TOTP Verification Code Input Field
+--------------------------------*/
+
+.ui.input {
+    > input{
+        .&totp-verification-code-input {
+            text-aligh: center;
+        }
+    }
+
+}
+
+/*-------------------------------
+         TOTP Verification Code Input Field
+--------------------------------*/
+
+.ui.input {
+    &.totp-verification-code-input-temp {
+        width: 10%;
+    }
+}

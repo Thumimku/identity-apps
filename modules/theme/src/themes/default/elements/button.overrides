@@ -291,6 +291,11 @@
         margin-left: @OIDCActionButtonMarginLeft;
     }
 }
+.ui.button {
+    &.totp-verify-action-button {
+        width: @TOTPVerifyActionButtonWidth;
+    }
+}
 
 .ui.button {
    &.certificate-info-link-button {

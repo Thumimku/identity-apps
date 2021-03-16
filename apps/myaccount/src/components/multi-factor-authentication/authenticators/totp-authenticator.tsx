@@ -17,13 +17,14 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
-import { Field, Forms, useTrigger } from "@wso2is/forms";
-import { GenericIcon } from "@wso2is/react-components";
+import { Field, FormField, Forms, useTrigger } from "@wso2is/forms";
+import { GenericIcon, MessageInfo } from "@wso2is/react-components";
+import { equal } from "assert";
 import QRCode from "qrcode.react";
-import React, { PropsWithChildren, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import React, { PropsWithChildren, useEffect, useState, useRef } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Button, Divider, Grid, Icon, List, Message, Modal, Popup, Segment } from "semantic-ui-react";
+import { Button, Divider, Grid, Icon, List, Message, Modal, Popup, Segment, Form, FormProps, Container, Table } from "semantic-ui-react";
 import { initTOTPCode, refreshTOTPCode, validateTOTPCode } from "../../../api";
 import { getMFAIcons, getQRCodeScanIcon } from "../../../configs";
 import { AlertInterface, AlertLevels } from "../../../models";
@@ -64,6 +65,19 @@ export const TOTPAuthenticator: React.FunctionComponent<TOTPProps> = (
     const totpConfig = useSelector((state: AppState) => state?.config?.ui?.authenticatorApp);
 
     const translateKey = "myAccount:components.mfa.authenticatorApp.";
+
+    const pinCode1 = useRef<HTMLInputElement>();
+    const pinCode2 = useRef<HTMLInputElement>();
+    const pinCode3 = useRef<HTMLInputElement>();
+    const pinCode4 = useRef<HTMLInputElement>();
+    const pinCode5 = useRef<HTMLInputElement>();
+    const pinCode6 = useRef<HTMLInputElement>();
+
+    const [pinCode2PastValue, setPinCode2PastValue] = useState<string>(null);
+    const [pinCode3PastValue, setPinCode3PastValue] = useState<string>(null);
+    const [pinCode4PastValue, setPinCode4PastValue] = useState<string>(null);
+    const [pinCode5PastValue, setPinCode5PastValue] = useState<string>(null);
+    const [pinCode6PastValue, setPinCode6PastValue] = useState<string>(null);
 
     /**
      * Reset error and step when the modal is closed
@@ -129,16 +143,88 @@ export const TOTPAuthenticator: React.FunctionComponent<TOTPProps> = (
         });
     };
 
+    const handleTOTPVerificationCodeSubmit = (event: React.FormEvent<HTMLFormElement> ) =>{
+
+        let verificationCode =  event.target[0].value;
+        for (let pinCodeIndex = 1;pinCodeIndex<6;pinCodeIndex++){
+            verificationCode = verificationCode + event.target[pinCodeIndex].value;
+        }
+
+        verifyCode(verificationCode);
+    }
+
+
+    /**
+     * Scrolls to the first field that throws an error.
+     *
+     * @param {string} field The name of the field.
+     */
+    const focusInToNextPinCode = (field: string): void => {
+        
+        switch (field) {
+            case "pincode-1":
+                pinCode2.current.focus();
+                break;
+            case "pincode-2":
+                pinCode3.current.focus();
+                break;
+            case "pincode-3":
+                pinCode4.current.focus();
+                break;
+            case "pincode-4":
+                    pinCode5.current.focus();
+                    break;
+            case "pincode-5":
+                pinCode6.current.focus();
+                break;
+        }
+
+    };
+
+    /**
+     * Scrolls to the first field that throws an error.
+     *
+     * @param {string} field The name of the field.
+     */
+         const focusInToPreviousPinCode = (field: string): void => {
+        
+            switch (field) {
+                case "pincode-2":
+                    pinCode1.current.value = "";
+                    pinCode1.current.focus();
+                    break;
+                case "pincode-3":
+                    pinCode2.current.value = "";
+                    pinCode2.current.focus();
+                    break;
+                case "pincode-4":
+                    pinCode3.current.value = "";
+                    pinCode3.current.focus();
+                    break;
+                case "pincode-5":
+                    pinCode4.current.value = "";
+                    pinCode4.current.focus();
+                    break;
+                case "pincode-6":
+                    pinCode5.current.value = "";
+                    pinCode5.current.focus();
+                    break;
+            }
+    
+        };
+
     /**
      * This renders the QR code page
      */
-    const renderQRCode = (): JSX.Element => {
+    const renderQRCode = (step: number): JSX.Element => {
         return (
-            <Segment basic>
-                <div className="stepper">
-                    <div className="step-number">1</div>
-                    <div className="step-text">
-                        <h5 >{ t(translateKey + "modals.scan.heading") }</h5>
+            <Segment basic >
+                {/* <div className="stepper"> */}
+                    {/* <div className="step-number">1</div> */}
+                    <h5 className=" text-center" > Scan the QR code below using an anthenticator app.</h5>
+
+                    {/* <div className="step-text"> */}
+                        {/* <h5 >{ t(translateKey + "modals.scan.heading") }</h5> */}
                         <Segment textAlign="center" basic className="qr-code">
                             <QRCode value={ qrCode } data-testid={ `${ testId }-modals-scan-qrcode`}/>
                             <Divider hidden />
@@ -170,48 +256,172 @@ export const TOTPAuthenticator: React.FunctionComponent<TOTPProps> = (
                                 </Message>
                             )
                             : null }
-                    </div>
-                    <div className="step-connector">
-                        <div className="step-line"></div>
-                    </div>
-                </div>
-                <div className="stepper">
-                    <div className="step-number">2</div>
-                    <div className="step-text">
-                        <h5>{ t(translateKey + "modals.verify.heading") }</h5>
+                        <h5 className=" text-center" > Enter the generated code to verify </h5>
+
                         <Segment basic className="pl-0">
                         {
                             error
                                 ? (
-                                <>
-                                    <Message
+                                
+                                    <Message 
                                         error data-testid={ `${ testId }-code-verification-form-field-error` }>
+                                            
                                         { t(translateKey + "modals.verify.error") }
                                     </Message>
-                                </>
+                                    
                                 )
                                 : null
                         }
-                        <Forms
-                            data-testid={ `${ testId }-code-verification-form` }
-                            onSubmit={ (values: Map<string, string>) => {
-                                verifyCode(values.get("code"));
-                            } }
-                            submitState={ submit }
-                        >
-                            <Field
-                                data-testid={ `${ testId }-code-verification-form-field` }
-                                name="code"
-                                label={ t(translateKey + "modals.verify.label") }
-                                placeholder={ t(translateKey + "modals.verify.placeholder") }
-                                type="text"
-                                required={ true }
-                                requiredErrorMessage={ t(translateKey + "modals.verify.requiredError") }
-                            />
-                        </Forms>
+<Form onSubmit={ (event: React.FormEvent<HTMLFormElement>, data: FormProps): void => {
+                (handleTOTPVerificationCodeSubmit(event));
+            } }>
+<Container>
+    <Grid>
+        <Grid.Row textAlign="center" centered columns={ 6 } >
+                
+                <Grid.Column >
+                    <Form.Field>
+                        <input autoFocus ref= { pinCode1 }name="pincode-1" placeholder="." className="text-center" type='text' maxLength={1} 
+                        onChange= { (event) => {
+                            if (event.target.value.length !==0){
+                                focusInToNextPinCode("pincode-1");
+                            }
+                        }}/>
+                    </Form.Field>
+                </Grid.Column>
+                <Grid.Column >
+                    <Form.Field>
+                        <input ref= { pinCode2 } name="pincode-2" placeholder="." className="text-center" type='text' maxLength={1} 
+                        onChange= { (event) => {
+                            if (event.target.value.length !==0){
+                                setPinCode2PastValue[event.target.value];
+                                focusInToNextPinCode("pincode-2");
+                            }else {
+                                if (pinCode2PastValue != null && pinCode2PastValue.length == 0)  {
+                                    focusInToPreviousPinCode("pincode-2");
+                                }
+                                setPinCode2PastValue[event.target.value];
+                            }
+                        }}/>
+                    </Form.Field>
+                </Grid.Column>
+                <Grid.Column >
+                    <Form.Field >
+                        <input ref= { pinCode3 } name="pincode-3" placeholder="." className="text-center" type='text' maxLength={1} 
+                        onChange= { (event) => {
+                            if (event.target.value.length !==0){
+                                setPinCode3PastValue[event.target.value];
+                                focusInToNextPinCode("pincode-3");
+                            }else {
+                                if (pinCode3PastValue != null && pinCode3PastValue.length == 0)  {
+                                    focusInToPreviousPinCode("pincode-3");
+                                }
+                                setPinCode3PastValue[event.target.value];
+                            }
+                        }}/>
+                    </Form.Field>
+                </Grid.Column>
+                <Grid.Column>
+                    <Form.Field>
+                        <input ref= { pinCode4 } name="pincode-4" placeholder="." className="text-center" type='text' maxLength={1} 
+                        onChange= { (event) => {
+                            if (event.target.value.length !==0){
+                                setPinCode4PastValue[event.target.value];
+                                focusInToNextPinCode("pincode-4");
+                            }else {
+                                if (pinCode4PastValue != null && pinCode4PastValue.length == 0)  {
+                                    focusInToPreviousPinCode("pincode-4");
+                                }
+                                setPinCode4PastValue[event.target.value];
+                            }
+                        }}/>
+                    </Form.Field>
+                </Grid.Column>
+                <Grid.Column >
+                    <Form.Field>
+                        <input ref= { pinCode5 } name="pincode-5" placeholder="." className="text-center" type='text' maxLength={1} 
+                        // onChange= { (event) => {
+                        //     if (event.target.value.length !==0){
+                        //         setPinCode5PastValue[event.target.value];
+                        //         focusInToNextPinCode("pincode-5");
+                        //     } else {
+                        //         if (pinCode5PastValue != null && pinCode5PastValue.length == 0)  {
+                        //             focusInToPreviousPinCode("pincode-5");
+                        //         }
+                        //         setPinCode5PastValue[event.target.value];
+                        //     }
+                        // }}
+                        
+                        onKeyUp= { (event) => {
+                            if ((event.key === "Backspace") || (event.key === "Delete")){
+                                focusInToPreviousPinCode("pincode-5");
+                                // setPinCode5PastValue[event.key];
+                                // focusInToNextPinCode("pincode-5");
+                            } else {
+                                focusInToNextPinCode("pincode-5");
+
+                                // if (pinCode5PastValue != null && pinCode5PastValue.length == 0)  {
+                                //     focusInToPreviousPinCode("pincode-5");
+                                // }
+                                // setPinCode5PastValue[event.target.value];
+                            }
+                        }}/>
+                    </Form.Field>
+                </Grid.Column>
+                <Grid.Column >
+                    <Form.Field>
+                        <input ref= { pinCode6 } name="pincode-6" placeholder="." className="text-center" type='text' maxLength={1} 
+                        // onChange= { (event) => {
+
+                        //     if (event.target.value.length !==0){
+                        //         setPinCode6PastValue[event.target.value];
+                        //     } 
+                        // }}
+                        onKeyUp={ (event)=> {
+                            console.log(pinCode6PastValue);
+                            if (event.key === "Backspace"){
+                                if (pinCode6PastValue === "Backspace") {
+                                    console.log("focusInToPreviousPinCode");
+                                    focusInToPreviousPinCode("pincode-6");
+                                }
+                            } 
+                            setPinCode6PastValue[event.key];
+                            console.log(pinCode6PastValue);
+
+                        }}/>
+                    </Form.Field>
+                    </Grid.Column>
+        </Grid.Row>
+        <Grid.Row columns={ 1 }>
+            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                <Button
+                    primary
+                    type="submit"
+                    className=" totp-verify-action-button"
+                    data-testid={ `${ testId }-modal-actions-primary-button`}
+                >
+                    { stepButtonText(step) }
+                </Button>
+            </Grid.Column>
+        </Grid.Row>
+        {
+            step !== 1
+                ? (
+                    <Grid.Row columns={ 1 }>
+                        <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                            < Button onClick={ () => { setOpenWizard(false); } } className="link-button totp-verify-action-button"
+                            data-testid={ `${ testId }-modal-actions-cancel-button`}>
+                            { t("common:cancel") }
+                            </Button>
+                        </Grid.Column>
+                    </Grid.Row>
+                )
+                : null
+                }
+    </Grid>
+</Container>
+</Form>
                         </Segment>
-                    </div>
-                </div>
             </Segment>
         );
     };
@@ -256,7 +466,7 @@ export const TOTPAuthenticator: React.FunctionComponent<TOTPProps> = (
     const stepContent = (stepToDisplay: number): JSX.Element => {
         switch (stepToDisplay) {
             case 0:
-                return renderQRCode();
+                return renderQRCode(stepToDisplay);
             case 1:
                 return renderSuccess();
         }
@@ -306,14 +516,8 @@ export const TOTPAuthenticator: React.FunctionComponent<TOTPProps> = (
                 {
                     step !== 3
                         ? (
-                            < Modal.Header className="totp-header">
-                                <div className="illustration">
-                                    <GenericIcon
-                                        transparent
-                                        size="small"
-                                        icon={ getQRCodeScanIcon() }
-                                    />
-                                </div>
+                            < Modal.Header className="wizard-header text-center">
+                                Set Up An Authenticator App
                             </Modal.Header>
                         )
                         : null
@@ -323,19 +527,29 @@ export const TOTPAuthenticator: React.FunctionComponent<TOTPProps> = (
                 </Modal.Content>
                 <Modal.Actions data-testid={ `${ testId }-modal-actions` }>
                     {
-                        step !== 1
+                        step === 0
                             ? (
-                                < Button onClick={ () => { setOpenWizard(false); } } className="link-button"
-                                  data-testid={ `${ testId }-modal-actions-cancel-button`}>
-                                    { t("common:cancel") }
-                                </Button>
+                        <Message info className="text-left grey display-flex">      
+                        <Icon name="info circle" />
+                        <Message.Content
+                        className="message-content " > 
+                            
+                                    Don&apos;t have an app? Download an authenticator application like Google Authenticator from
+                                    <a href="https://www.apple.com/us/search/totp?src=globalnav"> App Store </a> or
+                                        <a href="https://play.google.com/store/search?q=totp"> Google Play </a>
+                        </Message.Content>
+                        </Message>  
                             )
-                            : null
+                            : (  
+                            <Button
+                            primary
+                            data-testid={ `${ testId }-modal-actions-primary-button`}
+                            onClick= { () => { handleModalButtonClick(step);}}
+                        >
+                            { stepButtonText(step) }
+                        </Button>
+                        )
                     }
-                    <Button onClick={ () => { handleModalButtonClick(step); } } primary
-                        data-testid={ `${ testId }-modal-actions-primary-button`}>
-                        { stepButtonText(step) }
-                    </Button>
                 </Modal.Actions>
 
             </Modal>
