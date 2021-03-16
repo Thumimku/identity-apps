@@ -774,7 +774,9 @@ export const console: ConsoleNS = {
                                             makeMandatory: "අනිවාර්ය කරන්න",
                                             makeRequested: "ඉල්ලීමක් කරන්න",
                                             removeMandatory: "අනිවාර්ය ඉවත් කරන්න",
-                                            removeRequested: "ඉල්ලූ දේ ඉවත් කරන්න"
+                                            removeRequested: "ඉල්ලූ දේ ඉවත් කරන්න",
+                                            subjectDisabledSelection: "මෙම ගුණාංගය අනිවාර්ය වන්නේ " +
+                                                "එය විෂය ගුණාංගය වන බැවිනි."
                                         },
                                         fields: {
                                             claim: {
@@ -1196,6 +1198,10 @@ export const console: ConsoleNS = {
                                 children: {
                                     implicit: {
                                         hint: "පොදු අයදුම්පත් සමඟ ව්‍යංග ප්‍රදානය භාවිතා කිරීම නිර්දේශ නොකරයි.",
+                                        label: "{{grantType}} (නිර්දේශ නොකරයි)"
+                                    },
+                                    password: {
+                                        hint: "පොදු යෙදුම් සමඟ මුරපද ප්‍රදානය භාවිතා කිරීම නිර්දේශ නොකරයි.",
                                         label: "{{grantType}} (නිර්දේශ නොකරයි)"
                                     }
                                 },

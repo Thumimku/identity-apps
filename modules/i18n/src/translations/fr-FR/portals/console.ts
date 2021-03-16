@@ -772,7 +772,9 @@ export const console: ConsoleNS = {
                                             makeMandatory: "Rendre obligatoire",
                                             makeRequested: "Rendre demandable",
                                             removeMandatory: "Retirer l'obligation",
-                                            removeRequested: "Retirer la demandabilité"
+                                            removeRequested: "Retirer la demandabilité",
+                                            subjectDisabledSelection: "Cet attribut est obligatoire car il " +
+                                                "s'agit de l'attribut sujet."
                                         },
                                         fields: {
                                             claim: {
@@ -1196,6 +1198,11 @@ export const console: ConsoleNS = {
                                     implicit: {
                                         hint: "L'utilisation de l'octroi implicite avec des applications publiques " +
                                             "n'est pas recommandée.",
+                                        label: "{{grantType}} (non recommandé)"
+                                    },
+                                    password: {
+                                        hint: "L'utilisation de l'octroi de mot de passe avec des applications " +
+                                            "publiques n'est pas recommandée.",
                                         label: "{{grantType}} (non recommandé)"
                                     }
                                 },
