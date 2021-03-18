@@ -590,10 +590,10 @@ export const console: ConsoleNS = {
                     },
                     deleteApplication: {
                         assertionHint: "Please type <1>{{ name }}</1> to confirm.",
-                        content: "All the applications depending on this also might stop working. " +
-                            "Please proceed with caution.",
+                        content: "This action is irreversible and will permanently delete the application.",
                         header: "Are you sure?",
-                        message: "This action is irreversible and will permanently delete the application."
+                        message: "If you delete this application, authentication flows for this application will " +
+                            "stop working. Please proceed with caution."
                     },
                     deleteOutboundProvisioningIDP: {
                         assertionHint: "Please type <1>{{ name }}</1> to confirm.",
@@ -1169,8 +1169,10 @@ export const console: ConsoleNS = {
                                         "However, if you are planning to try the sample app, " +
                                         "this field can be ignored."
                                 },
-                                info: "Don’t have an app? Try out a sample app using {{callBackURLFromTemplate}} " +
-                                "as the authorized redirect URL. (You can download and run a sample at a later step.)"
+                                info: "Try out a sample app using {{callBackURLFromTemplate}} as the authorized" +
+                                    " redirect URL. You can download and run a sample at a later step.",
+                                infoTraditional: "You will be prompted to download the sample later. You will need" +
+                                    " Apache Tomcat 8.x or a later version to try out the sample."
                             },
                             clientID: {
                                 label: "Client ID"
@@ -2398,6 +2400,11 @@ export const console: ConsoleNS = {
                         help: {
                             heading: "Help",
                             subHeading: "Use the guide below"
+                        },
+                        applicationMode: {
+                            label: "Would you like to:",
+                            integrate: "Integrate an existing app",
+                            sample: "Explore a sample"
                         }
                     }
                 }
@@ -2500,7 +2507,8 @@ export const console: ConsoleNS = {
                         alias: {
                             hint: "If the resident identity provider is known by an alias at the federated " +
                                 "identity provider, specify it here.",
-                            label: "Alias"
+                            label: "Alias",
+                            placeholder: "Enter value for Alias."
                         },
                         certificateType: {
                             certificateJWKS: {
@@ -2528,7 +2536,8 @@ export const console: ConsoleNS = {
                         },
                         homeRealmIdentifier: {
                             hint: "Enter the home realm identifier for this identity provider",
-                            label: "Home Realm Identifier"
+                            label: "Home Realm Identifier",
+                            placeholder: "Enter value for Home Realm Identifier."
                         }
                     },
                     attributeSettings: {
@@ -7570,7 +7579,7 @@ export const console: ConsoleNS = {
                             message: "Something went wrong"
                         },
                         success: {
-                            description: "Successfully deleted the user's association to your organization.",
+                            description: "Successfully deleted the user's invitation.",
                             message: "Invitation deletion successful"
                         }
                     },

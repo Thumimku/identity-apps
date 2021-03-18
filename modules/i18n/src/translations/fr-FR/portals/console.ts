@@ -1173,8 +1173,11 @@ export const console: ConsoleNS = {
                                         "Toutefois, si vous prévoyez d'essayer l'exemple d'application, " +
                                         "ce champ peut être ignoré."
                                 },
-                                info: "Vous n’avez pas d’application? Essayez un exemple d'application " +
-                                "en utilisant {{callBackURLFromTemplate}} comme URL autorisée."
+                                info: "Essayez un exemple d'application en utilisant {{callBackURLFromTemplate}}" +
+                                    " comme URL de redirection autorisée. Vous pouvez télécharger et exécuter un" +
+                                    " exemple ultérieurement.",
+                                infoTraditional: "Vous serez invité à télécharger l'exemple plus tard. Vous aurez" +
+                                    " besoin d'Apache Tomcat 8.x ou d'une version ultérieure pour essayer l'exemple."
                             },
                             clientID: {
                                 label: "Identifiant du client"
@@ -2411,6 +2414,11 @@ export const console: ConsoleNS = {
                         help: {
                             heading: "Aide",
                             subHeading: "Utilisez les descriptions ci-dessous pour vous guider"
+                        },
+                        applicationMode: {
+                            label: "Souhaitez-vous:",
+                            integrate: "Intégrer une application existante",
+                            sample: "Explorer un échantillon"
                         }
                     }
                 }
@@ -2513,7 +2521,8 @@ export const console: ConsoleNS = {
                         alias: {
                             hint: "If the resident identity provider is known by an alias at the federated identity " +
                                 "provider, specify it here.",
-                            label: "Alias"
+                            label: "Alias",
+                            placeholder: "Entrez une valeur pour Alias."
                         },
                         certificateType: {
                             certificateJWKS: {
@@ -2541,7 +2550,8 @@ export const console: ConsoleNS = {
                         },
                         homeRealmIdentifier: {
                             hint: "Entrez l'identifiant du domaine d'identité pour ce fournisseur d'identité",
-                            label: " Identifiant du domaine local"
+                            label: " Identifiant du domaine local",
+                            placeholder: "Entrez la valeur de l'identifiant du royaume d'origine."
                         }
                     },
                     attributeSettings: {
