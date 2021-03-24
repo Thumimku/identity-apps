@@ -19,8 +19,8 @@
 
 import { TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
-import get from "lodash/get";
-import isEqual from "lodash/isEqual";
+import get from "lodash-es/get";
+import isEqual from "lodash-es/isEqual";
 import React, { Fragment, ReactElement, ReactNode, SyntheticEvent, useEffect, useState } from "react";
 import {
     Dropdown,
@@ -529,7 +529,7 @@ export const DataTable = <T extends object = {}>(
                     trigger={ (
                         <Icon
                             link={ actionLink && actionLink(item) }
-                            className="list-icon"
+                            className="list-icon data-table-list-icon"
                             disabled={ actionDisabled }
                             size="small"
                             color="grey"

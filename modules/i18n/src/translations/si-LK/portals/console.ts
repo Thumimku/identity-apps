@@ -3818,7 +3818,7 @@ export const console: ConsoleNS = {
                         list: {
                             description: "ගුණාංග උපභාෂා සාදන්න සහ කළමනාකරණය කරන්න",
                             primaryAction: "නව බාහිර උපභාෂාව",
-                            title: "උපභාෂා ආරෝපණය කරන්න",
+                            title: "ගුණාංග",
                             view: "දේශීය හිමිකම් බලන්න"
                         }
                     },
@@ -3912,7 +3912,7 @@ export const console: ConsoleNS = {
                             },
                             success: {
                                 description: "බාහිර ගුණාංගය උපභාෂාවට සාර්ථකව එකතු කර ඇත!",
-                                message: "බාහිර ගුණාංගය සාර්ථකව එක් කරන ලදි"
+                                message: "ගුණාංගය එකතු කරන ලදි"
                             }
                         },
                         deleteExternalClaim: {
@@ -3922,7 +3922,7 @@ export const console: ConsoleNS = {
                             },
                             success: {
                                 description: "බාහිර ගුණාංගය සාර්ථකව මකා දමා ඇත!",
-                                message: "බාහිර ගුණාංගය සාර්ථකව මකා දමන ලදි"
+                                message: "ගුණාංගය මකා දමන ලදි"
                             }
                         },
                         fetchExternalClaims: {
@@ -3952,7 +3952,7 @@ export const console: ConsoleNS = {
                             },
                             success: {
                                 description: "බාහිර ගුණාංගය සාර්ථකව යාවත්කාලීන කර ඇත!",
-                                message: "බාහිර ගුණාංගය සාර්ථකව යාවත්කාලීන කරන ලදි"
+                                message: "ගුණාංගය යාවත්කාලීන කරන ලදි"
                             }
                         }
                     },
@@ -5550,7 +5550,7 @@ export const console: ConsoleNS = {
                 addEmailTemplate: "විද්‍යුත් තැපැල් අච්චුව එක් කරන්න",
                 addEmailTemplateLocale: "විද්‍යුත් තැපැල් ආකෘති පෙදෙසි එක් කරන්න",
                 approvals: "අනුමත කිරීම්",
-                attributeDialects: "උපභාෂා ආරෝපණය කරන්න",
+                attributeDialects: "ගුණාංග",
                 categories: {
                     attributes: "ගුණාංග",
                     certificates: "සහතික",

@@ -4708,7 +4708,7 @@ export const console: ConsoleNS = {
                             description: "View and manage how user attributes are mapped and " +
                                 "transformed when interacting with APIs or your applications.",
                             primaryAction: "New Attribute Mapping",
-                            title: "Attributes and Mappings",
+                            title: "Attributes",
                             view: "View attributes"
                         }
                     },
@@ -4804,7 +4804,7 @@ export const console: ConsoleNS = {
                             success: {
                                 description: "The {{type}} attribute has been added to the attribute mapping" +
                                     " successfully!",
-                                message: "{{type}} attribute added successfully"
+                                message: "Attribute added"
                             }
                         },
                         deleteExternalClaim: {
@@ -4814,7 +4814,7 @@ export const console: ConsoleNS = {
                             },
                             success: {
                                 description: "The {{type}} attribute has been deleted successfully!",
-                                message: "{{type}} attribute deleted successfully"
+                                message: "Attribute deleted"
                             }
                         },
                         fetchExternalClaims: {
@@ -4844,7 +4844,7 @@ export const console: ConsoleNS = {
                             },
                             success: {
                                 description: "The {{type}} attribute has been updated successfully!",
-                                message: "{{type}} attribute updated successfully"
+                                message: "Attribute updated"
                             }
                         }
                     },
@@ -6435,7 +6435,7 @@ export const console: ConsoleNS = {
                 addEmailTemplate: "Add Email Template",
                 addEmailTemplateLocale: "Add Email Template Locale",
                 approvals: "Approvals",
-                attributeDialects: "Attributes & Mappings",
+                attributeDialects: "Attributes",
                 categories: {
                     attributes: "User Attributes",
                     certificates: "Certificates",

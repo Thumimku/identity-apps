@@ -18,7 +18,7 @@
 
 import { TestableComponentInterface } from "@wso2is/core/models";
 import { Code } from "@wso2is/react-components";
-import isEmpty from "lodash/isEmpty";
+import isEmpty from "lodash-es/isEmpty";
 import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
@@ -118,7 +118,7 @@ export const AttributeListItem: FunctionComponent<AttributeListItemPropInterface
 
     useEffect(() => {
         setMandatory(initialMandatory);
-    }, [initialMandatory]);
+    }, []);
 
     useEffect(() => {
         setRequested(initialRequested);
@@ -191,6 +191,7 @@ export const AttributeListItem: FunctionComponent<AttributeListItemPropInterface
                     trigger={
                         (
                             <Checkbox
+                                checked={ mandatory || subject }
                                 defaultChecked={ initialMandatory }
                                 onClick={ handleMandatoryCheckChange }
                                 disabled={ mappingOn ? !requested : false }
@@ -210,7 +211,7 @@ export const AttributeListItem: FunctionComponent<AttributeListItemPropInterface
                     }
                     inverted
                     disabled={
-                        readOnly
+                        subject ? false : readOnly
                             ? true
                             : mappingOn
                                 ? !requested
