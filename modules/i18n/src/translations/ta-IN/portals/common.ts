@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,28 +18,44 @@
 
 import { CommonNS } from "../../../models";
 
+/**
+ * NOTES: No need to care about the max-len for this file since it's easier to
+ * translate the strings to other languages easily with editor translation tools.
+ */
+/* eslint-disable max-len */
 export const common: CommonNS = {
     access: "அணுகல்",
     actions: "செயல்கள்",
     activate: "செயல்படுத்த",
     active: "செயல்பாட்டில் உள்ள",
     add: "சேர்",
+    addKey: "ரகசியத்தைச் சேர்க்கவும்",
     addURL: "URL ஐச் சேர்க்கவும்",
     all: "அனைத்தும்",
     applicationName: "செயலியின் பெயர்",
     applications: "செயலிகள்",
     approvalStatus: "அனுமதி நிலை",
     approve: "அனுமதி",
+    apps: "செயலிகள்",
+    assignee: "ஒதுக்கப்பட்டவர்",
     assignees: "அளிக்கப்பட்டவர்கள்",
-    authenticator: "அங்கீகார",
     authentication: "அங்கீகார",
-    // eslint-disable-next-line @typescript-eslint/camelcase
+    authenticator: "அங்கீகார",
     authenticator_plural: "அங்கீகாரிகள்",
+    back: "மீண்டும்",
     browser: "உலாவி",
     cancel: "இரத்து செய்",
     challengeQuestionNumber: "சவால் வினா {{number}}",
     change: "மாற்று",
+    chunkLoadErrorMessage: {
+        description: "கோரப்பட்ட பயன்பாட்டிற்கு சேவை செய்யும் போது பிழை ஏற்பட்டது. பயன்பாட்டை மீண்டும் " +
+            "ஏற்ற முயற்சிக்கவும்.",
+        heading: "ஏதோ தவறு நடந்துவிட்டது",
+        primaryActionText: "பயன்பாட்டை மீண்டும் ஏற்றவும்"
+    },
     claim: "கோர்",
+    clear: "அழிக்கவும்",
+    clientId: "வாடிக்கையாளர் அடையாளம்",
     close: "நெருக்கமான",
     comingSoon: "விரைவில்",
     completed: "பூரணப்படுத்தப்பட்டவை",
@@ -47,8 +63,11 @@ export const common: CommonNS = {
     confirm: "உறுதிப்படுத்தவும்",
     contains: "கொண்டுள்ளது",
     continue: "தொடர்",
+    copyToClipboard: "கிளிப்போர்டுக்கு நகலெடு",
+    create: "உருவாக்கு",
     createdOn: "உருவாக்கப்பட்ட தினம்",
     dangerZone: "ஆபத்து மண்டலம்",
+    darkMode: "இருண்ட தீம்",
     delete: "அழி",
     description: "விபரம்",
     deviceModel: "கருவி மாதிரி",
@@ -65,6 +84,7 @@ export const common: CommonNS = {
     enabled: "செயலில் உள்ளது",
     endsWith: "முடிவடைவது",
     equals: "சமன்",
+    exitFullScreen: "முழுத்திரையில் இருந்து வெளியேறவும்",
     explore: "ஆராயுங்கள்",
     export: "ஏற்று",
     featureAvailable: "இந்த அம்சம் விரைவில் கிடைக்கும்!",
@@ -72,6 +92,7 @@ export const common: CommonNS = {
     finish: "நிறைவு செய்",
     generatePassword: "கடவுச்சொல்லை உருவாக்கவும்",
     goBackHome: "முகப்புக்கு செல்",
+    goFullScreen: "முழுத்திரைக்குச் செல்லுங்கள்",
     good: "சிறந்தது",
     help: "உதவி",
     hide: "மறை",
@@ -80,17 +101,29 @@ export const common: CommonNS = {
     import: "இறக்கு",
     initiator: "கருத்தா",
     ipAddress: "IP முகவரி",
+    issuer: "வழங்குபவர்",
     lastAccessed: "இறுதி அணுகல்",
     lastModified: "கடைசியாக மாற்றியமைக்கப்பட்டது",
     lastSeen: "இறுதி நுழைவு",
     lastUpdatedOn: "கடைசியாக புதுப்பிக்கப்பட்ட தேதி",
+    learnMore: "மேலும் அறிக",
+    lightMode: "ஒளி தீம்",
+    loading: "ஏற்றுகிறது",
     loginTime: "நுழைந்த நேரம்",
     logout: "வெளியேறு",
+    maxValidation: "இந்த மதிப்பு {{max}} ஐ விட குறைவாகவோ அல்லது சமமாகவோ இருக்க வேண்டும்.",
     maximize: "பெரிதாக்கு",
+    minValidation: "இந்த மதிப்பு {{min}} ஐ விட அதிகமாகவோ அல்லது சமமாகவோ இருக்க வேண்டும்.",
     minimize: "குறைத்தல்",
     more: "மேலும்",
     myAccount: "என் கணக்கு",
     name: "பெயர்",
+    networkErrorMessage: {
+        description: "மீண்டும் உள்நுழைய முயற்சிக்கவும்.",
+        heading: "உங்கள் அமர்வு காலாவதியாகி விட்டது",
+        primaryActionText: "உள்நுழையவும்"
+    },
+    new: "புதிய",
     next: "அடுத்தது",
     okay: "சரி",
     operatingSystem: "இயங்கு தளம்",
@@ -99,6 +132,7 @@ export const common: CommonNS = {
     personalInfo: "பயனர் விபரம்",
     pin: "பொருத்து",
     pinned: "பொருத்தப்பட்டுள்ளது",
+    preview: "முன்னோட்ட",
     previous: "பின் செல்",
     priority: "முன்னுரிமை",
     privacy: "தனியுரிமை",
@@ -122,11 +156,14 @@ export const common: CommonNS = {
     search: "தேடு",
     security: "பாதுகாப்பு",
     services: "சேவைகள்",
+    settings: "அமைப்புகள்",
+    setup: "அமைவு",
     show: "காட்டு",
     showAll: "அனைத்தையும் காட்டு",
     showLess: "சுருக்கிக் காண்",
     showMore: "மேலுங் காண்",
     showPassword: "கடவுச்சொல்லை காண்",
+    skip: "தவிர்",
     startsWith: "தொடங்குவது",
     step: "படி",
     strong: "வலுவான",

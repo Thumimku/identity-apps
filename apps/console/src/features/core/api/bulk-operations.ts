@@ -16,17 +16,25 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
 import { HttpMethods } from "@wso2is/core/models";
 import { store } from "../store";
 
 /**
+ * Proptypes for bulk data.
+ */
+interface BulkDataPropsInterface {
+    Operations?: any,
+    failOnErrors?: number,
+    schemas?: string[]
+}
+/**
  * Get an axios instance.
  *
  */
-const httpClient = IdentityClient.getInstance()
-    .httpRequest.bind(IdentityClient.getInstance())
-    .bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance()
+    .httpRequest.bind(AsgardeoSPAClient.getInstance())
+    .bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Update bulks of resources
@@ -34,7 +42,7 @@ const httpClient = IdentityClient.getInstance()
  * @param data request payload
  * @returns {Promise<any>} a promise containing the response.
  */
-export const updateResources = (data: object): Promise<any> => {
+export const updateResources = (data: BulkDataPropsInterface): Promise<any> => {
     const requestConfig = {
         data,
         headers: {

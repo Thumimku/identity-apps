@@ -333,6 +333,21 @@
             &.with-bottom-gutters {
                 padding-bottom: (@gutterWidth / 2);
             }
+
+            &.centered-text {
+                margin-top: auto;
+                margin-bottom: auto;
+
+                 &::after {
+                    margin: -0.2em 0 0 0.2em;
+                    content: '*';
+                    color: #db2828;
+                 }
+            }
+
+              &.session-display {
+                 padding-top: 0.5em;
+              }
         }
     }
 }
@@ -348,6 +363,10 @@
                 padding-bottom: (@gutterWidth / 2);
             }
         }
+         &.session-display-padded {
+              padding-top: 0.25em;
+              padding-bottom: 0.25em;
+         }
     }
 }
 
@@ -367,13 +386,45 @@
 }
 
 /*----------------------------------
-          Form Grids
+    Organization Switcher  Grid
 ------------------------------------*/
 
 .ui.grid {
-    &.form-container {
-        &.with-max-width {
-            max-width: @formGridContainerMaxWidth;
+    &.organization-list-grid {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .row{
+        &.organization-list-row {
+            cursor: pointer;
+        }
+    }
+}
+
+/*----------------------------------
+   Share App Transfer List  Grid
+------------------------------------*/
+
+.ui.grid {
+    &.share-app-modal {
+        margin-top: 0 !important;
+
+        .transfer-list-row {
+            padding-top: 0 !important;
+        }
+    }
+}
+
+/*----------------------------------
+            Sticky Bar
+------------------------------------*/
+
+.ui.grid {
+    .row{
+        &.sticky-bar {
+            padding-bottom: 0;
+            margin-bottom: -14px;
         }
     }
 }

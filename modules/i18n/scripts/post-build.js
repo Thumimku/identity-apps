@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,16 +16,19 @@
  * under the License.
  */
 
+const { execSync } = require("child_process");
+const crypto = require("crypto");
 const path = require("path");
 const fs = require("fs-extra");
-const { execSync } = require("child_process");
+
 
 // eslint-disable-next-line no-console
 const log = console.log;
 
 const OUTPUT_DIR_NAME = "bundle";
-const META_FILE_NAME = "meta.json";
+const META_FILE_NAME = "meta.{hash}.json";
 const TRANSLATIONS_FOLDER_NAME = "translations";
+const EXTENSIONS_FILENAME = "extensions.{hash}.json";
 
 // Path for the distribution directory.
 const dist = path.join(__dirname, "..", "dist");
@@ -54,7 +57,7 @@ if (!fs.existsSync(dist) || !fs.existsSync(translationsPath)) {
 // If the bundle folder exists, clean it first.
 if (fs.existsSync(outputPath)) {
     log("\nBundle already exists. Cleaning it first......");
-    execSync("npm run clean:bundle");
+    execSync("pnpm clean:bundle");
 }
 
 // Create the output directory if it doesn't exist.
@@ -86,7 +89,7 @@ for (const value of Object.values(translations)) {
     log("\nCreating a directory for the language - " + value.meta.name + "\n");
 
     // Iterate through the resources object to extract the sub folders.
-    for (const [objKey, objValue] of Object.entries(value.resources)) {
+    for (const [ objKey, objValue ] of Object.entries(value.resources)) {
         const subFolderPath = path.join(langDirPath, objKey);
 
         createDirectory(subFolderPath, true);
@@ -94,8 +97,9 @@ for (const value of Object.values(translations)) {
         log("Creating " + objKey + " sub folder to store relevant namespace resources.");
 
         // Extract and create the JSON files from the namespaces.
-        for (const [nsObjKey, nsObjValue] of Object.entries(objValue)) {
-            const fileName = nsObjKey + ".json";
+        for (const [ nsObjKey, nsObjValue ] of Object.entries(objValue)) {
+            const hash = crypto.createHash("sha1").update(JSON.stringify(nsObjValue)).digest("hex");
+            const fileName = `${ nsObjKey }.${ hash.substr(0, 8) }.json`;
             const filePath = path.join(subFolderPath, fileName);
 
             createFile(filePath, JSON.stringify(nsObjValue, undefined, 4), null, true);
@@ -104,21 +108,29 @@ for (const value of Object.values(translations)) {
 
             resourcePaths = {
                 ...resourcePaths,
-                [ nsObjKey ]: path.join(value.meta.code, objKey, fileName),
+                [ nsObjKey ]: path.join(value.meta.code, objKey, fileName).split(path.sep).join(path.posix.sep)
             };
         }
+
+        // Add extensions.json file to the path
+        resourcePaths = {
+            ...resourcePaths,
+            extensions: path.join(value.meta.code, objKey, EXTENSIONS_FILENAME).split(path.sep).join(path.posix.sep)
+        };
     }
 
     metaFileContent = {
         ...metaFileContent,
         [ value.meta.code ] : {
             ...value.meta,
-            paths: resourcePaths,
-        },
+            paths: resourcePaths
+        }
     };
 }
 
-createFile(path.join(outputPath, META_FILE_NAME),
+const hash = crypto.createHash("sha1").update(JSON.stringify(metaFileContent)).digest("hex");
+
+createFile(path.join(outputPath, META_FILE_NAME.replace("{hash}", hash.substr(0, 8))),
     JSON.stringify(metaFileContent, undefined, 4), null, true);
 
 log("\nCreated the locale meta file.");
@@ -127,7 +139,7 @@ log("\nSuccessfully generated the locale bundle.");
 
 log("\nRunning cleanup task......");
 
-execSync("npm run clean:translations");
+execSync("pnpm clean:translations");
 
 log("\nClean up task finished successfully......");
 

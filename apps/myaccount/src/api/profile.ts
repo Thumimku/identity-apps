@@ -16,8 +16,10 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
 import { ProfileConstants } from "@wso2is/core/constants";
+import { IdentityAppsApiException } from "@wso2is/core/exceptions";
+import { ProfileInfoInterface, ProfileSchemaInterface } from "@wso2is/core/models";
 import { CommonUtils } from "@wso2is/core/utils";
 import axios from "axios";
 import isEmpty from "lodash-es/isEmpty";
@@ -33,7 +35,7 @@ import { toggleSCIMEnabled } from "../store/actions";
  *
  * @type {AxiosHttpClientInstance}
  */
-const httpClient = IdentityClient.getInstance().httpRequest.bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance().httpRequest.bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Retrieve the user information of the currently authenticated user.
@@ -43,7 +45,7 @@ const httpClient = IdentityClient.getInstance().httpRequest.bind(IdentityClient.
 export const getUserInfo = (): Promise<any> => {
     const requestConfig = {
         headers: {
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost,
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost,
             "Content-Type": "application/json"
         },
         method: HttpMethods.GET,
@@ -56,6 +58,7 @@ export const getUserInfo = (): Promise<any> => {
                 return Promise.reject(new Error(`Failed get user info from:
                 ${store.getState().config.endpoints.user}`));
             }
+
             return Promise.resolve(response);
         })
         .catch((error) => {
@@ -71,7 +74,7 @@ export const getUserInfo = (): Promise<any> => {
 export const getUserReadOnlyStatus = (): Promise<ReadOnlyUserStatus> => {
     const requestConfig = {
         headers: {
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost,
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost,
             "Content-Type": "application/json"
         },
         method: HttpMethods.GET,
@@ -86,6 +89,7 @@ export const getUserReadOnlyStatus = (): Promise<ReadOnlyUserStatus> => {
                 ${store.getState().config.endpoints.user}`)
                 );
             }
+
             return Promise.resolve(response?.data);
         })
         .catch((error) => {
@@ -102,6 +106,7 @@ export const getGravatarImage = (email: string): Promise<string> => {
         return Promise.reject("Email is null");
     } else {
         const url: string = CommonUtils.getGravatar(email);
+
         return new Promise((resolve, reject) => {
             axios
                 .get(url)
@@ -124,11 +129,11 @@ export const getProfileInfo = (): Promise<BasicProfileInterface> => {
     const requestConfig = {
         headers: {
             "Accept": "application/json",
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost,
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost,
             "Content-Type": "application/scim+json"
         },
         method: HttpMethods.GET,
-        url: store.getState().config.endpoints.me
+        url: store.getState().config?.endpoints?.me
     };
 
     return httpClient(requestConfig)
@@ -182,12 +187,11 @@ export const getProfileInfo = (): Promise<BasicProfileInterface> => {
  * @param {object} info.
  * @return {Promise<any>} a promise containing the response.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export const updateProfileInfo = (info: object): Promise<any> => {
+export const updateProfileInfo = (info: Record<string, unknown>): Promise<any> => {
     const requestConfig = {
         data: info,
         headers: {
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost,
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost,
             "Content-Type": "application/json"
         },
         method: HttpMethods.PATCH,
@@ -201,9 +205,98 @@ export const updateProfileInfo = (info: object): Promise<any> => {
                     new Error(`Failed update user profile info with: ${store.getState().config.endpoints.me}`)
                 );
             }
+
             return Promise.resolve(response);
         })
         .catch((error) => {
             return Promise.reject(error?.response?.data);
+        });
+};
+
+/**
+ * Update the logged in user's profile image URL.
+ *
+ * @param {string} url - Image URL.
+ * @return {Promise<ProfileInfoInterface>} Updated profile info as a Promise.
+ * @throws {IdentityAppsApiException}
+ */
+export const updateProfileImageURL = (url: string): Promise<ProfileInfoInterface> => {
+    const data = {
+        Operations: [
+            {
+                op: "replace",
+                value: {
+                    profileUrl: url
+                }
+            }
+        ],
+        schemas: [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ]
+    };
+
+    return updateProfileInfo(data);
+};
+
+/**
+ * Retrieve the profile schemas of the user claims of the currently authenticated user.
+ *
+ * @return {Promise<ProfileSchemaInterface[]>} Array of profile schemas as a Promise.
+ * @throws {IdentityAppsApiException}
+ */
+export const getProfileSchemas = (): Promise<ProfileSchemaInterface[]> => {
+
+    const requestConfig = {
+        headers: {
+            "Accept": "application/json"
+        },
+        method: HttpMethods.GET,
+        url: Config.getServiceResourceEndpoints().profileSchemas
+    };
+    const schemaAttributes: ProfileSchemaInterface[] = [];
+
+    return httpClient(requestConfig)
+        .then((response) => {
+            if (response.status !== 200) {
+                throw new IdentityAppsApiException(
+                    ProfileConstants.SCHEMA_FETCH_REQUEST_INVALID_RESPONSE_CODE_ERROR,
+                    null,
+                    response.status,
+                    response.request,
+                    response,
+                    response.config);
+            }
+
+            // Retrieve the attributes from all the available resources, and if the
+            // attribute belongs to an schema extension the boolean extended will be
+            // appended to the attribute object.
+            response.data.map((schema) => {
+                schema.attributes.map((attribute) => {
+                    if (schema.id !== ProfileConstants.SCIM2_CORE_USER_SCHEMA) {
+                        const modifiedSubAttributes = [];
+
+                        if(attribute.type === "COMPLEX") {
+                            attribute.subAttributes.map((subAttribute) => {
+                                modifiedSubAttributes.push({ ...subAttribute,  extended: true, schemaId: schema.id });
+                            }
+                            );
+                            attribute.subAttributes = modifiedSubAttributes;
+                        }
+                        schemaAttributes.push({ ...attribute, extended: true, schemaId: schema.id });
+
+                        return;
+                    }
+                    schemaAttributes.push(attribute);
+                });
+            });
+
+            return Promise.resolve(schemaAttributes as ProfileSchemaInterface[]);
+        })
+        .catch((error) => {
+            throw new IdentityAppsApiException(
+                ProfileConstants.SCHEMA_FETCH_REQUEST_ERROR,
+                error.stack,
+                error.code,
+                error.request,
+                error.response,
+                error.config);
         });
 };

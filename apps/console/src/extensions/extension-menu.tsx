@@ -28,11 +28,15 @@ import { ExtensionRoutesInterface } from "./models";
  */
 export const EXTENSION_ROUTES = (): ExtensionRoutesInterface  => {
 
+    const defaultRoutes: RouteInterface[]  =  [ ...ExtensionsManager.getConfig().routes.default ];
     const developRoutes: RouteInterface[]  =  [ ...ExtensionsManager.getConfig().routes.develop ];
     const manageRoutes: RouteInterface[]  =  [ ...ExtensionsManager.getConfig().routes.manage ];
     const fullscreenRoutes: RouteInterface[]  = [ ...ExtensionsManager.getConfig().routes.fullscreen ];
+    const authRoutes: RouteInterface[]  = [ ...ExtensionsManager.getConfig().routes.auth ];
 
     return {
+        auth: loadRouteComponents(authRoutes),
+        default: loadRouteComponents(defaultRoutes),
         develop: loadRouteComponents(developRoutes),
         fullscreen: loadRouteComponents(fullscreenRoutes),
         manage: loadRouteComponents(manageRoutes)
@@ -59,7 +63,10 @@ const loadRouteComponents = (routes: RouteInterface[]): RouteInterface[] => {
         // pass the component path. Therefore we have overcome this issue by assigning it to a
         // const.
         const routePath = route.component;
-        route.component = lazy(() => import(`${ routePath }`));
+
+        if (typeof route.component === "string") {
+            route.component = lazy(() => import(`${ routePath }`));
+        }
 
         if (route.children && route.children.length > 0) {
             route.children = loadRouteComponents(route.children);

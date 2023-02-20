@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -80,7 +80,7 @@ export const AppUtils = (function() {
          * Constructs a basename to be used by the History API.
          *
          * @remarks For SaaS apps, basename should be "/". Since is applied on the fly.
-         * @return {any | string | string}
+         * @returns App base name for the History API.
          */
         constructAppBaseNameForHistoryAPI: function() {
             if (_config.appBaseNameForHistoryAPI !== undefined) {
@@ -95,7 +95,7 @@ export const AppUtils = (function() {
          *
          * @remarks For non SaaS apps, a relative path without the tenant and basename would surfise.
          * @param path - Path to be constructed.
-         * @return {string | any}
+         * @returns App paths.
          */
         constructAppPaths: function(path) {
             if (!this.isSaas()) {
@@ -110,11 +110,11 @@ export const AppUtils = (function() {
          *
          * @remarks For SaaS apps, the application the callback URLs shouldn't contain tenant domain.
          * @param url - URL to be constructed.
-         * @return {string}
+         * @returns Redirect URLs.
          */
         constructRedirectURLs: function(url) {
             if (!this.isSaas()) {
-                return _config.clientOrigin + this.getTenantPath(true) + "/" + _config.appBaseName + url;
+                return _config.clientOrigin + (_config.appBaseName ? "/" + _config.appBaseName : "") + url;
             }
 
             return _config.clientOrigin + (_config.appBaseName ? "/" + _config.appBaseName : "") + url;
@@ -123,7 +123,7 @@ export const AppUtils = (function() {
         /**
          * Get app base from URL.
          *
-         * @return {string}
+         * @returns App base.
          */
         getAppBase: function() {
             const path = this.getLocationPathWithoutTenant();
@@ -142,7 +142,8 @@ export const AppUtils = (function() {
 
         /**
          * Get app base with the tenant domain.
-         * @return {string}
+         *
+         * @returns App base with tenant.
          */
         getAppBaseWithTenant: function() {
             return this.getTenantPath(true) + (_config.appBaseName ? ("/" + _config.appBaseName) : "");
@@ -151,12 +152,18 @@ export const AppUtils = (function() {
         /**
          * Get the config object.
          *
-         * @return {object}
+         * @returns Deployment Configuration.
          */
         getConfig: function() {
             if (Object.entries(_config).length === 0) {
                 return null;
             }
+            if (_config.consoleApp && _config.consoleApp.origin) {
+                _config.consoleAppOrigin = _config.consoleApp.origin;
+            }
+
+            const tenantPath = this.getTenantPath(false);
+            const resolvedTenantPath = tenantPath.match(this.getSuperTenant())?.length > 0 ? "" : tenantPath;
 
             return {
                 appBase: _config.appBaseName,
@@ -167,12 +174,18 @@ export const AppUtils = (function() {
                     : _config.clientID + "_" + this.getTenantName(),
                 clientOrigin: _config.clientOrigin,
                 clientOriginWithTenant: _config.clientOrigin + this.getTenantPath(true),
+                consoleApp: {
+                    path: _config.consoleApp?.path
+                        ? _config.consoleAppOrigin + resolvedTenantPath + _config.consoleApp?.path
+                        : null
+                },
+                customServerHost: _config.customServerHost,
                 debug: _config.debug,
+                extensions: _config.extensions,
                 idpConfigs: this.resolveIdpConfigs(),
                 isSaas: this.isSaas(),
                 loginCallbackURL: this.constructRedirectURLs(_config.loginCallbackPath),
                 logoutCallbackURL: this.constructRedirectURLs(_config.logoutCallbackPath),
-                productVersion: _config.productVersion,
                 productVersionConfig: _config.ui.productVersionConfig,
                 routes: {
                     home: this.constructAppPaths(_config.routePaths.home),
@@ -183,6 +196,7 @@ export const AppUtils = (function() {
                 serverOriginWithTenant: _config.serverOrigin + this.getTenantPath(true),
                 session: _config.session,
                 superTenant: this.getSuperTenant(),
+                superTenantProxy: this.getSuperTenantProxy(),
                 tenant: (this.isSuperTenant()) ? this.getSuperTenant() : this.getTenantName(),
                 tenantPath: this.getTenantPath(),
                 tenantPrefix: this.getTenantPrefix(),
@@ -193,7 +207,7 @@ export const AppUtils = (function() {
         /**
          * Get URL location without tenant.
          *
-         * @return {string}
+         * @returns Location without the tenant.
          */
         getLocationPathWithoutTenant: function() {
             const path = window.location.pathname;
@@ -211,7 +225,7 @@ export const AppUtils = (function() {
         /**
          * Get the super tenant.
          *
-         * @return {string}
+         * @returns Super tenant.
          */
         getSuperTenant: function() {
             return _args.superTenant || superTenantFallback;
@@ -219,8 +233,8 @@ export const AppUtils = (function() {
 
         /**
          * Get the proxy name for super tenant if overriden. This will be used to build the URLs
-         * 
-         * @return {string}
+         *
+         * @returns Super tenant proxy.
          */
         getSuperTenantProxy: function() {
             return _config.superTenantProxy || this.getSuperTenant();
@@ -229,8 +243,8 @@ export const AppUtils = (function() {
         /**
          * Get the tenant name.
          *
-         * @param {boolean} fromLocation - Flag to determine if resolution should be done using URL location.
-         * @return {string | any}
+         * @param fromLocation - Flag to determine if resolution should be done using URL location.
+         * @returns Tenant name.
          */
         getTenantName: function(fromLocation = this.getTenantResolutionStrategy() === "location") {
             if (!fromLocation && this.getTenantResolutionStrategy() === "id_token" && _config.tenant) {
@@ -242,6 +256,7 @@ export const AppUtils = (function() {
 
             if (tenantIndex > 0) {
                 const tenantName = paths[tenantIndex + 1];
+
                 return (tenantName) ? tenantName : "";
             } else {
                 return "";
@@ -252,12 +267,17 @@ export const AppUtils = (function() {
          * Get the tenant path.
          *
          * @remarks if `skipSuperTenant` is set to true, "" will be returned.
-         * @param {boolean} skipSuperTenant - Flag to skip super tenant.
-         * @return {string}
+         * @param skipSuperTenant - Flag to skip super tenant.
+         * @returns Tenant path.
          */
         getTenantPath: function(skipSuperTenant = false) {
             if (skipSuperTenant && (this.getTenantName() === this.getSuperTenant() || this.getTenantName() === "")) {
                 return urlPathForSuperTenantOriginsFallback;
+            }
+
+            // For non-SaaS apps, no need to have tenanted paths.
+            if (!this.isSaas()) {
+                return "/";
             }
 
             return (this.getTenantName() !== "") ?
@@ -267,7 +287,7 @@ export const AppUtils = (function() {
         /**
          * Get the tenant prefix.
          *
-         * @return {string}
+         * @returns Tenant prefix.
          */
         getTenantPrefix: function() {
             return _args.tenantPrefix || tenantPrefixFallback;
@@ -276,7 +296,7 @@ export const AppUtils = (function() {
         /**
          * Get the tenant resolution strategy.
          *
-         * @return {string}
+         * @returns Tenant resolution strategy.
          */
         getTenantResolutionStrategy: function() {
             return _config.tenantResolutionStrategy !== undefined
@@ -287,7 +307,7 @@ export const AppUtils = (function() {
         /**
          * Initialize the config.
          *
-         * @param Args
+         * @param Args - Arguments passed to the instance.
          */
         init: function(Args) {
             _args = Args;
@@ -295,13 +315,14 @@ export const AppUtils = (function() {
             _default = {
                 "accountAppOrigin": _args.accountAppOrigin || _args.serverOrigin || fallbackServerOrigin,
                 "clientOrigin": window.location.origin,
+                "consoleAppOrigin": _args.consoleAppOrigin || _args.serverOrigin || fallbackServerOrigin,
                 "contextPath": _args.contextPath,
                 "serverOrigin": _args.serverOrigin || fallbackServerOrigin
             };
 
             _config = _default;
 
-            const userConfigFile = _config.contextPath + "/deployment.config.json";
+            const userConfigFile = _config.contextPath + "deployment.config.json";
 
             loadUserConfig(userConfigFile, function(response) {
                 const configResponse = JSON.parse(response);
@@ -326,7 +347,7 @@ export const AppUtils = (function() {
         /**
          * Is the app SaaS.
          *
-         * @return {boolean}
+         * @returns Is saas or not.
          */
         isSaas: function() {
             return (_config.isSaas !== undefined) ? _config.isSaas : isSaasFallback;
@@ -335,7 +356,7 @@ export const AppUtils = (function() {
         /**
          * Is the tenant super tenant?.
          *
-         * @return {boolean}
+         * @returns Is super tenant or not.
          */
         isSuperTenant: function() {
             if (_config.tenant && _config.tenant === this.getSuperTenant()) {
@@ -348,7 +369,7 @@ export const AppUtils = (function() {
         /**
          * Resolves the IDP configs object.
          *
-         * @return {(IdpConfigInterface<T, S> & {serverOrigin: any}) | ({serverOrigin: any} & {serverOrigin: any})}
+         * @returns Resolved IDP configs.
          */
         resolveIdpConfigs: function() {
             return {
@@ -362,8 +383,10 @@ export const AppUtils = (function() {
 
         /**
          * Resolves IDP URLs by resolving the placeholders.
-         * ex: /t/{userTenantDomain}/common/oauth2/authz?t={superTenantDomain} ->
-         * /t/wso2.com/common/oauth2/authz?t=carbon.super
+         * ex: `/t/{userTenantDomain}/common/oauth2/authz?t={superTenantDomain}`
+         * to /t/wso2.com/common/oauth2/authz?t=carbon.super
+         *
+         * @returns Resolved URLs.
          */
         resolveURLs: function() {
             return {
@@ -400,7 +423,7 @@ export const AppUtils = (function() {
                         .replace(SERVER_ORIGIN_IDP_URL_PLACEHOLDER, _config.serverOrigin)
                         .replace(TENANT_PREFIX_IDP_URL_PLACEHOLDER, this.getTenantPrefix())
                         .replace(SUPER_TENANT_DOMAIN_IDP_URL_PLACEHOLDER, this.getSuperTenantProxy())
-                        .replace(USER_TENANT_DOMAIN_IDP_URL_PLACEHOLDER, this.getTenantName()
+                        .replace(USER_TENANT_DOMAIN_IDP_URL_PLACEHOLDER, this.getTenantName() !== this.getSuperTenant()
                             ? this.getTenantName()
                             : this.getSuperTenantProxy()),
                 tokenEndpointURL: _config.idpConfigs

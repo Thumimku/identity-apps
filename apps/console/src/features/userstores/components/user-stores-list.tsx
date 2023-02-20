@@ -1,21 +1,22 @@
 /**
-* Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-*
-* WSO2 Inc. licenses this file to you under the Apache License,
-* Version 2.0 (the 'License'); you may not use this file except
-* in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing,
-* software distributed under the License is distributed on an
-* 'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-* KIND, either express or implied. See the License for the
-* specific language governing permissions and limitations
-* under the License.
-*/
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
+import { UserstoreConstants } from "@wso2is/core/constants";
 import { hasRequiredScopes } from "@wso2is/core/helpers";
 import {
     AlertLevels,
@@ -30,14 +31,16 @@ import {
     EmptyPlaceholder,
     GenericIcon,
     LinkButton,
+    Popup,
     PrimaryButton,
     TableActionsInterface,
     TableColumnInterface
 } from "@wso2is/react-components";
 import React, { FunctionComponent, ReactElement, ReactNode, SyntheticEvent, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Header, Icon, Popup, SemanticICONS } from "semantic-ui-react";
+import { Header, Icon, SemanticICONS } from "semantic-ui-react";
+import { userstoresConfig } from "../../../extensions";
 import {
     AppConstants,
     AppState,
@@ -48,8 +51,8 @@ import {
 } from "../../core";
 import { deleteUserStore } from "../api";
 import { getTableIcons } from "../configs";
+import { CONSUMER_USERSTORE, CONSUMER_USERSTORE_ID } from "../constants";
 import { UserStoreListItem } from "../models";
-import { CONSUMER_USERSTORE_ID } from "../constants";
 
 /**
  * Prop types of the `UserStoresList` component
@@ -98,9 +101,9 @@ interface UserStoresListPropsInterface extends SBACInterface<FeatureConfigInterf
 /**
  * This component renders the Userstore List.
  *
- * @param {UserStoresListPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns user store list component.
  */
 export const UserStoresList: FunctionComponent<UserStoresListPropsInterface> = (
     props: UserStoresListPropsInterface
@@ -125,7 +128,8 @@ export const UserStoresList: FunctionComponent<UserStoresListPropsInterface> = (
     const [ deleteID, setDeleteID ] = useState<string>(null);
     const [ deleteName, setDeleteName ] = useState<string>("");
 
-    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.scope);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
+    const isPrivilegedUser: boolean = useSelector((state: AppState) => state.auth.isPrivilegedUser);
 
     const dispatch = useDispatch();
 
@@ -134,8 +138,8 @@ export const UserStoresList: FunctionComponent<UserStoresListPropsInterface> = (
     /**
      * Delete a userstore.
      *
-     * @param {string} id userstore id.
-     * @param {string} name userstore name.
+     * @param id -  userstore id.
+     * @param name - userstore name.
      */
     const initDelete = (id: string, name: string) => {
         setDeleteID(id);
@@ -154,25 +158,18 @@ export const UserStoresList: FunctionComponent<UserStoresListPropsInterface> = (
 
     /**
      * Shows the delete confirmation modal
-     * @return {ReactElement}
+     * @returns delete confirmation modal component
      */
     const showDeleteConfirm = (): ReactElement => (
         <ConfirmationModal
             onClose={ closeDeleteConfirm }
-            type="warning"
+            type={ "negative" }
             open={ deleteConfirm }
             assertion={ deleteName }
             assertionHint={
-                <p>
-                    <Trans i18nKey="console:manage.features.userstores.confirmation.hint">
-                        Please type
-                        <strong data-testid={ `${ testId }-delete-confirmation-modal-assertion` }>
-                            { { name: deleteName } }
-                        </strong > to confirm.
-                    </Trans>
-                </p>
+                t("console:manage.features.userstores.confirmation.hint")
             }
-            assertionType="input"
+            assertionType={ "checkbox" }
             primaryAction={ t("common:confirm") }
             secondaryAction={ t("common:cancel") }
             onSecondaryActionClick={ closeDeleteConfirm }
@@ -220,7 +217,7 @@ export const UserStoresList: FunctionComponent<UserStoresListPropsInterface> = (
             </ConfirmationModal.Header>
             <ConfirmationModal.Message
                 attached
-                warning
+                negative
                 data-testid={ `${ testId }-delete-confirmation-modal-message` }
             >
                 { t("console:manage.features.userstores.confirmation.message") }
@@ -236,7 +233,7 @@ export const UserStoresList: FunctionComponent<UserStoresListPropsInterface> = (
     /**
      * Shows list placeholders.
      *
-     * @return {React.ReactElement}
+     * @returns placeholders for the list component when list is empty.
      */
     const showPlaceholders = (): ReactElement => {
         // When the search returns empty.
@@ -261,36 +258,45 @@ export const UserStoresList: FunctionComponent<UserStoresListPropsInterface> = (
         }
 
         if (list?.length === 0) {
-            return (
-                <EmptyPlaceholder
-                    action={ (
-                        <PrimaryButton onClick={ onEmptyListPlaceholderActionClick }>
-                            <Icon name="add" />
-                            { t("console:manage.features.userstores.placeholders.emptyList.action") }
-                        </PrimaryButton>
-                    ) }
-                    image={ getEmptyPlaceholderIllustrations().newList }
-                    imageSize="tiny"
-                    title={ t("console:manage.features.userstores.placeholders.emptyList.title") }
-                    subtitle={ [
-                        t("console:manage.features.userstores.placeholders.emptyList.subtitles")
-                    ] }
-                    data-testid={ `${ testId }-empty-placeholder` }
-                />
-            );
+            if (!userstoresConfig.userstoreList.renderEmptyPlaceholder(onEmptyListPlaceholderActionClick)) {
+                return (
+                    <EmptyPlaceholder
+                        action={ (
+                            <PrimaryButton onClick={ onEmptyListPlaceholderActionClick }>
+                                <Icon name="add" />
+                                { t("console:manage.features.userstores.placeholders.emptyList.action") }
+                            </PrimaryButton>
+                        ) }
+                        image={ getEmptyPlaceholderIllustrations().newList }
+                        imageSize="tiny"
+                        title={ t("console:manage.features.userstores.placeholders.emptyList.title") }
+                        subtitle={ [
+                            t("console:manage.features.userstores.placeholders.emptyList.subtitles")
+                        ] }
+                        data-testid={ `${ testId }-empty-placeholder` }
+                    />
+                );
+            } else {
+                return userstoresConfig.userstoreList.renderEmptyPlaceholder(onEmptyListPlaceholderActionClick);
+            }
         }
 
         return null;
     };
 
     const handleUserstoreEdit = (userstoreId: string) => {
-        history.push(AppConstants.getPaths().get("USERSTORES_EDIT").replace(":id", userstoreId));
+        if (userstoresConfig.onUserstoreEdit(userstoreId)) {
+            history.push(AppConstants.getPaths().get("USERSTORES_EDIT").replace(":id", userstoreId));
+        } else {
+            history.push(AppConstants.getPaths().get("USERSTORES_EDIT").replace(":id", userstoreId).replace(
+                "edit-user-store", userstoresConfig.userstoreEdit.remoteUserStoreEditPath));
+        }
     };
 
     /**
      * Resolves data table columns.
      *
-     * @return {TableColumnInterface[]}
+     * @returns data table columns.
      */
     const resolveTableColumns = (): TableColumnInterface[] => {
         return [
@@ -319,34 +325,41 @@ export const UserStoresList: FunctionComponent<UserStoresListPropsInterface> = (
                         <Header.Content>
                             {
                                 userstore.enabled
-                                    ? <Popup
-                                        trigger={
-                                            <Icon
-                                                className="mr-2 ml-0 vertical-aligned-baseline"
-                                                size="small"
-                                                name="circle"
-                                                color="green"
-                                            />
-                                        }
-                                        content={ t("common:enabled") }
-                                        inverted
-                                    />
-                                    : <Popup
-                                        trigger={
-                                            <Icon
-                                                className="mr-2 ml-0 vertical-aligned-baseline"
-                                                size="small"
-                                                name="circle"
-                                                color="orange"
-                                            />
-                                        }
-                                        content={ t("common:disabled") }
-                                        inverted
-                                    />
+                                    ? (
+                                        <Popup
+                                            trigger={ (
+                                                <Icon
+                                                    className="mr-2 ml-0 vertical-aligned-baseline"
+                                                    size="small"
+                                                    name="circle"
+                                                    color="green"
+                                                />
+                                            ) }
+                                            content={ t("common:enabled") }
+                                            inverted
+                                        />
+                                    ) : (
+                                        <Popup
+                                            trigger={ (
+                                                <Icon
+                                                    className="mr-2 ml-0 vertical-aligned-baseline"
+                                                    size="small"
+                                                    name="circle"
+                                                    color="orange"
+                                                />
+                                            ) }
+                                            content={ t("common:disabled") }
+                                            inverted
+                                        />
+                                    )
                             }
                         </Header.Content>
                         <Header.Content>
-                            { userstore.name }
+                            {
+                                userstore?.name === CONSUMER_USERSTORE
+                                    ? UserstoreConstants.CUSTOMER_USER_STORE_MAPPING
+                                    : userstore?.name
+                            }
                             <Header.Subheader>
                                 { userstore.description }
                             </Header.Subheader>
@@ -369,7 +382,7 @@ export const UserStoresList: FunctionComponent<UserStoresListPropsInterface> = (
     /**
      * Resolves data table actions.
      *
-     * @return {TableActionsInterface[]}
+     * @returns data table actions.
      */
     const resolveTableActions = (): TableActionsInterface[] => {
         if (!showListItemActions) {
@@ -386,7 +399,7 @@ export const UserStoresList: FunctionComponent<UserStoresListPropsInterface> = (
             {
                 hidden: (userstore: UserStoreListItem): boolean => {
                     return !hasRequiredScopes(featureConfig?.userStores, featureConfig?.userStores?.scopes?.delete,
-                        allowedScopes) || userstore.id == CONSUMER_USERSTORE_ID;
+                        allowedScopes) || userstore.id == CONSUMER_USERSTORE_ID || isPrivilegedUser;
                 },
                 icon: (): SemanticICONS => "trash alternate",
                 onClick: (e: SyntheticEvent, userstore: UserStoreListItem): void =>

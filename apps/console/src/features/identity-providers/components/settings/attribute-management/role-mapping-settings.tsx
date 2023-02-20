@@ -16,13 +16,18 @@
  * under the License.
  */
 
-import { getRolesList } from "@wso2is/core/api";
 import { RoleListInterface, RolesInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { DynamicField, Heading, Hint } from "@wso2is/react-components";
 import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { Grid } from "semantic-ui-react";
-import { getGroupList } from "../../../../groups/api";
+import { AppState } from "../../../../core";
+import { getOrganizationRoles } from "../../../../organizations/api";
+import { OrganizationRoleListItemInterface } from "../../../../organizations/models";
+import { OrganizationUtils } from "../../../../organizations/utils";
+import { getRolesList } from "../../../../roles";
+import { IdentityProviderConstants } from "../../../constants";
 import { IdentityProviderRoleMappingInterface } from "../../../models";
 import { handleGetRoleListError } from "../../utils";
 
@@ -45,6 +50,10 @@ interface RoleMappingSettingsPropsInterface extends TestableComponentInterface {
      * Roles of the IDP
      */
     initialRoleMappings?: IdentityProviderRoleMappingInterface[];
+    /**
+     * Specifies if the component should only be read-only.
+     */
+    isReadOnly: boolean;
 }
 
 /**
@@ -57,12 +66,14 @@ export const RoleMappingSettings: FunctionComponent<RoleMappingSettingsPropsInte
     props: RoleMappingSettingsPropsInterface
 ): ReactElement => {
 
-    const [roleList, setRoleList] = useState<RolesInterface[]>();
+    const currentOrganization = useSelector((state: AppState) => state.organization.organization);
+    const [ roleList, setRoleList ] = useState<RolesInterface[] | OrganizationRoleListItemInterface[]>();
 
     const {
         onSubmit,
         triggerSubmit,
         initialRoleMappings,
+        isReadOnly,
         [ "data-testid" ]: testId
     } = props;
 
@@ -72,7 +83,7 @@ export const RoleMappingSettings: FunctionComponent<RoleMappingSettingsPropsInte
      * Filter out Application related and Internal roles
      */
     const getFilteredRoles = () => {
-        const filterRole: RolesInterface[] = roleList.filter(
+        const filterRole: RolesInterface[] | OrganizationRoleListItemInterface[] = roleList.filter(
             (role) => {
                 return !(role.displayName.includes("Application/") || role.displayName.includes("Internal/"));
             });
@@ -86,61 +97,108 @@ export const RoleMappingSettings: FunctionComponent<RoleMappingSettingsPropsInte
     };
 
     useEffect(() => {
-        getGroupList(null)
-            .then((response) => {
-                if (response.status === 200) {
-                    const allRole: RoleListInterface = response.data;
-                    setRoleList(allRole.Resources);
-                }
-            })
-            .catch((error) => {
-                handleGetRoleListError(error);
-            });
-    }, [initialRoleMappings]);
+        if (OrganizationUtils.isCurrentOrganizationRoot()) {
+            getRolesList(null)
+                .then((response) => {
+                    if (response.status === 200) {
+                        const allRole: RoleListInterface = response.data;
+
+                        setRoleList(allRole.Resources);
+                    }
+                })
+                .catch((error) => {
+                    handleGetRoleListError(error);
+                });
+        } else {
+            getOrganizationRoles(currentOrganization.id, null, null, null)
+                .then((response) => {
+                    setRoleList(response.Resources);
+                });
+        }
+    }, [ initialRoleMappings ]);
+
+
+    /**
+     * Prepends `Internal/` to the role name if it does not have a domain prepended already.
+     *
+     * @param {string} role The role name as received from the API response.
+     *
+     * @returns {string}
+     */
+    const resolveRoleName = (role: string): string => {
+        if (role.split("/").length === 1) {
+            return `${ IdentityProviderConstants.INTERNAL_DOMAIN }${ role }`;
+        }
+
+        return role;
+    };
+
+    /**
+     * Removes `Internal/` part from the role name if it is present.
+     *
+     * @param {string} role The role name as received from the API response.
+     *
+     * @returns {string}
+     */
+    const resolveRoleDisplayName = (role: string): string => {
+        const roleParts: string[] = role.split("/");
+
+        if (roleParts.length > 1) {
+            if (roleParts[ 0 ] === IdentityProviderConstants.INTERNAL_DOMAIN.slice(0, -1)) {
+                return roleParts[ 1 ];
+            }
+        }
+
+        return role;
+    };
 
     return (
         <>
             <Grid.Row>
                 <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 10 }>
-                    <Heading as="h4">{ t("console:develop.features.idp.forms.roleMapping.heading") }</Heading>
+                    <Heading as="h4">
+                        { t("console:develop.features.authenticationProvider.forms.roleMapping.heading") }
+                    </Heading>
                     <DynamicField
                         bottomMargin={ false }
                         data={
                             initialRoleMappings ?
                                 initialRoleMappings.map(mapping => {
                                     return {
-                                        key: mapping.localRole,
+                                        key: resolveRoleDisplayName(mapping.localRole),
                                         value: mapping.idpRole
                                     };
                                 }) : []
                         }
                         keyType="dropdown"
                         keyData={ roleList ? getFilteredRoles() : [] }
-                        keyName={ t("console:develop.features.idp.forms.roleMapping.keyName") }
-                        valueName={ t("console:develop.features.idp.forms.roleMapping.valueName") }
-                        keyRequiredMessage={ t("console:develop.features.idp.forms.roleMapping." +
+                        keyName={ t("console:develop.features.authenticationProvider.forms.roleMapping.keyName") }
+                        valueName={ t("console:develop.features.authenticationProvider.forms.roleMapping.valueName") }
+                        keyRequiredMessage={ t("console:develop.features.authenticationProvider.forms.roleMapping." +
                             "validation.keyRequiredMessage") }
-                        valueRequiredErrorMessage={ t("console:develop.features.idp.forms.roleMapping." +
-                            "validation.valueRequiredErrorMessage") }
-                        duplicateKeyErrorMsg={ t("console:develop.features.idp.forms.roleMapping." +
+                        valueRequiredErrorMessage={ t("console:develop.features.authenticationProvider.forms." +
+                            "roleMapping.validation.valueRequiredErrorMessage") }
+                        duplicateKeyErrorMsg={ t("console:develop.features.authenticationProvider.forms.roleMapping." +
                             "validation.duplicateKeyErrorMsg") }
                         submit={ triggerSubmit }
-                        update={ (data) => {
+                        listen={ (data) => {
                             if (data.length > 0) {
                                 const finalData: IdentityProviderRoleMappingInterface[] = data.map(mapping => {
                                     return {
                                         idpRole: mapping.value,
-                                        localRole: mapping.key
+                                        localRole: resolveRoleName(mapping.key)
                                     };
                                 });
+
                                 onSubmit(finalData);
                             } else {
                                 onSubmit([]);
                             }
                         } }
                         data-testid={ testId }
+                        readOnly={ isReadOnly }
                     />
-                    <Hint>{ t("console:develop.features.idp.forms.roleMapping.hint") }</Hint>
+                    <Hint>{ t("console:develop.features.authenticationProvider.forms.roleMapping.hint") }</Hint>
                 </Grid.Column>
             </Grid.Row>
         </>

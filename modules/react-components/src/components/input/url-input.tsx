@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,16 +16,17 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { URLUtils } from "@wso2is/core/utils";
 import React, { FunctionComponent, ReactElement, ReactNode, useCallback, useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
-import { Button, Grid, Icon, Input, Label, Popup } from "semantic-ui-react";
+import { Trans } from "react-i18next";
+import { Button, Grid, Icon, Input, Label } from "semantic-ui-react";
 import { LinkButton } from "../button";
 import { LabelWithPopup } from "../label";
+import { Popup } from "../popup";
 import { Hint } from "../typography";
 
-export interface URLInputPropsInterface extends TestableComponentInterface {
+export interface URLInputPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     addURLTooltip?: string;
     duplicateURLErrorMessage: string;
     emptyErrorMessage?: string;
@@ -110,14 +111,52 @@ export interface URLInputPropsInterface extends TestableComponentInterface {
      * Checks validity using provided validator
      */
     skipInternalValidation?: boolean;
+    isCustom?: boolean;
+    addOriginByDefault?: boolean;
+    /**
+     * Resolve i18n tag for popupHeaderPositive content
+     */
+    popupHeaderPositive?: string;
+    /**
+     * Resolve i18n tag for popupHeaderNegative content
+     */
+    popupHeaderNegative?: string;
+    /**
+     * Resolve i18n tag for popupContentPositive content
+     */
+    popupContentPositive?: string;
+    /**
+     * Resolve i18n tag for popupContentNegative content
+     */
+    popupContentNegative?: string;
+    /**
+     * Resolve i18n tag for popupDetailedContentPositive content
+     */
+    popupDetailedContentPositive?: string;
+    /**
+     * Resolve i18n tag for popupDetailedContentNegative content
+     */
+    popupDetailedContentNegative?: string;
+    /**
+     * Resolve i18n tag for insecureURLDescription content
+     */
+    insecureURLDescription?: string;
+    /**
+     * Resolve i18n tag for showLessContent content
+     */
+    showLessContent?: string;
+    /**
+     * Resolve i18n tag for showMoreContent content
+     */
+    showMoreContent?: string;
 }
 
 /**
  * URL Input component.
  *
- * @param {URLInputPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns React Element.
  */
 export const URLInput: FunctionComponent<URLInputPropsInterface> = (
     props: URLInputPropsInterface
@@ -157,10 +196,20 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
         onlyOrigin,
         skipValidation,
         skipInternalValidation,
+        isCustom,
+        addOriginByDefault,
+        popupHeaderPositive,
+        popupHeaderNegative,
+        popupContentPositive,
+        popupContentNegative,
+        popupDetailedContentPositive,
+        popupDetailedContentNegative,
+        insecureURLDescription,
+        showLessContent,
+        showMoreContent,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
-
-    const { t } = useTranslation();
 
     const [ changeUrl, setChangeUrl ] = useState<string>("");
     const [ predictValue, setPredictValue ] = useState<string[]>([]);
@@ -173,11 +222,11 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
     /**
      * Add URL to the URL list.
      *
-     * @returns {string} URLs.
+     * @returns URLs.
      */
     const addUrl = useCallback((): string => {
 
-        const url: string = changeUrl;
+        let url: string = changeUrl;
 
         /**
          * If the entered URL is a invalid i.e not a standard URL input, then we won't add
@@ -185,31 +234,48 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
          */
         if (!(skipValidation || skipInternalValidation) && !URLUtils.isURLValid(url, true)) {
             setValidURL(false);
+
             return;
         }
 
-        const urlValid = skipValidation
+        const urlValid: boolean = skipValidation
             ? true
             : validation(url);
 
         setValidURL(urlValid);
+
+        /*
+         * If the entered URL is valid and it is intended to be an origin URL,
+         * and it has a trailing "/" at the end, it is sliced to get the valid origin.
+        */
+        if (urlValid && onlyOrigin && url.charAt(url.length - 1) === "/") {
+            url = url.slice(0, -1);
+        }
+
         if (urlValid && (urlState === "" || urlState === undefined)) {
             setURLState(url);
+            if (addOriginByDefault) {
+                const originOfURL: string = URLUtils.urlComponents(url).origin;
+
+                handleAddAllowedOrigin(originOfURL);
+                allowedOrigins.push(originOfURL);
+            }
             setChangeUrl("");
 
             return url;
         } else {
-            const availableURls: string[] = !urlState ? [] : urlState?.split(",");
-            const urls = new Set([
-                ...(onlyOrigin ? (allowedOrigins ?? []) : []),
-                ...(availableURls ?? [])
-            ]);
-            const duplicate: boolean = urls.has(url);
+            const duplicate: boolean = checkDuplicateUrl(url);
+
             urlValid && setDuplicateURL(duplicate);
 
             if (urlValid && !duplicate) {
                 setURLState((url + "," + urlState));
+                if (addOriginByDefault) {
+                    handleAddAllowedOrigin(url);
+                    allowedOrigins.push(url);
+                }
                 setChangeUrl("");
+
                 return url + "," + urlState;
             }
         }
@@ -220,11 +286,12 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
     /**
      * This submits the URL and calls the callback function passing the URL as an argument.
      *
-     * @param {(url: string) => void} callback A callback function that accepts the url as an optional argument.
+     * @param callback - A callback function that accepts the url as an optional argument.
      */
     const externalSubmit = (callback: (url?: string) => void): void => {
         if (getChangeUrl()) {
-            const url = addUrl();
+            const url: string = addUrl();
+
             if (url) {
                 callback(url);
             }
@@ -235,9 +302,9 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
 
     /**
      * Initial prediction for the URL.
-     * @param changeValue input by the user.
+     * @param changeValue - input by the user.
      */
-    const getPredictions = (changeValue) => {
+    const getPredictions = (changeValue: string): string[] => {
 
         return [
             "https://",
@@ -247,10 +314,11 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
 
     /**
      * Enter button option.
-     * @param e keypress event.
+     * @param e - keypress event.
      */
     const keyPressed = (e) => {
         const key = e.which || e.charCode || e.keyCode;
+
         if (key === 13) {
             e.preventDefault();
             addUrl();
@@ -258,22 +326,49 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
     };
 
     /**
+     * Checks whether the given URL is duplicated with the current values
+     * @param url - URL to be checked
+     *
+     * @returns A boolean value denoting whether the URL is duplicated or not
+     */
+    const checkDuplicateUrl = useCallback((url: string): boolean => {
+        const availableURls: string[] = !urlState ? [] : urlState?.split(",");
+        const urls: Set<string> = new Set([
+            ...(onlyOrigin ? (allowedOrigins ?? []) : []),
+            ...(availableURls ?? [])
+        ]);
+
+        if (url.charAt(url.length-1) === "/") {
+            return urls.has(url) || urls.has(url.slice(0, -1));
+        }
+        else {
+            return urls.has(url) || urls.has(url + "/");
+        }
+    }, [ urlState, onlyOrigin, allowedOrigins ]);
+
+    /**
      * Handle change event of the input.
      *
-     * @param event change event.
+     * @param event - change event.
      */
-    const handleChange = (event) => {
-        const changeValue = event.target.value;
-        let predictions = [];
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const changeValue: string = event.target.value;
+        let predictions: string[] = [];
+
         if (changeValue.length > 0) {
             predictions = getPredictions(changeValue);
         }
+
         if (!validURL) {
             setValidURL(true);
         }
+
+        const isDuplicate: boolean = checkDuplicateUrl(changeValue);
+
+        setDuplicateURL(isDuplicate);
         setKeepFocus(true);
         setPredictValue(predictions);
-        setChangeUrl(changeValue);
+        setChangeUrl(changeValue.toString().trim());
     };
 
     /**
@@ -289,7 +384,7 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
 
     /**
      * When the predicted element is clicked select the predict.
-     * @param predict filter prediction.
+     * @param predict - filter prediction.
      */
     const onPredictClick = (predict: string) => {
         setChangeUrl(predict);
@@ -303,13 +398,15 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
 
     /**
      * Remove the URL from the listed URLS.
-     * @param removeURL URL to be removed.
+     * @param removeURL - URL to be removed.
      */
     const removeValue = (removeURL) => {
-        let urlsAfterRemoved = urlState;
+        let urlsAfterRemoved: string = urlState;
+
         if (urlState.split(",").length > 1) {
             const urls: string[] = urlsAfterRemoved.split(",");
-            const removeIndex = urls.findIndex((url) => url === removeURL);
+            const removeIndex: number = urls.findIndex((url) => url === removeURL);
+
             urls.splice(removeIndex, 1);
             urlsAfterRemoved = urls.join(",");
         } else {
@@ -332,7 +429,7 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
     /**
      * Returns the changeUrl value.
      *
-     * @returns {string} Change URL.
+     * @returns the change URL.
      */
     const getChangeUrl = useCallback((): string => {
         return changeUrl;
@@ -377,8 +474,8 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
      * {@link React.MouseEvent.preventDefault} to avoid accidental
      * form submission events.
      *
-     * @param event {React.MouseEvent<HTMLButtonElement>}
-     * @param url {string} user input
+     * @param event - React mousevent
+     * @param url - user input url
      */
     const onAllowOriginClick = (event: React.MouseEvent<HTMLButtonElement>, url: string): void => {
         event.preventDefault();
@@ -390,97 +487,124 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
 
     const resolveCORSStatusLabel = (url: string) => {
         const { origin, href } = URLUtils.urlComponents(url);
-        const positive = isOriginIsKnownAndAllowed(url);
+        const positive: boolean = isOriginIsKnownAndAllowed(url);
+        const isValid: boolean = (URLUtils.isURLValid(url, true) && (URLUtils.isHttpUrl(url) ||
+            URLUtils.isHttpsUrl(url)));
+
         /**
          * TODO : React Components should not depend on the product
          * locale bundles.
          * Issue to track. {@link https://github.com/wso2/product-is/issues/10693}
          */
         return (
-            <LabelWithPopup
-                className="cors-details-popup"
-                trigger={
-                    <Icon
-                        className={ "p-1" }
-                        name={ positive ? "check" : "exclamation triangle" }
-                        color={ positive ? "green" : "grey" }
-                    />
-                }
-                popupHeader={
-                    positive ?
-                        t("console:develop.features.URLInput.withLabel.positive.header") :
-                        t("console:develop.features.URLInput.withLabel.negative.header")
-                }
-                popupSubHeader={
-                    <React.Fragment>
-                        <Icon name={ positive ? "check" : "times" } color={ positive ? "green" : "red" }/>
-                        { origin }
-                    </React.Fragment>
-                }
-                popupContent={
-                    <React.Fragment>
-                        {
+            (!isCustom || isValid)
+                ? (
+                    <LabelWithPopup
+                        className="cors-details-popup"
+                        trigger={ (
+                            <Icon
+                                className={ "p-1" }
+                                name={ positive ? "check" : "exclamation triangle" }
+                                color={ positive ? "green" : "grey" }
+                            />
+                        ) }
+                        popupHeader={
                             positive ?
-                                t("console:develop.features.URLInput.withLabel.positive.content", {
-                                    productName: productName
-                                }) :
-                                t("console:develop.features.URLInput.withLabel.negative.content", {
-                                    productName: productName, urlLink: origin
-                                })
+                                (popupHeaderPositive
+                                    ? popupHeaderPositive
+                                    : "CORS is Allowed for")
+                                :
+                                (popupHeaderNegative
+                                    ? popupHeaderNegative
+                                    : "CORS is not Allowed for")
                         }
-                        { !restrictSecondaryContent &&
-                            <>
-                                <a onClick={ () => setShowMore(!showMore) }>
-                                    &nbsp;{ showMore ? t("common:showLess") : t("common:showMore") }
-                                </a><br/>
+                        popupSubHeader={ (
+                            <React.Fragment>
+                                <Icon name={ positive ? "check" : "times" } color={ positive ? "green" : "red" }/>
+                                { origin && origin !== "null" ? origin : href }
+                            </React.Fragment>
+                        ) }
+                        popupContent={ (
+                            <React.Fragment>
                                 {
-                                    showMore && (
-                                        <React.Fragment>
-                                            {
-                                                positive ?
-                                                    t("console:develop.features.URLInput." +
-                                                        "withLabel.positive.detailedContent.0") :
-                                                    t("console:develop.features.URLInput." +
-                                                        "withLabel.negative.detailedContent.0")
-                                            }
-                                            <br/>
-                                            <Trans
-                                                i18nKey={
-                                                    positive ?
-                                                        "console:develop.features.URLInput." +
-                                                        "withLabel.positive.detailedContent.1" :
-                                                        "console:develop.features.URLInput." +
-                                                        "withLabel.negative.detailedContent.1"
-                                                }
-                                                tOptions={ { tenantName: tenantDomain } }
-                                            >
-                                                Therefore enabling CORS for this origin will allow you to access
-                                                Identity Server APIs from the applications registered in the
-                                                <strong>{ tenantDomain }</strong> tenant domain.
-                                            </Trans>
-                                        </React.Fragment>
-                                    )
+                                    positive
+                                        ? (popupContentPositive
+                                            ? popupContentPositive
+                                            : "The origin of this URL is allowed to make requests to " +
+                                            `${productName} APIs from a browser.`)
+                                        : (popupContentNegative
+                                            ? popupContentNegative
+                                            : "You need to enable CORS for the origin of this URL to make requests" +
+                                            ` to ${productName} from a browser.`)
                                 }
-                            </>
-                        }
-
-                    </React.Fragment>
-                }
-                popupOptions={ { basic: true, on: "hover" } }
-                labelColor={ positive ? "green" : "red" }
-            />
+                                { !restrictSecondaryContent && (
+                                    <>
+                                        <a onClick={ () => setShowMore(!showMore) }>
+                                            &nbsp;{ showMore
+                                                ? (showLessContent
+                                                    ? showLessContent
+                                                    : "Show less")
+                                                : (showMoreContent
+                                                    ? showMoreContent
+                                                    : "Show more") }
+                                        </a><br/>
+                                        {
+                                            showMore && (
+                                                <React.Fragment>
+                                                    {
+                                                        positive
+                                                            ? (popupDetailedContentPositive
+                                                                ? popupDetailedContentPositive
+                                                                : "")
+                                                            : (popupDetailedContentNegative
+                                                                ? popupDetailedContentNegative
+                                                                : "")
+                                                    }
+                                                    <br/>
+                                                    <Trans
+                                                        i18nKey={
+                                                            positive ?
+                                                                "console:develop.features.URLInput." +
+                                                                "withLabel.positive.detailedContent.1" :
+                                                                "console:develop.features.URLInput." +
+                                                                "withLabel.negative.detailedContent.1"
+                                                        }
+                                                        tOptions={ { tenantName: tenantDomain } }
+                                                    >
+                                                        Therefore enabling CORS for this origin will allow you to access
+                                                        Identity Server APIs from the applications registered in the
+                                                        <strong>{ tenantDomain }</strong> organization.
+                                                    </Trans>
+                                                </React.Fragment>
+                                            )
+                                        }
+                                    </>
+                                ) }
+                            </React.Fragment>
+                        ) }
+                        popupOptions={ { basic: true, on: "hover" } }
+                        labelColor={ positive ? "green" : "red" }
+                    />
+                )
+                : null
         );
     };
 
     /**
      * Resolves the error label.
      *
-     * @return {React.ReactElement | React.ReactNode}
+     * @returns the resolved error label.
      */
     const resolveValidationLabel = (): ReactElement | ReactNode => {
         if(!validURL && !changeUrl && emptyErrorMessage) {
             return (
-                <Label className="prompt" basic color="red" pointing>
+                <Label
+                    data-componentid={ `${ componentId }-empty-error-message` }
+                    className="prompt"
+                    basic
+                    color="red"
+                    pointing
+                >
                     { emptyErrorMessage }
                 </Label>
             );
@@ -488,7 +612,13 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
 
         if (!validURL) {
             return (
-                <Label basic className="prompt" color="red" pointing>
+                <Label
+                    data-componentid={ `${ componentId }-valid-url-error-message` }
+                    basic
+                    className="prompt"
+                    color="red"
+                    pointing
+                >
                     { validationErrorMsg }
                 </Label>
             );
@@ -496,7 +626,13 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
 
         if (duplicateURL) {
             return (
-                <Label basic className="prompt" color="red" pointing>
+                <Label
+                    data-componentid={ `${ componentId }-duplicate-error-message` }
+                    basic
+                    className="prompt"
+                    color="red"
+                    pointing
+                >
                     { duplicateURLErrorMessage }
                 </Label>
             );
@@ -518,11 +654,12 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
      * {@link https://tools.ietf.org/html/rfc6454#section-3.2.1}
      * {@link https://stackoverflow.com/a/19542686}
      *
-     * @param url {string} a URL i.e., https://myapp.io/x/y/z\
-     * @return {boolean} origin allowed or not
+     * @param url - a URL i.e., https://myapp.io/x/y/z
+     * @returns a boolean that indicates whether the origin is allowed or not
      */
     const isOriginIsKnownAndAllowed = (url: string): boolean => {
         const urlComponents = URLUtils.urlComponents(url);
+
         if (!urlComponents) {
             return false;
         }
@@ -535,8 +672,9 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
         const normalizedOrigins = allowedOrigins?.map(
             (url) => URLUtils.urlComponents(url)?.origin
         );
+
         return new Set<string>(normalizedOrigins ?? []).has(checkingOrigin);
-    }
+    };
 
     const shouldShowAllowOriginAction = (origin: string): boolean => {
         return labelEnabled && (isAllowEnabled && !isOriginIsKnownAndAllowed(origin));
@@ -546,7 +684,7 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
      * Chip widget that contains the origin or href with a
      * following remove button.
      *
-     * @param url {string}
+     * @param url - origin url
      */
     const urlTextWidget = (url: string): ReactElement => {
 
@@ -561,16 +699,20 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
 
         return (
             <span>
-                { (!URLUtils.isHTTPS(url)) ? (
+                { (!URLUtils.isHTTPS(url) && !onlyOrigin && !isCustom) ? (
                     <Popup
                         trigger={
                             <span style={ { color: "red", textDecoration: "line-through" } }>{ protocol }</span>
                         }
-                        content={ t("console:common.validations.inSecureURL.description") }
+                        content={
+                            insecureURLDescription
+                                ? insecureURLDescription
+                                : "The entered URL is a non-TLS URL. Please proceed with caution." }
                         position="top left"
                         size="mini"
                         hoverable
                         inverted
+                        popper={ <div style={ { filter: "none" } }/> }
                     />
                 ) : <span>{ protocol }</span> }
                 <span>://</span>
@@ -583,52 +725,58 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
 
     /**
      * Added url remove button. In the click event it will send
-     * the full {@code url} regardless of the type {@code onlyOrigin}
+     * the full url regardless of the type onlyOrigin.
      *
-     * @param url {string}
+     * @param url - origin url
      */
     const urlRemoveButtonWidget = (url: string): ReactElement => {
         return (
             <Icon
                 name="delete"
                 onClick={ () => removeValue(url) }
+                data-componentid={ `${ componentId }-${ url }-delete-button` }
                 data-testid={ `${ testId }-${ url }-delete-button` }
             />
         );
     };
 
     const urlChipItemWidget = (url: string): ReactElement => {
-        const { origin, href } = URLUtils.urlComponents(url);
+        const { origin } = URLUtils.urlComponents(url);
+
         return (
             <Grid.Row key={ url } className={ "urlComponentTagRow" }>
                 <Grid.Column mobile={ 16 } tablet={ 16 } computer={ computerSize }>
                     <p>
-                        {/*Section that contains | https://origin X |*/ }
-                        {/*Chip widget with protocol highlights*/ }
-                        <Label data-testid={ `${ testId }-${ url }` }>
+                        { /*Section that contains | https://origin X |*/ }
+                        { /*Chip widget with protocol highlights*/ }
+                        <Label
+                            data-componentid={ `${ componentId }-${ url }` }
+                            data-testid={ `${ testId }-${ url }` }
+                        >
                             { urlTextWidget(url) }
                             { !readOnly && urlRemoveButtonWidget(url) }
                         </Label>
 
-                        {/*Below is the exclamation mark that shows a popup*/ }
-                        {/*when clicked on top of it.*/ }
+                        { /*Below is the exclamation mark that shows a popup*/ }
+                        { /*when clicked on top of it.*/ }
                         &nbsp;{ labelEnabled && resolveCORSStatusLabel(url) }
 
-                        {/*Below is the static label text that get rendered*/ }
-                        {/*when the url is not allowed in cors list.*/ }
+                        { /*Below is the static label text that get rendered*/ }
+                        { /*when the url is not allowed in cors list.*/ }
                         { shouldShowAllowOriginAction(origin) &&
                         <span className={ "grey" }>&nbsp;<em>CORS not allowed for origin of this URL.</em></span>
                         }
 
-                        {/*Below is the `Allow` button that gets rendered when*/ }
-                        {/*this url is not allowed is cors list.*/ }
+                        { /*Below is the `Allow` button that gets rendered when*/ }
+                        { /*this url is not allowed is cors list.*/ }
                         { shouldShowAllowOriginAction(origin) && (
                             <LinkButton
                                 className={ "m-1 p-1 with-no-border orange" }
                                 onClick={ (e) => {
                                     onAllowOriginClick(e, origin);
                                 } }
-                                data-testid={ `${ testId }-${ url }-allow-button`}
+                                data-componentid={ `${ componentId }-${ url }-allow-button` }
+                                data-testid={ `${ testId }-${ url }-allow-button` }
                             >
                                 <span style={ { fontWeight: "bold" } }>Allow</span>
                             </LinkButton>
@@ -637,118 +785,126 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
                 </Grid.Column>
             </Grid.Row>
         );
-    }
+    };
 
-    return (!hideEntireComponent &&
-        <>
-            <Grid.Row columns={ 1 } className={ "urlComponentLabelRow" }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ computerSize }>
-                    {
-                        required ? (
-                            <div className={ "required field" }>
-                                <label>{ labelName }</label>
-                            </div>
-                        ) : (
+    return (
+        !hideEntireComponent && (
+            <>
+                <Grid.Row columns={ 1 } className={ "urlComponentLabelRow" }>
+                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ computerSize }>
+                        {
+                            required ? (
+                                <div className={ "required field" }>
+                                    <label>{ labelName }</label>
+                                </div>
+                            ) : (
                                 <div className={ "field" }>
                                     <label>{ labelName }</label>
                                 </div>
                             )
-                    }
-                </Grid.Column>
-            </Grid.Row>
-            <Grid.Row className={ "urlComponentInputRow" }>
-                <Grid.Column mobile={ 14 } tablet={ 14 } computer={ computerSize }>
-                    <Input
-                        fluid
-                        error={ !(validURL && !duplicateURL) }
-                        focus={ keepFocus }
-                        value={ changeUrl }
-                        onKeyDown={ keyPressed }
-                        onChange={ handleChange }
-                        onBlur={ handleOnBlur }
-                        placeholder={ placeholder }
-                        action
-                        readOnly={ readOnly }
-                        data-testid={ testId }
-                    >
-                        <input
-                            disabled={ disabled ? disabled : false }
-                        />
-                        <Popup
-                            disabled={ readOnly }
-                            trigger={
-                                (
-                                    <Button
-                                        onClick={ (e) => addFormButton(e) }
-                                        icon="add"
-                                        type="button"
-                                        disabled={ readOnly || disabled || (!allowEmptyValues && !changeUrl) }
-                                        data-testid={ `${ testId }-add-button` }
-                                    />
-                                )
-                            }
-                            position="top center"
-                            content={ addURLTooltip }
-                            inverted
-                        />
-                    </Input>
-                    { resolveValidationLabel() }
-                </Grid.Column>
-            </Grid.Row>
-            {
-                showPredictions && (
-                    <Grid.Row className={ "urlComponentInputRow" }>
-                        <Grid.Column mobile={ 14 } tablet={ 14 } computer={ computerSize }>
-                            {
-                                (predictValue.length > 0) && predictValue.map((predict) => {
-                                    return (
-                                        <Label
-                                            key={ predict }
-                                            basic
-                                            color="grey"
-                                            onClick={ () => onPredictClick(predict) }
-                                        >
-                                            { predict }
-                                        </Label>
-                                    );
-                                })
-                            }
-                        </Grid.Column>
-                    </Grid.Row>
-                )
-            }
-            { urlState && urlState.split(",").map((url) => {
-                if (url !== "") {
-                    if (skipValidation || skipInternalValidation) {
-                        return (
-                            <Grid.Row key={ url } className={ "urlComponentTagRow" }>
-                                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ computerSize }>
-                                    <p>
-                                        <Label data-testid={ `${ testId }-${ url }` }>
-                                            <span>{ url }</span>
-                                            { !readOnly && urlRemoveButtonWidget(url) }
-                                        </Label>
-                                    </p>
-                                </Grid.Column>
-                            </Grid.Row>
-                        );
-                    }
-
-                    if (URLUtils.isURLValid(url, true)) {
-                        return urlChipItemWidget(url);
-                    }
-                }
-            }) }
-            { hint && (
-                <Grid.Row className={ "urlComponentTagRow" }>
-                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ computerSize }>
-                        <Hint>
-                            { hint }
-                        </Hint>
+                        }
                     </Grid.Column>
                 </Grid.Row>
-            ) }
-        </>
+                <Grid.Row className={ "urlComponentInputRow" }>
+                    <Grid.Column mobile={ 14 } tablet={ 14 } computer={ computerSize }>
+                        <Input
+                            fluid
+                            error={ !(validURL && !duplicateURL) }
+                            focus={ keepFocus }
+                            value={ changeUrl }
+                            onKeyDown={ keyPressed }
+                            onChange={ handleChange }
+                            onBlur={ handleOnBlur }
+                            placeholder={ placeholder }
+                            action
+                            readOnly={ readOnly }
+                            data-componentid={ componentId }
+                            data-testid={ testId }
+                        >
+                            <input
+                                disabled={ disabled ? disabled : false }
+                            />
+                            <Popup
+                                disabled={ readOnly }
+                                trigger={
+                                    (
+                                        <Button
+                                            onClick={ (e) => addFormButton(e) }
+                                            icon="add"
+                                            type="button"
+                                            disabled={ readOnly || disabled || (!allowEmptyValues && !changeUrl) }
+                                            data-componentid={ `${ componentId }-add-button` }
+                                            data-testid={ `${ testId }-add-button` }
+                                        />
+                                    )
+                                }
+                                position="top center"
+                                content={ addURLTooltip }
+                                inverted
+                                popper={ <div style={ { filter: "none" } }/> }
+                            />
+                        </Input>
+                        { resolveValidationLabel() }
+                    </Grid.Column>
+                </Grid.Row>
+                {
+                    showPredictions && (
+                        <Grid.Row className={ "urlComponentInputRow" }>
+                            <Grid.Column mobile={ 14 } tablet={ 14 } computer={ computerSize }>
+                                {
+                                    (predictValue.length > 0) && predictValue.map((predict) => {
+                                        return (
+                                            <Label
+                                                key={ predict }
+                                                basic
+                                                color="grey"
+                                                onClick={ () => onPredictClick(predict) }
+                                            >
+                                                { predict }
+                                            </Label>
+                                        );
+                                    })
+                                }
+                            </Grid.Column>
+                        </Grid.Row>
+                    )
+                }
+                { urlState && urlState.split(",").map((url) => {
+                    if (url !== "") {
+                        if (skipValidation || skipInternalValidation) {
+                            return (
+                                <Grid.Row key={ url } className={ "urlComponentTagRow" }>
+                                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ computerSize }>
+                                        <p>
+                                            <Label
+                                                data-componentid={ `${ componentId }-${ url }` }
+                                                data-testid={ `${ testId }-${ url }` }
+                                            >
+                                                <span>{ url }</span>
+                                                { !readOnly && urlRemoveButtonWidget(url) }
+                                            </Label>
+                                        </p>
+                                    </Grid.Column>
+                                </Grid.Row>
+                            );
+                        }
+
+                        if (URLUtils.isURLValid(url, true)) {
+                            return urlChipItemWidget(url);
+                        }
+                    }
+                }) }
+                { hint && (
+                    <Grid.Row className={ "urlComponentTagRow" }>
+                        <Grid.Column mobile={ 16 } tablet={ 16 } computer={ computerSize }>
+                            <Hint>
+                                { hint }
+                            </Hint>
+                        </Grid.Column>
+                    </Grid.Row>
+                ) }
+            </>
+        )
     );
 };
 
@@ -756,13 +912,16 @@ export const URLInput: FunctionComponent<URLInputPropsInterface> = (
  * Default props for the URL input component.
  */
 URLInput.defaultProps = {
+    addOriginByDefault: false,
     addURLTooltip: "Add a URL",
     allowEmptyValues: false,
+    "data-componentid": "url-input",
     "data-testid": "url-input",
     duplicateURLErrorMessage: "This URL is already added. Please select a different one.",
     isAllowEnabled: true,
+    isCustom: false,
     labelEnabled: false,
-    showPredictions: true,
     onlyOrigin: false,
     restrictSecondaryContent: true,
+    showPredictions: true
 };

@@ -49,7 +49,7 @@ import {
     ServiceInterface
 } from "../../models";
 import { AppState } from "../../store";
-import { endUserSession } from "../../utils";
+import { useEndUserSession } from "../../utils";
 import { ModalComponent, SettingsSection } from "../shared";
 
 /**
@@ -76,9 +76,10 @@ export const Consents: FunctionComponent<ConsentComponentProps> = (props: Consen
     const [ consentListActiveIndexes, setConsentListActiveIndexes ] = useState([]);
     const [ deniedPIIClaimList, setDeniedPIIClaimList ] = useState<Set<PIICategoryClaimToggleItem>>(new Set());
     const [ acceptedPIIClaimList, setAcceptedPIIClaimList ] = useState<Set<PIICategoryClaimToggleItem>>(new Set());
-    const userName: string = useSelector((state: AppState) => state?.authenticationInformation?.username);
+    const userName: string = useSelector((state: AppState) => state?.authenticationInformation?.profileInfo.userName);
     const tenantDomain: string = useSelector((state: AppState) => state?.authenticationInformation?.tenantDomain);
     const { t } = useTranslation();
+    const endUserSession = useEndUserSession();
 
     /**
      * Retrieves the consented applications of the user. It will only
@@ -137,9 +138,8 @@ export const Consents: FunctionComponent<ConsentComponentProps> = (props: Consen
         // thrown it will be handled in @link getConsentedApps function.
         const homeRealmIdentifiers: string[] = await fetchHomeRealmIdentifiers();
 
-        // Recreate the piiPrincipalId from currently authenticated user's username.
-        const fragments = userName.split("@");
-        const piiPrincipalId = fragments.length ? fragments[0] : "";
+        // Use the profile username for the piiPrincipalId.
+        const piiPrincipalId = userName;
 
         const receipt: ConsentInterface = {
             consentReceipt: {
@@ -197,11 +197,15 @@ export const Consents: FunctionComponent<ConsentComponentProps> = (props: Consen
      * Apply any component side-effects here.
      */
     useEffect(() => {
+        if (!userName) {
+            return;
+        }
+        
         ( async function _execute() {
             await getConsentedApps();
             await getAllPurposesDetails();
         }() );
-    }, []);
+    }, [userName]);
 
     /**
      * Populates the PII claim list to state hooks.
@@ -654,8 +658,8 @@ export const Consents: FunctionComponent<ConsentComponentProps> = (props: Consen
                 updatingConsent.consentReceipt.services || [] as ServiceInterface[]
             ).map(value => value.purposes as PurposeInterface[])
         )
-            .map(v => v.piiCategory.length)
-            .reduce((accumulator, currentVal) => accumulator + currentVal) === 0;
+            .map(v => v.piiCategory?.length ?? 0)
+            .reduce((accumulator, currentVal) => accumulator + currentVal, 0) === 0;
         // If consent to all the pii categories in every purpose are revoked
         // then the application (receipt) will have to be revoked.
         if (isAllPIICategoriesRemovedFromThisReceipt) {
@@ -760,7 +764,7 @@ export const Consents: FunctionComponent<ConsentComponentProps> = (props: Consen
                 onPrimaryActionClick={ () => revokeAppConsent(revokingConsent) }
                 open={ isConsentRevokeModalVisible }
                 onClose={ handleConsentRevokeModalClose }
-                type="negative"
+                type="warning"
                 header={
                     t("myAccount:components.consentManagement.modals.consentRevokeModal.heading",
                         { appName: revokingConsent.spDisplayName })

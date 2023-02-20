@@ -16,133 +16,162 @@
  * under the License.
  */
 
-import { AppConstants } from "../../core/constants";
+import { identityProviderConfig } from "../../../extensions/configs/identity-provider";
+import BasicAuthIcon from "../../../themes/default/assets/images/authenticators/basic-auth.png";
+import SMSOTPIcon from "../../../themes/default/assets/images/authenticators/sms-otp.svg";
+import SalesforceLogo from "../../../themes/default/assets/images/connectors/salesforce.png";
+import SCIMLogo from "../../../themes/default/assets/images/connectors/scim.png";
+import SPMLLogo from "../../../themes/default/assets/images/connectors/spml.png";
+import CertificateColoredIcon from "../../../themes/default/assets/images/icons/certificate-colored-icon.svg";
+import ClockColoredIcon from "../../../themes/default/assets/images/icons/clock-colored-icon.svg";
+import ConnectionIcon from "../../../themes/default/assets/images/icons/connection.svg";
+import { ReactComponent as DocumentIcon } from "../../../themes/default/assets/images/icons/document-icon.svg";
+import FIDOLogo from "../../../themes/default/assets/images/icons/fingerprint.svg";
+import { ReactComponent as GearsIcon } from "../../../themes/default/assets/images/icons/gears-icon.svg";
+import MagicLinkLogo from "../../../themes/default/assets/images/icons/magic-link-icon.svg";
+import MagnifierColoredIcon from "../../../themes/default/assets/images/icons/magnifier-colored-icon.svg";
+import { ReactComponent as OpenBookIcon } from "../../../themes/default/assets/images/icons/open-book-icon.svg";
+import TOTPIcon from "../../../themes/default/assets/images/icons/outline-icons/clock-outline.svg";
+import { ReactComponent as ReportIcon } from "../../../themes/default/assets/images/icons/report-icon.svg";
+import EmailOTPIcon from "../../../themes/default/assets/images/icons/solid-icons/email-solid.svg";
+import {
+    ReactComponent as ProvisionCapabilityIcon
+} from "../../../themes/default/assets/images/identity-provider-capabilities/provision.svg";
+import {
+    ReactComponent as EnterpriseModeIdPIcon
+} from "../../../themes/default/assets/images/identity-providers/enterprise-idp-illustration.svg";
+import {
+    ReactComponent as ExpertModeIdPIcon
+} from "../../../themes/default/assets/images/identity-providers/expert.svg";
+import FacebookLogo from "../../../themes/default/assets/images/identity-providers/facebook-idp-illustration.svg";
+import GithubIdPIcon from "../../../themes/default/assets/images/identity-providers/github-idp-illustration.svg";
+import GoogleLogo from "../../../themes/default/assets/images/identity-providers/google-idp-illustration.svg";
+import KerberosLogo from "../../../themes/default/assets/images/identity-providers/kerberos.png";
+import Office365Logo from "../../../themes/default/assets/images/identity-providers/office-365.svg";
+import OrganizationSSOIcon from "../../../themes/default/assets/images/identity-providers/organization-sso.svg";
+import TwitterLogo from "../../../themes/default/assets/images/identity-providers/twitter.svg";
+import YahooLogo from "../../../themes/default/assets/images/identity-providers/yahoo.svg";
+import OIDCLogo from "../../../themes/default/assets/images/protocols/openid-connect.png";
+import OpenIDLogo from "../../../themes/default/assets/images/protocols/openid.png";
+import SamlLogo from "../../../themes/default/assets/images/protocols/saml.png";
+import WSFedLogo from "../../../themes/default/assets/images/protocols/ws-fed.png";
+import JWTLogo from "../../../themes/default/assets/images/technologies/jwt-logo.svg";
+import AppleLogo
+    from "../../../themes/default/assets/images/third-party/apple-logo.svg";
+import LinkedInLogo
+    from "../../../themes/default/assets/images/third-party/linkedin-logo.svg";
+import MicrosoftLogo from "../../../themes/default/assets/images/third-party/microsoft-logo.svg";
 import { SupportedServices } from "../models";
 
-export const getAddIDPCertificateWizardStepIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getAddIDPCertificateWizardStepIcons = (): any => {
 
     return {
-        general: import(`../../../themes/${ theme }/assets/images/icons/document-icon.svg`)
+        general: DocumentIcon
     };
 };
 
-export const getIdentityProviderWizardStepIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getIdentityProviderWizardStepIcons = (): any => {
 
     return {
-        authenticatorSettings: import(`../../../themes/${ theme }/assets/images/icons/gears-icon.svg`),
-        general: import(`../../../themes/${ theme }/assets/images/icons/document-icon.svg`),
-        outboundProvisioningSettings: import(`../../../themes/${ theme }/assets/images/icons/gears-icon.svg`),
-        summary: import(`../../../themes/${ theme }/assets/images/icons/report-icon.svg`)
+        authenticatorSettings: GearsIcon,
+        general: DocumentIcon,
+        outboundProvisioningSettings: GearsIcon,
+        summary: ReportIcon
     };
 };
 
-export const getAuthenticatorIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getAuthenticatorIcons = (): any => {
 
     return {
-        basic: import(`../../../themes/${ theme }/assets/images/authenticators/basic-auth.png`),
-        default: import(`../../../themes/${ theme }/assets/images/icons/lock-shield.svg`),
-        emailOTP: import(`../../../themes/${ theme }/assets/images/authenticators/email-otp.svg`),
-        facebook: import(`../../../themes/${ theme }/assets/images/social/facebook.svg`),
-        fido: import(`../../../themes/${ theme }/assets/images/authenticators/fido.png`),
-        google: import(`../../../themes/${ theme }/assets/images/social/google.svg`),
-        identifierFirst: import(`../../../themes/${ theme }/assets/images/icons/magnifier-colored-icon.svg`),
-        jwtBasic: import(`../../../themes/${ theme }/assets/images/technologies/jwt-logo.svg`),
-        microsoft: import(`../../../themes/${ theme }/assets/images/third-party/microsoft-logo.svg`),
-        office365: import(`../../../themes/${ theme }/assets/images/third-party/office-365-logo.svg`),
-        sessionExecutor: import(`../../../themes/${ theme }/assets/images/icons/clock-colored-icon.svg`),
-        smsOTP: import(`../../../themes/${ theme }/assets/images/authenticators/sms-otp.svg`),
-        totp: import(`../../../themes/${ theme }/assets/images/authenticators/totp.png`),
-        twitter: import(`../../../themes/${ theme }/assets/images/social/twitter.svg`),
-        x509: import(`../../../themes/${ theme }/assets/images/icons/certificate-colored-icon.svg`),
-        yahoo: import(`../../../themes/${ theme }/assets/images/third-party/yahoo-logo.svg`)
+        basic: BasicAuthIcon,
+        default: ConnectionIcon,
+        emailOTP: EmailOTPIcon,
+        facebook: FacebookLogo,
+        fido: FIDOLogo,
+        google: GoogleLogo,
+        identifierFirst: MagnifierColoredIcon,
+        jwtBasic: JWTLogo,
+        magicLink: MagicLinkLogo,
+        microsoft: MicrosoftLogo,
+        office365: Office365Logo,
+        sessionExecutor: ClockColoredIcon,
+        smsOTP: SMSOTPIcon,
+        totp: TOTPIcon,
+        twitter: TwitterLogo,
+        x509: CertificateColoredIcon,
+        yahoo: YahooLogo
     };
 };
 
-export const getConnectorIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getConnectorIcons = (): any => {
 
     return {
-        google: import(`../../../themes/${ theme }/assets/images/identity-providers/google-idp-illustration.svg`),
-        salesforce: import(`../../../themes/${ theme }/assets/images/connectors/salesforce.png`),
-        scim: import(`../../../themes/${ theme }/assets/images/connectors/scim.png`),
-        spml: import(`../../../themes/${ theme }/assets/images/connectors/spml.png`)
+        google: GoogleLogo,
+        salesforce: SalesforceLogo,
+        scim: SCIMLogo,
+        spml: SPMLLogo
     };
 };
 
-export const getIdPIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getIdPIcons = (): any => {
 
     return {
-        default: import(`../../../themes/${ theme }/assets/images/identity-provider-capabilities/authentication.svg`),
-        emailOTP: import(`../../../themes/${ theme }/assets/images/authenticators/email-otp.svg`),
-        expert: import(`../../../themes/${ theme }/assets/images/identity-providers/expert-idp-illustration.svg`),
-        facebook: import(`../../../themes/${ theme }/assets/images/identity-providers/facebook-idp-illustration.svg`),
-        github: import(`../../../themes/${ theme }/assets/images/identity-providers/github-idp-illustration.svg`),
-        google: import(`../../../themes/${ theme }/assets/images/identity-providers/google-idp-illustration.svg`),
-        iwaKerberos: import(`../../../themes/${ theme }/assets/images/identity-providers/iwa-idp-illustration.svg`),
-        microsoft: import(`../../../themes/${ theme }/assets/images/identity-providers/microsoft-idp-illustration.svg`),
-        office365: import(`../../../themes/${ theme }/assets/images/identity-providers/office365-idp-illustration.svg`),
-        oidc: import(`../../../themes/${ theme }/assets/images/protocols/oidc.png`),
-        saml: import(`../../../themes/${ theme }/assets/images/protocols/saml.png`),
-        smsOTP: import(`../../../themes/${ theme }/assets/images/authenticators/sms-otp.svg`),
-        twitter: import(`../../../themes/${ theme }/assets/images/identity-providers/twitter-idp-illustration.svg`),
-        wsFed: import(`../../../themes/${ theme }/assets/images/protocols/ws-fed.png`),
-        yahoo: import(`../../../themes/${ theme }/assets/images/identity-providers/yahoo-idp-illustration.svg`)
+        apple: AppleLogo,
+        default: ConnectionIcon,
+        emailOTP: EmailOTPIcon,
+        enterprise: EnterpriseModeIdPIcon,
+        expert: ExpertModeIdPIcon,
+        facebook: FacebookLogo,
+        github: GithubIdPIcon,
+        google: GoogleLogo,
+        iwaKerberos: KerberosLogo,
+        linkedIn: LinkedInLogo,
+        microsoft: MicrosoftLogo,
+        office365: Office365Logo,
+        oidc: OIDCLogo,
+        organizationSSO:  OrganizationSSOIcon,
+        saml: SamlLogo,
+        smsOTP: SMSOTPIcon,
+        twitter: TwitterLogo,
+        wsFed: WSFedLogo,
+        yahoo: YahooLogo,
+        ...identityProviderConfig.getIconExtensions()
     };
 };
 
-export const getIdPTemplateDocsIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getIdPTemplateDocsIcons = (): any => {
 
     return {
-        facebook: import(`../../../themes/${ theme }/assets/images/identity-providers/facebook-idp-illustration.svg`),
-        google: import(`../../../themes/${ theme }/assets/images/identity-providers/google-idp-illustration.svg`),
-        manualsetup: import(`../../../themes/${ theme }/assets/images/identity-providers/expert-idp-illustration.svg`),
-        openidconnect: import(`../../../themes/${ theme }/assets/images/protocols/openid.png`)
+        facebook: FacebookLogo,
+        github: GithubIdPIcon,
+        google: GoogleLogo,
+        manualsetup: ExpertModeIdPIcon,
+        openidconnect: OpenIDLogo
     };
 };
 
-export const getIdPCapabilityIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getIdPCapabilityIcons = (): any => {
 
     return {
-        [ SupportedServices.AUTHENTICATION ]: import(`../../../themes/${
-            theme
-        }/assets/images/identity-provider-capabilities/authentication.svg`),
-        [ SupportedServices.PROVISIONING ]: import(`../../../themes/${
-            theme
-        }/assets/images/identity-provider-capabilities/provision.svg`)
+        [ SupportedServices.AUTHENTICATION ]: ConnectionIcon,
+        [ SupportedServices.PROVISIONING ]: ProvisionCapabilityIcon
     };
 };
 
-export const getOutboundProvisioningConnectorWizard = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getOutboundProvisioningConnectorWizard = (): any => {
 
     return {
-        connectorDetails: import(`../../../themes/${ theme }/assets/images/icons/document-icon.svg`),
-        connectorSelection: import(`../../../themes/${ theme }/assets/images/icons/gears-icon.svg`),
-        summary: import(`../../../themes/${ theme }/assets/images/icons/report-icon.svg`)
+        connectorDetails: DocumentIcon,
+        connectorSelection: GearsIcon,
+        summary: ReportIcon
     };
 };
 
-export const getHelpPanelIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getHelpPanelIcons = (): any => {
 
     return {
         tabs: {
-            docs: import(`../../../themes/${ theme }/assets/images/icons/open-book-icon.svg`)
+            docs: OpenBookIcon
         }
     };
 };

@@ -94,6 +94,8 @@ export const UserGroupsList: FunctionComponent<UserGroupsPropsInterface> = (
     const [ isSelectAllGroupsChecked, setIsSelectAllGroupsChecked ] = useState(false);
     const [ assignedGroups, setAssignedGroups ] = useState<RolesMemberInterface[]>([]);
     const [ isPrimaryGroupsLoading, setPrimaryGroupsLoading ] = useState<boolean>(false);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
+    const [ existingGroupList, setExistingGroupList ] = useState([]);
 
     useEffect(() => {
         if (!(user)) {
@@ -129,7 +131,7 @@ export const UserGroupsList: FunctionComponent<UserGroupsPropsInterface> = (
         if (domainName.length > 1) {
             domain = domainName[0];
         }
-        setPrimaryGroupsLoading(true)
+        setPrimaryGroupsLoading(true);
         getGroupList(domain)
             .then((response) => {
                 setPrimaryGroups(response.data.Resources);
@@ -182,7 +184,7 @@ export const UserGroupsList: FunctionComponent<UserGroupsPropsInterface> = (
             checkedGroups.push(group);
             setSelectedGroupList(checkedGroups);
         }
-        setIsSelectAllGroupsChecked(checkedGroups.length === groupList.length)
+        setIsSelectAllGroupsChecked(checkedGroups.length === groupList.length);
     };
 
     const setInitialLists = () => {
@@ -194,6 +196,7 @@ export const UserGroupsList: FunctionComponent<UserGroupsPropsInterface> = (
             }
         });
         setSelectedGroupList(addedGroups);
+        setExistingGroupList(addedGroups);
         setGroupList(groupListCopy);
         setInitialGroupList(groupListCopy);
         setIsSelectAllGroupsChecked(groupListCopy.length === addedGroups.length);
@@ -303,17 +306,21 @@ export const UserGroupsList: FunctionComponent<UserGroupsPropsInterface> = (
 
         if (groupIds && groupIds?.length > 0) {
             groupIds.map((id) => {
-                addOperation = {
-                    ...addOperation,
-                    ...{ path: "/Groups/" + id }
-                };
-                addOperations.push(addOperation);
+                if (!existingGroupList.find(existingGroup => existingGroup.id === id)) {
+                    addOperation = {
+                        ...addOperation,
+                        ...{ path: "/Groups/" + id }
+                    };
+                    addOperations.push(addOperation);
+                }
             });
 
             addOperations.map((operation) => {
                 bulkData.Operations.push(operation);
             });
         }
+
+        setIsSubmitting(true);
 
         updateResources(bulkData)
             .then(() => {
@@ -360,8 +367,11 @@ export const UserGroupsList: FunctionComponent<UserGroupsPropsInterface> = (
                         "genericError.message"
                     )
                 });
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
-        };
+    };
 
     const resolveListItemLabel = (displayName: string): ItemTypeLabelPropsInterface => {
         const userGroup = displayName?.split("/");
@@ -407,51 +417,53 @@ export const UserGroupsList: FunctionComponent<UserGroupsPropsInterface> = (
                     { t("console:manage.features.user.updateUser.groups.addGroupsModal.subHeading") }
                 </Heading>
             </Modal.Header>
-                <Modal.Content image>
-                    { !isPrimaryGroupsLoading ? (
-                        <TransferComponent
-                            selectionComponent
-                            searchPlaceholder={ t("console:manage.features.transferList.searchPlaceholder",
-                                { type: "Groups" }) }
-                            handleUnelectedListSearch={ handleUnselectedListSearch }
-                            data-testid="user-mgt-update-groups-modal"
-                        >
-                            <TransferList
-                                isListEmpty={ !(groupList.length > 0) }
-                                listType="unselected"
-                                listHeaders={ [
-                                    t("console:manage.features.transferList.list.headers.0"),
-                                    t("console:manage.features.transferList.list.headers.1")
-                                ] }
-                                handleHeaderCheckboxChange={ selectAllGroups }
-                                isHeaderCheckboxChecked={ isSelectAllGroupsChecked }
-                                emptyPlaceholderContent={ t("console:manage.features.transferList.list." +
+            <Modal.Content image>
+                { !isPrimaryGroupsLoading ? (
+                    <TransferComponent
+                        selectionComponent
+                        searchPlaceholder={ t("console:manage.features.transferList.searchPlaceholder",
+                            { type: "Groups" }) }
+                        handleUnelectedListSearch={ handleUnselectedListSearch }
+                        data-testid="user-mgt-update-groups-modal"
+                    >
+                        <TransferList
+                            isListEmpty={ !(groupList.length > 0) }
+                            listType="unselected"
+                            listHeaders={ [
+                                t("console:manage.features.transferList.list.headers.0"),
+                                t("console:manage.features.transferList.list.headers.1")
+                            ] }
+                            handleHeaderCheckboxChange={ selectAllGroups }
+                            isHeaderCheckboxChecked={ isSelectAllGroupsChecked }
+                            emptyPlaceholderContent={ t("console:manage.features.transferList.list." +
                                     "emptyPlaceholders.users.roles.unselected", { type: "groups" }) }
-                                data-testid="user-mgt-update-groups-modal-unselected-groups-select-all-checkbox"
-                            >
-                                {
-                                    groupList?.map((group, index)=> {
-                                        return (
-                                            <TransferListItem
-                                                handleItemChange={
-                                                    () => handleUnassignedItemCheckboxChange(group)
-                                                }
-                                                key={ index }
-                                                listItem={ resolveListItem(group?.displayName) }
-                                                listItemId={ group?.id }
-                                                listItemIndex={ index }
-                                                listItemTypeLabel={ resolveListItemLabel(group?.displayName) }
-                                                isItemChecked={ selectedGroupsList.includes(group) }
-                                                showSecondaryActions={ false }
-                                                data-testid="user-mgt-update-groups-modal-unselected-groups"
-                                            />
-                                        );
-                                    })
-                                }
-                            </TransferList>
-                        </TransferComponent>
-                    ) : <ContentLoader/> }
-                </Modal.Content>
+                            data-testid="user-mgt-update-groups-modal-unselected-groups-select-all-checkbox"
+                            emptyPlaceholderDefaultContent={ t("console:manage.features.transferList.list."
+                                + "emptyPlaceholders.default") }
+                        >
+                            {
+                                groupList?.map((group, index)=> {
+                                    return (
+                                        <TransferListItem
+                                            handleItemChange={
+                                                () => handleUnassignedItemCheckboxChange(group)
+                                            }
+                                            key={ index }
+                                            listItem={ resolveListItem(group?.displayName) }
+                                            listItemId={ group?.id }
+                                            listItemIndex={ index }
+                                            listItemTypeLabel={ resolveListItemLabel(group?.displayName) }
+                                            isItemChecked={ selectedGroupsList.includes(group) }
+                                            showSecondaryActions={ false }
+                                            data-testid="user-mgt-update-groups-modal-unselected-groups"
+                                        />
+                                    );
+                                })
+                            }
+                        </TransferList>
+                    </TransferComponent>
+                ) : <ContentLoader/> }
+            </Modal.Content>
             <Modal.Actions>
                 <Grid>
                     <Grid.Row columns={ 2 }>
@@ -468,6 +480,8 @@ export const UserGroupsList: FunctionComponent<UserGroupsPropsInterface> = (
                             <PrimaryButton
                                 data-testid="user-mgt-update-groups-modal-save-button"
                                 floated="right"
+                                loading={ isSubmitting }
+                                disabled={ isSubmitting }
                                 onClick={ () => updateUserGroup(user, selectedGroupsList) }
                             >
                                 { t("common:save") }

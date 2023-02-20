@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,17 +16,22 @@
  * under the License.
  */
 
-import { ProductReleaseTypes, ProductVersionConfigInterface, TestableComponentInterface } from "@wso2is/core/models";
+import {
+    IdentifiableComponentInterface,
+    ProductReleaseTypes,
+    ProductVersionConfigInterface,
+    TestableComponentInterface
+} from "@wso2is/core/models";
 import { CommonUtils } from "@wso2is/core/utils";
 import classNames from "classnames";
-import React, { FunctionComponent, PropsWithChildren, ReactElement, ReactNode } from "react";
+import React, { CSSProperties, FunctionComponent, PropsWithChildren, ReactElement, ReactNode } from "react";
 import { Label, SemanticCOLORS } from "semantic-ui-react";
 import { Heading } from "../typography";
 
 /**
  * Product brand component Prop types.
  */
-export interface ProductBrandPropsInterface extends TestableComponentInterface {
+export interface ProductBrandPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * App name.
      */
@@ -46,7 +51,7 @@ export interface ProductBrandPropsInterface extends TestableComponentInterface {
     /**
      * Custom styles object.
      */
-    style?: object;
+    style?: CSSProperties | undefined;
     /**
      * Product version.
      */
@@ -64,9 +69,9 @@ export interface ProductBrandPropsInterface extends TestableComponentInterface {
 /**
  * Product Brand component.
  *
- * @param {React.PropsWithChildren<ProductBrandPropsInterface>} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns ProductBrand React Component
  */
 export const ProductBrand: FunctionComponent<PropsWithChildren<ProductBrandPropsInterface>> = (
     props: PropsWithChildren<ProductBrandPropsInterface>
@@ -82,6 +87,7 @@ export const ProductBrand: FunctionComponent<PropsWithChildren<ProductBrandProps
         version,
         versionUISettings,
         mobile,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -93,7 +99,8 @@ export const ProductBrand: FunctionComponent<PropsWithChildren<ProductBrandProps
     const versionLabelClasses = classNames(
         "version-label",
         {
-            "primary" : !versionUISettings.labelColor,
+            "preview-label": version === "PREVIEW",
+            "primary" : (version !== "PREVIEW" && !versionUISettings.labelColor),
             [ versionUISettings.labelColor ]: (versionUISettings.labelColor === "primary"
                 || versionUISettings.labelColor === "secondary")
         }
@@ -102,9 +109,14 @@ export const ProductBrand: FunctionComponent<PropsWithChildren<ProductBrandProps
     /**
      * Resolves the version label color.
      *
-     * @return {SemanticCOLORS} Resolved color.
+     * @returns the esolved color.
      */
     const resolveVersionLabelColor = (releaseType: ProductReleaseTypes): SemanticCOLORS => {
+        // The label color will be resolved via label class applied.
+        if (version === "PREVIEW") {
+            return null;
+        }
+
         if (versionUISettings?.labelColor
             && !(versionUISettings.labelColor === "auto"
                 || versionUISettings.labelColor === "primary"
@@ -133,7 +145,7 @@ export const ProductBrand: FunctionComponent<PropsWithChildren<ProductBrandProps
     /**
      * Resolves the release version.
      *
-     * @return {string} Resolved release version.
+     * @returns the resolved release version.
      */
     const resolveReleaseVersionLabel = (): ReactNode => {
 
@@ -153,22 +165,30 @@ export const ProductBrand: FunctionComponent<PropsWithChildren<ProductBrandProps
             }
         }
 
+        const productTitleMetaClasses = classNames(
+            "product-title-meta",
+            {
+                "absolute": (versionUISettings?.labelPosition === "absolute")
+            }
+        );
+
         return (
-            <div className="product-title-meta">
+            <div className={ productTitleMetaClasses }>
                 <Label
                     color={ resolveVersionLabelColor(releaseType) }
                     className={ versionLabelClasses }
                     size="mini"
+                    data-componentid={ `${ componentId }-version` }
                     data-testid={ `${ testId }-version` }
                 >
                     { constructed }
                 </Label>
             </div>
-        )
+        );
     };
 
     return (
-        <div className={ mainClasses } style={ style } data-testid={ testId }>
+        <div className={ mainClasses } style={ style } data-testid={ testId } data-componentid={ componentId }>
             { version && resolveReleaseVersionLabel() }
             <div className={ `product-title-main ${ mobile ? "mt-4" : "" }` }>
                 { logo && logo }
@@ -178,6 +198,7 @@ export const ProductBrand: FunctionComponent<PropsWithChildren<ProductBrandProps
                             <Heading
                                 className={ "product-title-text" }
                                 style={ style }
+                                data-componentid={ `${ componentId }-title` }
                                 data-testid={ `${ testId }-title` }
                                 compact
                             >
@@ -198,6 +219,7 @@ export const ProductBrand: FunctionComponent<PropsWithChildren<ProductBrandProps
  * Default props for the product brand component.
  */
 ProductBrand.defaultProps = {
+    "data-componentid": "product-brand",
     "data-testid": "product-brand",
     versionUISettings: {
         allowSnapshot: false,

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, PropsWithChildren, ReactElement } from "react";
 import { Segment } from "semantic-ui-react";
@@ -24,7 +24,7 @@ import { Segment } from "semantic-ui-react";
 /**
  * Proptypes for the edit section component.
  */
-export interface EditSectionPropsInterface extends TestableComponentInterface {
+export interface EditSectionPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Shw/ Hide top margin.
      */
@@ -34,9 +34,9 @@ export interface EditSectionPropsInterface extends TestableComponentInterface {
 /**
  * Edit section component.
  *
- * @param {React.PropsWithChildren<any>} props
+ * @param props - props for the EditSection component
  *
- * @return {React.ReactElement}
+ * @returns EditSection React Component
  */
 export const EditSection: FunctionComponent<PropsWithChildren<EditSectionPropsInterface>> = (
     props: PropsWithChildren<EditSectionPropsInterface>
@@ -44,6 +44,7 @@ export const EditSection: FunctionComponent<PropsWithChildren<EditSectionPropsIn
 
     const {
         marginTop,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -52,8 +53,20 @@ export const EditSection: FunctionComponent<PropsWithChildren<EditSectionPropsIn
     });
 
     return (
-        <Segment padded className={ `edit-segment ${classes}` } data-testid={ testId }>
+        <Segment
+            padded
+            className={ `edit-segment ${classes}` }
+            data-componentid={ componentId }
+            data-testid={ testId }
+        >
             { props.children }
         </Segment>
     );
+};
+
+/**
+ * Default proptypes for the markdown component.
+ */
+EditSection.defaultProps = {
+    "data-componentid": "edit-section"
 };

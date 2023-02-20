@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,19 +14,21 @@
  * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import cloneDeep from "lodash-es/cloneDeep";
 import React, { FormEvent, FunctionComponent, ReactElement } from "react";
-import { Checkbox, Form, Popup } from "semantic-ui-react";
+import { Checkbox, Form } from "semantic-ui-react";
 import { TableColumnInterface } from "./data-table";
 import { ReactComponent as ColumnIcon } from "../../../assets/images/column-icon.svg";
 import { GenericIcon, GenericIconProps } from "../../icon";
+import { Popup } from "../../popup";
 import { Heading } from "../../typography";
 
-export interface DataTableColumnSelectorInterface extends TestableComponentInterface {
+export interface DataTableColumnSelectorInterface extends IdentifiableComponentInterface,
+    TestableComponentInterface {
+
     /**
      * Heading for the column selector dropdown.
      */
@@ -45,7 +47,7 @@ export interface DataTableColumnSelectorInterface extends TestableComponentInter
     floated?: GenericIconProps["floated"];
     /**
      * Callback to inform the new set of visible columns.
-     * @param {TableColumnInterface[]} columns - New columns.
+     * @param columns - New columns.
      */
     onColumnSelectionChange: (columns: TableColumnInterface[]) => void;
     /**
@@ -61,8 +63,8 @@ export interface DataTableColumnSelectorInterface extends TestableComponentInter
 /**
  * Data table column selector.
  *
- * @param {DataTableColumnSelectorInterface} props - Props injected to the component.
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns Table column selector component
  */
 export const DataTableColumnSelector: FunctionComponent<DataTableColumnSelectorInterface> = (
     props: DataTableColumnSelectorInterface
@@ -76,14 +78,15 @@ export const DataTableColumnSelector: FunctionComponent<DataTableColumnSelectorI
         onColumnSelectionChange,
         showToggleDisallowedColumns,
         triggerIcon,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
     /**
      * Checks if the column selector should be rendered or not.
      *
-     * @param {TableColumnInterface[]} columns - Table columns.
-     * @return {boolean}
+     * @param columns - Table columns.
+     * @returns whether the column selector should be rendered
      */
     const isColumnSelectorValid = (columns: TableColumnInterface[]): boolean => {
         return columns.some((column: TableColumnInterface) => column.allowToggleVisibility)
@@ -93,17 +96,17 @@ export const DataTableColumnSelector: FunctionComponent<DataTableColumnSelectorI
     /**
      * Handles column selector checkbox onchange event.
      *
-     * @param {FormEvent<HTMLInputElement>} e - Event.
-     * @param {string} uniqueId - Unique ID of the column.
+     * @param e - Event.
+     * @param uniqueId - Unique ID of the column.
      */
     const handleColumnVisibilityChange = (e: FormEvent<HTMLInputElement>, { uniqueId }: { uniqueId: string }): void => {
         const clone: TableColumnInterface[] = cloneDeep(columns);
-        
+
         clone.forEach((column: TableColumnInterface) => {
             if (column.id !== uniqueId) {
                 return;
             }
-            
+
             column.hidden = !column.hidden;
         });
 
@@ -113,7 +116,11 @@ export const DataTableColumnSelector: FunctionComponent<DataTableColumnSelectorI
     return (
         isColumnSelectorValid(columns)
             ? (
-                <div className="data-table-column-selector" data-testid={ testId }>
+                <div
+                    className="data-table-column-selector"
+                    data-componentid={ componentId }
+                    data-testid={ testId }
+                >
                     <Popup
                         flowing
                         basic
@@ -122,7 +129,7 @@ export const DataTableColumnSelector: FunctionComponent<DataTableColumnSelectorI
                         style={ {
                             width: `${ columnSelectorWidth }px`
                         } }
-                        content={
+                        content={ (
                             <>
                                 <div className="data-table-column-selector-popup-heading-container">
                                     <Heading as="h6">
@@ -160,17 +167,17 @@ export const DataTableColumnSelector: FunctionComponent<DataTableColumnSelectorI
                                                             onChange={ handleColumnVisibilityChange }
                                                         />
                                                     </Form.Field>
-                                                )
+                                                );
                                             }
-                                        )
+                                            )
                                         }
                                     </Form>
                                 </div>
                             </>
-                        }
+                        ) }
                         position="bottom right"
                         on="click"
-                        trigger={
+                        trigger={ (
                             <GenericIcon
                                 fill
                                 link
@@ -180,7 +187,7 @@ export const DataTableColumnSelector: FunctionComponent<DataTableColumnSelectorI
                                 icon={ triggerIcon }
                                 size="micro"
                             />
-                        }
+                        ) }
                     />
                 </div>
             )
@@ -194,6 +201,7 @@ export const DataTableColumnSelector: FunctionComponent<DataTableColumnSelectorI
 DataTableColumnSelector.defaultProps = {
     columnSelectorHeader: "Show/Hide Columns",
     columnSelectorWidth: 240,
+    "data-componentid": "data-table-column-selector",
     "data-testid": "data-table-column-selector",
     floated: "right",
     showToggleDisallowedColumns: false,

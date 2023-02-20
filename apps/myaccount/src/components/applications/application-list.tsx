@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,9 +17,10 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
+import { ContentLoader, LinkButton, Popup, Text } from "@wso2is/react-components";
 import React, { Fragment, FunctionComponent } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Grid } from "semantic-ui-react";
+import { Grid } from "semantic-ui-react";
 import { ApplicationListItem } from "./application-list-item";
 import { getEmptyPlaceholderIllustrations } from "../../configs";
 import { Application } from "../../models";
@@ -42,7 +43,7 @@ interface ApplicationListProps extends TestableComponentInterface {
 /**
  * Application list component.
  *
- * @return {JSX.Element}
+ * @returns
  */
 export const ApplicationList: FunctionComponent<ApplicationListProps> = (
     props: ApplicationListProps
@@ -61,7 +62,8 @@ export const ApplicationList: FunctionComponent<ApplicationListProps> = (
 
     /**
      * Shows list placeholders.
-     * @return {JSX.Element}
+     *
+     * @returns
      */
     const showPlaceholders = (): JSX.Element => {
         // When the search returns empty.
@@ -70,12 +72,12 @@ export const ApplicationList: FunctionComponent<ApplicationListProps> = (
                 <EmptyPlaceholder
                     data-testid={ `${testId}-empty-search-result-placeholder` }
                     action={ (
-                        <Button
+                        <LinkButton
                             className="link-button"
                             onClick={ onSearchQueryClear }
                         >
                             { t("myAccount:placeholders.emptySearchResult.action") }
-                        </Button>
+                        </LinkButton>
                     ) }
                     image={ getEmptyPlaceholderIllustrations().search }
                     title={ t("myAccount:placeholders.emptySearchResult.title") }
@@ -92,12 +94,12 @@ export const ApplicationList: FunctionComponent<ApplicationListProps> = (
             <EmptyPlaceholder
                 data-testid={ `${testId}-empty-list-placeholder` }
                 action={ (
-                    <Button
+                    <LinkButton
                         className="link-button"
                         onClick={ onListRefresh }
                     >
                         { t("myAccount:components.applications.placeholders.emptyList.action") }
-                    </Button>
+                    </LinkButton>
                 ) }
                 image={ getEmptyPlaceholderIllustrations().emptyList }
                 imageSize="tiny"
@@ -111,6 +113,10 @@ export const ApplicationList: FunctionComponent<ApplicationListProps> = (
         );
     };
 
+    const truncateAppName = (appName: string): string => {
+        return appName?.substring(0, 56) + " ...";
+    };
+
     return (
         <Grid>
             <Grid.Row>
@@ -119,14 +125,45 @@ export const ApplicationList: FunctionComponent<ApplicationListProps> = (
                         ? apps.map((app) => (
                             <Fragment key={ app.id }>
                                 <Grid.Column mobile={ 16 } tablet={ 8 } computer={ 5 }>
-                                    <ApplicationListItem
-                                        app={ app }
-                                        showFavouriteIcon={ showFavourites }
-                                        onAppNavigate={ onAppNavigate }
+                                    <Popup
+                                        trigger={ (
+                                            <div>
+                                                <ApplicationListItem
+                                                    app={ app }
+                                                    showFavouriteIcon={ showFavourites }
+                                                    onAppNavigate={ onAppNavigate }
+                                                />
+                                            </div>
+
+                                        ) }
+                                        position="top center"
+                                        content={ (
+                                            <Grid.Row>
+                                                <Grid.Column>
+                                                    <Text className="mb-1 mt-1">
+                                                        {
+                                                            app.name?.length > 55
+                                                                ? truncateAppName(app.name)
+                                                                : app.name
+                                                        }
+                                                    </Text>
+                                                </Grid.Column>
+                                                { app.description
+                                                    ? (
+                                                        <Grid.Column>
+                                                            <Text className="hint-description mb-1 mt-1">
+                                                                { app.description }
+                                                            </Text>
+                                                        </Grid.Column>
+                                                    )
+                                                    : null
+                                                }
+                                            </Grid.Row>
+                                        ) }
                                     />
                                 </Grid.Column>
                             </Fragment>
-                            )
+                        )
                         )
                         : !loading && (
                             <Grid.Column width={ 16 }>
@@ -134,6 +171,7 @@ export const ApplicationList: FunctionComponent<ApplicationListProps> = (
                             </Grid.Column>
                         )
                 }
+                { loading && <ContentLoader /> }
             </Grid.Row>
         </Grid>
     );

@@ -65,6 +65,7 @@ export const AddIDPCertificateWizard: FunctionComponent<AddIDPCertificateWizardP
 
     const [ partiallyCompletedStep, setPartiallyCompletedStep ] = useState<number>(undefined);
     const [ currentWizardStep, setCurrentWizardStep ] = useState<number>(currentStep);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     const [ alert, setAlert, alertComponent ] = useWizardAlert();
 
@@ -91,16 +92,18 @@ export const AddIDPCertificateWizard: FunctionComponent<AddIDPCertificateWizardP
     const addCertificate = (values: any) => {
         if (idp?.certificate?.certificates?.includes(values["certificate"])) {
             dispatch(addAlert({
-                description: t("console:develop.features.idp.notifications.duplicateCertificateUpload.error" +
+                description: t("console:develop.features.authenticationProvider." +
+                    "notifications.duplicateCertificateUpload.error" +
                     ".description", { idp: idp.name }),
                 level: AlertLevels.ERROR,
-                message: t("console:develop.features.idp.notifications.duplicateCertificateUpload.error.message")
+                message: t("console:develop.features.authenticationProvider." +
+                    "notifications.duplicateCertificateUpload.error.message")
             }));
             closeWizard();
             return;
         }
 
-        let data = [];
+        let data;
         const certificateIndex: number = idp?.certificate?.certificates ? idp?.certificate?.certificates?.length : 0;
 
         if (idp?.certificate?.jwksUri) {
@@ -126,13 +129,17 @@ export const AddIDPCertificateWizard: FunctionComponent<AddIDPCertificateWizardP
             ];
         }
 
+        setIsSubmitting(true);
+
         updateIDPCertificate(idp.id, data)
             .then(() => {
                 dispatch(addAlert({
-                    description: t("console:develop.features.idp.notifications.updateIDPCertificate.success" +
+                    description: t("console:develop.features.authenticationProvider." +
+                        "notifications.updateIDPCertificate.success" +
                         ".description"),
                     level: AlertLevels.SUCCESS,
-                    message: t("console:develop.features.idp.notifications.updateIDPCertificate.success.message")
+                    message: t("console:develop.features.authenticationProvider." +
+                        "notifications.updateIDPCertificate.success.message")
                 }));
                 closeWizard();
                 onUpdate(idp.id);
@@ -142,18 +149,24 @@ export const AddIDPCertificateWizard: FunctionComponent<AddIDPCertificateWizardP
                     setAlert({
                         description: error.response.data.description,
                         level: AlertLevels.ERROR,
-                        message: t("console:develop.features.idp.notifications.updateIDPCertificate.error.message")
+                        message: t("console:develop.features.authenticationProvider." +
+                            "notifications.updateIDPCertificate.error.message")
                     });
 
                     return;
                 }
 
                 setAlert({
-                    description: t("console:develop.features.idp.notifications.updateIDPCertificate.genericError" +
+                    description: t("console:develop.features.authenticationProvider." +
+                        "notifications.updateIDPCertificate.genericError" +
                         ".description"),
                     level: AlertLevels.ERROR,
-                    message: t("console:develop.features.idp.notifications.updateIDPCertificate.genericError.message")
+                    message: t("console:develop.features.authenticationProvider." +
+                        "notifications.updateIDPCertificate.genericError.message")
                 });
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
@@ -193,9 +206,10 @@ export const AddIDPCertificateWizard: FunctionComponent<AddIDPCertificateWizardP
             closeOnEscape
         >
             <Modal.Header className="wizard-header">
-                { t("console:develop.features.idp.modals.addCertificate.title", { idpName: idp.name }) }
+                { t("console:develop.features.authenticationProvider.modals.addCertificate.title",
+                    { idpName: idp.name }) }
                 <Heading as="h6">
-                    { t("console:develop.features.idp.modals.addCertificate.subTitle") }
+                    { t("console:develop.features.authenticationProvider.modals.addCertificate.subTitle") }
                 </Heading>
             </Modal.Header>
             <Modal.Content className="steps-container">
@@ -234,6 +248,8 @@ export const AddIDPCertificateWizard: FunctionComponent<AddIDPCertificateWizardP
                                 <PrimaryButton
                                     floated="right"
                                     onClick={ navigateToNext }
+                                    loading={ isSubmitting }
+                                    disabled={ isSubmitting }
                                     data-testid={ `${ testId }-finish-button` }
                                 >
                                     { t("common:finish") }

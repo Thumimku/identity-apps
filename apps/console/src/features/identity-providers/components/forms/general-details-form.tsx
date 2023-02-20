@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,16 +17,16 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
-import { Field, FormValue, Forms, Validation } from "@wso2is/forms";
-import { EmphasizedSegment, Heading, Hint } from "@wso2is/react-components";
+import { Field, Form } from "@wso2is/form";
+import { EmphasizedSegment, Heading } from "@wso2is/react-components";
 import { FormValidation } from "@wso2is/validation";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import React, { FunctionComponent, ReactElement, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Divider, Grid } from "semantic-ui-react";
-import { getIdentityProviderList } from "../../api";
-import { IdentityProviderInterface } from "../../models";
+import { Divider, Grid } from "semantic-ui-react";
+import { identityProviderConfig } from "../../../../extensions";
+import { IdentityProviderManagementConstants } from "../../constants";
+import { IdentityProviderInterface, IdentityProviderListResponseInterface } from "../../models";
 import { IdpCertificates } from "../settings";
-import { handleGetIDPListCallError } from "../utils";
 
 /**
  * Proptypes for the identity provider general details form component.
@@ -68,17 +68,50 @@ interface GeneralDetailsFormPopsInterface extends TestableComponentInterface {
      * Optimize for the creation wizard.
      */
     enableWizardMode?: boolean;
+    /**
+     * List of available Idps.
+     */
+    idpList?: IdentityProviderListResponseInterface;
+    /**
+     * Why? to hide or show the IdP logo edit input field.
+     * Introduced this for SAML and OIDC enterprise protocols.
+     * By default the icon/logo for this is readonly from
+     * extensions.
+     */
+    hideIdPLogoEditField?: boolean;
+    /**
+     * Specifies if the component should only be read-only.
+     */
+    isReadOnly: boolean;
+    /**
+     * Explicitly specifies whether the currently displaying
+     * IdP is a SAML provider or not.
+     */
+    isSaml?: boolean;
+    /**
+     * Explicitly specifies whether the currently displaying
+     * IdP is a OIDC provider or not.
+     */
+    isOidc?: boolean;
+    /**
+     * Specifies if the form is submitting.
+     */
+    isSubmitting?: boolean;
 }
 
-const IDP_NAME_MAX_LENGTH = 100;
+const IDP_NAME_MAX_LENGTH: number = 50;
+const IDP_DESCRIPTION_MAX_LENGTH: number = 300;
+
+const FORM_ID: string = "idp-general-details-form";
 
 /**
  * Form to edit general details of the identity provider.
  *
- * @param props GeneralDetailsFormPopsInterface.
- * @return {React.ReactElement}.
+ * @param props - Props injected to the component.
+ * @returns Functional component.
  */
-export const GeneralDetailsForm: FunctionComponent<GeneralDetailsFormPopsInterface> = (props): ReactElement => {
+export const GeneralDetailsForm: FunctionComponent<GeneralDetailsFormPopsInterface> = (
+    props: GeneralDetailsFormPopsInterface): ReactElement => {
 
     const {
         name,
@@ -86,186 +119,230 @@ export const GeneralDetailsForm: FunctionComponent<GeneralDetailsFormPopsInterfa
         imageUrl,
         onSubmit,
         onUpdate,
-        triggerSubmit,
-        enableWizardMode,
         editingIDP,
+        idpList,
+        hideIdPLogoEditField,
+        isReadOnly,
+        isSaml,
+        isSubmitting,
         [ "data-testid" ]: testId
     } = props;
 
-    const [isNameValid, setIsNameValid] = useState<boolean>(true);
-    const [modifiedName, setModifiedName] = useState<string>(name);
+    const certificateOptionsForTemplate: {
+        PEM: boolean;
+        JWKS: boolean;
+    } = useMemo(() => {
+        return identityProviderConfig.editIdentityProvider.getCertificateOptionsForTemplate(editingIDP?.templateId);
+    }, []);
+
+    // const [ modifiedName, setModifiedName ] = useState<string>(name);
 
     const { t } = useTranslation();
 
     /**
-     * Called when name field is modified.
+     * Check whether IDP name is already exist or not.
+     * @param value - IDP name
+     * @returns error msg if name is already taken.
      */
-    useEffect(() => {
-        if (!enableWizardMode) {
-            return;
+    const idpNameValidation = (value: string): string => {
+        if (!FormValidation.isValidResourceName(value)) {
+            return t("console:develop.features.authenticationProvider." +
+                "templates.enterprise.validation.name");
         }
-        setIsNameValid(false);
-        validateIdpName(modifiedName);
-    }, [modifiedName]);
+        let nameExist: boolean = false;
 
-    /**
-     * Retrieves the list of identity providers.
-     */
-    const validateIdpName = (idpName: string) => {
-        getIdentityProviderList(null, null, "name eq " + idpName)
-            .then((response) => {
-                setIsNameValid(response?.totalResults === 0);
-            })
-            .catch((error) => {
-                handleGetIDPListCallError(error);
+        if (idpList?.count > 0) {
+            idpList?.identityProviders.map((idp) => {
+                if (idp?.name === value && name !== value) {
+                    nameExist = true;
+                }
             });
+        }
+        if (nameExist) {
+            return t("console:develop.features." +
+                "authenticationProvider.forms.generalDetails.name." +
+                "validations.duplicate");
+        }
     };
+
+    // Temporarily comment out Idp name valiation logic per name.
+    // /**
+    //  * Called when name field is modified.
+    //  */
+    // useEffect(() => {
+    //     if (!enableWizardMode) {
+    //         return;
+    //     }
+    //     setIsNameValid(false);
+    //     validateIdpName(modifiedName);
+    // }, [ modifiedName ]);
+
+    // /**
+    //  * Retrieves the list of identity providers.
+    //  */
+    // const validateIdpName = (idpName: string) => {
+    //     getIdentityProviderList(null, null, "name eq " + idpName)
+    //         .then((response) => {
+    //             setIsNameValid(response?.totalResults === 0);
+    //         })
+    //         .catch((error) => {
+    //             handleGetIDPListCallError(error);
+    //         });
+    // };
 
     /**
      * Prepare form values for submitting.
      *
      * @param values - Form values.
-     * @return {any} Sanitized form values.
+     * @returns Sanitized form values.
      */
-    const updateConfigurations = (values: Map<string, FormValue>): IdentityProviderInterface => {
-        return {
-            description: values.get("description").toString(),
-            image: values.get("image").toString(),
-            isPrimary: !!values.get("isPrimary"),
-            name: values.get("name").toString()
-        };
+    const updateConfigurations = (values): void => {
+        onSubmit({
+            description: values.description?.toString(),
+            image: values.image?.toString(),
+            isPrimary: !!values.isPrimary,
+            name: values.name?.toString()
+        });
+    };
+
+    /**
+     * Checks if the certificates section should be shown.
+     *
+     * @returns Should show/hide certificates.
+     */
+    const shouldShowCertificates = (): boolean => {
+
+        let showCertificate: boolean = identityProviderConfig.generalDetailsForm.showCertificate;
+
+        if (certificateOptionsForTemplate !== undefined
+            && !certificateOptionsForTemplate.JWKS
+            && !certificateOptionsForTemplate.PEM) {
+            showCertificate = false;
+        }
+
+        return showCertificate;
     };
 
     return (
-        <>
+        <React.Fragment>
             <EmphasizedSegment padded="very">
-                <Forms
+                <Form
+                    id={ FORM_ID }
+                    uncontrolledForm={ false }
                     onSubmit={ (values): void => {
-                        onSubmit(updateConfigurations(values));
-                    } }
-                    submitState={ triggerSubmit }
-                    onChange={ (isPure, values) => {
-                        if (!enableWizardMode) {
-                            setModifiedName(values.get("name").toString());
-                        }
+                        updateConfigurations(values);
                     } }
                     data-testid={ testId }
                 >
+                    <Field.Input
+                        ariaLabel="name"
+                        inputType="resource_name"
+                        name="name"
+                        label={ t("console:develop.features.authenticationProvider.forms." +
+                            "generalDetails.name.label") }
+                        required={ true }
+                        message={ t("console:develop.features.authenticationProvider." +
+                            "forms.generalDetails.name.validations.empty") }
+                        placeholder={ name }
+                        validation={ (value) => idpNameValidation(value) }
+                        value={ name }
+                        maxLength={ IDP_NAME_MAX_LENGTH }
+                        minLength={ 3 }
+                        data-testid={ `${ testId }-idp-name` }
+                        hint={ t("console:develop.features.authenticationProvider.forms." +
+                            "generalDetails.name.hint") }
+                        readOnly={ isReadOnly }
+                    />
+                    <Field.Textarea
+                        name="description"
+                        ariaLabel="description"
+                        label={ t("console:develop.features.authenticationProvider.forms." +
+                            "generalDetails.description.label") }
+                        required={ false }
+                        placeholder={ t("console:develop.features.authenticationProvider.forms." +
+                            "generalDetails.description.placeholder") }
+                        value={ description }
+                        data-testid={ `${ testId }-idp-description` }
+                        maxLength={ IDP_DESCRIPTION_MAX_LENGTH }
+                        minLength={ 3 }
+                        hint={ t("console:develop.features.authenticationProvider.forms." +
+                            "generalDetails.description.hint") }
+                        readOnly={ isReadOnly }
+                    />
+                    { !hideIdPLogoEditField && (
+                        <Field.Input
+                            name="image"
+                            ariaLabel="image"
+                            inputType="url"
+                            label={ t("console:develop.features.authenticationProvider." +
+                                "forms.generalDetails.image.label") }
+                            required={ false }
+                            placeholder={ t("console:develop.features.authenticationProvider." +
+                                "forms.generalDetails.image." +
+                                "placeholder") }
+                            value={ imageUrl }
+                            data-testid={ `${ testId }-idp-image` }
+                            maxLength={
+                                IdentityProviderManagementConstants
+                                    .GENERAL_FORM_CONSTRAINTS.IMAGE_URL_MAX_LENGTH as number
+                            }
+                            minLength={
+                                IdentityProviderManagementConstants
+                                    .GENERAL_FORM_CONSTRAINTS.IMAGE_URL_MIN_LENGTH as number
+                            }
+                            hint={ t("console:develop.features.authenticationProvider.forms." +
+                                "generalDetails.image.hint") }
+                            readOnly={ isReadOnly }
+                        />
+                    ) }
+                    { !isReadOnly && (
+                        <Field.Button
+                            form={ FORM_ID }
+                            ariaLabel="Update General Details"
+                            size="small"
+                            buttonType="primary_btn"
+                            label={ t("common:update") }
+                            name="submit"
+                            disabled={ isSubmitting }
+                            loading={ isSubmitting }
+                        />
+                    ) }
+                </Form>
+            </EmphasizedSegment>
+            { shouldShowCertificates() && (
+                <React.Fragment>
+                    <Divider hidden/>
                     <Grid>
                         <Grid.Row columns={ 1 }>
-                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 8 }>
-                                <Field
-                                    name="name"
-                                    label={ t("console:develop.features.idp.forms.generalDetails.name.label") }
-                                    required={ true }
-                                    requiredErrorMessage={ t("console:develop.features.idp.forms.generalDetails." +
-                                        "name.validations.empty") }
-                                    placeholder={ name }
-                                    type="text"
-                                    validation={ (value: string, validation: Validation) => {
-                                        if (value.length > IDP_NAME_MAX_LENGTH) {
-                                            validation.isValid = false;
-                                            validation.errorMessages.push(t("console:develop.features." +
-                                                "idp.forms.generalDetails.name.validations." +
-                                                "maxLengthReached", { maxLength: IDP_NAME_MAX_LENGTH }));
-                                        } else if (isNameValid === false) {
-                                            validation.isValid = false;
-                                            validation.errorMessages.push(t("console:develop.features." +
-                                                "idp.forms.generalDetails.name.validations.duplicate"));
-                                        }
-                                    } }
-                                    value={ name }
-                                    data-testid={ `${ testId }-idp-name` }
-                                />
-                                <Hint>
-                                    { t("console:develop.features.idp.forms.generalDetails.name.hint") }
-                                </Hint>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Heading as="h4">Certificates</Heading>
                             </Grid.Column>
                         </Grid.Row>
-                        <Grid.Row columns={ 1 }>
-                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 8 }>
-                                <Field
-                                    name="description"
-                                    label={ t("console:develop.features.idp.forms.generalDetails.description.label") }
-                                    required={ false }
-                                    requiredErrorMessage=""
-                                    placeholder={ t("console:develop.features.idp.forms." +
-                                        "generalDetails.description.placeholder") }
-                                    type="textarea"
-                                    value={ description }
-                                    data-testid={ `${ testId }-idp-description` }
-                                />
-                                <Hint>
-                                    { t("console:develop.features.idp.forms.generalDetails.description.hint") }
-                                </Hint>
-                            </Grid.Column>
-                        </Grid.Row>
-                        <Grid.Row columns={ 1 }>
-                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 8 }>
-                                <Field
-                                    name="image"
-                                    label={ t("console:develop.features.idp.forms.generalDetails.image.label") }
-                                    required={ false }
-                                    requiredErrorMessage=""
-                                    placeholder={ t("console:develop.features.idp.forms.generalDetails.image." +
-                                        "placeholder") }
-                                    type="text"
-                                    validation={ (value: string, validation: Validation) => {
-                                        if (!FormValidation.url(value)) {
-                                            validation.isValid = false;
-                                            validation.errorMessages.push(t("console:develop.features.idp.forms." +
-                                                "common.invalidURLErrorMessage"));
-                                        }
-                                    } }
-                                    value={ imageUrl }
-                                    data-testid={ `${ testId }-idp-image` }
-                                />
-                                <Hint>
-                                    { t("console:develop.features.idp.forms.generalDetails.image.hint") }
-                                </Hint>
-                            </Grid.Column>
-                        </Grid.Row>
-                        {
-                            !enableWizardMode ? (
-                                <Grid.Row columns={ 1 }>
-                                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 8 }>
-                                        <Button primary type="submit" size="small" className="form-button"
-                                                data-testid={ `${ testId }-update-button` }>
-                                            { t("common:update") }
-                                        </Button>
-                                    </Grid.Column>
-                                </Grid.Row>
-                            ) : null
-                        }
                     </Grid>
-                </Forms>
-            </EmphasizedSegment>
-            <Divider hidden />
-            <Grid>
-                <Grid.Row columns={ 1 }>
-                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                        <Heading as="h4">Certificates</Heading>
-                    </Grid.Column>
-                </Grid.Row>
-            </Grid>
-            <EmphasizedSegment>
-                <Grid>
-                    <Grid.Row columns={ 1 }>
-                        <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                            <IdpCertificates
-                                editingIDP={ editingIDP }
-                                onUpdate={ onUpdate }
-                            />
-                        </Grid.Column>
-                    </Grid.Row>
-                </Grid>
-            </EmphasizedSegment>
-        </>
+                    <IdpCertificates
+                        isJWKSEnabled={
+                            certificateOptionsForTemplate !== undefined
+                                ? certificateOptionsForTemplate.JWKS
+                                : !isSaml
+                        }
+                        isReadOnly={ isReadOnly }
+                        editingIDP={ editingIDP }
+                        onUpdate={ onUpdate }
+                        isPEMEnabled={
+                            certificateOptionsForTemplate !== undefined
+                                ? certificateOptionsForTemplate.PEM
+                                : true
+                        }
+                    />
+                </React.Fragment>
+            ) }
+        </React.Fragment>
     );
 };
 
 GeneralDetailsForm.defaultProps = {
     "data-testid": "idp-edit-general-settings-form",
     enableWizardMode: false,
+    hideIdPLogoEditField: false,
     triggerSubmit: false
 };

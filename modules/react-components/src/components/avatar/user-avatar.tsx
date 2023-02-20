@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,18 +18,25 @@
 
 import { UIConstants } from "@wso2is/core/constants";
 import { resolveUserDisplayName } from "@wso2is/core/helpers";
-import { AuthReducerStateInterface, ProfileInfoInterface, TestableComponentInterface } from "@wso2is/core/models";
+import {
+    AuthReducerStateInterface,
+    IdentifiableComponentInterface,
+    ProfileInfoInterface,
+    TestableComponentInterface
+} from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
-import { Popup } from "semantic-ui-react";
 import { Avatar, AvatarPropsInterface } from "./avatar";
 import GravatarLogo from "../../assets/images/gravatar-logo.png";
 import DummyUser from "../../assets/images/user.png";
+import { Popup } from "../popup";
 
 /**
  * Prop types for the user avatar component.
  */
-export interface UserAvatarPropsInterface extends AvatarPropsInterface, TestableComponentInterface {
+export interface UserAvatarPropsInterface extends AvatarPropsInterface, IdentifiableComponentInterface,
+    TestableComponentInterface {
+
     /**
      * Authenticated users basic information.
      */
@@ -51,9 +58,9 @@ export interface UserAvatarPropsInterface extends AvatarPropsInterface, Testable
 /**
  * User Avatar component.
  *
- * @param {UserAvatarPropsInterface} props - Props injected in to the user avatar component.
+ * @param props - Props injected in to the user avatar component.
  *
- * @return {React.ReactElement}
+ * @returns the User Avatar component
  */
 export const UserAvatar: FunctionComponent<UserAvatarPropsInterface> = (
     props: UserAvatarPropsInterface
@@ -68,6 +75,7 @@ export const UserAvatar: FunctionComponent<UserAvatarPropsInterface> = (
         image,
         profileInfo,
         showGravatarLabel,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         ...rest
     } = props;
@@ -93,7 +101,7 @@ export const UserAvatar: FunctionComponent<UserAvatarPropsInterface> = (
     /**
      * Checks if the image is from `Gravatar`.
      *
-     * @return {boolean}
+     * @returns whether the image is from Gravatar
      */
     const isGravatarURL = (): boolean => {
         return (userImage && userImage.includes(UIConstants.GRAVATAR_URL))
@@ -106,7 +114,7 @@ export const UserAvatar: FunctionComponent<UserAvatarPropsInterface> = (
     /**
      * Resolves the top label image.
      *
-     * @return {string}
+     * @returns the resolved image
      */
     const resolveTopLabel = (): string => {
         if (isGravatarURL()) {
@@ -118,7 +126,7 @@ export const UserAvatar: FunctionComponent<UserAvatarPropsInterface> = (
 
     /**
      * Resolves the user image for the avatar.
-     * @return {any}
+     * @returns the resolved user image for the avatar.
      */
     const resolveAvatarImage = (): any => {
         // If an image is directly passed, give prominence.
@@ -171,12 +179,14 @@ export const UserAvatar: FunctionComponent<UserAvatarPropsInterface> = (
                     name={ profileInfo ? resolveUserDisplayName(profileInfo, authState) : name || "" }
                     onMouseOver={ handleOnMouseOver }
                     onMouseOut={ handleOnMouseOut }
+                    data-componentid={ componentId }
                     data-testid={ testId }
                     { ...rest }
                 >
                     { children }
                 </Avatar>
             ) }
+            data-componentid={ `${ componentId }-gravatar-disclaimer-popup` }
             data-testid={ `${ testId }-gravatar-disclaimer-popup` }
         />
     );
@@ -187,6 +197,7 @@ export const UserAvatar: FunctionComponent<UserAvatarPropsInterface> = (
  */
 UserAvatar.defaultProps = {
     authState: null,
+    "data-componentid": "user-avatar",
     "data-testid": "user-avatar",
     defaultIcon: DummyUser,
     gravatarInfoPopoverText: null,

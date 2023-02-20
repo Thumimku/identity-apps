@@ -16,7 +16,10 @@
  * under the License.
  */
 
- /**
+// Keep statement as this to avoid cyclic dependency. Do not import from config index.
+import { SCIMConfigs } from "../extensions/configs/scim";
+
+/**
   * Multi-valued attribute model
   */
 export interface MultiValue {
@@ -59,7 +62,7 @@ export interface BasicProfileInterface {
     userName?: string;
     /* eslint-disable @typescript-eslint/no-explicit-any */
     [ key: string ]: any;
-    isReadOnly: boolean;
+    isReadOnly: string;
 }
 
 /**
@@ -110,6 +113,7 @@ export interface ProfileSchema {
     required: boolean;
     subAttributes?: ProfileSchema[];
     extended?: boolean;
+    schemaId?: string;
     regEx?: string;
 }
 
@@ -167,9 +171,9 @@ export interface ProfileReducerStateInterface {
 export interface ReadOnlyUserStatus {
     id: string;
     schemas: string[];
-    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
-        isReadOnlyUser: boolean;
-    };
+     [key: string]: {
+        isReadOnlyUser: string;
+    } | any;
 }
 
 /**
@@ -196,7 +200,7 @@ export const emptyProfileCompletion = (): ProfileCompletion => ({
 export const createEmptyProfile = (): BasicProfileInterface => ({
     email: "",
     emails: [],
-    isReadOnly: true,
+    isReadOnly: "true",
     isSecurity: false,
     name: {
         familyName: "",

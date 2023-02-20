@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,7 @@ import { store } from "../store";
 
 /**
  * Updates the user's password.
- * 
+ *
  * @remarks
  * We're currently using basic auth to validate the current password. If the password is
  * different, the server responds with a status code `401`. The callbacks handle 401 errors and
@@ -32,23 +32,24 @@ import { store } from "../store";
  * TODO: Remove this once the API supports current password validation.
  * See https://github.com/wso2/product-is/issues/10014 for progress.
  *
- * @param {string} currentPassword currently registered password.
- * @param {string} newPassword newly assigned password.
- * @return {Promise<AxiosResponse>} a promise containing the response.
+ * @param currentPassword - currently registered password.
+ * @param newPassword - newly assigned password.
+ * @returns axiosResponse - a promise containing the response.
  */
 export const updatePassword = (currentPassword: string, newPassword: string): Promise<AxiosResponse> => {
 
     // If the `httpRequest` method from SDK is used for the request, it causes the 401 to be handled by
     // the callbacks set fot the application which will log the user out. Hence, axios will be used
     // for now to send the request since bearer token is not used for authorization we can get away with axios.
-    // TODO: Implement a method in `IdentityClient` http module to disable/enable the handler.
+    // TODO: Implement a method in `AsgardeoSPAClient` http module to disable/enable the handler.
     // See https://github.com/asgardio/asgardio-js-oidc-sdk/issues/45 for progress.
     // httpRequest.disableHandler();
 
     const requestConfig: AxiosRequestConfig = {
         auth: {
             password: currentPassword,
-            username: store.getState().authenticationInformation.username
+            username: [ store.getState().authenticationInformation?.profileInfo.userName, "@",
+                store.getState().authenticationInformation.tenantDomain ].join("")
         },
         data: {
             Operations: [
@@ -65,7 +66,8 @@ export const updatePassword = (currentPassword: string, newPassword: string): Pr
             "Content-Type": "application/json"
         },
         method: HttpMethods.PATCH,
-        url: store.getState().config.endpoints.me
+        url: store.getState().config.endpoints.me,
+        withCredentials: true
     };
 
     return axios.request(requestConfig)
@@ -82,7 +84,7 @@ export const updatePassword = (currentPassword: string, newPassword: string): Pr
 
             return Promise.resolve(response);
         })
-        .catch((error) => {
+        .catch((error: any) => {
             throw new IdentityAppsApiException(
                 ProfileConstants.CHANGE_PASSWORD_ERROR,
                 error.stack,
@@ -92,7 +94,7 @@ export const updatePassword = (currentPassword: string, newPassword: string): Pr
                 error.config);
         })
         .finally(() => {
-            // TODO: Implement a method in `IdentityClient` http module to disable/enable the handler.
+            // TODO: Implement a method in `AsgardeoSPAClient` http module to disable/enable the handler.
             // See https://github.com/asgardio/asgardio-js-oidc-sdk/issues/45 for progress.
             // httpRequest.enableHandler();
         });

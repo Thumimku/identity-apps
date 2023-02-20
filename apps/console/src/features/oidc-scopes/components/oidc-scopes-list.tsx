@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import { AccessControlConstants, Show } from "@wso2is/access-control";
 import { hasRequiredScopes, isFeatureEnabled } from "@wso2is/core/helpers";
 import {
     AlertLevels,
@@ -37,11 +38,13 @@ import {
     TableColumnInterface,
     TableDataInterface
 } from "@wso2is/react-components";
+import { AxiosError } from "axios";
 import React, { FunctionComponent, ReactElement, ReactNode, SyntheticEvent, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { Dispatch } from "redux";
 import { Header, Icon, SemanticICONS } from "semantic-ui-react";
-import { ApplicationManagementConstants } from "../../applications";
+import { ApplicationManagementConstants } from "../../applications/constants";
 import {
     AppConstants,
     AppState,
@@ -79,8 +82,8 @@ interface OIDCScopesListPropsInterface extends SBACInterface<FeatureConfigInterf
     /**
      * On list item select callback.
      *
-     * @param {React.SyntheticEvent} event - Click event.
-     * @param {OIDCScopesListInterface} scope - Selected Scope.
+     * @param event - Click event.
+     * @param scope - Selected Scope.
      */
     onListItemClick?: (event: SyntheticEvent, scope: OIDCScopesListInterface) => void;
     /**
@@ -116,9 +119,9 @@ interface OIDCScopesListPropsInterface extends SBACInterface<FeatureConfigInterf
 /**
  * OIDC scope list component.
  *
- * @param {OIDCScopesListPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns The OIDC Scope List Component.
  */
 export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
     props: OIDCScopesListPropsInterface
@@ -142,17 +145,17 @@ export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
 
     const { t } = useTranslation();
 
-    const dispatch = useDispatch();
+    const dispatch: Dispatch = useDispatch();
 
     const [ showDeleteConfirmationModal, setShowDeleteConfirmationModal ] = useState<boolean>(false);
     const [ deletingScope, setDeletingScope ] = useState<OIDCScopesListInterface>(undefined);
 
-    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.scope);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
 
     /**
      * Redirects to the OIDC scope edit page when the edit button is clicked.
      *
-     * @param {string} scopeName - scope name.
+     * @param scopeName - The Scope name.
      */
     const handleOIDCScopesEdit = (scopeName: string): void => {
         history.push(AppConstants.getPaths().get("OIDC_SCOPES_EDIT").replace(":id", scopeName));
@@ -161,7 +164,7 @@ export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
     /**
      * Deletes a scope when the delete scope button is clicked.
      *
-     * @param scopeName
+     * @param scopeName - The Scope name.
      */
     const handleOIDCScopeDelete = (scopeName: string): void => {
         deleteOIDCScope(scopeName)
@@ -177,7 +180,7 @@ export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
 
                 setShowDeleteConfirmationModal(false);
             })
-            .catch((error) => {
+            .catch((error: AxiosError) => {
                 if (error.response && error.response.data && error.response.data.description) {
                     dispatch(addAlert({
                         description: error.response.data.description,
@@ -202,7 +205,7 @@ export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
     /**
      * Resolves data table columns.
      *
-     * @return {TableColumnInterface[]}
+     * @returns - The table columns.
      */
     const resolveTableColumns = (): TableColumnInterface[] => {
         return [
@@ -255,7 +258,7 @@ export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
     /**
      * Resolves data table actions.
      *
-     * @return {TableActionsInterface[]}
+     * @returns - The table actions.
      */
     const resolveTableActions = (): TableActionsInterface[] => {
         if (!showListItemActions) {
@@ -267,10 +270,17 @@ export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
                 hidden: (): boolean => !isFeatureEnabled(
                     featureConfig?.applications,
                     ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT")),
-                icon: (): SemanticICONS => "pencil alternate",
+                icon: (): SemanticICONS =>
+                    hasRequiredScopes(
+                        featureConfig?.oidcScopes, featureConfig?.oidcScopes?.scopes?.update, allowedScopes)
+                        ? "pencil alternate"
+                        : "eye",
                 onClick: (e: SyntheticEvent, scope: OIDCScopesListInterface): void =>
                     handleOIDCScopesEdit(scope?.name),
-                popupText: (): string => t("common:edit"),
+                popupText: (): string => hasRequiredScopes(
+                    featureConfig?.oidcScopes, featureConfig?.oidcScopes?.scopes?.update, allowedScopes)
+                    ? t("common:edit")
+                    : t("common:view"),
                 renderer: "semantic-icon"
             }
         ];
@@ -278,7 +288,7 @@ export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
         actions.push({
             hidden: (item: TableDataInterface<OIDCScopesListInterface>): boolean => {
                 return !hasRequiredScopes(
-                featureConfig?.applications,
+                    featureConfig?.applications,
                     featureConfig?.applications?.scopes?.delete, allowedScopes)
                     || item.name === OIDCScopesManagementConstants.OPEN_ID_SCOPE;
             },
@@ -297,7 +307,7 @@ export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
     /**
      * Resolve the relevant placeholder.
      *
-     * @return {React.ReactElement}
+     * @returns The placeholders.
      */
     const showPlaceholders = (): ReactElement => {
 
@@ -325,10 +335,12 @@ export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
             return (
                 <EmptyPlaceholder
                     action={ onEmptyListPlaceholderActionClick && (
-                        <PrimaryButton onClick={ onEmptyListPlaceholderActionClick }>
-                            <Icon name="add"/>
-                            { t("console:manage.features.oidcScopes.placeholders.emptyList.action") }
-                        </PrimaryButton>
+                        <Show when={ AccessControlConstants.SCOPE_WRITE }>
+                            <PrimaryButton onClick={ onEmptyListPlaceholderActionClick }>
+                                <Icon name="add"/>
+                                { t("console:manage.features.oidcScopes.placeholders.emptyList.action") }
+                            </PrimaryButton>
+                        </Show>
                     ) }
                     image={ getEmptyPlaceholderIllustrations()?.newList }
                     imageSize="tiny"
@@ -348,50 +360,41 @@ export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
 
     return (
         <>
-            <DataTable<OIDCScopesListInterface>
-                className="oidc-scopes-table"
-                externalSearch={ advancedSearch }
-                isLoading={ isLoading }
-                loadingStateOptions={ {
-                    count: defaultListItemLimit,
-                    imageType: "square"
-                } }
-                actions={ resolveTableActions() }
-                columns={ resolveTableColumns() }
-                data={ list }
-                onRowClick={
-                    (e: SyntheticEvent, scope: OIDCScopesListInterface): void => {
-                        handleOIDCScopesEdit(scope?.name);
-                        onListItemClick(e, scope);
+            {
+                <DataTable<OIDCScopesListInterface>
+                    className="oidc-scopes-table"
+                    externalSearch={ advancedSearch }
+                    isLoading={ isLoading }
+                    loadingStateOptions={ {
+                        count: defaultListItemLimit,
+                        imageType: "square"
+                    } }
+                    actions={ resolveTableActions() }
+                    columns={ resolveTableColumns() }
+                    data={ list }
+                    onRowClick={
+                        (e: SyntheticEvent, scope: OIDCScopesListInterface): void => {
+                            handleOIDCScopesEdit(scope?.name);
+                            onListItemClick(e, scope);
+                        }
                     }
-                }
-                placeholders={ showPlaceholders() }
-                transparent={ !isLoading && (showPlaceholders() !== null) }
-                selectable={ selection }
-                showHeader={ false }
-                data-testid={ testId }
-            />
+                    placeholders={ showPlaceholders() }
+                    transparent={ !isLoading && (showPlaceholders() !== null) }
+                    selectable={ selection }
+                    showHeader={ false }
+                    data-testid={ testId }
+                />
+            }
             {
                 deletingScope && (
                     <ConfirmationModal
                         onClose={ (): void => setShowDeleteConfirmationModal(false) }
-                        type="warning"
+                        type="negative"
                         open={ showDeleteConfirmationModal }
                         assertion={ deletingScope.name }
-                        assertionHint={ (
-                            <p>
-                                <Trans
-                                    i18nKey={
-                                        "console:manage.features.oidcScopes.confirmationModals.deleteScope" +
-                                        ".assertionHint"
-                                    }
-                                    tOptions={ { name: deletingScope.name } }
-                                >
-                                    Please type <strong>{ deletingScope.name }</strong> to confirm.
-                                </Trans>
-                            </p>
-                        ) }
-                        assertionType="input"
+                        assertionHint={ t("console:manage.features.oidcScopes.confirmationModals.deleteScope" +
+                        ".assertionHint") }
+                        assertionType="checkbox"
                         primaryAction={ t("common:confirm") }
                         secondaryAction={ t("common:cancel") }
                         onSecondaryActionClick={ (): void => setShowDeleteConfirmationModal(false) }
@@ -406,7 +409,7 @@ export const OIDCScopeList: FunctionComponent<OIDCScopesListPropsInterface> = (
                         </ConfirmationModal.Header>
                         <ConfirmationModal.Message
                             attached
-                            warning
+                            negative
                             data-testid={ `${ testId }-delete-confirmation-modal-message` }
                         >
                             { t("console:manage.features.oidcScopes.confirmationModals.deleteScope.message") }

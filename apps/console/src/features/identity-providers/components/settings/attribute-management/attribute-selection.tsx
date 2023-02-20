@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import { AccessControlConstants, Show } from "@wso2is/access-control";
 import { TestableComponentInterface } from "@wso2is/core/models";
 import { EmptyPlaceholder, Heading, Hint, PrimaryButton } from "@wso2is/react-components";
 import isEmpty from "lodash-es/isEmpty";
@@ -32,6 +33,10 @@ interface AttributeSelectionPropsInterface extends TestableComponentInterface {
     selectedAttributesWithMapping: IdentityProviderCommonClaimMappingInterface[];
     setSelectedAttributesWithMapping: (selectedAttributes: IdentityProviderCommonClaimMappingInterface[]) => void;
     uiProps: AttributeSelectionUIPropsInterface;
+    /**
+     * Specifies if the component should only be read-only.
+     */
+    isReadOnly: boolean;
 }
 
 export interface AttributeSelectionUIPropsInterface {
@@ -47,6 +52,7 @@ export interface AttributeSelectionUIPropsInterface {
  * Attribute selection component.
  *
  * @param props AttributeSelectionPropsInterface
+ * @deprecated Please use {@link AttributesSelectionV2}
  */
 export const AttributeSelection: FunctionComponent<AttributeSelectionPropsInterface> = (
     props: AttributeSelectionPropsInterface
@@ -57,11 +63,12 @@ export const AttributeSelection: FunctionComponent<AttributeSelectionPropsInterf
         setSelectedAttributesWithMapping,
         selectedAttributesWithMapping,
         uiProps,
+        isReadOnly,
         [ "data-testid" ]: testId
     } = props;
 
     const { t } = useTranslation();
-    
+
     const [showSelectionModal, setShowSelectionModal] = useState<boolean>(false);
 
     const [searchFilter, setSearchFilter] = useState<string>("");
@@ -98,27 +105,30 @@ export const AttributeSelection: FunctionComponent<AttributeSelectionPropsInterf
     };
 
     const renderMappingTable = (): ReactElement => (
-        <Segment.Group fluid>
-            <Segment data-testid={ testId } className="user-role-edit-header-segment clearing">
-                <Grid.Row>
-                    <Table data-testid={ `${ testId }-action-bar` } basic="very" compact>
-                        <Table.Body>
-                            <Table.Row>
-                                <Table.Cell>
-                                    <Input
-                                        icon={ <Icon name="search"/> }
-                                        onChange={ handleSearch }
-                                        placeholder={
-                                            t("console:develop.features.idp.forms." +
-                                                "attributeSettings.attributeSelection." +
-                                                "searchAttributes.placeHolder")
-                                        }
-                                        floated="left"
-                                        size="small"
-                                        data-testid={ `${ testId }-search` }
-                                    />
-                                </Table.Cell>
-                                <Table.Cell textAlign="right">
+        <Grid 
+            data-testid={ testId } 
+            className="user-role-edit-header-segment clearing attributes ml-0 mr-0"
+        >
+            <Grid.Row>
+                <Table data-testid={ `${ testId }-action-bar` } basic="very" compact>
+                    <Table.Body>
+                        <Table.Row>
+                            <Table.Cell>
+                                <Input
+                                    icon={ <Icon name="search"/> }
+                                    onChange={ handleSearch }
+                                    placeholder={
+                                        t("console:develop.features.authenticationProvider.forms." +
+                                            "attributeSettings.attributeSelection." +
+                                            "searchAttributes.placeHolder")
+                                    }
+                                    floated="left"
+                                    size="small"
+                                    data-testid={ `${ testId }-search` }
+                                />
+                            </Table.Cell>
+                            <Table.Cell textAlign="right">
+                                <Show when={ AccessControlConstants.IDP_EDIT }>
                                     <Button
                                         size="medium"
                                         icon="pencil"
@@ -126,63 +136,64 @@ export const AttributeSelection: FunctionComponent<AttributeSelectionPropsInterf
                                         onClick={ handleOpenSelectionModal }
                                         data-testid={ `${ testId }-edit-button` }
                                     />
-                                </Table.Cell>
-                            </Table.Row>
-                        </Table.Body>
-                    </Table>
-                </Grid.Row>
-                <Grid.Row>
-                    <Table data-testid={ `${ testId }-list` } singleLine compact>
-                        <Table.Header>
-                            {
-                                (
-                                    <Table.Row>
-                                        <Table.HeaderCell>
-                                            <strong>
-                                                { uiProps.attributeColumnHeader }
-                                            </strong>
-                                        </Table.HeaderCell>
-                                        <Table.HeaderCell>
-                                            <strong>
-                                                { uiProps.attributeMapColumnHeader }
-                                            </strong>
-                                        </Table.HeaderCell>
-                                    </Table.Row>
-                                )
-                            }
-                        </Table.Header>
-                        <Table.Body>
-                            {
-                                selectedAttributesWithMapping?.filter((mapping) =>
-                                    isEmpty(searchFilter)
-                                        ? true
-                                        : mapping?.claim?.displayName?.startsWith(searchFilter)
-                                )?.sort((a, b) => a.claim.displayName.localeCompare(b.claim.displayName)
-                                )?.map((mapping) => {
-                                        return (
-                                            <AttributeListItem
-                                                key={ mapping?.claim.id }
-                                                attribute={ mapping?.claim }
-                                                placeholder={
-                                                    uiProps.attributeMapInputPlaceholderPrefix
-                                                    + mapping?.claim.displayName
-                                                }
-                                                updateMapping={ updateAttributeMapping }
-                                                mapping={ mapping?.mappedValue }
-                                                data-testid={
-                                                    `${ testId }-attribute-list-item-${
-                                                        mapping?.claim.id }`
-                                                }
-                                            />
-                                        );
-                                    }
-                                )
-                            }
-                        </Table.Body>
-                    </Table>
-                </Grid.Row>
-            </Segment>
-        </Segment.Group>
+                                </Show>
+                            </Table.Cell>
+                        </Table.Row>
+                    </Table.Body>
+                </Table>
+            </Grid.Row>
+            <Grid.Row>
+                <Table data-testid={ `${ testId }-list` } singleLine compact>
+                    <Table.Header>
+                        {
+                            (
+                                <Table.Row>
+                                    <Table.HeaderCell>
+                                        <strong>
+                                            { uiProps.attributeColumnHeader }
+                                        </strong>
+                                    </Table.HeaderCell>
+                                    <Table.HeaderCell>
+                                        <strong>
+                                            { uiProps.attributeMapColumnHeader }
+                                        </strong>
+                                    </Table.HeaderCell>
+                                </Table.Row>
+                            )
+                        }
+                    </Table.Header>
+                    <Table.Body>
+                        {
+                            selectedAttributesWithMapping?.filter((mapping) =>
+                                isEmpty(searchFilter)
+                                    ? true
+                                    : mapping?.claim?.displayName?.startsWith(searchFilter)
+                            )?.sort((a, b) => a.claim.displayName.localeCompare(b.claim.displayName)
+                            )?.map((mapping) => {
+                                    return (
+                                        <AttributeListItem
+                                            key={ mapping?.claim.id }
+                                            attribute={ mapping?.claim }
+                                            placeholder={
+                                                uiProps.attributeMapInputPlaceholderPrefix
+                                                + mapping?.claim.displayName
+                                            }
+                                            updateMapping={ updateAttributeMapping }
+                                            mapping={ mapping?.mappedValue }
+                                            data-testid={
+                                                `${ testId }-attribute-list-item-${
+                                                    mapping?.claim.id }`
+                                            }
+                                            isReadOnly={ isReadOnly }
+                                        />
+                                    );
+                                }
+                            )
+                        }
+                    </Table.Body>
+                </Table>
+            </Grid.Row>
+        </Grid>
     );
 
     return (
@@ -190,7 +201,7 @@ export const AttributeSelection: FunctionComponent<AttributeSelectionPropsInterf
             ? (
                 <>
                     <Grid.Row data-testid={ `${ testId }-section` }>
-                        <Grid.Column computer={ 10 }>
+                        <Grid.Column>
                             { uiProps.enablePrecedingDivider && <Divider/> }
                             <Heading as="h4">
                                 { uiProps.componentHeading }
@@ -205,16 +216,21 @@ export const AttributeSelection: FunctionComponent<AttributeSelectionPropsInterf
                                     : (
                                         <Segment data-testid={ testId }>
                                             <EmptyPlaceholder
-                                                title={ t("console:develop.features.idp.placeHolders.noAttributes." + 
+                                                title={ t("console:develop.features.authenticationProvider." +
+                                                    "placeHolders.noAttributes." +
                                                     "title") }
                                                 subtitle={ [
-                                                    t("console:develop.features.idp.placeHolders.noAttributes." + 
+                                                    t("console:develop.features.authenticationProvider." +
+                                                        "placeHolders.noAttributes." +
                                                         "subtitles.0")
                                                 ] }
                                                 action={
-                                                    <PrimaryButton onClick={ handleOpenSelectionModal } icon="plus">
-                                                        { t("console:develop.features.idp.buttons.addAttribute") }
-                                                    </PrimaryButton>
+                                                    <Show when={ AccessControlConstants.IDP_EDIT }>
+                                                        <PrimaryButton onClick={ handleOpenSelectionModal } icon="plus">
+                                                            { t("console:develop.features.authenticationProvider." +
+                                                                "buttons.addAttribute") }
+                                                        </PrimaryButton>
+                                                    </Show>
                                                 }
                                                 image={ getEmptyPlaceholderIllustrations().emptyList }
                                                 imageSize="tiny"

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
 import { HttpMethods } from "../models";
 import { store } from "../store";
 
@@ -25,7 +25,7 @@ import { store } from "../store";
  *
  * @type {AxiosHttpClientInstance}
  */
-const httpClient = IdentityClient.getInstance().httpRequest.bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance().httpRequest.bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Validate the user-entered verification code.
@@ -49,6 +49,7 @@ export const validateSMSOTPCode = (code: string): Promise<any> => {
             if (response.status == 202) {
                 return true;
             }
+
             return Promise.reject(`An error occurred. The server returned ${response.status}`);
         })
         .catch((error) => {
@@ -65,6 +66,7 @@ export const resendSMSOTPCode = (): Promise<any> => {
         "key": "RecoveryScenario",
         "value": "MOBILE_VERIFICATION_ON_UPDATE"
     };
+
     properties.push(propertyData);
     const requestConfig = {
         data: {

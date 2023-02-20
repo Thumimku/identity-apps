@@ -16,13 +16,19 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
 import { HttpMethods } from "@wso2is/core/models";
 import { AxiosError, AxiosResponse } from "axios";
 import { store } from "../../core";
+import useRequest, {
+    RequestConfigInterface,
+    RequestErrorInterface,
+    RequestResultInterface
+} from "../../core/hooks/use-request";
 import {
     CreateGroupInterface,
     GroupListInterface,
+    GroupsInterface,
     PatchGroupDataInterface,
     SearchGroupInterface
 } from "../models";
@@ -30,16 +36,16 @@ import {
 /**
  * Initialize an axios Http client.
  */
-const httpClient = IdentityClient.getInstance()
-    .httpRequest.bind(IdentityClient.getInstance())
-    .bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance()
+    .httpRequest.bind(AsgardeoSPAClient.getInstance())
+    .bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Retrieve the list of groups in the system.
  *
  * @param domain user store
  */
-export const getGroupList = (domain: string): Promise<GroupListInterface | any> => {
+export const getGroupList = (domain: string, excludedAttributes?: string): Promise<GroupListInterface | any> => {
 
     const requestConfig = {
         headers: {
@@ -48,7 +54,8 @@ export const getGroupList = (domain: string): Promise<GroupListInterface | any> 
         },
         method: HttpMethods.GET,
         params: {
-            domain
+            domain,
+            excludedAttributes
         },
         url: store.getState().config.endpoints.groups
     };
@@ -65,17 +72,62 @@ export const getGroupList = (domain: string): Promise<GroupListInterface | any> 
 };
 
 /**
- * Retrieve Group details for a give group id.
+ * Hook to get the Groups List from the API.
+ *
+ * @param {string} domain - User store domain.
+ * @param {string} excludedAttributes - Excluded Attributes.
+ * @returns {RequestResultInterface<Data, Error>}
+ */
+export const useGroupList = <Data = GroupListInterface, Error = RequestErrorInterface>(
+    domain: string,
+    excludedAttributes?: string
+): RequestResultInterface<Data, Error> => {
+
+    const requestConfig: RequestConfigInterface = {
+        headers: {
+            "Content-Type": "application/json"
+        },
+        method: HttpMethods.GET,
+        params: {
+            domain,
+            excludedAttributes
+        },
+        url: store.getState().config.endpoints.groups
+    };
+
+    const {
+        data,
+        error,
+        isValidating,
+        mutate,
+        response
+    } = useRequest<Data, Error>(requestConfig);
+
+    return {
+        data,
+        error,
+        isLoading: !error && !data,
+        isValidating,
+        mutate,
+        response
+    };
+};
+
+/**
+ * Retrieve Group details for a given group id.
  *
  * @param groupId group id to retrieve group details
  */
-export const getGroupById = (groupId: string): Promise<any> => {
+export const getGroupById = (groupId: string, excludedAttributes?: string): Promise<AxiosResponse<GroupsInterface>> => {
     const requestConfig = {
         headers: {
             "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost,
             "Content-Type": "application/json"
         },
         method: HttpMethods.GET,
+        params: {
+            excludedAttributes
+        },
         url: store.getState().config.endpoints.groups + "/" + groupId
     };
 

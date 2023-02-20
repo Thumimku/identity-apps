@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,28 +18,44 @@
 
 import { CommonNS } from "../../../models";
 
+/**
+ * NOTES: No need to care about the max-len for this file since it's easier to
+ * translate the strings to other languages easily with editor translation tools.
+ */
+/* eslint-disable max-len */
 export const common: CommonNS = {
     access: "Accès",
     actions: "Actions",
     activate: "Activer",
     active: "Actif",
     add: "Ajouter",
-    addURL: "Ajouter la valeur",
+    addKey: "Ajouter un secret",
+    addURL: "ajouter l'URL",
     all: "Tous",
     applicationName: "Nom de l'application",
     applications: "Applications",
     approvalStatus: "Statut d'approbation",
     approve: "Approuver",
+    apps: "Applications",
+    assignee: "Cessionnaire",
     assignees: "Contrôleurs",
-    authenticator: "Authentificateur",
     authentication: "Authentification",
-    // eslint-disable-next-line @typescript-eslint/camelcase
+    authenticator: "Authentificateur",
     authenticator_plural: "Authentificateurs",
+    back: "Dos",
     browser: "Navigateur",
     cancel: "Annuler",
     challengeQuestionNumber: "Question de sécurité {{number}}",
     change: "Modifier",
+    chunkLoadErrorMessage: {
+        description: "Une erreur s'est produite lors de la diffusion de l'application demandée. Veuillez essayer " +
+            "de recharger l'application.",
+        heading: "Quelque chose s'est mal passé",
+        primaryActionText: "Recharger l'application"
+    },
     claim: "Claim",
+    clear: "Effacer",
+    clientId: "Identité du client",
     close: "Fermer",
     comingSoon: "Bientôt disponible",
     completed: "Terminé",
@@ -47,8 +63,11 @@ export const common: CommonNS = {
     confirm: "Confirmer",
     contains: "Contient",
     continue: "Continuer",
+    copyToClipboard: "Copier dans le presse-papier",
+    create: "Créer",
     createdOn: "Créé le",
     dangerZone: "Zone de danger",
+    darkMode: "Mode sombre",
     delete: "Supprimer",
     description: "Description",
     deviceModel: "Modèle d'appareil",
@@ -65,6 +84,7 @@ export const common: CommonNS = {
     enabled: "Activée",
     endsWith: "Se termine par",
     equals: "Est égal à",
+    exitFullScreen: "Quitter le mode plein écran",
     explore: "Explorer",
     export: "Exporter",
     featureAvailable: "Cette fonctionnalité sera bientôt disponible!",
@@ -72,6 +92,7 @@ export const common: CommonNS = {
     finish: "Terminer",
     generatePassword: "Générer un mot de passe",
     goBackHome: "Revenir à l'accueil",
+    goFullScreen: "Ouvrir en plein écran",
     good: "Bien",
     help: "Aide",
     hide: "Cacher",
@@ -80,17 +101,29 @@ export const common: CommonNS = {
     import: "Importer",
     initiator: "Initiateur",
     ipAddress: "Addresse IP",
+    issuer: "Émetteur",
     lastAccessed: "Dernier accès",
     lastModified: "Dernière modification",
     lastSeen: "Dernier vu",
     lastUpdatedOn: "Dernière mise à jour le",
+    learnMore: "Apprendre encore plus",
+    lightMode: "Mode lumière",
+    loading: "Chargement",
     loginTime: "Heure de connexion",
     logout: "Déconnexion",
+    maxValidation: "Cette valeur doit être inférieure ou égale à {{max}}.",
     maximize: "Maximiser",
+    minValidation: "Cette valeur doit être supérieure ou égale à {{min}}.",
     minimize: "Minimiser",
     more: "Plus",
     myAccount: "Mon compte",
     name: "Nom",
+    networkErrorMessage:{
+        description: "Veuillez réessayer de vous connecter.",
+        heading: "Votre session a expiré",
+        primaryActionText: "S'identifier"
+    },
+    new: "Nouveau",
     next: "Suivant",
     okay: "d'accord",
     operatingSystem: "Système d'exploitation",
@@ -99,6 +132,7 @@ export const common: CommonNS = {
     personalInfo: "Informations personnelles",
     pin: "Épingler",
     pinned: "Épinglé",
+    preview: "Aperçu",
     previous: "Précédent",
     priority: "Priorité",
     privacy: "Vie privée",
@@ -122,11 +156,14 @@ export const common: CommonNS = {
     search: "Rechercher",
     security: "Sécurité",
     services: "Services",
+    settings: "Paramètres",
+    setup: "Installer",
     show: "Afficher",
     showAll: "Tout afficher",
     showLess: "Afficher moins",
     showMore: "Afficher plus",
     showPassword: "Afficher le mot de passe",
+    skip: "sauter",
     startsWith: "Commence par",
     step: "Étape",
     strong: "Fort",

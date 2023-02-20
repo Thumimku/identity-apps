@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +18,11 @@
 
 import { MyAccountNS } from "../../../models";
 
+/**
+ * NOTES: No need to care about the max-len for this file since it's easier to
+ * translate the strings to other languages easily with editor translation tools.
+ */
+/* eslint-disable max-len */
 export const myAccount: MyAccountNS = {
     components: {
         accountRecovery: {
@@ -27,26 +32,11 @@ export const myAccount: MyAccountNS = {
                 },
                 heading: "Codes de récupération"
             },
-            preference: {
-                notifications: {
-                    error: {
-                        description: "{{description}}",
-                        message: "Erreur lors de l'obtention de la préférence de récupération"
-                    },
-                    genericError: {
-                        description: "Une erreur s'est produite lors de l'obtention de la préférence de récupération",
-                        message: "Un problème est survenu"
-                    },
-                    success: {
-                        description: "Récupération réussie de la préférence de récupération",
-                        message: "Récupération des préférences de récupération réussie"
-                    }
-                }
-            },
             emailRecovery: {
                 descriptions: {
                     add: "Ajouter ou mettre à jour l'e-mail de récupération",
-                    update: "Mettre à jour de l'e-mail de récupération ({{email}}}"
+                    update: "Mettre à jour de l'e-mail de récupération ({{email}}}",
+                    view: "Afficher l'adresse e-mail de récupération ({{email}}}"
                 },
                 forms: {
                     emailResetForm: {
@@ -74,9 +64,26 @@ export const myAccount: MyAccountNS = {
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
-                            description: "L'adresse e-mail dans le profil de l'utilisateur a été mise à jour avec succès",
+                            description: "L'adresse e-mail dans le profil de l'utilisateur a été mise à jour " +
+                                "avec succès",
                             message: "Adresse e-mail mise à jour avec succès"
                         }
+                    }
+                }
+            },
+            preference: {
+                notifications: {
+                    error: {
+                        description: "{{description}}",
+                        message: "Erreur lors de l'obtention de la préférence de récupération"
+                    },
+                    genericError: {
+                        description: "Une erreur s'est produite lors de l'obtention de la préférence de récupération",
+                        message: "Un problème est survenu"
+                    },
+                    success: {
+                        description: "Récupération réussie de la préférence de récupération",
+                        message: "Récupération des préférences de récupération réussie"
                     }
                 }
             },
@@ -267,9 +274,23 @@ export const myAccount: MyAccountNS = {
                             message: "Erreur lors de la modification du mot de passe"
                         },
                         invalidCurrentPassword: {
-                            description: "Le mot de passe actuel que vous avez saisi semble être invalide. Veuillez réessayer",
+                            description: "Le mot de passe actuel que vous avez saisi semble être invalide. " +
+                                "Veuillez réessayer",
                             message: "Erreur lors de la modification du mot de passe"
                         },
+                        invalidNewPassword: {
+                            description: "Le mot de passe ne satisfait pas les contraintes requises.",
+                            message: "Mot de passe incorrect"
+                        },
+                        passwordCaseRequirement: "Au moins {{minUpperCase}} majuscule et {{minLowerCase}} " +
+                            "minuscules",
+                        passwordCharRequirement: "Au moins {{minSpecialChr}} de caractère(s) spécial(s)",
+                        passwordLengthRequirement: "Doit contenir entre {{min}} et {{max}} caractères",
+                        passwordLowerCaseRequirement: "Au moins {{minLowerCase}} lettre(s) minuscule(s)",
+                        passwordNumRequirement: "Au moins {{min}} numéro(s)",
+                        passwordRepeatedChrRequirement: "Pas plus de {{repeatedChr}} caractère(s) répété(s)",
+                        passwordUniqueChrRequirement: "Au moins {{uniqueChr}} caractère(s) unique(s)",
+                        passwordUpperCaseRequirement: "Au moins {{minUpperCase}} lettre(s) majuscule(s)",
                         submitError: {
                             description: "{{description}}",
                             message: "Erreur lors de la modification du mot de passe"
@@ -277,6 +298,16 @@ export const myAccount: MyAccountNS = {
                         submitSuccess: {
                             description: "Le mot de passe a été modifié avec succès",
                             message: "Réinitialisation du mot de passe réussie"
+                        },
+                        validationConfig: {
+                            error: {
+                                description: "{{description}}",
+                                message: "Erreur de récupération"
+                            },
+                            genericError: {
+                                description: "Impossible de récupérer les données de configuration de validation.",
+                                message: "Quelque chose s'est mal passé"
+                            }
                         }
                     }
                 }
@@ -297,7 +328,8 @@ export const myAccount: MyAccountNS = {
                     revoke: {
                         actionTitle: "Révoquer",
                         header: "Révoquer le consentement",
-                        subheader: "Vous devrez à nouveau donner votre consentement pour accéder à nouveau à cette application."
+                        subheader: "Vous devrez à nouveau donner votre consentement pour accéder à nouveau à " +
+                            "cette application."
                     }
                 },
                 description: "Description",
@@ -313,8 +345,8 @@ export const myAccount: MyAccountNS = {
                 consentRevokeModal: {
                     heading: "Etes-vous sûr ?",
                     message:
-                        "Cette opération est irréversible. Cela révoquera définitivement le consentement pour tous les " +
-                        "attributs. Êtes-vous sûr de vouloir continuer ?",
+                        "Cette opération est irréversible. Cela révoquera définitivement le consentement pour " +
+                        "tous les attributs. Êtes-vous sûr de vouloir continuer ?",
                     warning: "Veuillez noter que vous serez redirigé vers la page de recueil de consentement"
                 }
             },
@@ -377,6 +409,13 @@ export const myAccount: MyAccountNS = {
                 }
             }
         },
+        cookieConsent: {
+            confirmButton: "J'ai compris",
+            content: "Nous utilisons des cookies pour vous garantir la meilleure expérience globale. Ces cookies " +
+                "sont utilisés pour maintenir une session continue ininterrompue tout en offrant des services " +
+                "fluides et personnalisés. Pour En savoir plus sur la façon dont nous utilisons les cookies, " +
+                "reportez-vous à notre <1>Politique relative aux cookies</1>."
+        },
         federatedAssociations: {
             deleteConfirmation: "Ceci supprimera l'accès à votre compte par le service d'authentification tiers. " +
                 "Confirmez-vous la suppression ?",
@@ -387,11 +426,13 @@ export const myAccount: MyAccountNS = {
                         message: "Quelque chose s'est mal passé"
                     },
                     genericError: {
-                        description: "Impossible de récupérer les services d'authentifications tiers ayant accès à votre compte",
+                        description: "Impossible de récupérer les services d'authentifications tiers ayant " +
+                            "accès à votre compte",
                         message: "Quelque chose s'est mal passé"
                     },
                     success: {
-                        description: "Les services d'auhtentifications tiers ayant accès à votre compte ont été récupérées avec succès",
+                        description: "Les services d'auhtentifications tiers ayant accès à votre compte ont été " +
+                            "récupérées avec succès",
                         message: "Services d'authentifications tiers récupérés avec succès"
                     }
                 },
@@ -401,11 +442,13 @@ export const myAccount: MyAccountNS = {
                         message: "Quelque chose s'est mal passé"
                     },
                     genericError: {
-                        description: "Impossible de supprimer tous les services d'authentifications tiers ayant accès à votre",
+                        description: "Impossible de supprimer tous les services d'authentifications tiers ayant " +
+                            "accès à votre",
                         message: "Quelque chose s'est mal passé"
                     },
                     success: {
-                        description: "Accès supprimé avec succès pour tous les services d'authentifications tiers ayant eu accès à votre compte.",
+                        description: "Accès supprimé avec succès pour tous les services d'authentifications tiers " +
+                            "ayant eu accès à votre compte.",
                         message: "Accès supprimés avec succès"
                     }
                 },
@@ -415,11 +458,13 @@ export const myAccount: MyAccountNS = {
                         message: "Quelque chose s'est mal passé"
                     },
                     genericError: {
-                        description: "L'accès a votre compte par le service d'authentification tiers n'a pu être supprimé",
+                        description: "L'accès a votre compte par le service d'authentification tiers n'a pu " +
+                            "être supprimé",
                         message: "Quelque chose s'est mal passé"
                     },
                     success: {
-                        description: "L'accès à votre compte par le service d'authentification tiers a été supprimé avec succès",
+                        description: "L'accès à votre compte par le service d'authentification tiers a été supprimé " +
+                            "avec succès",
                         message: "Accès supprimé avec succès"
                     }
                 }
@@ -427,6 +472,20 @@ export const myAccount: MyAccountNS = {
         },
         footer: {
             copyright: "WSO2 Identity Server © {{year}}"
+        },
+        header: {
+            appSwitch: {
+                console: {
+                    description: "Gérer en tant que développeurs ou administrateurs",
+                    name: "Console"
+                },
+                myAccount: {
+                    description: "Gérez votre propre compte",
+                    name: "My Account"
+                },
+                tooltip: "Apps"
+            },
+            organizationLabel: "Ce compte est géré par"
         },
         linkedAccounts: {
             accountTypes: {
@@ -481,7 +540,8 @@ export const myAccount: MyAccountNS = {
                         message: "Quelque chose s'est mal passé"
                     },
                     success: {
-                        description: "Les informations requises sur le profil de l'utilisateur ont été récupérés avec succès",
+                        description: "Les informations requises sur le profil de l'utilisateur ont été récupérés " +
+                            "avec succès",
                         message: "Détails des comptes associés récupérés avec succès"
                     }
                 },
@@ -529,37 +589,100 @@ export const myAccount: MyAccountNS = {
                 }
             }
         },
+        loginVerifyData: {
+            description: "Ces données sont utilisées pour vérifier davantage votre identité lors de la connexion",
+            heading: "Données utilisées pour vérifier votre connexion",
+            modals: {
+                clearTypingPatternsModal: {
+                    heading: "Bestätigung",
+                    message: "Cette action effacera vos modèles de frappe enregistrés dans TypingDNA. " +
+                        "Souhaitez-vous continuer?"
+                }
+            },
+            notifications: {
+                clearTypingPatterns: {
+                    error: {
+                        description: "Les modèles de saisie n'ont pas pu être effacés. Veuillez contacter " +
+                            "l'administrateur de votre site",
+                        message: "Échec de la suppression des modèles de saisie"
+                    },
+                    success: {
+                        description: "Vos modèles de frappe dans TypingDNA ont été effacés avec succès",
+                        message: "Modèles de frappe supprimés avec succès"
+                    }
+                }
+            },
+            typingdna: {
+                description: "Vos modèles de frappe peuvent être effacés à partir d'ici",
+                heading: "TypingDNA modèles de frappe"
+            }
+        },
         mfa: {
             authenticatorApp: {
+                addHint: "Configurer",
+                configuredDescription: "Vous pouvez utiliser les codes TOTP de votre " +
+                    "application d'authentification configurée pour une authentification à " +
+                    "deux facteurs. Si vous n'avez pas accès à l'application, vous pouvez configurer " +
+                    "une nouvelle application d'authentification à partir d'ici",
+                deleteHint: "Retirer",
                 description: "Scannez le code QR à l'aide d'une application " +
                     "d'authentification pour utiliser des codes d'accès " +
                     "à usage unique basés sur le temps (également appelés TOTP) " +
                     "comme deuxième facteur lors de la connexion aux applications.",
+                enableHint: "Activer/désactiver l'authentificateur TOTP",
                 heading: "Application d'authentification",
-                hint: "Afficher le code QR",
+                hint: "Voir",
                 modals: {
-                    heading: "Set Up An Authenticator App",
-                    done: "Réussi ! Vous pouvez maintenant utiliser votre application d'authentification pour une authentification en deux étapes",
+                    delete : {
+                        heading: "Confirmation",
+                        message: "Cette action supprimera le code QR ajouté à votre profil. " +
+                            "Souhaitez-vous continuer ? "
+                    },
+                    done: "Réussi ! Vous pouvez maintenant utiliser votre application d'authentification pour une " +
+                        "authentification en deux étapes",
+                    heading: "Configurer une application d'authentification",
                     scan: {
+                        additionNote: "Le code QR a été ajouté avec succès à votre profil",
                         authenticatorApps: "Applications d'authentification",
                         generate: "Générer un nouveau code",
                         heading: "Scannez ce code QR à l'aide d'une application d'authentification",
-                        messageBody: "Vous pouvez utiliser une application d'authentification compatible dans cette liste :",
-                        messageHeading: "Vous n'avez pas d'application d'authentification ?"
+                        messageBody: "Vous pouvez utiliser une application d'authentification compatible dans " +
+                            "cette liste :",
+                        messageHeading: "Vous n'avez pas d'application d'authentification ?",
+                        regenerateConfirmLabel: "Confirmez la régénération d'un nouveau code QR",
+                        regenerateWarning: {
+                            extended: "Lorsque vous régénérez un nouveau code QR, vous devez le scanner et réinstaller votre application Authenticatrice.Vous ne pourrez plus vous connecter avec le code QR précédent.",
+                            generic: "Lorsque vous régénérez un nouveau code QR, vous devez le scanner et réinstaller votre application Authenticatrice.Votre configuration précédente ne fonctionnera plus."
+                        }
                     },
+                    toolTip: "Vous n'avez pas d'application? Téléchargez une application d'authentification " +
+                        "telle que Google Authenticator depuis <1>App Store</1> ou <3>Google Play</3>",
                     verify: {
                         error: "La vérification a échoué. Veuillez réessayer.",
-                        heading: "Entrez le code de vérification fourni par l'application d'authentification",
+                        heading: "Entrez le code généré pour vérification",
                         label: "Code de vérification",
                         placeholder: "Entrez votre code de vérification",
                         reScan: "Re-scanner",
                         reScanQuestion: "Voulez-vous scanner le code QR à nouveau ?",
                         requiredError: "Veuillez entrer votre code de vérification"
-                    },
-                    toolTip: "Vous n'avez pas d'application? Téléchargez une application d'authentification " + 
-                    "telle que Google Authenticator depuis <3> App Store </3> ou <3> Google Play </3>"
+                    }
                 },
                 notifications: {
+                    deleteError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la suppression de la " +
+                                "configuration de l'authentificateur TOTP",
+                            message: "Quelque chose s'est mal passé"
+                        }
+                    },
+                    deleteSuccess: {
+                        genericMessage: "Suppression réussie",
+                        message: "La configuration TOTP a bien été supprimée."
+                    },
                     initError: {
                         error: {
                             description: "{{error}}",
@@ -579,72 +702,216 @@ export const myAccount: MyAccountNS = {
                             description: "Une erreur s'est produite lors de la récupération d'un nouveau code QR",
                             message: "Quelque chose s'est mal passé"
                         }
+                    },
+                    updateAuthenticatorError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la tentative de mise " +
+                                "à jour de la liste des authentificateurs activés",
+                            message: "Quelque chose s'est mal passé"
+                        }
                     }
-                }
+                },
+                regenerate: "Régénérer"
+            },
+            backupCode: {
+                description: "Utilisez des codes de secours pour accéder à votre compte au cas où vous ne pourriez pas " +
+                    "recevoir de codes d'authentification multifacteur. Vous pouvez régénérer de nouveaux codes si nécessaire.",
+                download: {
+                    heading: "ENREGISTREZ VOS CODES DE SECOURS.",
+                    info1: "Vous ne pouvez utiliser chaque code de secours qu'une seule fois.",
+                    info2: "Ces codes ont été générés sur ",
+                    subHeading: "Vous pouvez utiliser ces codes de secours pour vous connecter à " +
+                        "Asgardeo lorsque vous êtes loin de votre téléphone. Conservez ces codes " +
+                        "de sauvegarde dans un endroit sûr mais accessible."
+                },
+                heading: "Codes de sauvegarde",
+                modals: {
+                    actions: {
+                        copied: "copié",
+                        copy: "Copier les codes",
+                        download: "Codes de téléchargement",
+                        regenerate: "Régénérer"
+                    },
+                    description: "Utilisez les codes de secours pour vous connecter lorsque vous êtes " +
+                        "loin de votre téléphone. Vous pouvez en générer plus lorsqu'ils sont tous utilisés",
+                    generate: {
+                        description: "Tous vos codes de secours sont utilisés. " +
+                            "Permet de générer un nouvel ensemble de codes de secours",
+                        heading: "Générer"
+                    },
+                    heading: "Codes de sauvegarde",
+                    info: "Chaque code ne peut être utilisé qu'une seule fois",
+                    regenerate: {
+                        description: "Après avoir généré de nouveaux codes, vos anciens codes ne fonctionneront plus. "
+                            + "Assurez-vous de sauvegarder les nouveaux codes une fois qu'ils sont générés.",
+                        heading: "Confirmation"
+                    },
+                    subHeading: "Codes d'accès à usage unique que vous pouvez utiliser pour vous connecter",
+                    warn: "Ces codes n'apparaîtront qu'une seule fois. Assurez-vous de les enregistrer "
+                        + "maintenant et de les stocker dans un endroit sûr mais accessible."
+                },
+                mutedHeader: "Options de récupération",
+                notifications: {
+                    deleteError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la suppression des codes de secours",
+                            message: "Quelque chose s'est mal passé"
+                        }
+                    },
+                    downloadError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la tentative de " +
+                                "téléchargement des codes de secours",
+                            message: "Quelque chose s'est mal passé"
+                        }
+                    },
+                    downloadSuccess: {
+                        genericMessage: {
+                            description: "Les codes de sauvegarde sont téléchargés avec succès.",
+                            message: "Les codes de sauvegarde ont été téléchargés avec succès."
+                        },
+                        message: {
+                            description: "{{message}}",
+                            message: "Les codes de sauvegarde ont été téléchargés avec succès."
+                        }
+                    },
+                    refreshError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la tentative de " +
+                                "génération de nouveaux codes de secours",
+                            message: "Quelque chose s'est mal passé"
+                        }
+                    },
+                    retrieveAuthenticatorError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la tentative d'obtention " +
+                                "de la liste des authentificateurs activés",
+                            message: "Quelque chose s'est mal passé"
+                        }
+                    },
+                    retrieveError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la récupération des codes de secours",
+                            message: "Quelque chose s'est mal passé"
+                        }
+                    },
+                    updateAuthenticatorError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la tentative de mise " +
+                                "à jour de la liste des authentificateurs activés",
+                            message: "Quelque chose s'est mal passé"
+                        }
+                    }
+                },
+                remaining: "restant"
             },
             fido: {
-                description: "Authentifiez-vous à l'aide un dispositif biométrique ou dispositif FIDO",
+                description: "Vous pouvez utiliser une clé de sécurité FIDO2 ou des données biométriques" +
+                    " dans votre appareil pour vous connecter à votre compte.",
                 form: {
-                    label: "Dispositif de sécurité",
-                    placeholder: "Entrez un nom pour le dispositif",
-                    remove: "Supprimer le dispositif",
-                    required: "Veuillez saisir un nom pour votre dispositif de sécurité"
+                    label: "Clé de sécurité/Biométrie",
+                    placeholder: "Entrez un nom pour la clé de sécurité/biométrique",
+                    remove: "Retirer la clé de sécurité/biométrique",
+                    required: "Veuillez entrer un nom pour votre clé de sécurité/biométrique"
                 },
-                heading: "à l'aide d'un dispositif de sécurité",
+                heading: "Clé de sécurité/Biométrie",
                 modals: {
+                    deleteConfirmation: {
+                        assertionHint: "Veuillez confirmer votre action.",
+                        content: "Cette action est irréversible et supprimera définitivement " +
+                            "la clé de sécurité/biométrique.",
+                        description: "Si vous supprimez cette clé de sécurité/biométrique, vous ne pourrez " +
+                            "peut-être plus vous connecter à votre compte. Veuillez procéder avec prudence.",
+                        heading: "Es-tu sûr?"
+                    },
                     deviceRegistrationErrorModal: {
-                        description: "L'enregistrement du dispositif a été interrompu. " +
-                            "Si ce n'était pas intentionnel, veuillez recommencer la procédure d'ajout " +
-                            "du dispositif ou réessayer avec un dispositif moins récent.",
-                        heading: "Échec de l'enregistrement du dispositif"
+                        description: "La clé de sécurité/l'enregistrement biométrique a " +
+                            "été interrompu. Si ce n'était pas intentionnel, vous pouvez réessayer le flux.",
+                        heading: "Échec de l'enregistrement de la clé de sécurité/biométrique",
+                        tryWithOlderDevice: "Vous pouvez également réessayer avec une " +
+                            "ancienne clé de sécurité/biométrique."
                     }
                 },
                 notifications: {
                     removeDevice: {
                         error: {
                             description: "{{description}}",
-                            message: "Une erreur s'est produite lors de la suppression du dispositif"
+                            message: "Une erreur s'est produite lors de la suppression " +
+                                "de la clé de sécurité/biométrique"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la suppression du dispositif",
+                            description: "Une erreur s'est produite lors de la " +
+                                "suppression de la clé de sécurité/biométrique",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
-                            description: "Le dispositif a été supprimé de votre compte avec succès",
-                            message: "Dispositif retiré avec succès"
+                            description: "La clé de sécurité/biométrique a été supprimée avec succès de la liste",
+                            message: "Votre clé de sécurité/biométrique a été supprimée avec succès"
                         }
                     },
                     startFidoFlow: {
                         error: {
                             description: "{{description}}",
-                            message: "Une erreur s'est produite lors de l'accès au dispositif"
+                            message: "Une erreur s'est produite lors de la récupération " +
+                                "de la clé de sécurité/biométrique"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de l'accès au dispositif",
+                            description: "Une erreur s'est produite lors de la récupération" +
+                                " de la clé de sécurité/biométrique",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
-                            description: "Le dispositif a été enregistré avec succès. Vous pouvez dès " +
-                                "à présent l'utiliser comme un facteur d'authentification",
-                            message: "Votre dispositif a été enregistré avec succès"
+                            description: "La clé de sécurité/biométrique a été enregistrée " +
+                                "avec succès et vous pouvez maintenant l'utiliser pour l'authentification.",
+                            message: "Votre clé de sécurité/biométrique enregistrée avec succès"
                         }
                     },
                     updateDeviceName: {
                         error: {
                             description: "{{description}}",
-                            message: "Une erreur s'est produite lors de la mise à jour du nom du dispositif"
+                            message: "Une erreur s'est produite lors de la mise à jour " +
+                                "de la clé de sécurité/du nom biométrique"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour du nom du dispositif",
+                            description: "Une erreur s'est produite lors de la mise à " +
+                                "jour de la clé de sécurité/du nom biométrique",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
-                            description: "Le nom de votre dispositif a été mis à jour avec succès",
-                            message: "Nom du dispositif mis à jour avec succès"
+                            description: "Le nom de votre clé de sécurité/biométrique a été mis à jour avec succès",
+                            message: "Clé de sécurité/Nom biométrique mis à jour avec succès"
                         }
                     }
                 },
-                tryButton: "Essayez avec un dispositif moins récent"
+                tryButton: "Essayez avec une ancienne clé de sécurité/biométrique"
             },
             smsOtp: {
                 descriptions: {
@@ -655,18 +922,51 @@ export const myAccount: MyAccountNS = {
                     updateMobile: {
                         error: {
                             description: "{{description}}",
-                            message: "Une erreur s'est produite lors de la mise à jour du numéro de téléphone de récupération"
+                            message: "Une erreur s'est produite lors de la mise à jour du numéro de téléphone " +
+                                "de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour du numéro de téléphone de récupération",
+                            description: "Une erreur s'est produite lors de la mise à jour du numéro de téléphone " +
+                                "de récupération",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
-                            description: "Le numéro de téléphone portable dans le profil de l'utilisateur est mis à jour avec succès",
+                            description: "Le numéro de téléphone portable dans le profil de l'utilisateur est mis " +
+                                "à jour avec succès",
                             message: "Numéro de récupération mis à jour avec succès"
                         }
                     }
                 }
+            }
+        },
+        mobileUpdateWizard: {
+            done: "Succès! Votre numéro de mobile a été vérifié avec succès.",
+            notifications: {
+                resendError: {
+                    error: {
+                        description: "{{error}}",
+                        message: "Un problème est survenu"
+                    },
+                    genericError: {
+                        description: "Une erreur s'est produite lors de la tentative d'obtention d'un nouveau " +
+                            "code de vérification",
+                        message: "Un problème est survenu"
+                    }
+                },
+                resendSuccess: {
+                    message: "La demande de code de renvoi a été envoyée avec succès"
+                }
+            },
+            submitMobile: {
+                heading: "Entrez votre nouveau numéro de mobile"
+            },
+            verifySmsOtp: {
+                error: "Échec de la vérification. Veuillez réessayer.",
+                generate: "Renvoyer un nouveau code de vérification",
+                heading: "Entrez le code de vérification envoyé à votre numéro de mobile",
+                label: "Code de vérification",
+                placeholder: "Entrez votre code de vérification",
+                requiredError: "Entrer le code de vérification"
             }
         },
         overview: {
@@ -700,6 +1000,14 @@ export const myAccount: MyAccountNS = {
                     },
                     description: "Contrôlez les données que vous souhaitez partager avec d'autres applications",
                     header: "Gestion du consentement"
+                },
+                profileStatus: {
+                    completionPercentage: "Votre profil est complété à {{percentage}}%",
+                    description: "Gérez votre profil",
+                    header: "Votre profil {{productName}}",
+                    profileText: "Détails de votre profil personnel",
+                    readOnlyDescription: "Afficher votre profil",
+                    userSourceText: "(Connecté via {{source}})"
                 }
             }
         },
@@ -746,7 +1054,7 @@ export const myAccount: MyAccountNS = {
                         " collection, and information about the retention of your personal information.",
                     para2:
                         "Please note that this policy is for reference only, and is applicable for the software " +
-                        "as a product. WSO2 Inc. and its developers have no access to the information held within " +
+                        "as a product. WSO2 LLC. and its developers have no access to the information held within " +
                         "WSO2 IS. Please see the <1>disclaimer</1> section for more information.",
                     para3:
                         "Entities, organizations or individuals controlling the use and administration of WSO2 IS " +
@@ -854,8 +1162,8 @@ export const myAccount: MyAccountNS = {
                         description: {
                             para1:
                                 "You can request the administrator to delete your account. The administrator is " +
-                                "the administrator of the tenant you are registered under, or the " +
-                                "super-administrator if you do not use the tenant feature.",
+                                "the administrator of the organization you are registered under, or the " +
+                                "super-administrator if you do not use the organization feature.",
                             para2:
                                 "Additionally, you can request to anonymize all traces of your activities " +
                                 "that WSO2 IS may have retained in logs, databases or analytical storage."
@@ -942,27 +1250,111 @@ export const myAccount: MyAccountNS = {
         },
         profile: {
             fields: {
-                addressesHome: "Adresse personnelle",
-                addressesWork: "Adresse professionnelle",
+                "Account Confirmed Time": "Heure confirmée du compte",
+                "Account Disabled": "Compte désactivé",
+                "Account Locked": "Compte bloqué",
+                "Account State": "État du compte",
+                "Active": "Active",
+                "Address - Street": "Rue d'adresse",
+                "Ask Password": "Demander le mot de passe",
+                "Backup Code Enabled": "Code de sauvegarde activé",
+                "Backup Codes": "Codes de sauvegarde",
+                "Birth Date": "Date de naissance",
+                "Country": "Pays",
+                "Created Time": "Temps créé",
+                "Disable EmailOTP": "Désactiver EMAILOTP",
+                "Disable SMSOTP": "Désactiver SMSOTP",
+                "Display Name": "Afficher un nom",
+                "Email": "E-mail",
+                "Email Verified": "Email verifié",
+                "Enabled Authenticators": "Authentificateurs activés",
+                "Existing Lite User": "Utilisateur Lite existant",
+                "External ID": "ID externe",
+                "Failed Attempts Before Success": "Échec des tentatives avant le succès",
+                "Failed Backup Code Attempts": "Échec des tentatives de code de sauvegarde",
+                "Failed Email OTP Attempts": "Email Échec des tentatives OTP",
+                "Failed Lockout Count": "Compte de lock-out échoué",
+                "Failed Login Attempts": "Échec des tentatives de connexion",
+                "Failed Password Recovery Attempts": "Échec des tentatives de récupération de mot de passe",
+                "Failed SMS OTP Attempts": "Échec des tentatives de SMS OTP",
+                "Failed TOTP Attempts": "Échec des tentatives TOTP",
+                "First Name": "Prénom",
+                "Force Password Reset": "Forcer la réinitialisation du mot de passe",
+                "Full Name": "Nom et prénom",
+                "Gender": "Genre",
+                "Groups": "Groupes",
+                "Identity Provider Type": "Type de fournisseur d'identité",
+                "Last Logon": "Dernière connexion",
+                "Last Modified Time": "Dernière heure modifiée",
+                "Last Name": "Nom de famille",
+                "Last Password Update": "Dernière mise à jour du mot de passe",
+                "Lite User": "Utilisateur de lite",
+                "Lite User ID": "ID utilisateur de lite",
+                "Local": "Locale",
+                "Local Credential Exists": "Des informations d'identification locales existent",
+                "Locality": "Localité",
+                "Location": "Emplacement",
+                "Locked Reason": "Raison verrouillée",
+                "Manager - Name": "Manager - Nom",
+                "Middle Name": "Deuxième nom",
+                "Mobile": "mobile",
+                "Nick Name": "Surnom",
+                "Phone Verified": "Téléphone vérifié",
+                "Photo - Thumbnail": "Photo - Vignette",
+                "Photo URL": "URL photo",
+                "Postal Code": "Code Postal",
+                "Preferred Channel": "Canal préféré",
+                "Read Only User": "Lire uniquement l'utilisateur",
+                "Region": "Région",
+                "Resource Type": "Type de ressource",
+                "Roles": "Les rôles",
+                "Secret Key": "Clef secrète",
+                "TOTP Enabled": "TOTP activé",
+                "Time Zone": "Fuseau horaire",
+                "URL": "url",
+                "Unlock Time": "Déverrouiller le temps",
+                "User Account Type": "Type de compte d'utilisateur",
+                "User ID": "ID de l'utilisateur",
+                "User Metadata - Version": "Métadonnées utilisateur - version",
+                "User Source": "Source d'utilisateur",
+                "User Source ID": "ID de source utilisateur",
+                "Username": "Nom d'utilisateur",
+                "Verification Pending Email": "E-mail en attente de vérification",
+                "Verification Pending Mobile Number": "Numéro de mobile en attente de vérification",
+                "Verify Email": "Vérifier les courriels",
+                "Verify Mobile": "Vérifiez le mobile",
+                "Verify Secret Key": "Vérifiez la clé secrète",
+                "Website URL": "URL de site web",
                 emails: "Email",
-                emailsHome: "E-mail personnel",
-                emailsOther: "Autre adresse e-mail",
-                emailsWork: "E-mail professionnel",
                 generic: {
                     default: "Ajouter l'attribut {{fieldName}}"
                 },
                 nameFamilyName: "Nom de famille",
                 nameGivenName: "Prénom",
                 phoneNumbers: "Numéros de téléphone",
-                phoneNumbersHome: "Numéro de téléphone personnel",
-                phoneNumbersMobile: "Numéro de téléphone portable",
-                phoneNumbersOther: "Autre numéro de téléphone",
-                phoneNumbersWork: "Numéro de téléphone au professionnel",
                 profileImage: "Image de profil",
                 profileUrl: "URL",
                 userName: "Nom d'utilisateur"
             },
             forms: {
+                countryChangeForm: {
+                    inputs: {
+                        country: {
+                            placeholder: "Sélectionnez votre pays"
+                        }
+                    }
+                },
+                dateChangeForm: {
+                    inputs: {
+                        date: {
+                            validations: {
+                                futureDateError: "La date que vous avez saisie pour le champ {{field}} " +
+                                "n'est pas valide.",
+                                invalidFormat: "Veuillez saisir un test valide au format YYYY-MM-DD."
+                            }
+                        }
+                    }
+                },
                 emailChangeForm: {
                     inputs: {
                         email: {
@@ -972,7 +1364,9 @@ export const myAccount: MyAccountNS = {
                             placeholder: "Veuillez saisir votre adresse e-mail",
                             validations: {
                                 empty: "L'adresse e-mail est obligatoire",
-                                invalidFormat: "Format de l'adresse e-mail saisie invalide"
+                                invalidFormat: "Format de l'adresse e-mail saisie invalide. Vous pouvez utiliser des " +
+                                    "caractères alphanumériques, caractères Unicode, des traits de soulignement (_), " +
+                                    "des tirets (-), des points (.) Et un signe arobase (@)."
                             }
                         }
                     }
@@ -986,7 +1380,7 @@ export const myAccount: MyAccountNS = {
                         },
                         validations: {
                             empty: "L'attribut {{fieldName}} est obligatoire",
-                            invalidFormat: "Le format de l'attribut {{fieldName}} saisi est invalide"
+                            invalidFormat: "Le format du {{fieldName}} saisi est incorrect"
                         }
                     }
                 },
@@ -994,11 +1388,13 @@ export const myAccount: MyAccountNS = {
                     inputs: {
                         mobile: {
                             label: "Numéro de téléphone portable",
-                            note: "NOTE: Le numéro de téléphone portable associé de votre profil utilisateur sera modifié",
+                            note: "NOTE: Le numéro de téléphone portable associé de votre profil utilisateur " +
+                                "sera modifié",
                             placeholder: "Veuillez saisir votre numéro de portable",
                             validations: {
                                 empty: "Le numéro de portable est un champ obligatoire",
-                                invalidFormat: "Le format du numéro de téléphone portable saisi est invalide"
+                                invalidFormat: "Veuillez saisir un numéro de mobile valide au format [+][indicatif du "+
+                                    "pays][indicatif régional][numéro de téléphone local]."
                             }
                         }
                     }
@@ -1043,7 +1439,7 @@ export const myAccount: MyAccountNS = {
                         "second facteur est activée et pour l'envoi de codes de récupération en cas de " +
                         "récupération d'un nom d'utilisateur / mot de passe. Pour mettre à jour ce numéro, " +
                         "vous devez vérifier le nouveau numéro en entrant le code de vérification envoyé à votre " +
-                        "nouveau numéro. Cliquez sur mettre à jour si vous souhaitez continuer.",
+                        "nouveau numéro. Cliquez sur mettre à jour si vous souhaitez continuer."
                 }
             },
             notifications: {
@@ -1077,7 +1473,8 @@ export const myAccount: MyAccountNS = {
                 },
                 getUserReadOnlyStatus: {
                     genericError: {
-                        description: "Une erreur s'est produite lors de la récupération du statut lecture-seule de l'utilisateur",
+                        description: "Une erreur s'est produite lors de la récupération du statut lecture-seule " +
+                            "de l'utilisateur",
                         message: "Quelque chose s'est mal passé"
                     }
                 },
@@ -1107,14 +1504,17 @@ export const myAccount: MyAccountNS = {
                 downloadProfileInfo: {
                     error: {
                         description: "{{description}}",
-                        message: "Une erreur s'est produite lors du téléchargement des informations de votre profil utilisateur"
+                        message: "Une erreur s'est produite lors du téléchargement des informations de votre profil " +
+                            "utilisateur"
                     },
                     genericError: {
-                        description: "Une erreur s'est produite lors du téléchargement des informations de votre profil utilisateur",
+                        description: "Une erreur s'est produite lors du téléchargement des informations de votre " +
+                            "profil utilisateur",
                         message: "Quelque chose s'est mal passé"
                     },
                     success: {
-                        description: "Le téléchargement du fichier contenant les informations de votre profil utilisateur a commencé",
+                        description: "Le téléchargement du fichier contenant les informations de votre profil " +
+                            "utilisateur a commencé",
                         message: "Le téléchargement des détails de votre profil utilisateur a débuté"
                     }
                 }
@@ -1133,13 +1533,22 @@ export const myAccount: MyAccountNS = {
                     subheader: "L'accès à votre compte depuis cet appareil sera supprimé."
                 }
             },
-            lastAccessed: "Dernier accès il y a {{date}}",
+            lastAccessed: "Dernier accès {{date}}",
             modals: {
+                terminateActiveUserSessionModal: {
+                    heading: "Terminer les sessions actives en cours",
+                    message:
+                        "Les modifications de l'option d'authentification à deux facteurs (2FA) ne seront pas appliquées à vos sessions actives. Nous vous " +
+                        "recommandons de les résilier.",
+                    primaryAction: "Terminer tout",
+                    secondaryAction: "Réviser et résilier"
+
+                },
                 terminateAllUserSessionsModal: {
                     heading: "Confirmation",
                     message:
-                        "Cette action supprimera l'accès à votre compte depuis tous les appareils. " +
-                        "Souhaitez-vous continuer ?"
+                        "L'action vous déconnectera de cette session et de toutes les autres sessions sur " +
+                        "chaque appareil. Souhaitez-vous continuer?"
                 },
                 terminateUserSessionModal: {
                     heading: "Confirmation",
@@ -1192,35 +1601,6 @@ export const myAccount: MyAccountNS = {
                     }
                 }
             }
-        },
-        mobileUpdateWizard: {
-            done: "Succès! Votre numéro de mobile a été vérifié avec succès.",
-            submitMobile: {
-                heading: "Entrez votre nouveau numéro de mobile",
-            },
-            verifySmsOtp: {
-                generate: "Renvoyer un nouveau code de vérification",
-                heading: "Entrez le code de vérification envoyé à votre numéro de mobile",
-                error: "Échec de la vérification. Veuillez réessayer.",
-                label: "Code de vérification",
-                placeholder: "Entrez votre code de vérification",
-                requiredError: "Entrer le code de vérification",
-            },
-            notifications: {
-                resendSuccess: {
-                    message: "La demande de code de renvoi a été envoyée avec succès"
-                },
-                resendError: {
-                    error: {
-                        description: "{{error}}",
-                        message: "Un problème est survenu"
-                    },
-                    genericError: {
-                        description: "Une erreur s'est produite lors de la tentative d'obtention d'un nouveau code de vérification",
-                        message: "Un problème est survenu"
-                    }
-                }
-            }
         }
     },
     modals: {
@@ -1229,8 +1609,8 @@ export const myAccount: MyAccountNS = {
                 gravatar: {
                     errors: {
                         noAssociation: {
-                            content: "Il semblerait que l'adresse e-mail sélectionnée ne soit pas enregistré sur Gravatar. " +
-                                "Veuillez créer un compte en vous rendant sur le site officiel de Gravatar " +
+                            content: "Il semblerait que l'adresse e-mail sélectionnée ne soit pas enregistré sur " +
+                                "Gravatar. Veuillez créer un compte en vous rendant sur le site officiel de Gravatar " +
                                 "ou utilisez une des images ci-dessous.",
                             header: "Aucune image n'a été trouvée sur Gravatar !"
                         }
@@ -1275,19 +1655,19 @@ export const myAccount: MyAccountNS = {
             secondaryButton: "Annuler"
         },
         sessionTimeoutModal: {
-            description: "Vous semblez inactif et allez être déconnecté. " +
-                "Sélectionnez <1>Rester connecté<1> pour poursuivre la session.",
-            heading: "Vous serez déconnecté(e) dans <1>{{ time }}</1>.",
-            primaryButton: "Rester connecté",
-            secondaryButton: "Se déconnecter",
+            description: "Lorsque vous cliquez sur <1>Retour</1>, nous essaierons de récupérer la session " +
+                "si elle existe. Si vous n'avez pas de session active, vous serez redirigé vers la page de connexion.",
+            heading: "Il semble que vous ayez été inactif pendant longtemps.",
             loginAgainButton: "Connectez-vous à nouveau",
-            sessionTimedOutHeading: "La session utilisateur a expiré en raison d'une inactivité.",
-            sessionTimedOutDescription: "Veuillez vous reconnecter pour reprendre là où vous vous étiez arrêté."
+            primaryButton: "Retourner",
+            secondaryButton: "Déconnexion",
+            sessionTimedOutDescription: "Veuillez vous reconnecter pour reprendre là où vous vous étiez arrêté.",
+            sessionTimedOutHeading: "La session utilisateur a expiré en raison d'une inactivité."
         }
     },
     pages: {
         applications: {
-            subTitle: "Gérer et maintenir vos applications",
+            subTitle: "Découvrez et accédez à vos applications",
             title: "Applications"
         },
         overview: {
@@ -1299,18 +1679,20 @@ export const myAccount: MyAccountNS = {
             subTitle: "Modifier ou exporter votre profil personnel et gérer vos comptes associés",
             title: "Données personnelles"
         },
-        personalInfoWithoutLinkedAccounts: {
-            subTitle: "Modifier ou exporter votre profil personnel",
-            title: "Données personnelles"
-        },
         personalInfoWithoutExportProfile: {
             subTitle: "Modifier votre profil personnel",
+            title: "Données personnelles"
+        },
+        personalInfoWithoutLinkedAccounts: {
+            subTitle: "Modifier ou exporter votre profil personnel",
             title: "Données personnelles"
         },
         privacy: {
             subTitle: "",
             title: "Politique de confidentialité de WSO2 Identity Server"
         },
+        readOnlyProfileBanner: "Votre profil ne peut pas être modifié depuis ce portail. Veuillez " +
+            "contacter votre administrateur pour plus de détails.",
         security: {
             subTitle: "Sécurisez votre compte en gérant les consentements, les sessions authentifiées et les " +
                 "paramètres de sécurité",
@@ -1322,7 +1704,8 @@ export const myAccount: MyAccountNS = {
             action: "Revenir à la page d'accueil",
             subtitles: {
                 0: "La page que vous essayez de consulter n'existe pas.",
-                1: "Veuillez vérifier l'URL ou cliquez sur le bouton ci-dessous pour être redirigé vers la page d'accueil."
+                1: "Veuillez vérifier l'URL ou cliquez sur le bouton ci-dessous pour être redirigé vers la page " +
+                    "d'accueil."
             },
             title: "Page introuvable"
         },
@@ -1379,7 +1762,8 @@ export const myAccount: MyAccountNS = {
             actionTitles: {
                 change: "Changer mon mot de passe"
             },
-            description: "Assurez-vous de mettre à jour régulièrement votre mot de passe et de ne pas le réutiliser sur d'autres sites.",
+            description: "Assurez-vous de mettre à jour régulièrement votre mot de passe et de ne pas le réutiliser " +
+                "sur d'autres sites.",
             heading: "Changer de mot de passe"
         },
         consentManagement: {
@@ -1396,8 +1780,17 @@ export const myAccount: MyAccountNS = {
                 }
             }
         },
+        createPassword: {
+            actionTitles: {
+                create: "Créer un mot de passe"
+            },
+            description: "Créez un mot de passe dans {{productName}}. Vous pouvez utiliser ce mot de passe pour vous " +
+                "connecter à {{productName}} en plus de la connexion sociale.\n",
+            heading: "Créer un mot de passe"
+        },
         federatedAssociations: {
-            description: "Visualisez les comptes enregistrés auprès de services d'authentifications tiers liés à votre compte",
+            description: "Visualisez les comptes enregistrés auprès de services d'authentifications tiers liés à " +
+                "votre compte",
             heading: "Services d'authentification tiers"
         },
         linkedAccounts: {
@@ -1414,14 +1807,16 @@ export const myAccount: MyAccountNS = {
             heading: "Authentification à plusieurs étapes"
         },
         profile: {
-            description: "Gérez vos données personnelles telles que votre nom, votre adresse e-mail, votre numéro de téléphone portable, etc.",
+            description: "Gérez vos données personnelles telles que votre nom, votre adresse e-mail, votre numéro " +
+                "de téléphone portable, etc.",
             heading: "Profil"
         },
         profileExport: {
             actionTitles: {
                 export: "Téléchargez le profil"
             },
-            description: "Téléchargez toutes les données de votre profil utilisateur : données personnelles, questions de sécurité et consentements",
+            description: "Téléchargez toutes les données de votre profil utilisateur : données personnelles, " +
+                "questions de sécurité et consentements",
             heading: "Télécharger mon profil"
         },
         userSessions: {

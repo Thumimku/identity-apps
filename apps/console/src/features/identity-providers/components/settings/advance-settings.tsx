@@ -19,7 +19,7 @@
 import { AlertLevels, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import { EmphasizedSegment } from "@wso2is/react-components";
-import React, { FunctionComponent, ReactElement } from "react";
+import React, { FunctionComponent, ReactElement, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { updateIdentityProviderDetails } from "../../api";
@@ -43,6 +43,18 @@ interface AdvanceSettingsPropsInterface extends TestableComponentInterface {
      * Callback to update the idp details.
      */
     onUpdate: (id: string) => void;
+    /**
+     * Is the idp info request loading.
+     */
+    isLoading?: boolean;
+    /**
+     * Specifies if the component should only be read-only.
+     */
+    isReadOnly: boolean;
+    /**
+     * Loading Component.
+     */
+    loader: () => ReactElement;
 }
 
 /**
@@ -59,10 +71,15 @@ export const AdvanceSettings: FunctionComponent<AdvanceSettingsPropsInterface> =
         editingIDP,
         advancedConfigurations,
         onUpdate,
+        isReadOnly,
+        isLoading,
+        loader: Loader,
         [ "data-testid" ]: testId
     } = props;
 
     const dispatch = useDispatch();
+
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     const { t } = useTranslation();
 
@@ -72,26 +89,39 @@ export const AdvanceSettings: FunctionComponent<AdvanceSettingsPropsInterface> =
      * @param values - Form values.
      */
     const handleAdvancedConfigFormSubmit = (values: any): void => {
+        setIsSubmitting(true);
+
         updateIdentityProviderDetails({ id: editingIDP.id, ...values })
             .then(() => {
                 dispatch(addAlert({
-                    description: t("console:develop.features.idp.notifications.updateIDP.success.description"),
+                    description: t("console:develop.features.authenticationProvider.notifications." +
+                        "updateIDP.success.description"),
                     level: AlertLevels.SUCCESS,
-                    message: t("console:develop.features.idp.notifications.updateIDP.success.message")
+                    message: t("console:develop.features.authenticationProvider.notifications." +
+                        "updateIDP.success.message")
                 }));
                 onUpdate(editingIDP.id);
             })
             .catch((error) => {
                 handleIDPUpdateError(error);
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
+    if (isLoading) {
+        return <Loader />;
+    }
+
     return (
-        <EmphasizedSegment className="advanced-configuration-section" padded="very">
+        <EmphasizedSegment className="advanced-configuration-section">
             <AdvanceConfigurationsForm
                 config={ advancedConfigurations }
                 onSubmit={ handleAdvancedConfigFormSubmit }
                 data-testid={ testId }
+                isReadOnly={ isReadOnly }
+                isSubmitting={ isSubmitting }
             />
         </EmphasizedSegment>
     );

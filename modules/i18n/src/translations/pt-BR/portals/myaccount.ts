@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +18,11 @@
 
 import { MyAccountNS } from "../../../models";
 
+/**
+ * NOTES: No need to care about the max-len for this file since it's easier to
+ * translate the strings to other languages easily with editor translation tools.
+ */
+/* eslint-disable max-len */
 export const myAccount: MyAccountNS = {
     components: {
         accountRecovery: {
@@ -27,26 +32,11 @@ export const myAccount: MyAccountNS = {
                 },
                 heading: "Recuperação de código"
             },
-            preference: {
-                notifications: {
-                    error: {
-                        description: "{{description}}",
-                        message: "Erro ao obter a preferência de recuperação"
-                    },
-                    genericError: {
-                        description: "Ocorreu um erro ao obter a preferência de recuperação",
-                        message: "Algo deu errado"
-                    },
-                    success: {
-                        description: "A preferência de recuperação foi recuperada com sucesso",
-                        message: "Recuperação de preferência de recuperação bem-sucedida"
-                    }
-                }
-            },
             emailRecovery: {
                 descriptions: {
                     add: "Adicionar um endereço de email de recuperação",
-                    update: "Atualizar endereço de email de recuperação ({{email}})"
+                    update: "Atualizar endereço de email de recuperação ({{email}})",
+                    view: "Ver endereço de e-mail de recuperação ({{email}})"
                 },
                 forms: {
                     emailResetForm: {
@@ -77,6 +67,22 @@ export const myAccount: MyAccountNS = {
                             description: "O endereço de email no perfil do usuário foi atualizado com sucesso",
                             message: "Endereço de email atualizado com sucesso"
                         }
+                    }
+                }
+            },
+            preference: {
+                notifications: {
+                    error: {
+                        description: "{{description}}",
+                        message: "Erro ao obter a preferência de recuperação"
+                    },
+                    genericError: {
+                        description: "Ocorreu um erro ao obter a preferência de recuperação",
+                        message: "Algo deu errado"
+                    },
+                    success: {
+                        description: "A preferência de recuperação foi recuperada com sucesso",
+                        message: "Recuperação de preferência de recuperação bem-sucedida"
                     }
                 }
             },
@@ -194,7 +200,7 @@ export const myAccount: MyAccountNS = {
                         }
                     }
                 },
-                placeholder: "Procura por nome",
+                placeholder: "Procura por nome"
             },
             all: {
                 heading: "Todas as aplicações"
@@ -271,6 +277,19 @@ export const myAccount: MyAccountNS = {
                                 "novamente",
                             message: "Alterar erro de senha"
                         },
+                        invalidNewPassword: {
+                            description: "A senha não atende às restrições exigidas.",
+                            message: "Senha inválida"
+                        },
+                        passwordCaseRequirement: "Pelo menos {{minUpperCase}} maiúsculas e {{minLowerCase}} " +
+                            "letras minúsculas",
+                        passwordCharRequirement: "Pelo menos {{minSpecialChr}} de caracteres especiais",
+                        passwordLengthRequirement: "Deve ter entre {{min}} e {{max}} caracteres",
+                        passwordLowerCaseRequirement: "Pelo menos {{minLowerCase}} letra(s) minúscula(s)",
+                        passwordNumRequirement: "Pelo menos {{min}} número(s)",
+                        passwordRepeatedChrRequirement: "Não mais que {{repeatedChr}} caracter(es) repetido(s)",
+                        passwordUniqueChrRequirement: "Pelo menos {{uniqueChr}} caractere(s) exclusivo(s)",
+                        passwordUpperCaseRequirement: "Pelo menos {{minUpperCase}} letra(s) maiúscula(s)",
                         submitError: {
                             description: "{{description}}",
                             message: "Alterar erro de senha"
@@ -278,6 +297,16 @@ export const myAccount: MyAccountNS = {
                         submitSuccess: {
                             description: "A senha foi alterada com sucesso",
                             message: "Redefinição de senha bem-sucedida"
+                        },
+                        validationConfig: {
+                            error: {
+                                description: "{{description}}",
+                                message: "Erro de recuperação"
+                            },
+                            genericError: {
+                                description: "Não foi possível recuperar os dados de configuração de validação.",
+                                message: "algo deu errado"
+                            }
                         }
                     }
                 }
@@ -375,6 +404,13 @@ export const myAccount: MyAccountNS = {
                 }
             }
         },
+        cookieConsent: {
+            confirmButton: "Entendi",
+            content: "Usamos cookies para garantir que você obtenha a melhor experiência geral. Esses cookies " +
+                "são usados ​​para manter uma sessão contínua ininterrupta ao mesmo tempo em que oferece serviços " +
+                "personalizados e fluidos. Para saiba mais sobre como usamos cookies, consulte nossa " +
+                "<1>Política de Cookies</1>."
+        },
         federatedAssociations: {
             deleteConfirmation: "Isso removerá esse login externo da sua conta. Deseja continuar removendo?",
             notifications: {
@@ -424,6 +460,20 @@ export const myAccount: MyAccountNS = {
         },
         footer: {
             copyright: "Servidor de Identidade WSO2 © {{year}}"
+        },
+        header: {
+            appSwitch: {
+                console: {
+                    description: "Gerenciar como desenvolvedores ou administradores",
+                    name: "Console"
+                },
+                myAccount: {
+                    description: "Gerenciar sua própria conta",
+                    name: "My Account"
+                },
+                tooltip: "Apps"
+            },
+            organizationLabel: "Esta conta é gerenciada por"
         },
         linkedAccounts: {
             accountTypes: {
@@ -525,38 +575,96 @@ export const myAccount: MyAccountNS = {
                 }
             }
         },
+        loginVerifyData: {
+            description: "Esses dados são usados para verificar ainda mais sua identidade durante o login ",
+            heading: "Dados usados para verificar o seu login",
+            modals: {
+                clearTypingPatternsModal: {
+                    heading: "Confirmação",
+                    message: "Esta ação irá limpar seus padrões de digitação salvos no TypingDNA. "+
+                        "Você deseja continuar?"
+                }
+            },
+            notifications: {
+                clearTypingPatterns: {
+                    error: {
+                        description: "Os padrões de digitação não puderam ser apagados. Entre em contato com o"+
+                            " administrador do seu site",
+                        message: "Falha ao limpar padrões de digitação"
+                    },
+                    success: {
+                        description: "Seus padrões de digitação no TypingDNA foram apagados com sucesso ",
+                        message: "Padrões de digitação limpos com sucesso"
+                    }
+                }
+            },
+            typingdna: {
+                description: "Seus padrões de digitação podem ser apagados aqui",
+                heading: "TypingDNA padrões de Digitação"
+            }
+        },
         mfa: {
             authenticatorApp: {
+                addHint: "Configurar",
+                configuredDescription: "Você pode usar códigos TOTP de seu aplicativo " +
+                    "autenticador configurado para autenticação de dois fatores. " +
+                    "Se você não tiver acesso ao aplicativo, pode configurar um novo aplicativo autenticador aqui",
+                deleteHint: "Remover",
                 description: "Digitalize o código QR usando um aplicativo " +
                     "Authenticator para usar senhas de uso único baseadas " +
                     "em tempo (também conhecidas como TOTP) como um segundo " +
                     "fator ao fazer login em aplicativos.",
+                enableHint: "Ativar/desativar o autenticador TOTP",
                 heading: "App autenticador",
-                hint: "Mostrar o QR Code",
+                hint: "Visão",
                 modals: {
-                    heading: "Set Up An Authenticator App",
+                    delete: {
+                        heading: "Confirmação",
+                        message: "Esta ação removerá o código QR adicionado ao seu perfil. Você deseja continuar ?"
+                    },
                     done: "Sucesso! Agora você pode usar seu aplicativo de autenticação para autenticação de dois " +
                         "fatores",
+                    heading: "Configurar um aplicativo autenticador",
                     scan: {
+                        additionNote: "O código QR foi adicionado com sucesso ao seu perfil",
                         authenticatorApps: "Authenticator Apps",
                         generate: "Gere um novo código",
                         heading: "Leia este QR Code usando um aplicativo Authenticator",
                         messageBody: "Você pode encontrar uma lista de aplicativos autenticadores disponíveis aqui.",
-                        messageHeading: "Não tem um aplicativo autenticador instalado?"
+                        messageHeading: "Não tem um aplicativo autenticador instalado?",
+                        regenerateConfirmLabel: "Confirme a regeneração de um novo código QR",
+                        regenerateWarning: {
+                            extended: "Quando você regenera um novo código QR, você deve digitalizá-lo e recriar o aplicativo Authenticator.Você não poderá mais fazer login com o código QR anterior.",
+                            generic: "Quando você regenera um novo código QR, você deve digitalizá-lo e recriar o aplicativo Authenticator.Sua configuração anterior não funcionará mais."
+                        }
                     },
+                    toolTip: "Não tem um aplicativo? Baixe um aplicativo autenticador como o " +
+                        "Google Authenticator na <1>App Store</1> ou <3>Google Play</3>",
                     verify: {
                         error: "Falha na verificação. Por favor, tente novamente.",
-                        heading: "Digite o código de verificação no aplicativo de autenticação",
+                        heading: "Insira o código gerado para verificação",
                         label: "Código de verificação",
                         placeholder: "Digite seu código de verificação",
                         reScan: "Verificar novamente",
                         reScanQuestion: "Deseja digitalizar o código QR novamente?",
                         requiredError: "Insira o código de verificação"
-                    },
-                    toolTip: "Não tem um aplicativo? Baixe um aplicativo autenticador como o " +
-                    "Google Authenticator na <3> App Store </3> ou <3> Google Play </3>"
+                    }
                 },
                 notifications: {
+                    deleteError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Algo deu errado"
+                        },
+                        genericError: {
+                            description: "Ocorreu um erro ao excluir a configuração do Autenticador TOTP",
+                            message: "Algo deu errado"
+                        }
+                    },
+                    deleteSuccess: {
+                        genericMessage: "Removido com sucesso",
+                        message: "Configuração TOTP removida com sucesso."
+                    },
                     initError: {
                         error: {
                             description: "{{error}}",
@@ -576,72 +684,203 @@ export const myAccount: MyAccountNS = {
                             description: "Erro ao tentar obter um novo código QR",
                             message: "Algo deu errado"
                         }
+                    },
+                    updateAuthenticatorError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Algo deu errado"
+                        },
+                        genericError: {
+                            description: "Ocorreu um erro ao tentar atualizar a lista de autenticadores habilitados",
+                            message: "Algo deu errado"
+                        }
                     }
-                }
+                },
+                regenerate: "Regenerado"
+            },
+            backupCode: {
+                description: "Use códigos de backup para acessar sua conta caso não consiga receber códigos de autenticação " +
+                    "multifator. Você pode regenerar novos códigos, se necessário.",
+                download: {
+                    heading: "SALVE SEUS CÓDIGOS DE BACKUP.",
+                    info1: "Você só pode usar cada código de backup uma vez.",
+                    info2: "Esses códigos foram gerados em ",
+                    subHeading: "Você pode usar esses códigos de backup para entrar no Asgardeo quando estiver " +
+                        "longe do telefone. Mantenha esses códigos de backup em algum lugar seguro, mas acessível."
+                },
+                heading: "Códigos de backup",
+                modals: {
+                    actions: {
+                        copied: "Copiado",
+                        copy: "Copiar códigos",
+                        download: "Códigos de download",
+                        regenerate: "Regenerado"
+                    },
+                    description: "Use os códigos de backup para fazer login quando estiver longe do telefone. " +
+                        "Você pode gerar mais quando todos são usados",
+                    generate: {
+                        description: "Todos os seus códigos de backup são usados. " +
+                            "Permite gerar um novo conjunto de códigos de backup",
+                        heading: "Gerar"
+                    },
+                    heading: "Códigos de backup",
+                    info: "Cada código só pode ser usado uma vez",
+                    regenerate: {
+                        description: "Depois de gerar novos códigos, seus códigos antigos não funcionarão mais. "
+                            + "Certifique-se de salvar os novos códigos assim que forem gerados.",
+                        heading: "Confirmação"
+                    },
+                    subHeading: "Senhas de uso único que você pode usar para fazer login",
+                    warn: "Esses códigos aparecerão apenas uma vez. Certifique-se de salvá-los agora e armazená-los "
+                        + "em algum lugar seguro, mas acessível."
+                },
+                mutedHeader: "Opções de recuperação",
+                notifications: {
+                    deleteError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Algo deu errado"
+                        },
+                        genericError: {
+                            description: "Ocorreu um erro ao excluir códigos de backup",
+                            message: "Algo deu errado"
+                        }
+                    },
+                    downloadError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Algo deu errado"
+                        },
+                        genericError: {
+                            description: "Ocorreu um erro ao tentar baixar os códigos de backup",
+                            message: "Algo deu errado"
+                        }
+                    },
+                    downloadSuccess: {
+                        genericMessage: {
+                            description: "Os códigos de backup foram baixados com sucesso.",
+                            message: "Códigos de backup baixados com sucesso."
+                        },
+                        message: {
+                            description: "{{message}}",
+                            message: "Códigos de backup baixados com sucesso."
+                        }
+                    },
+                    refreshError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Algo deu errado"
+                        },
+                        genericError: {
+                            description: "Ocorreu um erro ao tentar gerar novos códigos de backup",
+                            message: "Algo deu errado"
+                        }
+                    },
+                    retrieveAuthenticatorError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Algo deu errado"
+                        },
+                        genericError: {
+                            description: "Ocorreu um erro ao tentar obter a lista de autenticadores habilitados",
+                            message: "Algo deu errado"
+                        }
+                    },
+                    retrieveError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Algo deu errado"
+                        },
+                        genericError: {
+                            description: "Ocorreu um erro ao recuperar os códigos de backup",
+                            message: "Algo deu errado"
+                        }
+                    },
+                    updateAuthenticatorError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "Algo deu errado"
+                        },
+                        genericError: {
+                            description: "Ocorreu um erro ao tentar atualizar a lista de autenticadores habilitados",
+                            message: "Algo deu errado"
+                        }
+                    }
+                },
+                remaining: "restante"
             },
             fido: {
-                description: "Autentique-se conectando uma chave FIDO",
+                description: "Você pode usar uma chave de segurança FIDO2 ou biometria em seu dispositivo " +
+                    "para fazer login em sua conta.",
                 form: {
-                    label: "Dispositivo de segurança",
-                    placeholder: "Digite o nome do dispositivo",
-                    remove: "Retire o dispositivo",
-                    required: "Digite um nome para o seu dispositivo de segurança"
+                    label: "Chave de segurança/biometria",
+                    placeholder: "Insira um nome para a chave de segurança/biométrico",
+                    remove: "Remova a chave de segurança/biométrica",
+                    required: "Insira um nome para sua chave de segurança/biometria"
                 },
-                heading: "FIDO",
+                heading: "Chave de segurança/biometria",
                 modals: {
+                    deleteConfirmation: {
+                        assertionHint: "Por favor, confirme sua ação.",
+                        content: "Esta ação é irreversível e excluirá permanentemente a chave de segurança/biométrica.",
+                        description: "Se você excluir essa chave de segurança/biométrica, talvez não consiga fazer" +
+                            " login na sua conta novamente. Por favor, prossiga com cautela.",
+                        heading: "Tem certeza?"
+                    },
                     deviceRegistrationErrorModal: {
-                        description: "O registro do dispositivo foi interrompido. Se isso não foi intencional, tente " +
-                            "novamente o mesmo fluxo ou tente novamente com uma chave de segurança mais antiga.",
-                        heading: "Falha no registro do dispositivo"
+                        description: "TA chave de segurança/registro biométrico foi interrompido. " +
+                            "Se isso não foi intencional, você pode tentar novamente o fluxo.",
+                        heading: "Falha no registro biométrico/chave de segurança",
+                        tryWithOlderDevice: "Você também pode tentar novamente com uma " +
+                            "chave de segurança/biométrica mais antiga."
                     }
                 },
                 notifications: {
                     removeDevice: {
                         error: {
                             description: "{{description}}",
-                            message: "Ocorreu um erro ao remover o dispositivo"
+                            message: "Ocorreu um erro ao remover a chave de segurança/biométrica"
                         },
                         genericError: {
-                            description: "Ocorreu um erro ao remover o dispositivo",
+                            description: "Ocorreu um erro ao remover a chave de segurança/biométrica",
                             message: "Algo deu errado"
                         },
                         success: {
-                            description: "O dispositivo foi removido com sucesso da lista",
-                            message: "Seu dispositivo foi removido com sucesso"
+                            description: "A chave de segurança/biometria foi removida com sucesso da lista",
+                            message: "Sua chave de segurança/biométrico removido com sucesso"
                         }
                     },
                     startFidoFlow: {
                         error: {
                             description: "{{description}}",
-                            message: "Ocorreu um erro ao recuperar o dispositivo"
+                            message: "Ocorreu um erro ao recuperar a chave de segurança/biométrica"
                         },
                         genericError: {
-                            description: "Ocorreu um erro ao recuperar o dispositivo",
+                            description: "Ocorreu um erro ao recuperar a chave de segurança/biométrica",
                             message: "Algo deu errado"
                         },
                         success: {
-                            description: "O dispositivo foi registrado com sucesso e agora você pode usá-lo como" +
-                                " um fator de autenticação",
-                            message: "Seu dispositivo registrado com sucesso"
+                            description: "A chave de segurança/biométrica foi registrada com sucesso " +
+                                "e agora você pode usá-la para autenticação.",
+                            message: "Sua chave de segurança/biométrico registrado com sucesso"
                         }
                     },
                     updateDeviceName: {
                         error: {
                             description: "{{description}}",
-                            message: "Ocorreu um erro ao atualizar o nome do dispositivo de segurança"
+                            message: "Ocorreu um erro ao atualizar a chave de segurança/nome biométrico"
                         },
                         genericError: {
-                            description: "Erro ao atualizar o nome do dispositivo de segurança",
+                            description: "Ocorreu um erro ao atualizar a chave de segurança/nome biométrico",
                             message: "Algo deu errado"
                         },
                         success: {
-                            description:
-                                "O nome do seu dispositivo de segurança foi atualizado com sucesso",
-                            message: "Nome do dispositivo de segurança atualizado com sucesso"
+                            description: "O nome da sua chave de segurança/biometria foi atualizado com sucesso",
+                            message: "Chave de segurança/nome biométrico atualizado com sucesso"
                         }
                     }
                 },
-                tryButton: "Tente com um dispositivo mais antigo"
+                tryButton: "Tente com uma chave de segurança/biométrica mais antiga"
             },
             smsOtp: {
                 descriptions: {
@@ -664,6 +903,35 @@ export const myAccount: MyAccountNS = {
                         }
                     }
                 }
+            }
+        },
+        mobileUpdateWizard: {
+            done: "Sucesso! O número do seu celular foi verificado com sucesso.",
+            notifications: {
+                resendError: {
+                    error: {
+                        description: "{{error}}",
+                        message: "Algo deu errado"
+                    },
+                    genericError: {
+                        description: "Ocorreu um erro ao tentar obter um novo código de verificação",
+                        message: "Algo deu errado"
+                    }
+                },
+                resendSuccess: {
+                    message: "O pedido de reenvio do código foi enviado com sucesso"
+                }
+            },
+            submitMobile: {
+                heading: "Insira seu novo número de celular"
+            },
+            verifySmsOtp: {
+                error: "Falha na verificação. Por favor, tente novamente.",
+                generate: "Reenviar um novo código de verificação",
+                heading: "Digite o código de verificação enviado para o seu número de celular",
+                label: "Código de verificação",
+                placeholder: "Digite seu código de verificação",
+                requiredError: "Insira o código de verificação"
             }
         },
         overview: {
@@ -697,6 +965,14 @@ export const myAccount: MyAccountNS = {
                     },
                     description: "Controle os dados que você deseja compartilhar com os aplicativos",
                     header: "Controle de Consentimento"
+                },
+                profileStatus: {
+                    completionPercentage: "A conclusão do seu perfil está em {{percentage}}%",
+                    description: "Gerencie seu perfil",
+                    header: "Seu perfil do {{productName}}",
+                    profileText: "Detalhes do seu perfil pessoal",
+                    readOnlyDescription:"Ver seu perfil",
+                    userSourceText: "(Conectado via {{source}})"
                 }
             }
         },
@@ -741,7 +1017,7 @@ export const myAccount: MyAccountNS = {
                     para1: "Esta política descreve como o WSO2 IS captura suas informações pessoais, os propósitos " +
                         "de coleta e informações sobre a retenção de suas informações pessoais.",
                     para2: "Observe que esta política é apenas para referência e é aplicável ao software como um " +
-                        "roduto. A WSO2 Inc. e seus desenvolvedores não têm acesso às informações mantidas no " +
+                        "roduto. A WSO2 LLC. e seus desenvolvedores não têm acesso às informações mantidas no " +
                         "WSO2 IS. Consulte a seção <1> isenção de responsabilidade </1> para obter mais informações.",
                     para3: "Entidades, organizações ou indivíduos que controlam o uso e a administração do WSO2 IS " +
                         "devem criar suas próprias políticas de privacidade, definindo a maneira pela qual os dados " +
@@ -923,27 +1199,110 @@ export const myAccount: MyAccountNS = {
         },
         profile: {
             fields: {
-                addressesHome: "Endereço residencial",
-                addressesWork: "Endereço de trabalho",
+                "Account Confirmed Time": "Tempo confirmado tempo",
+                "Account Disabled": "conta desativada",
+                "Account Locked": "Conta bloqueada",
+                "Account State": "Estado da conta",
+                "Active": "Ativa",
+                "Address - Street": "Endereço - Rua",
+                "Ask Password": "Pergunte a senha",
+                "Backup Code Enabled": "Código de backup ativado",
+                "Backup Codes": "Códigos de backup",
+                "Birth Date": "Data de nascimento",
+                "Country": "País",
+                "Created Time": "Tempo criado",
+                "Disable EmailOTP": "DDesative o email OTP",
+                "Disable SMSOTP": "Desative smsotp",
+                "Display Name": "Nome de exibição",
+                "Email": "E-mail",
+                "Email Verified": "email verificado",
+                "Enabled Authenticators": "Autenticadores habilitados",
+                "Existing Lite User": "Usuário Lite existente",
+                "External ID": "ID externo",
+                "Failed Attempts Before Success": "Tentativas fracassadas antes do sucesso",
+                "Failed Backup Code Attempts": "Tentativas de código de backup com falha",
+                "Failed Email OTP Attempts": "Tentativas de OTP de e -mail fracassado",
+                "Failed Lockout Count": "Contagem de bloqueio com falha",
+                "Failed Login Attempts": "Tentativas de login com falha",
+                "Failed Password Recovery Attempts": "Tentativas de recuperação de senha com falha",
+                "Failed SMS OTP Attempts": "Falha no SMS OTP Tentativas",
+                "Failed TOTP Attempts": "Totp com falha",
+                "First Name": "Primeiro nome",
+                "Force Password Reset": "Redefinição de senha de força",
+                "Full Name": "Nome completo",
+                "Gender": "Gênero",
+                "Groups": "Grupos",
+                "Identity Provider Type": "Tipo de provedor de identidade",
+                "Last Logon": "Último logon",
+                "Last Modified Time": "Último tempo modificado",
+                "Last Name": "Sobrenome",
+                "Last Password Update": "Última atualização de senha",
+                "Lite User": "Usuário de Lite",
+                "Lite User ID": "ID do usuário Lite",
+                "Local": "local",
+                "Local Credential Exists": "Credencial local existe",
+                "Locality": "Localidade",
+                "Location": "Localização",
+                "Locked Reason": "Razão bloqueada",
+                "Manager - Name": "Nome do gerente",
+                "Middle Name": "Nome do meio",
+                "Mobile": "Móvel",
+                "Nick Name": "Apelido",
+                "Phone Verified": "Telefone verificado",
+                "Photo - Thumbnail": "Foto - Miniatura",
+                "Photo URL": "photoUrl",
+                "Postal Code": "Código postal",
+                "Preferred Channel": "Canal preferido",
+                "Read Only User": "Leia apenas o usuário",
+                "Region": "Região",
+                "Resource Type": "Tipo de recurso",
+                "Roles": "Papéis",
+                "Secret Key": "Chave secreta",
+                "TOTP Enabled": "TOTP ativado",
+                "Time Zone": "Tfazer para zona",
+                "URL": "Url",
+                "Unlock Time": "Desbloquear o tempo",
+                "User Account Type": "Tipo de conta de usuário",
+                "User ID": "ID do usuário",
+                "User Metadata - Version": "Metadados do usuário - versão",
+                "User Source": "Fonte do usuário",
+                "User Source ID": "ID de origem do usuário",
+                "Username": "Nome de usuário",
+                "Verification Pending Email": "Verificação em e -mail pendente",
+                "Verification Pending Mobile Number": "Verificação com número de celular pendente",
+                "Verify Email": "Verificar e-mail",
+                "Verify Mobile": "Verifique o celular",
+                "Verify Secret Key": "Verifique a chave secreta",
+                "Website URL": "URL do site",
                 emails: "O email",
-                emailsHome: "E-mail residencial",
-                emailsOther: "Outro email",
-                emailsWork: "Email de trabalho",
                 generic: {
                     default: "Adicionar {{fieldName}}"
                 },
                 nameFamilyName: "Último nome",
                 nameGivenName: "Primeiro nome",
                 phoneNumbers: "Número de telefone",
-                phoneNumbersHome: "Número de telefone residencial",
-                phoneNumbersMobile: "Número de celular",
-                phoneNumbersOther: "Outro número de telefone",
-                phoneNumbersWork: "Número de telefone comercial",
                 profileImage: "Imagem de perfil",
                 profileUrl: "URL",
                 userName: "Nome de usuário"
             },
             forms: {
+                countryChangeForm: {
+                    inputs: {
+                        country: {
+                            placeholder: "Escolha o seu país"
+                        }
+                    }
+                },
+                dateChangeForm: {
+                    inputs: {
+                        date: {
+                            validations: {
+                                futureDateError: "A data inserida no campo {{field}} é inválida.",
+                                invalidFormat: "Insira um {{fieldName}} válido no formato AAAA-MM-DD."
+                            }
+                        }
+                    }
+                },
                 emailChangeForm: {
                     inputs: {
                         email: {
@@ -953,7 +1312,9 @@ export const myAccount: MyAccountNS = {
                             placeholder: "Insira o seu endereço de email",
                             validations: {
                                 empty: "O endereço de email é um campo obrigatório",
-                                invalidFormat: "O endereço de email não está no formato correto"
+                                invalidFormat: "O endereço de email não está no formato correto. Você pode usar " +
+                                    "caracteres alfanuméricos, caracteres Unicode, sublinhados (_), travessões (-), " +
+                                    "pontos (.) E uma arroba (@)."
                             }
                         }
                     }
@@ -979,7 +1340,8 @@ export const myAccount: MyAccountNS = {
                             placeholder: "Digite seu número de celular",
                             validations: {
                                 empty: "O número do celular é um campo obrigatório",
-                                invalidFormat: "O número do celular não está no formato correto"
+                                invalidFormat: "Insira um número de celular válido no formato [+][código do país]"+
+                                    "[código de área][número de telefone local]."
                             }
                         }
                     }
@@ -1024,7 +1386,7 @@ export const myAccount: MyAccountNS = {
                         "fator está habilitada e para enviar códigos de recuperação em caso de recuperação de nome " +
                         "de usuário / senha. Para atualizar este número, você deve verificar o novo número " +
                         "inserindo o código de verificação enviado para o seu novo número. Clique em atualizar se " +
-                        "quiser continuar.",
+                        "quiser continuar."
                 }
             },
             notifications: {
@@ -1117,10 +1479,19 @@ export const myAccount: MyAccountNS = {
             },
             lastAccessed: "Último acesso {{date}}",
             modals: {
+                terminateActiveUserSessionModal: {
+                    heading: "Encerrar sessões ativas atuais",
+                    message:
+                        "As alterações da opção de autenticação de segundo fator (2FA) não serão aplicadas às suas sessões ativas. " +
+                        "Recomendamos que você os encerre.",
+                    primaryAction: "Terminar tudo",
+                    secondaryAction: "Revisar e encerrar"
+
+                },
                 terminateAllUserSessionsModal: {
                     heading: "Confirmação",
-                    message: "Esta ação fará o logout de todas as sessões em todos os dispositivos. Você deseja " +
-                        "continuar?"
+                    message: "A ação o desconectará desta sessão e de todas as outras sessões em todos os " +
+                        "dispositivos. Você deseja continuar?"
                 },
                 terminateUserSessionModal: {
                     heading: "Confirmação",
@@ -1169,35 +1540,6 @@ export const myAccount: MyAccountNS = {
                     success: {
                         description: "Encerrada com êxito a sessão do IDP",
                         message: "Sessão finalizada com sucesso"
-                    }
-                }
-            }
-        },
-        mobileUpdateWizard: {
-            done: "Sucesso! O número do seu celular foi verificado com sucesso.",
-            submitMobile: {
-                heading: "Insira seu novo número de celular",
-            },
-            verifySmsOtp: {
-                generate: "Reenviar um novo código de verificação",
-                heading: "Digite o código de verificação enviado para o seu número de celular",
-                error: "Falha na verificação. Por favor, tente novamente.",
-                label: "Código de verificação",
-                placeholder: "Digite seu código de verificação",
-                requiredError: "Insira o código de verificação",
-            },
-            notifications: {
-                resendSuccess: {
-                    message: "O pedido de reenvio do código foi enviado com sucesso"
-                },
-                resendError: {
-                    error: {
-                        description: "{{error}}",
-                        message: "Algo deu errado"
-                    },
-                    genericError: {
-                        description: "Ocorreu um erro ao tentar obter um novo código de verificação",
-                        message: "Algo deu errado"
                     }
                 }
             }
@@ -1254,19 +1596,19 @@ export const myAccount: MyAccountNS = {
             secondaryButton: "Cancelar"
         },
         sessionTimeoutModal: {
-            description: "Você será desconectado da sessão atual devido à inatividade." +
-                "Selecione Permanecer conectado se desejar continuar a sessão.",
-            heading: "Você será desconectado em <1>{{ time }}</1>.",
-            primaryButton: "Permaneça logado",
-            secondaryButton: "Sair",
+            description: "Ao clicar em <1>Voltar</1>, tentaremos recuperar a sessão, se ela existir. Se você " +
+                "não tiver uma sessão ativa, será redirecionado para a página de login.",
+            heading: "Parece que você está inativo há muito tempo.",
             loginAgainButton: "Entrar novamente",
-            sessionTimedOutHeading: "A sessão do usuário expirou devido à inatividade.",
-            sessionTimedOutDescription: "Faça login novamente para continuar de onde parou."
+            primaryButton: "Volte",
+            secondaryButton: "Sair",
+            sessionTimedOutDescription: "Please log in again to continue from where you left off.",
+            sessionTimedOutHeading: "A sessão do usuário expirou devido à inatividade."
         }
     },
     pages: {
         applications: {
-            subTitle: "Manage and maintain your applications",
+            subTitle: "Descubra e acesse seus aplicativos",
             title: "Applications"
         },
         overview: {
@@ -1277,18 +1619,20 @@ export const myAccount: MyAccountNS = {
             subTitle: "Edite ou exporte seu perfil pessoal e gerencie contas vinculadas",
             title: "Informação pessoal"
         },
-        personalInfoWithoutLinkedAccounts: {
-            subTitle: "Edite ou exporte o seu perfil pessoal",
-            title: "Informação pessoal"
-        },
         personalInfoWithoutExportProfile: {
             subTitle: "Edite o seu perfil pessoal",
+            title: "Informação pessoal"
+        },
+        personalInfoWithoutLinkedAccounts: {
+            subTitle: "Edite ou exporte o seu perfil pessoal",
             title: "Informação pessoal"
         },
         privacy: {
             subTitle: "",
             title: "Política de Privacidade do Servidor de Identidade WSO2"
         },
+        readOnlyProfileBanner: "Seu perfil não pode ser modificado neste portal. " +
+            "Entre em contato com seu administrador para obter mais detalhes.",
         security: {
             subTitle: "Atualize as configurações para tornar sua conta segura",
             title: "Segurança"
@@ -1370,6 +1714,15 @@ export const myAccount: MyAccountNS = {
                     heading: "Você não concedeu consentimento a nenhum aplicativo"
                 }
             }
+        },
+        createPassword: {
+            actionTitles: {
+                create: "Criar senha"
+            },
+            description: "Crie uma senha no {{productName}}. " +
+                "Você pode usar essa senha para fazer login no {{productName}}, " +
+                "além do login social.",
+            heading: "Criar senha"
         },
         federatedAssociations: {
             description: "Veja suas contas de outros provedores de identidade que estão vinculados a esta conta",

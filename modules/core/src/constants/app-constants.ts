@@ -62,4 +62,42 @@ export class AppConstants {
      * @default
      */
     public static readonly MY_ACCOUNT_APP: string = "my_account";
+
+    /**
+     * The name of the event dispatched when a network error occurs.
+     * @constant
+     * @type {string}
+     * @default
+     */
+    public static readonly NETWORK_ERROR_EVENT: string = "network_error_event";
+
+    /**
+     * The name of the event dispatched when a chunk load error occurs.
+     * @constant
+     * @type {string}
+     * @default
+     */
+    public static readonly CHUNK_LOAD_ERROR_EVENT: string = "chunk_load_error_event";
+
+    /**
+     * The name of the event dispatched when a network error occurs.
+     * @constant
+     * @type {string}
+     * @default
+     */
+    public static readonly FULL_UI_SCOPE: string = "console:full";
+
+    /**
+     * Set of Browsers that do not properly support Web Worker APIs.
+     * TODO: Remove `Safari` from here when https://github.com/wso2/product-is/issues/14652 is fixed.
+     * @constant
+     * @type {string[]}
+     * @default
+     */
+    public static readonly WEB_WORKER_UNSUPPORTED_AGENTS: string[] = [
+        "IE",
+        "Safari",
+        "[Mobile] Safari",
+        "Mobile Safari"
+    ];
 }

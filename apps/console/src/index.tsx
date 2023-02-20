@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,92 +16,82 @@
  * under the License.
  */
 
-import { setSupportedI18nLanguages } from "@wso2is/core/store";
+import "core-js/stable";
+import "regenerator-runtime/runtime";
+import { AuthParams, AuthProvider, SPAUtils } from "@asgardeo/auth-react";
 import { ContextUtils, StringUtils } from "@wso2is/core/utils";
-import {
-    I18n,
-    I18nInstanceInitException,
-    I18nModuleConstants,
-    LanguageChangeException,
-    isLanguageSupported
-} from "@wso2is/i18n";
-import { ThemeProvider } from "@wso2is/react-components";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import * as React from "react";
+import { ReactElement } from "react";
 import * as ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
-import { App } from "./app";
-import { Config, UIConstants, store } from "./features/core";
-import "core-js/stable";
-import "regenerator-runtime/runtime";
+import { AuthenticateUtils } from "./features/authentication";
+import { Config, PreLoader, store } from "./features/core";
+import { ProtectedApp } from "./protected-app";
 
 // Set the runtime config in the context.
 ContextUtils.setRuntimeConfig(Config.getDeploymentConfig());
 
-// Set up the i18n module.
-I18n.init({
-    ...Config.getI18nConfig()?.initOptions,
-    debug: window["AppUtils"].getConfig().debug
-    },
-    Config.getI18nConfig()?.overrideOptions,
-    Config.getI18nConfig()?.langAutoDetectEnabled,
-    Config.getI18nConfig()?.xhrBackendPluginEnabled)
-    .then(() => {
+const getAuthParams = (): Promise<AuthParams> => {
+    if (!SPAUtils.hasAuthSearchParamsInURL() && process.env.NODE_ENV === "production") {
 
-        // If `appBaseNameWithoutTenant` is "", avoids adding a forward slash.
-        const resolvedAppBaseNameWithoutTenant: string = StringUtils.removeSlashesFromPath(
-            Config.getDeploymentConfig().appBaseNameWithoutTenant)
-            ? `/${ StringUtils.removeSlashesFromPath(Config.getDeploymentConfig().appBaseNameWithoutTenant) }`
+        const contextPath: string = window[ "AppUtils" ].getConfig().appBase
+            ? `/${ StringUtils.removeSlashesFromPath(window[ "AppUtils" ].getConfig().appBase) }`
             : "";
 
-        // Since the portals are not deployed per tenant, looking for static resources in tenant qualified URLs
-        // will fail. This constructs the path without the tenant, therefore it'll look for the file in
-        // `https://localhost:9443/<PORTAL>/resources/i18n/meta.json` rather than looking for the file in
-        // `https://localhost:9443/t/wso2.com/<PORTAL>/resources/i18n/meta.json`.
-        const metaPath = `${ resolvedAppBaseNameWithoutTenant }/${
-            StringUtils.removeSlashesFromPath(Config.getI18nConfig().resourcePath) }/${
-            I18nModuleConstants.META_FILENAME
-            }`;
-
-        // Fetch the meta file to get the supported languages.
-        axios.get(metaPath)
-            .then((response) => {
-                // Set the supported languages in redux store.
-                store.dispatch(setSupportedI18nLanguages(response?.data));
-
-                const isSupported = isLanguageSupported(I18n.instance.language, null, response?.data);
-
-                if (!isSupported) {
-                    I18n.instance.changeLanguage(I18nModuleConstants.DEFAULT_FALLBACK_LANGUAGE)
-                        .catch((error) => {
-                            throw new LanguageChangeException(I18nModuleConstants.DEFAULT_FALLBACK_LANGUAGE, error);
-                        });
-                }
+        return axios.get(contextPath + "/auth").then((response: AxiosResponse ) => {
+            return Promise.resolve({
+                authorizationCode: response?.data?.authCode,
+                sessionState: response?.data?.sessionState,
+                state: response?.data?.state
             });
-    })
-    .catch((error) => {
-        throw new I18nInstanceInitException(error);
-    });
+        });
+    }
 
-ReactDOM.render(
-    (
+    return;
+};
+
+/**
+ * Render root component with configs.
+ *
+ * @returns Root element with configs.
+ */
+const RootWithConfig = (): ReactElement => {
+
+    const [ ready, setReady ] = React.useState(false);
+
+    React.useEffect(() => {
+        if (AuthenticateUtils.getInitializeConfig()?.baseUrl) {
+            setReady(true);
+
+            return;
+        }
+
+        setReady(false);
+    }, [ AuthenticateUtils.getInitializeConfig()?.baseUrl ]);
+
+    if (!ready) {
+        return <PreLoader />;
+    }
+
+    return (
         <Provider store={ store }>
-            <ThemeProvider
-                initialState={ {
-                    theme: window["AppUtils"].getConfig().ui?.theme?.name ?? UIConstants.DEFAULT_THEME
-                } }
-            >
-                <BrowserRouter>
-                    <App/>
-                </BrowserRouter>
-            </ThemeProvider>
+            <BrowserRouter>
+                <AuthProvider
+                    config={ AuthenticateUtils.getInitializeConfig() }
+                    fallback={ <PreLoader /> }
+                    getAuthParams={ getAuthParams }
+                >
+                    <ProtectedApp />
+                </AuthProvider>
+            </BrowserRouter>
         </Provider>
-    ),
-    document.getElementById("root")
-);
+    );
+};
 
-// Accept HMR for updated modules
-if (import.meta.webpackHot) {
-    import.meta.webpackHot.accept();
-}
+const rootElement: HTMLElement = document.getElementById("root");
+
+// Moved back to the legacy mode due to unpredictable state update issue.
+// Tracked here: https://github.com/wso2/product-is/issues/14912
+ReactDOM.render(<RootWithConfig />, rootElement);

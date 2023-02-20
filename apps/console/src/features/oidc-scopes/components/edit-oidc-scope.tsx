@@ -16,23 +16,37 @@
  * under the License.
  */
 
+import { AccessControlConstants, Show } from "@wso2is/access-control";
+import { hasRequiredScopes } from "@wso2is/core/helpers";
 import { AlertLevels, ExternalClaim, SBACInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import {
+    ConfirmationModal,
     DataTable,
     EmptyPlaceholder,
+    LinkButton,
     PrimaryButton,
     TableActionsInterface,
     TableColumnInterface,
     TableDataInterface
 } from "@wso2is/react-components";
-import React, { FunctionComponent, ReactElement, ReactNode, SyntheticEvent, useEffect, useRef, useState } from "react";
+import React, {
+    FunctionComponent,
+    ReactElement,
+    ReactNode,
+    SyntheticEvent,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState
+} from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Header, Icon, SemanticICONS } from "semantic-ui-react";
 import { AttributeSelectionWizardOtherDialect }
     from "../../applications/components/settings/attribute-management/attirbute-selection-wizard-other-dialect";
-import { FeatureConfigInterface, getEmptyPlaceholderIllustrations } from "../../core";
+import { AppState, FeatureConfigInterface, getEmptyPlaceholderIllustrations } from "../../core";
 import { updateOIDCScopeDetails } from "../api";
 import { OIDCScopesManagementConstants } from "../constants";
 import { OIDCScopesListInterface } from "../models";
@@ -58,6 +72,10 @@ interface EditScopePropsInterface extends SBACInterface<FeatureConfigInterface>,
      */
     selectedAttributes: ExternalClaim[];
     /**
+     * Attributes that have already been filtered.
+     */
+    tempSelectedAttributes: ExternalClaim[];
+    /**
      * Attributes that haven't been selected yet.
      */
     unselectedAttributes: ExternalClaim[];
@@ -69,6 +87,10 @@ interface EditScopePropsInterface extends SBACInterface<FeatureConfigInterface>,
      * Triggers the add attribute modal.
      */
     triggerAddAttributeModal: boolean;
+    /**
+     * Callback to clear the searched attributed list.
+     */
+    clearSearchedAttributes?: () => void;
 }
 
 /**
@@ -85,19 +107,32 @@ export const EditOIDCScope: FunctionComponent<EditScopePropsInterface> = (
         scope,
         onUpdate,
         selectedAttributes,
+        tempSelectedAttributes,
         unselectedAttributes,
         isRequestLoading,
         triggerAddAttributeModal,
-        ["data-testid"]: testId
+        clearSearchedAttributes,
+        [ "data-testid" ]: testId
     } = props;
 
     const { t } = useTranslation();
 
     const dispatch = useDispatch();
 
-    const [showSelectionModal, setShowSelectionModal] = useState<boolean>(false);
+    const [ showSelectionModal, setShowSelectionModal ] = useState<boolean>(false);
+    const [ deletingClaim, setDeletingClaim ] = useState<ExternalClaim>(undefined);
+    const [ showDeleteConfirmationModal, setShowDeleteConfirmationModal ] = useState<boolean>(false);
+    const [ updatedClaimList, setUpdatedClaimList ] = useState<ExternalClaim[]>([]);
 
     const init = useRef(true);
+
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
+    const featureConfig: FeatureConfigInterface = useSelector((state: AppState) => state.config.ui.features);
+
+    const isReadOnly = useMemo(
+        () => !hasRequiredScopes(featureConfig?.oidcScopes, featureConfig?.oidcScopes?.scopes?.update, allowedScopes),
+        [ featureConfig, allowedScopes ]
+    );
 
     useEffect(() => {
         if (init.current) {
@@ -105,11 +140,19 @@ export const EditOIDCScope: FunctionComponent<EditScopePropsInterface> = (
         } else {
             handleOpenSelectionModal();
         }
-    }, [triggerAddAttributeModal]);
+    }, [ triggerAddAttributeModal ]);
 
-    const updateOIDCScope = (attributes: string[]): void => {
+    useEffect(() => {
+        if (!tempSelectedAttributes) {
+            return;
+        }
+
+        setUpdatedClaimList(tempSelectedAttributes);
+    }, [ tempSelectedAttributes ]);
+
+    const updateOIDCScope = useCallback((): void => {
         const data: OIDCScopesListInterface = {
-            claims: attributes,
+            claims: updatedClaimList.map((claim: ExternalClaim) => claim.claimURI),
             description: scope.description,
             displayName: scope.displayName
         };
@@ -119,7 +162,10 @@ export const EditOIDCScope: FunctionComponent<EditScopePropsInterface> = (
                 dispatch(
                     addAlert({
                         description: t(
-                            "console:manage.features.oidcScopes.notifications.updateOIDCScope.success" + ".description"
+                            "console:manage.features.oidcScopes.notifications.updateOIDCScope.success"
+                            + ".description", {
+                                scope: scope.name
+                            }
                         ),
                         level: AlertLevels.SUCCESS,
                         message: t(
@@ -148,7 +194,7 @@ export const EditOIDCScope: FunctionComponent<EditScopePropsInterface> = (
                     addAlert({
                         description: t(
                             "console:manage.features.oidcScopes.notifications.updateOIDCScope" +
-                                ".genericError.description"
+                            ".genericError.description"
                         ),
                         level: AlertLevels.ERROR,
                         message: t(
@@ -157,7 +203,7 @@ export const EditOIDCScope: FunctionComponent<EditScopePropsInterface> = (
                     })
                 );
             });
-    };
+    }, [ updatedClaimList, scope.name, onUpdate, dispatch ]);
 
     const showAttributeSelectionModal = () => {
         return (
@@ -165,13 +211,10 @@ export const EditOIDCScope: FunctionComponent<EditScopePropsInterface> = (
                 availableExternalClaims={ unselectedAttributes }
                 selectedExternalClaims={ selectedAttributes }
                 showAddModal={ showSelectionModal }
-                data-testid={ `${testId}-add-attributes` }
+                data-testid={ `${ testId }-add-attributes` }
                 setShowAddModal={ setShowSelectionModal }
-                setAvailableExternalClaims={ ()=> null }
-                setInitialSelectedExternalClaims={ (response: ExternalClaim[]) => {
-                    const claimURIs: string[] = response?.map((claim: ExternalClaim) => claim.claimURI);
-                    updateOIDCScope(claimURIs);
-                } }
+                setAvailableExternalClaims={ () => null }
+                setInitialSelectedExternalClaims={ (response: ExternalClaim[]) => setUpdatedClaimList(response) }
                 setSelectedExternalClaims={ () => null }
                 isScopeSection={ true }
                 scopeName={ scope.displayName }
@@ -183,11 +226,11 @@ export const EditOIDCScope: FunctionComponent<EditScopePropsInterface> = (
         setShowSelectionModal(true);
     };
 
-    const handleRemoveAttribute = (claim: string): void => {
-        const assignedClaims = scope?.claims;
-        const newClaimList = assignedClaims.filter((claimName) => claimName !== claim);
+    const handleRemoveAttribute = (claim: ExternalClaim): void => {
+        const newClaimList = updatedClaimList.filter((claimItem) => claimItem.id !== claim.id);
 
-        updateOIDCScope(newClaimList);
+        setUpdatedClaimList(newClaimList);
+        setShowDeleteConfirmationModal(false);
     };
 
     /**
@@ -203,12 +246,9 @@ export const EditOIDCScope: FunctionComponent<EditScopePropsInterface> = (
                 id: "name",
                 key: "name",
                 render: (claim: ExternalClaim): ReactNode => (
-                    <Header image as="h6" className="header-with-icon" data-testid={ `${testId}-item-heading` }>
+                    <Header image as="h6" className="header-with-icon" data-testid={ `${ testId }-item-heading` }>
                         <Header.Content>
                             { claim.claimURI }
-                            <Header.Subheader>
-                                <code>{ claim.mappedLocalClaimURI }</code>
-                            </Header.Subheader>
                         </Header.Content>
                     </Header>
                 ),
@@ -234,11 +274,15 @@ export const EditOIDCScope: FunctionComponent<EditScopePropsInterface> = (
         const actions: TableActionsInterface[] = [
             {
                 hidden: (item: TableDataInterface<ExternalClaim>) => {
-                    return item.claimURI === "sub" && scope.name === OIDCScopesManagementConstants.OPEN_ID_SCOPE;
+                    return (
+                        (item.claimURI === "sub" && scope.name === OIDCScopesManagementConstants.OPEN_ID_SCOPE) ||
+                        isReadOnly
+                    );
                 },
                 icon: (): SemanticICONS => "trash alternate",
                 onClick: (e: SyntheticEvent, claim: ExternalClaim): void => {
-                    handleRemoveAttribute(claim.claimURI);
+                    setShowDeleteConfirmationModal(true);
+                    setDeletingClaim(claim);
                 },
                 popupText: (): string => t("common:delete"),
                 renderer: "semantic-icon"
@@ -251,23 +295,42 @@ export const EditOIDCScope: FunctionComponent<EditScopePropsInterface> = (
     const showPlaceholders = (): ReactElement => {
         return selectedAttributes?.length === 0 ? (
             <EmptyPlaceholder
+                data-testid="scope-mgt-empty-actual-claims-list"
+                subtitle={ [ t("console:manage.features.oidcScopes.editScope." +
+                    "claimList.emptyPlaceholder.subtitles.0") ] }
+                action={
+                    (<Show when={ AccessControlConstants.SCOPE_WRITE }>
+                        <PrimaryButton
+                            data-testid="user-mgt-roles-list-add-button"
+                            size="medium"
+                            icon={ <Icon name="add" /> }
+                            onClick={ () => {
+                                handleOpenSelectionModal();
+                                showAttributeSelectionModal();
+                            } }
+                        >
+                            <Icon name="add" />
+                            { t("console:manage.features.oidcScopes.editScope.claimList.addClaim") }
+                        </PrimaryButton>
+                    </Show>)
+                }
+                image={ getEmptyPlaceholderIllustrations().newList }
+                imageSize="tiny"
+            />
+        ) : tempSelectedAttributes?.length === 0 ? (
+            <EmptyPlaceholder
                 data-testid="scope-mgt-empty-claims-list"
-                title={ t("console:manage.features.oidcScopes.editScope.claimList." + "emptyPlaceholder.title") }
+                title={ t("console:manage.features.oidcScopes.editScope.claimList.emptySearch.title") }
                 subtitle={ [
-                    t("console:manage.features.oidcScopes.editScope.claimList." + "emptyPlaceholder.subtitles.0"),
-                    t("console:manage.features.oidcScopes.editScope.claimList." + "emptyPlaceholder.subtitles.1")
+                    t("console:manage.features.oidcScopes.editScope.claimList.emptySearch.subtitles.0"),
+                    t("console:manage.features.oidcScopes.editScope.claimList.emptySearch.subtitles.1")
                 ] }
                 action={
-                    <PrimaryButton
-                        data-testid="scope-mgt-empty-claims-list-add-claim-button"
-                        onClick={ handleOpenSelectionModal }
-                        icon="plus"
-                    >
-                        <Icon name="add" />
-                        { t("console:manage.features.oidcScopes.editScope.claimList." + "emptyPlaceholder.action") }
-                    </PrimaryButton>
+                    (<LinkButton onClick={ clearSearchedAttributes }>
+                        { t("console:manage.features.oidcScopes.editScope.claimList.emptySearch.action") }
+                    </LinkButton>)
                 }
-                image={ getEmptyPlaceholderIllustrations().emptyList }
+                image={ getEmptyPlaceholderIllustrations().emptySearch }
                 imageSize="tiny"
             />
         ) : null;
@@ -284,13 +347,48 @@ export const EditOIDCScope: FunctionComponent<EditScopePropsInterface> = (
                 } }
                 actions={ resolveTableActions() }
                 columns={ resolveTableColumns() }
-                data={ selectedAttributes }
+                data={ updatedClaimList }
                 onRowClick={ () => null }
                 placeholders={ showPlaceholders() }
                 transparent={ !isRequestLoading && showPlaceholders() !== null }
                 showHeader={ false }
                 data-testid={ testId }
             />
+            <PrimaryButton onClick={ updateOIDCScope }>
+                { t("console:manage.features.claims.scopeMappings.saveChangesButton") }
+            </PrimaryButton>
+            {
+                deletingClaim && (
+                    <ConfirmationModal
+                        data-testid={ `${ testId }-confirmation-modal` }
+                        onClose={ (): void => setShowDeleteConfirmationModal(false) }
+                        type="negative"
+                        open={ showDeleteConfirmationModal }
+                        assertionHint={ t("console:manage.features.claims.scopeMappings." +
+                            "deletionConfirmationModal.assertionHint") }
+                        assertionType="checkbox"
+                        primaryAction={ t("common:confirm") }
+                        secondaryAction={ t("common:cancel") }
+                        onSecondaryActionClick={ (): void => setShowDeleteConfirmationModal(false) }
+                        onPrimaryActionClick={ (): void => handleRemoveAttribute(deletingClaim) }
+                        closeOnDimmerClick={ false }
+                    >
+                        <ConfirmationModal.Header data-testid={ `${ testId }-confirmation-modal-header` }>
+                            { t("console:manage.features.claims.scopeMappings.deletionConfirmationModal.header") }
+                        </ConfirmationModal.Header>
+                        <ConfirmationModal.Message
+                            data-testid={ `${ testId }-confirmation-modal-message` }
+                            attached
+                            negative
+                        >
+                            { t("console:manage.features.claims.scopeMappings.deletionConfirmationModal.message") }
+                        </ConfirmationModal.Message>
+                        <ConfirmationModal.Content>
+                            { t("console:manage.features.claims.scopeMappings.deletionConfirmationModal.content") }
+                        </ConfirmationModal.Content>
+                    </ConfirmationModal>
+                )
+            }
             { showAttributeSelectionModal() }
         </>
     );

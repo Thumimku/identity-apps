@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,15 +16,17 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
-import React, { FunctionComponent, ReactElement } from "react";
-import { Segment, SegmentProps } from "semantic-ui-react";
+import React, { FunctionComponent, MutableRefObject, ReactElement, forwardRef } from "react";
+import { Ref, Segment, SegmentProps } from "semantic-ui-react";
 
 /**
  * Prop types for the emphasized segment component.
  */
-export interface EmphasizedSegmentPropsInterface extends SegmentProps, TestableComponentInterface {
+export interface EmphasizedSegmentPropsInterface extends SegmentProps, IdentifiableComponentInterface,
+    TestableComponentInterface {
+
     /**
      * Should the segment be bordered.
      */
@@ -38,12 +40,13 @@ export interface EmphasizedSegmentPropsInterface extends SegmentProps, TestableC
 /**
  * Emphasized segment component.
  *
- * @param {EmphasizedSegmentPropsInterface} props - Props injected in to the component.
+ * @param props - Props injected in to the component.
  *
- * @return {React.ReactElement}
+ * @returns React Component
  */
-export const EmphasizedSegment: FunctionComponent<EmphasizedSegmentPropsInterface> = (
-    props: EmphasizedSegmentPropsInterface
+export const EmphasizedSegment: FunctionComponent<EmphasizedSegmentPropsInterface> = forwardRef((
+    props: EmphasizedSegmentPropsInterface,
+    ref: MutableRefObject<HTMLElement>
 ): ReactElement => {
 
     const {
@@ -51,6 +54,7 @@ export const EmphasizedSegment: FunctionComponent<EmphasizedSegmentPropsInterfac
         className,
         children,
         emphasized,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         ...rest
     } = props;
@@ -64,11 +68,18 @@ export const EmphasizedSegment: FunctionComponent<EmphasizedSegmentPropsInterfac
     );
 
     return (
-        <Segment className={ classes } data-testid={ testId } { ...rest }>
-            { children }
-        </Segment>
+        <Ref innerRef={ ref }>
+            <Segment
+                className={ classes }
+                data-componentid={ componentId }
+                data-testid={ testId }
+                { ...rest }
+            >
+                { children }
+            </Segment>
+        </Ref>
     );
-};
+});
 
 /**
  * Prop types for the component.
@@ -76,6 +87,7 @@ export const EmphasizedSegment: FunctionComponent<EmphasizedSegmentPropsInterfac
 EmphasizedSegment.defaultProps =  {
     basic: true,
     bordered: true,
+    "data-componentid": "emphasized-segment",
     "data-testid": "emphasized-segment",
     emphasized: true
 };

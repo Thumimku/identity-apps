@@ -37,6 +37,10 @@ interface OutboundProvisioningIdpWizardFormPropsInterface extends TestableCompon
      * Make the form read only.
      */
     readOnly?: boolean;
+    /**
+     * Specifies if the form is being submitted.
+     */
+    isSubmitting?: boolean;
 }
 
 interface DropdownOptionsInterface {
@@ -63,6 +67,7 @@ export const OutboundProvisioningWizardIdpForm: FunctionComponent<OutboundProvis
         onSubmit,
         isEdit,
         readOnly,
+        isSubmitting,
         [ "data-testid" ]: testId
     } = props;
 
@@ -84,6 +89,7 @@ export const OutboundProvisioningWizardIdpForm: FunctionComponent<OutboundProvis
 
         if (initialValues?.idp) {
             const idp = idpList?.find(idp => idp.name === initialValues?.idp);
+
             setSelectedIdp(idp.id);
         }
     }, [ idpList ]);
@@ -102,6 +108,7 @@ export const OutboundProvisioningWizardIdpForm: FunctionComponent<OutboundProvis
             text: "",
             value: ""
         };
+
         idpList.map((idp, index) => {
             idpOption = {
                 key: index,
@@ -127,6 +134,7 @@ export const OutboundProvisioningWizardIdpForm: FunctionComponent<OutboundProvis
             text: "",
             value: ""
         };
+
         getIdentityProviderDetail(selectedIdp)
             .then((response) => {
                 response.provisioning.outboundConnectors.connectors.map((connector, index) => {
@@ -157,10 +165,11 @@ export const OutboundProvisioningWizardIdpForm: FunctionComponent<OutboundProvis
      * Sanitizes and prepares the form values for submission.
      *
      * @param values - Form values.
-     * @return {object} Prepared values.
+     * @return {Record<string, unknown>} Prepared values.
      */
-    const getFormValues = (values: any): object => {
+    const getFormValues = (values: any): Record<string, unknown> => {
         const idpName = (idpListOptions.find(idp => idp.value === selectedIdp)).text;
+
         return {
             blocking: isBlockingChecked ? isBlockingChecked : !!values.get("blocking").includes("blocking"),
             connector: connector,
@@ -234,12 +243,14 @@ export const OutboundProvisioningWizardIdpForm: FunctionComponent<OutboundProvis
                             }
                             data-testid={ `${ testId }-provisioning-connector-dropdown` }
                         />
-                        { connectorListOptions?.length <= 0 &&
+                        { connectorListOptions?.length <= 0 && (
                             <Hint icon="warning sign">
-                            { t("console:develop.features.applications.edit.sections.provisioning." +
-                                "outbound.addIdpWizard.errors.noProvisioningConnector") }
+                                {
+                                    t("console:develop.features.applications.edit.sections.provisioning." +
+                                        "outbound.addIdpWizard.errors.noProvisioningConnector")
+                                }
                             </Hint>
-                        }
+                        ) }
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row columns={ 1 }>
@@ -336,6 +347,8 @@ export const OutboundProvisioningWizardIdpForm: FunctionComponent<OutboundProvis
                                     size="small"
                                     className="form-button"
                                     data-testid={ `${ testId }-submit-button` }
+                                    loading={ isSubmitting }
+                                    disabled={ isSubmitting }
                                 >
                                     { t("common:update") }
                                 </PrimaryButton>

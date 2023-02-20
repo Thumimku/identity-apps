@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { ReactElement } from "react";
 import { Header, HeaderProps } from "semantic-ui-react";
@@ -24,7 +24,9 @@ import { Header, HeaderProps } from "semantic-ui-react";
 /**
  * Heading component prop types.
  */
-export interface HeadingPropsInterface extends HeaderProps, TestableComponentInterface {
+export interface HeadingPropsInterface extends HeaderProps, IdentifiableComponentInterface,
+    TestableComponentInterface {
+
     /**
      * Determines if the hint is in the disabled state.
      */
@@ -54,9 +56,9 @@ export interface HeadingPropsInterface extends HeaderProps, TestableComponentInt
 /**
  * Heading component.
  *
- * @param {HeadingPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns Heading React Component
  */
 export const Heading: React.FunctionComponent<HeadingPropsInterface> = (
     props: HeadingPropsInterface
@@ -70,6 +72,7 @@ export const Heading: React.FunctionComponent<HeadingPropsInterface> = (
         disabled,
         inline,
         subHeading,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         ...rest
     } = props;
@@ -88,7 +91,12 @@ export const Heading: React.FunctionComponent<HeadingPropsInterface> = (
     );
 
     return (
-        <Header className={ classes } data-testid={ testId } { ...rest } />
+        <Header
+            className={ classes }
+            data-componentid={ componentId }
+            data-testid={ testId }
+            { ...rest }
+        />
     );
 };
 
@@ -96,5 +104,6 @@ export const Heading: React.FunctionComponent<HeadingPropsInterface> = (
  * Default props for the transfer component.
  */
 Heading.defaultProps = {
+    "data-componentid": "heading",
     "data-testid": "heading"
 };

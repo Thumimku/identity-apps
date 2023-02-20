@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +17,7 @@
  */
 
 import { getGravatarImage } from "@wso2is/core/api";
-import { GravatarFallbackTypes, TestableComponentInterface } from "@wso2is/core/models";
+import { GravatarFallbackTypes, IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { ImageUtils, ProfileUtils, URLUtils } from "@wso2is/core/utils";
 import classNames from "classnames";
 import React, {
@@ -43,7 +43,8 @@ import {
     Input, LabelProps,
     Message,
     Modal,
-    ModalProps
+    ModalProps,
+    SemanticShorthandItem
 } from "semantic-ui-react";
 import { UserAvatar } from "../../avatar";
 import { LinkButton, PrimaryButton } from "../../button";
@@ -54,7 +55,9 @@ import { Hint } from "../../typography";
 /**
  * Edit Avatar Modal props interface.
  */
-export interface EditAvatarModalPropsInterface extends ModalProps, TestableComponentInterface {
+export interface EditAvatarModalPropsInterface extends ModalProps, IdentifiableComponentInterface,
+    TestableComponentInterface {
+
     /**
      * Set of Emails to look for Gravatar.
      */
@@ -81,13 +84,13 @@ export interface EditAvatarModalPropsInterface extends ModalProps, TestableCompo
     submitButtonText?: string;
     /**
      * Callback function for the submit button.
-     * @param {<HTMLButtonElement>} e - Event.
-     * @param {string} url - Submitted URL.
+     * @param e - Event.
+     * @param url - Submitted URL.
      */
     onSubmit?: (e: MouseEvent<HTMLButtonElement>, url: string) => void;
     /**
      * Callback function for the cancel button.
-     * @param {<HTMLButtonElement>} e - Event.
+     * @param e - Event.
      */
     onCancel?: (e: MouseEvent<HTMLButtonElement>) => void;
     /**
@@ -102,6 +105,9 @@ export interface EditAvatarModalPropsInterface extends ModalProps, TestableCompo
      * Flag to decide whether to show the hosted URL option.
      */
     showHostedURLOption?: boolean;
+    /**
+     * Specifies if there is a pending submission.
+     */
 }
 
 const GRAVATAR_IMAGE_MIN_SIZE = 80;
@@ -168,8 +174,8 @@ export interface EditAvatarModalContentI18nInterface {
 /**
  * Edit Avatar modal.
  *
- * @param {EditAvatarModalPropsInterface} props - Props injected to the component.
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns Edit Avatar modal component.
  */
 export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> = (
     props: EditAvatarModalPropsInterface
@@ -187,6 +193,8 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
         showHostedURLOption,
         showOptionTitle,
         submitButtonText,
+        isSubmitting,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         translations,
         ...rest
@@ -199,7 +207,8 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
     const [ gravatarURLs, setGravatarURLs ] = useState<Map<string, string>>(undefined);
     const [ selectedAvatarType, setSelectedAvatarType ] = useState<AvatarTypes>(undefined);
     const [ hostedURL, setHostedURL ] = useState<string>(undefined);
-    const [ hostedURLError, setHostedURLError ] = useState<LabelProps>(undefined);
+    const [ isGravatarUrl, setIsGravatarUrl ] = useState<boolean>(false);
+    const [ hostedURLError, setHostedURLError ] = useState<SemanticShorthandItem<LabelProps>>(undefined);
     const [
         outputURL,
         setOutputURL
@@ -245,7 +254,7 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
 
         getGravatarImage(selectedGravatarEmail)
             .then(() => {
-                setIsGravatarQualified(true)
+                setIsGravatarQualified(true);
             })
             .catch(() => {
                 setIsGravatarQualified(false);
@@ -283,20 +292,44 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
         setGravatarURLs(urls);
     }, [ selectedGravatarEmail, isGravatarQualified ]);
 
+    /**
+     * Set the Avatar types based on imageUrl.
+     */
     useEffect(() => {
         if (imageUrl) {
-            setHostedURL(imageUrl);
-            setSelectedAvatarType(AvatarTypes.URL);
+            if (isGravatarUrl) {
+                setOutputURL(imageUrl);
+                setSelectedAvatarType(AvatarTypes.GRAVATAR);
+            } else {
+                setHostedURL(imageUrl);
+                setSelectedAvatarType(AvatarTypes.URL);
+            }
         } else {
             setSelectedAvatarType(AvatarTypes.SYSTEM_GENERATED);
         }
-    }, [ imageUrl ]);
+    }, [ imageUrl , isGravatarUrl ]);
+
+    /**
+     * Check the type of imageUrl.
+     */
+    useEffect(() => {
+
+        if (gravatarURLs && imageUrl) {
+            for (const [ , value ] of gravatarURLs) {
+                if (imageUrl.localeCompare(value) == 0) {
+                    setIsGravatarUrl(true);
+
+                    break;
+                }
+            }
+        }
+    }, [ gravatarURLs ]);
 
     /**
      * Handles selected gravatar email change.
      *
-     * @param {React.SyntheticEvent<HTMLElement>} e - Event.
-     * @param {DropdownProps} data - Dropdown data.
+     * @param e - Event.
+     * @param data - Dropdown data.
      */
     const handleGravatarEmailDropdownChange = (e: SyntheticEvent<HTMLElement>, data: DropdownProps): void => {
         const { value } = data;
@@ -315,7 +348,7 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
     /**
      * Render the different gravatar options.
      *
-     * @return {ReactElement[]}
+     * @returns Gravatar options.
      */
     const renderGravatarOptions = (): ReactElement[] => {
 
@@ -332,12 +365,12 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
                     size="x100"
                     showText={ showOptionTitle }
                     header={ key }
-                    image={
+                    image={ (
                         <UserAvatar
                             size="little"
                             image={ value }
                         />
-                    }
+                    ) }
                     selected={ outputURL === value }
                     onClick={ handleGravatarOptionChange }
                 />
@@ -350,8 +383,8 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
     /**
      * Handle selected avatar type change.
      *
-     * @param {React.FormEvent<HTMLInputElement>} e - Event.
-     * @param {CheckboxProps} data - Checkbox data.
+     * @param e - Event.
+     * @param data - Checkbox data.
      */
     const handleSelectedAvatarTypeChange = (e: FormEvent<HTMLInputElement>, data: CheckboxProps) => {
         const { value } = data;
@@ -364,7 +397,7 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
     /**
      * Resolves the default option when the avatar type changes.
      *
-     * @param {AvatarTypes} avatarType - Avatar Type.
+     * @param avatarType - Avatar Type.
      */
     const resolveOutputURLsOnAvatarTypeChange = (avatarType: AvatarTypes): void => {
         if (avatarType === AvatarTypes.SYSTEM_GENERATED) {
@@ -385,8 +418,8 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
     /**
      * Handles gravatar option change,
      *
-     * @param {React.MouseEvent<HTMLAnchorElement>} e - Event.
-     * @param {CardProps} data - Card data.
+     * @param e - Event.
+     * @param data - Card data.
      */
     const handleGravatarOptionChange = (e: MouseEvent<HTMLAnchorElement>, data: CardProps): void => {
         const { id } = data;
@@ -398,8 +431,8 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
     /**
      * Handles system generated avatar option change.
      *
-     * @param {React.MouseEvent<HTMLAnchorElement>} e - Event.
-     * @param {CardProps} data - Card data.
+     * @param e - Event.
+     * @param data - Card data.
      */
     const handleSystemGeneratedAvatarChange = (e: MouseEvent<HTMLAnchorElement>, data: CardProps): void => {
         const { id } = data;
@@ -411,11 +444,11 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
     /**
      * Handle Hosted URL field on change event.
      *
-     * @param {React.ChangeEvent<HTMLInputElement>} e - Event.
-     * @param {string} value - Input value.
+     * @param e - Event.
+     * @param value - Input value.
      */
     const handleHostedURLFieldOnChange = (e: ChangeEvent<HTMLInputElement>,
-                                                { value }: { value: string }): void => {
+        { value }: { value: string }): void => {
 
         setHostedURL(value);
         setOutputURL(value);
@@ -425,7 +458,7 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
     /**
      * Validates the Hosted Image URL.
      *
-     * @param {string} url - Image URL.
+     * @param url - Image URL.
      */
     const validateHostedURL = (url: string): void => {
         const isImageValid = (isValid: boolean) => {
@@ -449,7 +482,7 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
     /**
      * Handles modal submit.
      *
-     * @param {React.MouseEvent<HTMLButtonElement>} e - Event.
+     * @param e - Event.
      */
     const handleModalSubmit = (e: MouseEvent<HTMLButtonElement>): void => {
         onSubmit(e, outputURL === SystemGeneratedAvatars.get("Initials") ? "" : outputURL);
@@ -458,8 +491,8 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
     /**
      * Resolves the errors of the hosted image URL field.
      *
-     * @param {AvatarTypes} avatarType - Selected avatar type.
-     * @param {boolean} isValid - Is avatar valid.
+     * @param avatarType - Selected avatar type.
+     * @param isValid - Is avatar valid.
      */
     const resolveHostedURLFieldErrors = (avatarType?: AvatarTypes, isValid?: boolean): void => {
 
@@ -487,7 +520,8 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
 
     /**
      * Resolves gravatar options validation message.
-     * @return {React.ReactElement}
+     *
+     * @returns Gravatar options message.
      */
     const resolveGravatarOptionsMessage = (): ReactElement => {
         if (isInitialGravatarRequestLoading || isGravatarQualified) {
@@ -514,7 +548,8 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
 
     /**
      * Resolves hosted URL validation message.
-     * @return {React.ReactElement}
+     *
+     * @returns Hosted URL message component.
      */
     const resolveHostedURLMessage = (): ReactElement => {
         if (isHostedURLValidationRequestLoading || hostedURLError || !hostedURL) {
@@ -550,6 +585,7 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
 
     return (
         <Modal
+            data-componentid={ componentId }
             data-testid={ testId }
             className={ classes }
             closeOnDimmerClick={ false }
@@ -581,12 +617,12 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
                                                     size="x100"
                                                     showText={ showOptionTitle }
                                                     header={ translations.systemGenAvatars.types.initials }
-                                                    image={
+                                                    image={ (
                                                         <UserAvatar
                                                             size="little"
                                                             name={ name }
                                                         />
-                                                    }
+                                                    ) }
                                                     selected={ outputURL === SystemGeneratedAvatars.get("Initials") }
                                                     onClick={ handleSystemGeneratedAvatarChange }
                                                 />
@@ -606,7 +642,7 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
                                                     <Checkbox
                                                         radio
                                                         value={ AvatarTypes.GRAVATAR }
-                                                        label={
+                                                        label={ (
                                                             <label>
                                                                 <>
                                                                     <span>{ translations.gravatar.heading }</span>
@@ -619,14 +655,14 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
                                                                                         key: index,
                                                                                         text: email,
                                                                                         value: email
-                                                                                    }
+                                                                                    };
                                                                                 })
                                                                         }
                                                                         onChange={ handleGravatarEmailDropdownChange }
                                                                     />
                                                                 </>
                                                             </label>
-                                                        }
+                                                        ) }
                                                         checked={ selectedAvatarType === AvatarTypes.GRAVATAR }
                                                         onChange={ handleSelectedAvatarTypeChange }
                                                     />
@@ -717,7 +753,9 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
                         || !outputURL
                         || (selectedAvatarType === AvatarTypes.URL && !isHostedURLValid)
                         || (selectedAvatarType === AvatarTypes.URL && hostedURL === imageUrl)
+                        || isSubmitting
                     }
+                    loading={ isSubmitting }
                     onClick={ handleModalSubmit }
                 >
                     { submitButtonText }
@@ -732,6 +770,7 @@ export const EditAvatarModal: FunctionComponent<EditAvatarModalPropsInterface> =
  */
 EditAvatarModal.defaultProps = {
     cancelButtonText: "Cancel",
+    "data-componentid": "edit-avatar-modal",
     "data-testid": "edit-avatar-modal",
     dimmer: "blurring",
     heading: "Update profile picture",

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,9 +16,13 @@
  * under the License.
  */
 
-import { getUserStoreList } from "@wso2is/core/api";
+import { AccessControlConstants, Show } from "@wso2is/access-control";
 import { CommonHelpers } from "@wso2is/core/helpers";
-import { AlertInterface, AlertLevels, TestableComponentInterface } from "@wso2is/core/models";
+import { 
+    AlertInterface, 
+    AlertLevels, 
+    MultiValueAttributeInterface, 
+    TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import { LocalStorageUtils } from "@wso2is/core/utils";
 import {
@@ -26,27 +30,35 @@ import {
     EmptyPlaceholder,
     ListLayout,
     PageLayout,
+    Popup,
     PrimaryButton
 } from "@wso2is/react-components";
-import React, { FunctionComponent, ReactElement, useEffect, useRef, useState } from "react";
+import { AxiosError, AxiosResponse } from "axios";
+import React, { FunctionComponent, MutableRefObject, ReactElement, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Dropdown, DropdownProps, Icon, PaginationProps, Popup } from "semantic-ui-react";
+import { Dispatch } from "redux";
+import { Dropdown, DropdownProps, Icon, PaginationProps } from "semantic-ui-react";
 import {
     AdvancedSearchWithBasicFilters,
-    AppConstants,
     AppState,
     FeatureConfigInterface,
     SharedUserStoreUtils,
     UIConstants,
+    UserBasicInterface,
     getAUserStore,
     getEmptyPlaceholderIllustrations,
     store
 } from "../../core";
+import { RootOnlyComponent } from "../../organizations/components";
+import { OrganizationUtils } from "../../organizations/utils";
 import {
+    ConnectorPropertyInterface,
+    GovernanceConnectorCategoryInterface,
     GovernanceConnectorInterface,
     RealmConfigInterface,
     ServerConfigurationsConstants,
+    ServerConfigurationsInterface,
     getConnectorCategory,
     getServerConfigs
 } from "../../server-configurations";
@@ -56,10 +68,17 @@ import {
     UserStorePostData,
     UserStoreProperty
 } from "../../userstores";
-import { deleteUser, getUsersList } from "../api";
+import { getUserStoreList } from "../../userstores/api";
+import { getUsersList } from "../api";
 import { AddUserWizard, UsersList, UsersListOptionsComponent } from "../components";
 import { UserManagementConstants } from "../constants";
 import { UserListInterface } from "../models";
+
+interface UserStoreItem {
+    key: number;
+    text: string;
+    value: string;
+}
 
 /**
  * Props for the Users page.
@@ -68,15 +87,14 @@ type UsersPageInterface = TestableComponentInterface;
 
 /**
  * Temporary value to append to the list limit to figure out if the next button is there.
- * @type {number}
  */
 const TEMP_RESOURCE_LIST_ITEM_LIMIT_OFFSET: number = 1;
 
 /**
  * Users info page.
  *
- * @param {UsersPageInterface} props - Props injected to the component.
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns React Element
  */
 const UsersPage: FunctionComponent<UsersPageInterface> = (
     props: UsersPageInterface
@@ -88,7 +106,7 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
 
     const { t } = useTranslation();
 
-    const dispatch = useDispatch();
+    const dispatch: Dispatch<any> = useDispatch();
 
     const featureConfig: FeatureConfigInterface = useSelector((state: AppState) => state.config.ui.features);
 
@@ -110,30 +128,32 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
     const [ isNextPageAvailable, setIsNextPageAvailable ] = useState<boolean>(undefined);
     const [ realmConfigs, setRealmConfigs ] = useState<RealmConfigInterface>(undefined);
 
-    const init = useRef(true);
+    const init : MutableRefObject<boolean> = useRef(true);
 
-    const username = useSelector((state: AppState) => state.auth.username);
-    const tenantName = store.getState().config.deployment.tenant;
-    const tenantSettings = JSON.parse(LocalStorageUtils.getValueFromLocalStorage(tenantName));
+    const username: string = useSelector((state: AppState) => state.auth.username);
+    const tenantName: string = store.getState().config.deployment.tenant;
+    const tenantSettings: Record<string, any> = JSON.parse(LocalStorageUtils.getValueFromLocalStorage(tenantName));
 
     const getList = (limit: number, offset: number, filter: string, attribute: string, domain: string) => {
         setUserListRequestLoading(true);
 
-        const modifiedLimit = limit + TEMP_RESOURCE_LIST_ITEM_LIMIT_OFFSET;
+        const modifiedLimit : number = limit + TEMP_RESOURCE_LIST_ITEM_LIMIT_OFFSET;
 
         getUsersList(modifiedLimit, offset, filter, attribute, domain)
-            .then((response) => {
-                const data = { ...response };
+            .then((response: UserListInterface) => {
+                const data: UserListInterface = { ...response };
 
-                data.Resources = data?.Resources?.map((resource) => {
-                    const userStore = resource.userName.split("/").length > 1
+                data.Resources = data?.Resources?.map((resource: UserBasicInterface) => {
+                    const userStore: string = resource.userName.split("/").length > 1
                         ? resource.userName.split("/")[0]
                         : "Primary";
 
                     if (userStore !== CONSUMER_USERSTORE) {
                         let email: string = null;
+
                         if (resource?.emails instanceof Array) {
-                            const emailElement = resource?.emails[0];
+                            const emailElement: string | MultiValueAttributeInterface = resource?.emails[0];
+
                             if (typeof emailElement === "string") {
                                 email = emailElement;
                             } else {
@@ -141,11 +161,12 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
                             }
                         }
 
-                        resource.emails = [email];
+                        resource.emails = [ email ];
 
                         return resource;
                     } else {
-                        const resources = [ ...data.Resources ];
+                        const resources: UserBasicInterface[] = [ ...data.Resources ];
+
                         resources.splice(resources.indexOf(resource), 1);
                         data.Resources = resources;
                     }
@@ -153,7 +174,7 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
 
                 setUsersList(moderateUsersList(data, modifiedLimit, TEMP_RESOURCE_LIST_ITEM_LIMIT_OFFSET));
                 setUserStoreError(false);
-            }).catch((error) => {
+            }).catch((error: AxiosError) => {
                 if (error?.response?.data?.description) {
                     dispatch(addAlert({
                         description: error?.response?.data?.description ?? error?.response?.data?.detail
@@ -195,24 +216,29 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
                 setShowWizard(true);
             }
         }
-    }, [emailVerificationEnabled]);
+    }, [ emailVerificationEnabled ]);
 
     useEffect(() => {
-        SharedUserStoreUtils.getReadOnlyUserStores().then((response) => {
+        if (!OrganizationUtils.isCurrentOrganizationRoot()) {
+            return;
+        }
+
+        SharedUserStoreUtils.getReadOnlyUserStores().then((response: string[]) => {
             setReadOnlyUserStoresList(response);
         });
     }, [ userStore ]);
 
     useEffect(() => {
         if(CommonHelpers.lookupKey(tenantSettings, username) !== null) {
-            const userSettings = CommonHelpers.lookupKey(tenantSettings, username);
-            const userPreferences = userSettings[1];
-            const tempColumns = new Map<string, string> ();
+            const userSettings: Record<string, any> = CommonHelpers.lookupKey(tenantSettings, username);
+            const userPreferences: Record<string, any> = userSettings[1];
+            const tempColumns: Map<string, string> = new Map<string, string> ();
 
             if (userPreferences.identityAppsSettings.userPreferences.userListColumns.length < 1) {
-                const metaColumns = UserManagementConstants.DEFAULT_USER_LIST_ATTRIBUTES;
+                const metaColumns: string[] = UserManagementConstants.DEFAULT_USER_LIST_ATTRIBUTES;
+
                 setUserMetaColumns(metaColumns);
-                metaColumns.map((column) => {
+                metaColumns.map((column: string) => {
                     if (column === "id") {
                         tempColumns.set(column, "");
                     } else {
@@ -221,7 +247,7 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
                 });
                 setUserListMetaContent(tempColumns);
             }
-            userPreferences.identityAppsSettings.userPreferences.userListColumns.map((column) => {
+            userPreferences.identityAppsSettings.userPreferences.userListColumns.map((column: any) => {
                 tempColumns.set(column, column);
             });
             setUserListMetaContent(tempColumns);
@@ -236,13 +262,13 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
      * TODO: Remove this function and other related variables once there is a proper fix for LDAP pagination.
      * @see {@link https://github.com/wso2/product-is/issues/7320}
      *
-     * @param {UserListInterface} list - Users list retrieved from the API.
-     * @param {number} requestedLimit - Requested item limit.
-     * @param {number} popCount - Tempt count used which will be removed after figuring out if next page is available.
-     * @return {UserListInterface}
+     * @param list - Users list retrieved from the API.
+     * @param requestedLimit - Requested item limit.
+     * @param popCount - Tempt count used which will be removed after figuring out if next page is available.
+     * @returns UserListInterface
      */
     const moderateUsersList = (list: UserListInterface, requestedLimit: number,
-                               popCount: number = 1): UserListInterface => {
+        popCount: number = 1): UserListInterface => {
 
         const moderated: UserListInterface = list;
 
@@ -260,7 +286,7 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
      * The following function fetch the userstore list and set it to the state.
      */
     const getUserStores = () => {
-        const storeOptions = [
+        const storeOptions: UserStoreItem[] = [
             {
                 key: -2,
                 text: t("console:manage.features.users.userstores.userstoreOptions.all"),
@@ -273,21 +299,21 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
             }
         ];
 
-        let storeOption = {
+        let storeOption: UserStoreItem = {
             key: null,
             text: "",
             value: ""
         };
 
         getUserStoreList()
-            .then((response) => {
-                if (storeOptions === []) {
+            .then((response: AxiosResponse<UserStoreListItem[]>) => {
+                if (storeOptions.length === 0) {
                     storeOptions.push(storeOption);
                 }
-                response.data.map((store: UserStoreListItem, index) => {
+                response.data.map((store: UserStoreListItem, index: number) => {
                     if (store.name !== CONSUMER_USERSTORE) {
                         getAUserStore(store.id).then((response: UserStorePostData) => {
-                            const isDisabled = response.properties.find(
+                            const isDisabled: boolean = response.properties.find(
                                 (property: UserStoreProperty) => property.name === "Disabled")?.value === "true";
 
                             if (!isDisabled) {
@@ -312,11 +338,11 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
      * The following method accepts a Map and returns the values as a string.
      *
      * @param attributeMap - IterableIterator<string>
-     * @return string
+     * @returns string
      */
     const generateAttributesString = (attributeMap: IterableIterator<string>) => {
-        const attArray = [];
-        const iterator1 = attributeMap[Symbol.iterator]();
+        const attArray: any[] = [];
+        const iterator1: IterableIterator<string> = attributeMap[Symbol.iterator]();
 
         for (const attribute of iterator1) {
             if (attribute !== "") {
@@ -326,6 +352,7 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
         if (!attArray.includes(UserManagementConstants.SCIM2_SCHEMA_DICTIONARY.get("USERNAME"))) {
             attArray.push(UserManagementConstants.SCIM2_SCHEMA_DICTIONARY.get("USERNAME"));
         }
+
         return attArray.toString();
     };
 
@@ -334,7 +361,7 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
      */
     const getAdminUser = () => {
         getServerConfigs()
-            .then((response) => {
+            .then((response: ServerConfigurationsInterface) => {
                 setRealmConfigs(response?.realmConfig);
             });
     };
@@ -343,18 +370,24 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
      * Fetch the list of available userstores.
      */
     useEffect(() => {
+        if (!OrganizationUtils.isCurrentOrganizationRoot()) {
+            return;
+        }
+
         getUserStores();
         getAdminUser();
     }, []);
 
     useEffect(() => {
-        const attributes = userListMetaContent ? generateAttributesString(userListMetaContent?.values()) : null;
+        const attributes: string = userListMetaContent ? generateAttributesString(userListMetaContent?.values()) : null;
+
         getList(listItemLimit, listOffset, null, attributes, userStore);
     }, [ userStore ]);
 
     useEffect(() => {
         if (userListMetaContent) {
-            const attributes = generateAttributesString(userListMetaContent?.values());
+            const attributes: string = generateAttributesString(userListMetaContent?.values());
+
             getList(listItemLimit, listOffset, null, attributes, userStore);
         }
     }, [ listOffset, listItemLimit ]);
@@ -363,7 +396,8 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
         if (!isListUpdated) {
             return;
         }
-        const attributes = generateAttributesString(userListMetaContent?.values());
+        const attributes: string = generateAttributesString(userListMetaContent?.values());
+
         getList(listItemLimit, listOffset, null, attributes, userStore);
         setListUpdated(false);
     }, [ isListUpdated ]);
@@ -375,10 +409,10 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
      */
     const setUserMetaColumns = (metaColumns: string[]) => {
         if(CommonHelpers.lookupKey(tenantSettings, username) !== null) {
-            const userSettings = CommonHelpers.lookupKey(tenantSettings, username);
-            const userPreferences = userSettings[1];
+            const userSettings: Record<string, any> = CommonHelpers.lookupKey(tenantSettings, username);
+            const userPreferences: Record<string, any> = userSettings[1];
 
-            const newUserSettings = {
+            const newUserSettings: Record<string, any> = {
                 ...tenantSettings,
                 [ username ]: {
                     ...userPreferences,
@@ -408,7 +442,7 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
     /**
      * Dispatches the alert object to the redux store.
      *
-     * @param {AlertInterface} alert - Alert object.
+     * @param alert - Alert object.
      */
     const handleAlerts = (alert: AlertInterface) => {
         dispatch(addAlert(alert));
@@ -422,10 +456,11 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
      */
     const handleMetaColumnChange = (metaColumns: string[]) => {
         metaColumns.push("profileUrl");
-        const tempColumns = new Map<string, string> ();
+        const tempColumns: Map<string, string> = new Map<string, string> ();
+
         setUserMetaColumns(metaColumns);
 
-        metaColumns.map((column) => {
+        metaColumns.map((column: string) => {
             tempColumns.set(column, column);
         });
         setUserListMetaContent(tempColumns);
@@ -436,16 +471,19 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
      * Handles the `onFilter` callback action from the
      * users search component.
      *
-     * @param {string} query - Search query.
+     * @param query - Search query.
      */
     const handleUserFilter = (query: string): void => {
-        const attributes = generateAttributesString(userListMetaContent.values());
+        const attributes: string = generateAttributesString(userListMetaContent.values());
+
         if (query === "userName sw ") {
             getList(listItemLimit, listOffset, null, attributes, userStore);
+
             return;
         }
 
         setSearchQuery(query);
+        setListOffset(0);
         getList(listItemLimit, listOffset, query, attributes, userStore);
     };
 
@@ -473,19 +511,21 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
      * Handles the click event of the create new user button.
      */
     const handleAddNewUserWizardClick = (): void => {
+
         getConnectorCategory(ServerConfigurationsConstants.USER_ONBOARDING_CONNECTOR_ID)
-            .then((response) => {
+            .then((response: GovernanceConnectorCategoryInterface) => {
                 const connectors: GovernanceConnectorInterface[]  = response?.connectors;
-                const userOnboardingConnector = connectors.find(
+                const userOnboardingConnector: GovernanceConnectorInterface = connectors.find(
                     (connector: GovernanceConnectorInterface) => connector.id
                         === ServerConfigurationsConstants.USER_EMAIL_VERIFICATION_CONNECTOR_ID
                 );
 
-                const emailVerification = userOnboardingConnector.properties.find(
-                    property => property.name === ServerConfigurationsConstants.EMAIL_VERIFICATION_ENABLED);
+                const emailVerification: ConnectorPropertyInterface = userOnboardingConnector.properties.find(
+                    (property: ConnectorPropertyInterface) => 
+                        property.name === ServerConfigurationsConstants.EMAIL_VERIFICATION_ENABLED);
 
                 setEmailVerificationEnabled(emailVerification.value === "true");
-            }).catch((error) => {
+            }).catch((error: AxiosError) => {
                 handleAlerts({
                     description: error?.response?.data?.description ?? t(
                         "console:manage.features.governanceConnectors.notifications." +
@@ -505,16 +545,19 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
             action={
                 (isUserListRequestLoading || !(!searchQuery && usersList?.totalResults <= 0))
                 && (
-                    <PrimaryButton
-                        data-testid="user-mgt-user-list-add-user-button"
-                        onClick={ () => handleAddNewUserWizardClick()  }
-                    >
-                        <Icon name="add"/>
-                        { t("console:manage.features.users.buttons.addNewUserBtn") }
-                    </PrimaryButton>
+                    <Show when={ AccessControlConstants.USER_WRITE }>
+                        <PrimaryButton
+                            data-testid="user-mgt-user-list-add-user-button"
+                            onClick={ () => handleAddNewUserWizardClick()  }
+                        >
+                            <Icon name="add"/>
+                            { t("console:manage.features.users.buttons.addNewUserBtn") }
+                        </PrimaryButton>
+                    </Show>
                 )
             }
             title={ t("console:manage.pages.users.title") }
+            pageTitle={ t("console:manage.pages.users.title") }
             description={ t("console:manage.pages.users.subTitle") }
             data-testid={ `${ testId }-page-layout` }
         >
@@ -549,7 +592,7 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
                                 ".placeholder")
                         }
                         placeholder={ t("console:manage.features.users.advancedSearch.placeholder") }
-                        defaultSearchAttribute="userName"
+                        defaultSearchAttribute="emails"
                         defaultSearchOperator="co"
                         triggerClearQuery={ triggerClearQuery }
                     />
@@ -567,33 +610,35 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
                                 flowing
                                 basic
                                 content={
-                                    <UsersListOptionsComponent
+                                    (<UsersListOptionsComponent
                                         data-testid="user-mgt-user-list-meta-columns"
                                         handleMetaColumnChange={ handleMetaColumnChange }
                                         userListMetaContent={ userListMetaContent }
-                                    />
+                                    />)
                                 }
                                 position="bottom left"
-                                on='click'
+                                on="click"
                                 pinned
                                 trigger={
-                                    <Button
+                                    (<Button
                                         data-testid="user-mgt-user-list-meta-columns-button"
                                         className="meta-columns-button"
                                         basic
                                     >
                                         <Icon name="columns"/>
                                         { t("console:manage.features.users.buttons.metaColumnBtn") }
-                                    </Button>
+                                    </Button>)
                                 }
                             />
-                            <Dropdown
-                                data-testid="user-mgt-user-list-userstore-dropdown"
-                                selection
-                                options={ userStoreOptions && userStoreOptions }
-                                onChange={ handleDomainChange }
-                                defaultValue="all"
-                            />
+                            <RootOnlyComponent>
+                                <Dropdown
+                                    data-testid="user-mgt-user-list-userstore-dropdown"
+                                    selection
+                                    options={ userStoreOptions && userStoreOptions }
+                                    onChange={ handleDomainChange }
+                                    defaultValue="all"
+                                />
+                            </RootOnlyComponent>
                         </>
                     )
                 }
@@ -610,14 +655,14 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
                 } }
             >
                 { userStoreError
-                    ? <EmptyPlaceholder
+                    ? (<EmptyPlaceholder
                         subtitle={ [ t("console:manage.features.users.placeholders.userstoreError.subtitles.0"),
                             t("console:manage.features.users.placeholders.userstoreError.subtitles.1")     ] }
                         title={ t("console:manage.features.users.placeholders.userstoreError.title") }
                         image={ getEmptyPlaceholderIllustrations().genericError }
                         imageSize="tiny"
-                    />
-                    : <UsersList
+                    />)
+                    : (<UsersList
                         advancedSearch={ (
                             <AdvancedSearchWithBasicFilters
                                 onFilter={ handleUserFilter }
@@ -648,7 +693,7 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
                                         ".placeholder")
                                 }
                                 placeholder={ t("console:manage.features.users.advancedSearch.placeholder") }
-                                defaultSearchAttribute="userName"
+                                defaultSearchAttribute="emails"
                                 defaultSearchOperator="co"
                                 triggerClearQuery={ triggerClearQuery }
                             />
@@ -664,22 +709,22 @@ const UsersPage: FunctionComponent<UsersPageInterface> = (
                         data-testid="user-mgt-user-list"
                         readOnlyUserStores={ readOnlyUserStoresList }
                         featureConfig={ featureConfig }
-                    />
+                    />)
                 }
                 {
                     showWizard && (
-                    <AddUserWizard
-                        data-testid="user-mgt-add-user-wizard-modal"
-                        closeWizard={ () => {
-                            setShowWizard(false);
-                            setEmailVerificationEnabled(undefined);
-                        } }
-                        listOffset={ listOffset }
-                        listItemLimit={ listItemLimit }
-                        updateList={ () => setListUpdated(true) }
-                        rolesList={ rolesList }
-                        emailVerificationEnabled={ emailVerificationEnabled }
-                    />
+                        <AddUserWizard
+                            data-testid="user-mgt-add-user-wizard-modal"
+                            closeWizard={ () => {
+                                setShowWizard(false);
+                                setEmailVerificationEnabled(undefined);
+                            } }
+                            listOffset={ listOffset }
+                            listItemLimit={ listItemLimit }
+                            updateList={ () => setListUpdated(true) }
+                            rolesList={ rolesList }
+                            emailVerificationEnabled={ emailVerificationEnabled }
+                        />
                     )
                 }
             </ListLayout>

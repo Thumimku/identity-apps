@@ -16,17 +16,19 @@
   ~ under the License.
   --%>
 
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="com.google.gson.Gson" %>
 <%@ page import="org.wso2.carbon.identity.application.authentication.endpoint.util.AuthContextAPIClient" %>
 <%@ page import="org.wso2.carbon.identity.application.authentication.endpoint.util.Constants" %>
 <%@ page import="java.io.File" %>
 <%@ page import="org.wso2.carbon.identity.core.util.IdentityUtil" %>
 <%@ page import="java.net.URLEncoder" %>
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <%@include file="includes/localize.jsp" %>
 <jsp:directive.include file="includes/init-url.jsp"/>
 <jsp:directive.include file="includes/template-mapper.jsp"/>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
 
 <%@ taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -39,6 +41,9 @@
 
     if (StringUtils.isBlank(authAPIURL)) {
         authAPIURL = IdentityUtil.getServerURL("/api/identity/auth/v1.1/", true, true);
+    } else {
+        // Resolve tenant domain for the authentication API URl
+        authAPIURL = AuthenticationEndpointUtil.resolveTenantDomain(authAPIURL);
     }
     if (!authAPIURL.endsWith("/")) {
         authAPIURL += "/";
@@ -50,10 +55,15 @@
     Map data = gson.fromJson(contextProperties, Map.class);
 %>
 
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "medium");
+%>
+
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -64,10 +74,9 @@
     <% } %>
 </head>
 <body class="login-portal layout authentication-portal-layout">
-    <main class="center-segment">
-        <div class="ui container medium center aligned middle">
-
-            <!-- product-title -->
+    <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+        <layout:component componentName="ProductHeader" >
+            <%-- product-title --%>
             <%
                 File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
                 if (productTitleFile.exists()) {
@@ -76,7 +85,8 @@
             <% } else { %>
                 <jsp:include page="includes/product-title.jsp"/>
             <% } %>
-
+        </layout:component>
+        <layout:component componentName="MainSection" >
             <div class="ui segment">
                 <div class="segment-form">
                     <c:set var="data" value="<%=data%>" scope="request"/>
@@ -96,7 +106,7 @@
                             <fmt:formatNumber><e:forHtmlContent value='${requestScope.data["MaxSessionCount"]}'/></fmt:formatNumber> <%=AuthenticationEndpointUtil.i18n(resourceBundle, "you.currently.have.x.active.sessions.2")%>.
                         </h4>
 
-                        <table class="ui celled table">
+                        <table id="session-details" class="ui celled table">
                             <thead>
                                 <tr>
                                     <th>#</th>
@@ -106,21 +116,7 @@
                                     <th><input type="checkbox" onchange="toggleSessionCheckboxes()" id="masterCheckbox" checked></th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <c:forEach items='${requestScope.data["sessions"]}' var="session" varStatus="loop">
-                                    <tr>
-                                        <td><e:forHtmlContent value="${loop.index + 1}"/></td>
-                                        <td><e:forHtmlContent value="${session[2]}"/></td>
-                                        <td><e:forHtmlContent value="${session[3]}"/></td>
-                                        <td id="<e:forHtmlAttribute value="${session[1]}"/>">
-                                            <script>getDateFromTimestamp(<e:forJavaScript value="${session[1]}"/>);</script>
-                                        </td>
-                                        <td><input type="checkbox" onchange="toggleMasterCheckbox()"
-                                                    value="<e:forHtmlAttribute value="${session[0]}"/>"
-                                                    name="sessionsToTerminate" checked></td>
-                                    </tr>
-                                </c:forEach>
-                            </tbody>
+                            <tbody></tbody>
                         </table>
 
                         <h4>
@@ -153,8 +149,19 @@
                     </form>
                 </div>
             </div>
-        </div>
-    </main>
+        </layout:component>
+        <layout:component componentName="ProductFooter" >
+            <%-- product-footer --%>
+            <%
+                File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                if (productFooterFile.exists()) {
+            %>
+                <jsp:include page="extensions/product-footer.jsp"/>
+            <% } else { %>
+                <jsp:include page="includes/product-footer.jsp"/>
+            <% } %>
+        </layout:component>
+    </layout:main>
 
     <div class="ui modal mini" id="selected_sessions_validation" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
         <div class="header">
@@ -172,17 +179,7 @@
         </div>
     </div>
 
-    <!-- product-footer -->
-    <%
-        File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-        if (productFooterFile.exists()) {
-    %>
-        <jsp:include page="extensions/product-footer.jsp"/>
-    <% } else { %>
-        <jsp:include page="includes/product-footer.jsp"/>
-    <% } %>
-
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {
@@ -193,6 +190,22 @@
     <% } %>
 
     <script>
+        $(document).ready(function() {
+            <c:forEach items='${requestScope.data["sessions"]}' var="session" varStatus="loop">
+                var accessedTime = getDateFromTimestamp(<e:forJavaScript value="${session[1]}"/>);
+                var tableRow =
+                    "<tr>"
+                    + "<td><e:forHtmlContent value="${loop.index + 1}"/></td>"
+                    + "<td><e:forHtmlContent value="${session[2]}"/></td>"
+                    + "<td><e:forHtmlContent value="${session[3]}"/></td>"
+                    + "<td id='<e:forHtmlAttribute value="${session[1]}"/>'>" + accessedTime + "</td>"
+                    + "<td><input type='checkbox' onchange='toggleMasterCheckbox()' value='<e:forHtmlAttribute value="${session[0]}"/>' name='sessionsToTerminate' checked/></td>"
+                    + "</tr>";
+
+                $("#session-details tbody").append(tableRow);
+            </c:forEach>
+        });
+
         function hideModal(elem) {
             $(elem).closest('.modal').modal('hide');
         }
@@ -207,7 +220,7 @@
                 minute: "2-digit",
                 hour12: true,
             };
-            document.getElementById(timestamp).innerText = date.toLocaleDateString(undefined, options);
+            return date.toLocaleDateString(undefined, options);
         }
 
         function toggleSessionCheckboxes() {

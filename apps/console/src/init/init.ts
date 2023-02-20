@@ -16,23 +16,18 @@
  * under the License.
  */
 
-import { UAParser } from "ua-parser-js";
-import { AppUtils } from "./app-utils";
 import "core-js/stable";
 import "regenerator-runtime/runtime";
-
-const getItemFromSessionStorage = (key: string): string => {
-    try {
-        return sessionStorage.getItem(key);
-    } catch {
-        return "";
-    }
-};
+import TimerWorker from "@wso2is/core/workers/timer.worker";
+import { UAParser } from "ua-parser-js";
+import { AppUtils } from "./app-utils";
 
 if (!window["AppUtils"] || !window["AppUtils"]?.getConfig()) {
     AppUtils.init({
         accountAppOrigin: process.env.NODE_ENV === "production" ? undefined : "https://localhost:9000",
         contextPath: contextPathGlobal,
+        isAdaptiveAuthenticationAvailable: isAdaptiveAuthenticationAvailable,
+        isOrganizationManagementEnabled: isOrganizationManagementEnabled,
         serverOrigin: serverOriginGlobal,
         superTenant: superTenantGlobal,
         tenantPrefix: tenantPrefixGlobal
@@ -41,142 +36,108 @@ if (!window["AppUtils"] || !window["AppUtils"]?.getConfig()) {
     window["AppUtils"] = AppUtils;
 }
 
-function getRandomPKCEChallenge() {
-    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz-_";
-    const stringLength = 43;
-    let randomString = "";
-    for (let i = 0; i < stringLength; i++) {
-        const rnum = Math.floor(Math.random() * chars.length);
-        randomString += chars.substring(rnum, rnum + 1);
+function handleTimeOut(_idleSecondsCounter: number, _sessionAgeCounter: number,
+    SESSION_REFRESH_TIMEOUT: number, IDLE_TIMEOUT: number, IDLE_WARNING_TIMEOUT: number): number {
+
+    if (_idleSecondsCounter === IDLE_WARNING_TIMEOUT || _idleSecondsCounter >= IDLE_TIMEOUT) {
+        const warningSearchParamKey = "session_timeout_warning";
+        const currentURL = new URL(window.location.href);
+
+        // If the URL already has the timeout warning search para, delete it first.
+        if (currentURL && currentURL.searchParams && currentURL.searchParams.get(warningSearchParamKey) !== null) {
+            currentURL.searchParams.delete(warningSearchParamKey);
+        }
+
+        const existingSearchParams = currentURL.search;
+
+        // NOTE: This variable is used for push state.
+        // If already other search params are available simply append using `&`,
+        // otherwise just add the param using `?`.
+        const searchParam =
+            existingSearchParams + (existingSearchParams ? "&" : "?") + warningSearchParamKey + "=" + "true";
+
+        // Append the search param to the URL object.
+        currentURL.searchParams.append(warningSearchParamKey, "true");
+
+        const state = {
+            idleTimeout: IDLE_TIMEOUT,
+            idleWarningTimeout: IDLE_WARNING_TIMEOUT,
+            url: currentURL.href
+        };
+
+        window.history.pushState(state, null, searchParam);
+
+        dispatchEvent(new MessageEvent("session-timeout", { data: state }));
     }
-    return randomString;
-}
 
-function sendPromptNoneRequest() {
-    const rpIFrame: HTMLIFrameElement = document.getElementById("rpIFrame") as HTMLIFrameElement;
-    const promptNoneIFrame: HTMLIFrameElement = rpIFrame.contentWindow.document.getElementById(
-        "promptNoneIFrame"
-    ) as HTMLIFrameElement;
-    const config = window.parent["AppUtils"].getConfig();
-
-    const parsedAuthorizationEndpointURL: URL = new URL(getItemFromSessionStorage("authorization_endpoint"));
-
-    parsedAuthorizationEndpointURL.searchParams.append("response_type", "code");
-    parsedAuthorizationEndpointURL.searchParams.append("client_id", config.clientID);
-    parsedAuthorizationEndpointURL.searchParams.append("scope", "openid");
-    parsedAuthorizationEndpointURL.searchParams.append("redirect_uri", config.loginCallbackURL);
-    parsedAuthorizationEndpointURL.searchParams.append("state", "Y2hlY2tTZXNzaW9u");
-    parsedAuthorizationEndpointURL.searchParams.append("prompt", "none");
-    parsedAuthorizationEndpointURL.searchParams.append("code_challenge_method", "S256");
-    parsedAuthorizationEndpointURL.searchParams.append("code_challenge", getRandomPKCEChallenge());
-
-    promptNoneIFrame.src = parsedAuthorizationEndpointURL.toString();
+    return _sessionAgeCounter;
 }
 
 const config = window["AppUtils"]?.getConfig();
 
-const state = new URL(window.location.href).searchParams.get("state");
-if (state !== null && state === "Y2hlY2tTZXNzaW9u") {
-    // Prompt none response.
-    const code = new URL(window.location.href).searchParams.get("code");
+// Tracking user interactions
+let IDLE_TIMEOUT = 600;
 
-    if (code !== null && code.length !== 0) {
-        const newSessionState = new URL(window.location.href).searchParams.get("session_state");
+if (config?.session != null && config.session.userIdleTimeOut != null && config.session.userIdleTimeOut > 1) {
+    IDLE_TIMEOUT = config.session.userIdleTimeOut;
+}
+let IDLE_WARNING_TIMEOUT = 580;
 
-        sessionStorage.setItem("session_state", newSessionState);
+if (
+    config?.session != null &&
+    config.session.userIdleWarningTimeOut != null &&
+    config.session.userIdleWarningTimeOut > 1
+) {
+    IDLE_WARNING_TIMEOUT = config.session.userIdleWarningTimeOut;
+}
+let SESSION_REFRESH_TIMEOUT = 300;
 
-        // Stop loading rest of the page inside the iFrame
-        if (new UAParser().getBrowser().name === "IE") {
-            document.execCommand("Stop");
-        } else {
-            window.stop();
-        }
-    } else {
+if (
+    config?.session != null &&
+    config.session.sessionRefreshTimeOut != null &&
+    config.session.sessionRefreshTimeOut > 1
+) {
+    SESSION_REFRESH_TIMEOUT = config.session.sessionRefreshTimeOut;
+}
 
-        let logoutPath = config.clientOrigin + config.appBaseWithTenant + config.routes.logout;
+let _idleSecondsCounter = 0;
+let _sessionAgeCounter = 0;
 
-        // SaaS app paths already contains the tenant and basename.
-        if (config.isSaas) {
-            logoutPath = config.clientOrigin + config.routes.logout;
-        }
+document.onclick = function() {
+    _idleSecondsCounter = 0;
+};
+document.onmousemove = function() {
+    _idleSecondsCounter = 0;
+};
+document.onkeypress = function() {
+    _idleSecondsCounter = 0;
+};
 
-        window.top.location.href = logoutPath;
-    }
-} else {
-    // Tracking user interactions
-    let IDLE_TIMEOUT = 600;
-    if (config?.session != null && config.session.userIdleTimeOut != null && config.session.userIdleTimeOut > 1) {
-        IDLE_TIMEOUT = config.session.userIdleTimeOut;
-    }
-    let IDLE_WARNING_TIMEOUT = 580;
-    if (
-        config?.session != null &&
-        config.session.userIdleWarningTimeOut != null &&
-        config.session.userIdleWarningTimeOut > 1
-    ) {
-        IDLE_WARNING_TIMEOUT = config.session.userIdleWarningTimeOut;
-    }
-    let SESSION_REFRESH_TIMEOUT = 300;
-    if (
-        config?.session != null &&
-        config.session.sessionRefreshTimeOut != null &&
-        config.session.sessionRefreshTimeOut > 1
-    ) {
-        SESSION_REFRESH_TIMEOUT = config.session.sessionRefreshTimeOut;
-    }
-
-    let _idleSecondsCounter = 0;
-    let _sessionAgeCounter = 0;
-
-    document.onclick = function() {
-        _idleSecondsCounter = 0;
-    };
-    document.onmousemove = function() {
-        _idleSecondsCounter = 0;
-    };
-    document.onkeypress = function() {
-        _idleSecondsCounter = 0;
-    };
-
+// Run the timer in main thread if the browser is Internet Explorer.
+if (new UAParser().getBrowser().name === "IE") {
     window.setInterval(() => {
         _idleSecondsCounter++;
         _sessionAgeCounter++;
-
-        if (_idleSecondsCounter === IDLE_WARNING_TIMEOUT || _idleSecondsCounter >= IDLE_TIMEOUT) {
-            const warningSearchParamKey = "session_timeout_warning";
-            const currentURL = new URL(window.location.href);
-
-            // If the URL already has the timeout warning search para, delete it first.
-            if (currentURL && currentURL.searchParams && currentURL.searchParams.get(warningSearchParamKey) !== null) {
-                currentURL.searchParams.delete(warningSearchParamKey);
-            }
-
-            const existingSearchParams = currentURL.search;
-
-            // NOTE: This variable is used for push state.
-            // If already other search params are available simply append using `&`,
-            // otherwise just add the param using `?`.
-            const searchParam =
-                existingSearchParams + (existingSearchParams ? "&" : "?") + warningSearchParamKey + "=" + "true";
-
-            // Append the search param to the URL object.
-            currentURL.searchParams.append(warningSearchParamKey, "true");
-
-            const state = {
-                idleTimeout: IDLE_TIMEOUT,
-                idleWarningTimeout: IDLE_WARNING_TIMEOUT,
-                url: currentURL.href
-            };
-
-            window.history.pushState(state, null, searchParam);
-
-            dispatchEvent(new PopStateEvent("popstate", { state: state }));
-        }
-
-        // Keep user session intact if the user is active
-        if (_sessionAgeCounter > SESSION_REFRESH_TIMEOUT) {
-            sendPromptNoneRequest();
-            _sessionAgeCounter = 0;
-        }
+        _sessionAgeCounter = handleTimeOut(
+            _idleSecondsCounter,
+            _sessionAgeCounter,
+            SESSION_REFRESH_TIMEOUT,
+            IDLE_TIMEOUT,
+            IDLE_WARNING_TIMEOUT
+        );
     }, 1000);
+} else {
+    const worker = new TimerWorker();
+
+    worker.onmessage = () => {
+        _idleSecondsCounter++;
+        _sessionAgeCounter++;
+        _sessionAgeCounter = handleTimeOut(
+            _idleSecondsCounter,
+            _sessionAgeCounter,
+            SESSION_REFRESH_TIMEOUT,
+            IDLE_TIMEOUT,
+            IDLE_WARNING_TIMEOUT
+        );
+    };
 }

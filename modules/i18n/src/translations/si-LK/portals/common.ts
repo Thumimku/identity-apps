@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,28 +18,43 @@
 
 import { CommonNS } from "../../../models";
 
+/**
+ * NOTES: No need to care about the max-len for this file since it's easier to
+ * translate the strings to other languages easily with editor translation tools.
+ */
+/* eslint-disable max-len */
 export const common: CommonNS = {
     access: "ප්\u200Dරවේශය",
     actions: "ක්‍රියා",
     activate: "සක්‍රිය කරන්න",
     active: "සක්\u200Dරීයයි",
     add: "එකතු කරන්න",
+    addKey: "රහස එකතු කරන්න",
     addURL: "URL එක් කරන්න",
     all: "සියලුම",
     applicationName: "ඇප් එකේ නම",
     applications: "ඇප්ස්",
     approvalStatus: "අනුමත කිරීමේ තත්වය",
     approve: "අනුමත කරන්න",
+    apps: "ඇප්ස්",
+    assignee: "පැවරුම්කරු",
     assignees: "පැවරුම්කරුවන්",
-    authenticator: "සත්‍යාපකය",
     authentication: "සත්‍යාපනය",
-    // eslint-disable-next-line @typescript-eslint/camelcase
+    authenticator: "සත්‍යාපකය",
     authenticator_plural: "සත්‍යාපක",
+    back: "ආපසු",
     browser: "බ්\u200Dරව්සරය",
     cancel: "අවලංගු කරන්න",
     challengeQuestionNumber: "අභියෝගාත්මක ප්\u200Dරශ්නය {{number}}",
     change: "වෙනස් කරන්න",
+    chunkLoadErrorMessage: {
+        description: "ඉල්ලූ යෙදුමට සේවය කිරීමේදී දෝෂයක් ඇතිවිය. කරුණාකර යෙදුම නැවත පූරණය කිරීමට උත්සාහ කරන්න.",
+        heading: "මොකක්හරි වැරැද්දක් වෙලා",
+        primaryActionText: "යෙදුම නැවත පූරණය කරන්න"
+    },
     claim: "හිමිකම",
+    clear: "මකන්න",
+    clientId: "සේවාලාභී හැඳුනුම්පත",
     close: "වසන්න",
     comingSoon: "ඉක්මනින් පැමිණේවි",
     completed: "සම්පුර්ණ කරන ලද",
@@ -47,8 +62,11 @@ export const common: CommonNS = {
     confirm: "තහවුරු කරන්න",
     contains: "අඩංගු වේ",
     continue: "පවත්වාගෙන යන්න",
+    copyToClipboard: "ක්ලිප්බෝඩ් වෙත පිටපත් කරන්න",
+    create: "සාදන්න",
     createdOn: "නිර්මාණය කරන ලද්දේ",
     dangerZone: "අන්තරා කලාපය",
+    darkMode: "අඳුරු තේමාව",
     delete: "මකන්න",
     description: "විස්තරය",
     deviceModel: "උපාංග ආකෘතිය",
@@ -65,6 +83,7 @@ export const common: CommonNS = {
     enabled: "සක්‍රීයයි",
     endsWith: "සමඟ අවසන් වේ",
     equals: "සමාන",
+    exitFullScreen: "සම්පූර්ණ තිරයෙන් පිටවන්න",
     explore: "ගවේෂණය කරන්න",
     export: "අපනයනය කරන්න",
     featureAvailable: "මෙම අංගය ඉක්මනින් ලබා ගත හැක!",
@@ -72,6 +91,7 @@ export const common: CommonNS = {
     finish: "අවසන් කරන්න",
     generatePassword: "මුරපදය ජනනය කරන්න",
     goBackHome: "නැවත ප්\u200Dරධාන පිටුවට",
+    goFullScreen: "සම්පූර්ණ තිරයට යන්න",
     good: "හොඳ",
     help: "උපකාර",
     hide: "සඟවන්න",
@@ -80,17 +100,29 @@ export const common: CommonNS = {
     import: "ආනයන",
     initiator: "ආරම්භකයා",
     ipAddress: "IP ලිපිනය",
+    issuer: "යෙදුම් නිකුත් කරන්නා",
     lastAccessed: "අවසන් ප්\u200Dරවේශය",
     lastModified: "අවසන් වෙනස් කළ දිනය",
     lastSeen: "අවසන් වරට",
     lastUpdatedOn: "අවසන් වරට යාවත්කාලීන කළ දිනය",
+    learnMore: "තවත් හදාරන්න",
+    lightMode: "දීප්තිමත් තේමාව",
+    loading: "පූරණය වෙමින් පවතී",
     loginTime: "පිවිසුම් කාලය",
     logout: "වරන්න",
+    maxValidation: "මෙම අගය {{max}} ට වඩා අඩු හෝ සමාන විය යුතුය.",
     maximize: "උපරිම කරන්න",
+    minValidation: "මෙම අගය {{min}} ට වඩා වැඩි හෝ සමාන විය යුතුය.",
     minimize: "අවම කරන්න",
     more: "තව",
     myAccount: "පුද්ගලික ගිණුම",
     name: "නම",
+    networkErrorMessage: {
+        description: "කරුණාකර නැවත පුරනය වීමට උත්සාහ කරන්න.",
+        heading: "ඔබගේ සැසිය කල් ඉකුත් වී ඇත",
+        primaryActionText: "පුරන්න"
+    },
+    new: "නවතම",
     next: "ඊළඟ ",
     okay: "හරි",
     operatingSystem: "මෙහෙයුම් පද්ධතිය",
@@ -99,6 +131,7 @@ export const common: CommonNS = {
     personalInfo: "පෞද්ගලික තොරතුරු",
     pin: "තබා ගන්න",
     pinned: "තබා ඇත",
+    preview: "පෙරදසුන",
     previous: "පෙර",
     priority: "ප්\u200Dරමුඛතාවය",
     privacy: "රහස්\u200Dයතාවය",
@@ -122,11 +155,14 @@ export const common: CommonNS = {
     search: "සොයන්න",
     security: "ආරක්ෂාව",
     services: "සේවාවන්",
+    settings: "සැකසුම්",
+    setup: "සැලසුම",
     show: "පෙන්වන්න",
     showAll: "සියල්ල පෙන්වන්න",
     showLess: "අඩුවෙන් පෙන්වන්න",
     showMore: "වැඩිදුර තොරතුරු",
     showPassword: "මුරපදය පෙන්වන්න",
+    skip: "මඟ හරින්න",
     startsWith: "සමඟ ආරම්භ වේ",
     step: "පියවර",
     strong: "ශක්තිමත්",

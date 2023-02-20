@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import filter from "lodash-es/filter";
 import isEmpty from "lodash-es/isEmpty";
 import isEqual from "lodash-es/isEqual";
 import React, { FunctionComponent, useEffect, useState } from "react";
+// eslint-disable-next-line no-restricted-imports
 import { Button, Form, Icon, Label, Message, Popup } from "semantic-ui-react";
 
 interface QueryParametersPropsInterface {
@@ -41,18 +42,18 @@ export const QueryParameters: FunctionComponent<QueryParametersPropsInterface> =
         onChange
     } = props;
 
-    const QUERY_PARAMETER_SEPARATOR = ",";
-    const SPECIAL_CHARACTERS = [",", "&", "=", "?"];
+    const QUERY_PARAMETER_SEPARATOR = "&";
+    const SPECIAL_CHARACTERS = [ ",", "&", "=", "?" ];
 
-    const [queryParamName, setQueryParamName] = useState<string>("");
-    const [queryParamValue, setQueryParamValue] = useState<string>("");
-    const [errorMessage, setErrorMessage] = useState<string>("");
-    const [queryParams, setQueryParams] = useState<QueryParameter[]>([]);
+    const [ queryParamName, setQueryParamName ] = useState<string>("");
+    const [ queryParamValue, setQueryParamValue ] = useState<string>("");
+    const [ errorMessage, setErrorMessage ] = useState<string>("");
+    const [ queryParams, setQueryParams ] = useState<QueryParameter[]>([]);
 
     /**
      * Build query parameter object from the given string form.
      *
-     * @param queryParameter Query parameter in the string form.
+     * @param queryParameter - Query parameter in the string form.
      */
     const buildQueryParameter = (queryParameter: string): QueryParameter => {
         return {
@@ -70,15 +71,15 @@ export const QueryParameters: FunctionComponent<QueryParametersPropsInterface> =
      * Build query parameters string value, from it's object form.
      */
     const buildQueryParametersString = (queryParams: QueryParameter[]): string =>
-        queryParams?.map(buildQueryParameterString)?.join(",");
+        queryParams?.map(buildQueryParameterString)?.join("&");
 
     /**
      * Trigger provided onChange handler with provided query parameters.
-     * 
-     * @param queryParams QueryParameters.
-     * @param onChange onChange handler. 
+     *
+     * @param queryParams - QueryParameters.
+     * @param onChange - OnChange handler.
      */
-    const fireOnChangeEvent = (queryParams: QueryParameter[], onChange: (event: React.ChangeEvent<HTMLInputElement>) 
+    const fireOnChangeEvent = (queryParams: QueryParameter[], onChange: (event: React.ChangeEvent<HTMLInputElement>)
         => void) => {
 
         onChange(
@@ -92,10 +93,10 @@ export const QueryParameters: FunctionComponent<QueryParametersPropsInterface> =
 
     /**
      * Update input field values for query parameter.
-     * 
-     * @param queryParam QueryParameter.
+     *
+     * @param queryParam - QueryParameter.
      */
-    const updateQueryParameterInputFields = (queryParam: QueryParameter) => {
+    const updateQueryParameterInputFields = (queryParam: QueryParameter): void => {
         setQueryParamName(queryParam?.name);
         setQueryParamValue(queryParam?.value);
     };
@@ -115,16 +116,18 @@ export const QueryParameters: FunctionComponent<QueryParametersPropsInterface> =
      * Called when `queryParams` is changed.
      */
     useEffect(() => {
-        
+
         fireOnChangeEvent(queryParams, onChange);
-    }, [queryParams]);
+    }, [ queryParams ]);
 
     /**
      * Enter button option.
-     * @param e keypress event.
+     *
+     * @param e - The keypress event.
      */
     const keyPressed = (e) => {
         const key = e.which || e.charCode || e.keyCode;
+
         if (key === 13) {
             handleQueryParameterAdd(e);
         }
@@ -138,6 +141,7 @@ export const QueryParameters: FunctionComponent<QueryParametersPropsInterface> =
 
         setErrorMessage("");
         let isError = false;
+
         SPECIAL_CHARACTERS.map((c) => {
             if (queryParamValue.includes(c) || queryParamName.includes(c)) {
                 setErrorMessage("Cannot include \"" + c + "\" as a query parameter.");
@@ -149,17 +153,19 @@ export const QueryParameters: FunctionComponent<QueryParametersPropsInterface> =
             return;
         }
 
-        const output: QueryParameter[] = [{
+        const output: QueryParameter[] = [ {
             name: queryParamName,
             value: queryParamValue
-        }];
+        } ];
 
         queryParams.forEach(function(queryParam) {
             const existing = output.filter((item) => {
                 return item.name == queryParam.name;
             });
+
             if (existing.length) {
                 const existingIndex = output.indexOf(existing[0]);
+
                 output[existingIndex].value = queryParam.value + " " + output[existingIndex].value;
             } else {
                 output.push(queryParam);
@@ -174,12 +180,12 @@ export const QueryParameters: FunctionComponent<QueryParametersPropsInterface> =
         });
     };
 
-    const handleLabelRemove = (queryParameter: string) => {
-        
+    const handleLabelRemove = (queryParameter: string): void => {
+
         if (isEmpty(queryParameter)) {
             return;
         }
-        
+
         setQueryParams(filter(queryParams, queryParam => !isEqual(queryParam,
             buildQueryParameter(queryParameter))));
     };
@@ -223,6 +229,7 @@ export const QueryParameters: FunctionComponent<QueryParametersPropsInterface> =
                     position="top center"
                     content="Add key value pair"
                     inverted
+                    popper={ <div style={ { filter: "none" } }></div> }
                 />
             </Form.Group>
 
@@ -231,6 +238,7 @@ export const QueryParameters: FunctionComponent<QueryParametersPropsInterface> =
             {
                 queryParams && queryParams?.map((eachQueryParam, index) => {
                     const queryParameter = eachQueryParam.name + "=" + eachQueryParam.value;
+
                     return (
                         <Label
                             key={ index }

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,14 +19,27 @@
 import { hasRequiredScopes } from "@wso2is/core/helpers";
 import { AlertLevels, SBACInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
-import { ConfirmationModal, ContentLoader, EmphasizedSegment, GenericIcon } from "@wso2is/react-components";
-import { AxiosResponse } from "axios";
+import {
+    Code,
+    ConfirmationModal,
+    ContentLoader,
+    DocumentationLink,
+    EmphasizedSegment,
+    GenericIcon,
+    Message,
+    Popup,
+    useDocumentation
+} from "@wso2is/react-components";
+import { AxiosError, AxiosResponse } from "axios";
 import get from "lodash-es/get";
 import sortBy from "lodash-es/sortBy";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import React, { Fragment, FunctionComponent, MutableRefObject, ReactElement, useEffect, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Card, Grid, Radio, SemanticWIDTHS } from "semantic-ui-react";
+import { Dispatch } from "redux";
+import { Divider, Grid, Header, Button as SemButton } from "semantic-ui-react";
+import { SAMLSelectionLanding } from "./protocols";
+import { applicationConfig } from "../../../../extensions";
 import { AppState, FeatureConfigInterface, store } from "../../../core";
 import {
     deleteProtocol,
@@ -37,10 +50,17 @@ import {
     updateAuthProtocolConfig
 } from "../../api";
 import { getInboundProtocolLogos } from "../../configs";
+import { ApplicationManagementConstants } from "../../constants";
+import CustomApplicationTemplate
+    from "../../data/application-templates/templates/custom-application/custom-application.json";
 import {
+    ApplicationInterface,
     ApplicationTemplateListItemInterface,
-    CertificateInterface,
-    OIDCDataInterface,
+    AuthProtocolMetaInterface,
+    CertificateInterface, OIDCDataInterface,
+    OIDCMetadataInterface,
+    SAML2ConfigurationInterface,
+    SAMLConfigModes,
     SupportedAuthProtocolMetaTypes,
     SupportedAuthProtocolTypes
 } from "../../models";
@@ -50,9 +70,13 @@ import { InboundFormFactory } from "../forms";
 import { ApplicationCreateWizard } from "../wizard";
 
 /**
- * Proptypes for the applications settings component.
+ * Prop-types for the applications settings component.
  */
 interface AccessConfigurationPropsInterface extends SBACInterface<FeatureConfigInterface>, TestableComponentInterface {
+    /**
+     * The application model.
+     */
+    application: ApplicationInterface;
     /**
      * Currently editing application id.
      */
@@ -66,6 +90,10 @@ interface AccessConfigurationPropsInterface extends SBACInterface<FeatureConfigI
      */
     certificate: CertificateInterface;
     /**
+     * Access config to be Extended.
+     */
+    extendedAccessConfig: boolean;
+    /**
      * Protocol configurations.
      */
     inboundProtocolConfig: any;
@@ -77,10 +105,13 @@ interface AccessConfigurationPropsInterface extends SBACInterface<FeatureConfigI
      * Is the application info request loading.
      */
     isLoading?: boolean;
+    setIsLoading?: any;
     /**
      * Callback to update the application details.
      */
     onUpdate: (id: string) => void;
+
+    onProtocolUpdate: () => void;
     /**
      *  Is inbound protocol config request is still loading.
      */
@@ -109,20 +140,24 @@ interface AccessConfigurationPropsInterface extends SBACInterface<FeatureConfigI
      * Application template.
      */
     template?: ApplicationTemplateListItemInterface;
+    /**
+     * Application template.
+     */
+    applicationTemplateId?: string;
 }
 
 /**
  *  Inbound protocols and advance settings component.
  *
- * @param {AccessConfigurationPropsInterface} props - Props injected to the component.
- *
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns Access Configuration component.
  */
 export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInterface> = (
     props: AccessConfigurationPropsInterface
 ): ReactElement => {
 
     const {
+        application,
         appId,
         appName,
         certificate,
@@ -130,33 +165,48 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
         inboundProtocolConfig,
         inboundProtocols,
         isLoading,
+        setIsLoading,
         onUpdate,
         allowedOriginList,
         onAllowedOriginsUpdate,
         onApplicationSecretRegenerate,
-        inboundProtocolsLoading,
+        isInboundProtocolConfigRequestLoading,
         readOnly,
         template,
+        extendedAccessConfig,
+        applicationTemplateId,
         [ "data-testid" ]: testId
     } = props;
 
     const { t } = useTranslation();
+    const { getLink } = useDocumentation();
 
-    const dispatch = useDispatch();
+    const dispatch: Dispatch = useDispatch();
 
-    const authProtocolMeta = useSelector((state: AppState) => state.application.meta.protocolMeta);
-    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.scope);
-    const tenantName = store.getState().config.deployment.tenant;
+    const authProtocolMeta: AuthProtocolMetaInterface = useSelector(
+        (state: AppState) => state.application.meta.protocolMeta);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
+    const tenantName: string = store.getState().config.deployment.tenant;
+    const allowMultipleProtocol: boolean = useSelector(
+        (state: AppState) => state.config.deployment.allowMultipleAppProtocols);
 
     const [ selectedProtocol, setSelectedProtocol ] = useState<SupportedAuthProtocolTypes | string>(undefined);
+    const [ inboundProtocolList, setInboundProtocolList ] = useState<string[]>([]);
+    const [ supportedProtocolList, setSupportedProtocolList ] = useState<string[]>(undefined);
     const [ showWizard, setShowWizard ] = useState<boolean>(false);
     const [ showDeleteConfirmationModal, setShowDeleteConfirmationModal ] = useState<boolean>(false);
-    const [ protocolToDelete, setProtocolToDelete ] = useState<string>(undefined);
+    const [ showProtocolSwitchModal, setShowProtocolSwitchModal ] = useState<boolean>(false);
+    const [ protocolToDelete ] = useState<string>(undefined);
+    const [ requestLoading, setRequestLoading ] = useState<boolean>(false);
+
+    const [ samlCreationOption, setSAMLCreationOption ] = useState<SAMLConfigModes>(undefined);
+
+    const emphasizedSegmentRef: MutableRefObject<HTMLElement> = useRef<HTMLElement>(null);
 
     /**
      * Handles the inbound config delete action.
      *
-     * @param {SupportedAuthProtocolTypes} protocol - The protocol to be deleted.
+     * @param protocol - The protocol to be deleted.
      */
     const handleInboundConfigDelete = (protocol: string): void => {
         deleteProtocol(appId, protocol)
@@ -171,7 +221,7 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
 
                 onUpdate(appId);
             })
-            .catch((error) => {
+            .catch((error: AxiosError) => {
                 if (error?.response?.data?.description) {
                     dispatch(addAlert({
                         description: error?.response?.data?.description,
@@ -194,13 +244,51 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
     };
 
     /**
+     * Handles the inbound config delete action.
+     *
+     * @param protocol - The protocol to be deleted.
+     */
+    const handleInboundConfigSwitch = (protocol: string): void => {
+        setRequestLoading(true);
+        deleteProtocol(appId, protocol)
+            .then(() => {
+                onUpdate(appId);
+            })
+            .catch((error: AxiosError) => {
+                if (error?.response?.data?.description) {
+                    dispatch(addAlert({
+                        description: error?.response?.data?.description,
+                        level: AlertLevels.ERROR,
+                        message: t("console:develop.features.applications.notifications.deleteProtocolConfig.error" +
+                            ".message")
+                    }));
+
+                    return;
+                }
+
+                dispatch(addAlert({
+                    description: t("console:develop.features.applications.notifications.deleteProtocolConfig" +
+                        ".genericError.description"),
+                    level: AlertLevels.ERROR,
+                    message: t("console:develop.features.applications.notifications.deleteProtocolConfig" +
+                        ".genericError.message")
+                }));
+            }).finally(() => {
+                setRequestLoading(false);
+                setSelectedProtocol(undefined);
+            });
+    };
+
+    /**
      * Handles the inbound config form submit action.
      *
      * @param values - Form values.
-     * @param {SupportedAuthProtocolTypes} protocol - The protocol to be updated.
+     * @param protocol - The protocol to be updated.
      */
-    const handleInboundConfigFormSubmit = (values: any, protocol: string): void => {
-        updateAuthProtocolConfig(appId, values, protocol)
+    const handleInboundConfigFormSubmit = async (values: any, protocol: string): Promise<void> => {
+        let updateError: boolean = false;
+
+        return updateAuthProtocolConfig<OIDCDataInterface | SAML2ConfigurationInterface>(appId, values, protocol)
             .then(() => {
                 dispatch(addAlert({
                     description: t("console:develop.features.applications.notifications.updateInboundProtocolConfig" +
@@ -209,10 +297,10 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
                     message: t("console:develop.features.applications.notifications.updateInboundProtocolConfig" +
                         ".success.message")
                 }));
-
                 onAllowedOriginsUpdate();
             })
-            .catch((error) => {
+            .catch((error: AxiosError) => {
+                updateError= true;
                 if (error?.response?.data?.description) {
                     dispatch(addAlert({
                         description: error.response.data.description,
@@ -231,7 +319,19 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
                     message: t("console:develop.features.applications.notifications.updateInboundProtocolConfig" +
                         ".genericError.message")
                 }));
+            }).finally(() => {
+                onUpdate(appId);
+                if (!updateError) {
+                    createSAMLApplication();
+                }
             });
+    };
+
+    const createSAMLApplication= () => {
+        if (template.id === CustomApplicationTemplate.id
+            && samlCreationOption && selectedProtocol === SupportedAuthProtocolTypes.SAML) {
+            setSAMLCreationOption(undefined);
+        }
     };
 
     /**
@@ -240,14 +340,12 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
      * @param values - Form values.
      */
     const handleSubmit = (values: any): void => {
-
+        setIsLoading(true);
         updateApplicationDetails({ id: appId, ...values.general })
-            .then(() => {
-                handleInboundConfigFormSubmit(values.inbound, selectedProtocol);
-
-                onUpdate(appId);
+            .then(async () => {
+                await handleInboundConfigFormSubmit(values.inbound, selectedProtocol);
             })
-            .catch((error) => {
+            .catch((error: AxiosError) => {
                 if (error.response && error.response.data && error.response.data.description) {
                     dispatch(addAlert({
                         description: error.response.data.description,
@@ -266,6 +364,8 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
                     message: t("console:develop.features.applications.notifications.updateApplication.genericError" +
                         ".message")
                 }));
+            }).finally(() => {
+                setIsLoading(false);
             });
     };
 
@@ -285,7 +385,7 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
                 onApplicationSecretRegenerate(response.data);
                 onUpdate(appId);
             })
-            .catch((error) => {
+            .catch((error: AxiosError) => {
                 if (error.response && error.response.data && error.response.data.description) {
                     dispatch(addAlert({
                         description: error.response.data.description,
@@ -320,7 +420,7 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
                 }));
                 onUpdate(appId);
             })
-            .catch((error) => {
+            .catch((error: AxiosError) => {
                 if (error.response && error.response.data && error.response.data.description) {
                     dispatch(addAlert({
                         description: error.response.data.description,
@@ -341,20 +441,41 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
             });
     };
 
-    /**
-     * Resolves the protocol selection cards.
-     * @return {React.ReactElement}
-     */
-    const resolveInboundProtocolSelection = (): ReactElement => {
-
+    const getSupportedProtocols = (filterProtocol?: string): string[] => {
         let supportedProtocols: string[] = template?.authenticationProtocol
             ? [ template.authenticationProtocol ]
             : Object.values(SupportedAuthProtocolTypes);
 
+
+        if (applicationTemplateId === ApplicationManagementConstants.CUSTOM_APPLICATION_SAML) {
+            return [ SupportedAuthProtocolTypes.SAML ];
+        }
+
+        if (applicationTemplateId === ApplicationManagementConstants.CUSTOM_APPLICATION_OIDC) {
+            return [ SupportedAuthProtocolTypes.OAUTH2_OIDC ];
+        }
+
+        if (applicationTemplateId === ApplicationManagementConstants.CUSTOM_APPLICATION_PASSIVE_STS) {
+            return [ SupportedAuthProtocolTypes.WS_FEDERATION ];
+        }
+
         // Filter out legacy and unsupported auth protocols.
-        supportedProtocols = supportedProtocols.filter((protocol) => {
+        supportedProtocols = supportedProtocols.filter((protocol: string) => {
+
+            if (template && template.id === CustomApplicationTemplate.id
+                && applicationConfig.customApplication.allowedProtocolTypes
+                && applicationConfig.customApplication.allowedProtocolTypes.length > 0 ) {
+                if (applicationConfig.customApplication.allowedProtocolTypes.includes(protocol)){
+                    return protocol;
+                } else {
+                    return false;
+                }
+            }
+
             if (protocol === SupportedAuthProtocolTypes.WS_TRUST
-                || protocol === SupportedAuthProtocolTypes.CUSTOM) {
+                || protocol === SupportedAuthProtocolTypes.CUSTOM
+                || (extendedAccessConfig && protocol === SupportedAuthProtocolTypes.WS_FEDERATION)
+                || (filterProtocol && protocol === filterProtocol)) {
 
                 return false;
             }
@@ -362,16 +483,35 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
             return protocol;
         });
 
-        // Sort the list of protocols.
-        supportedProtocols = sortBy(supportedProtocols, (element) => {
+        return supportedProtocols;
+    };
 
-            let customOrder: object = {
+    /**
+     * Use effect hook to be before switching protocol.
+     */
+    useEffect(() => {
+        if (inboundProtocols.length > 0) {
+            setInboundProtocolList(inboundProtocols);
+        }
+    }, [ inboundProtocols ]);
+
+
+    /**
+     * Load supported protocols from api.
+     */
+    const loadSupportedProtocols = (): void => {
+        let supportedProtocols: string[] = getSupportedProtocols();
+
+        // Sort the list of protocols.
+        supportedProtocols = sortBy(supportedProtocols, (element: string) => {
+
+            let customOrder: Record<string, unknown> = {
                 [ SupportedAuthProtocolTypes.OIDC ] : 0,
                 [ SupportedAuthProtocolTypes.SAML ] : 1
             };
 
             if (inboundProtocols.length > 0) {
-                inboundProtocols.forEach((protocol, index) => {
+                inboundProtocols.forEach((protocol: string, index: number) => {
                     if (Object.values(SupportedAuthProtocolTypes).includes(protocol as SupportedAuthProtocolTypes)) {
                         customOrder = {
                             ...customOrder,
@@ -388,73 +528,14 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
             setSelectedProtocol(supportedProtocols[0]);
         }
 
-        // If only one protocol is available, skip the selection cards.
-        if (supportedProtocols.length === 1) {
-            return null;
+        if (!supportedProtocolList) {
+            setSupportedProtocolList(supportedProtocols);
         }
-
-        return (
-            <Grid.Row>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Card.Group
-                        itemsPerRow={ supportedProtocols.length as SemanticWIDTHS }
-                    >
-                        {
-                            supportedProtocols.map((protocol, index) => (
-                                <Card
-                                    key={ index }
-                                    className={
-                                        `selection-card radio-selection-card ${ (selectedProtocol === protocol)
-                                            ? "card-selected"
-                                            : ""
-                                            }`
-                                    }
-                                >
-                                    <Card.Content
-                                        onClick={ () => {
-                                            setSelectedProtocol(protocol);
-                                        } }
-                                        className="selection-card-content"
-                                    >
-                                        <div className="integrate-radio">
-                                            <Radio
-                                                checked={ selectedProtocol === protocol }
-                                            />
-                                        </div>
-                                        <div className="card-content">
-                                            <Card.Header>
-                                                <GenericIcon
-                                                    inline
-                                                    transparent
-                                                    icon={ getInboundProtocolLogos()[ protocol ] }
-                                                    size="micro"
-                                                    spaced="right"
-                                                />
-                                                {
-                                                    ApplicationManagementUtils.resolveProtocolDisplayName(
-                                                            protocol as SupportedAuthProtocolTypes)
-                                                }
-                                            </Card.Header>
-                                            <Card.Meta>
-                                                {
-                                                    ApplicationManagementUtils.resolveProtocolDescription(
-                                                        protocol as SupportedAuthProtocolTypes)
-                                                }
-                                            </Card.Meta>
-                                        </div>
-                                    </Card.Content>
-                                </Card>
-                            ))
-                        }
-                    </Card.Group>
-                </Grid.Column>
-            </Grid.Row>
-        );
     };
 
     /**
      * Resolves the corresponding protocol config form when a protocol is selected.
-     * @return {React.ReactElement}
+     * @returns Protocol settings form.
      */
     const resolveInboundProtocolSettingsForm = (): ReactElement => {
 
@@ -462,62 +543,344 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
             return null;
         }
 
+        /**
+         * Renders the link to documentation for integrating login.
+         * @remarks Currently, the logic is added only for standard based applications (custom).
+         * And shown when the link is defined.
+         * @returns Protocol integration help message.
+         */
+        const renderProtocolIntegrationHelpMessage = (): ReactElement => {
+
+            let docLink: string = undefined;
+            let i18nKey: string = undefined;
+
+            if (applicationTemplateId === ApplicationManagementConstants.CUSTOM_APPLICATION_OIDC) {
+                docLink = getLink("develop.applications.editApplication.standardBasedApplication" +
+                    ".oauth2OIDC.protocol.learnMore");
+                i18nKey = "console:develop.features.applications.forms.inboundOIDC.documentation";
+            }
+
+            if (applicationTemplateId === ApplicationManagementConstants.CUSTOM_APPLICATION_SAML) {
+                docLink = getLink("develop.applications.editApplication.standardBasedApplication" +
+                    ".saml.protocol.learnMore");
+                i18nKey = "console:develop.features.applications.forms.inboundSAML.documentation";
+            }
+
+            if (!docLink) {
+                return null;
+            }
+
+            return (
+                <Fragment>
+                    <Message
+                        visible
+                        type="info"
+                        content={
+                            (<Trans
+                                i18nKey={ i18nKey }
+                                tOptions={ {
+                                    protocol: ApplicationManagementUtils
+                                        .resolveProtocolDisplayName(selectedProtocol as SupportedAuthProtocolTypes)
+                                } }
+                            >
+                                Read through our
+                                <DocumentationLink link={ docLink }>documentation</DocumentationLink>
+                                to learn more about using
+                                <Code withBackground={ false }>
+                                    {
+                                        ApplicationManagementUtils.resolveProtocolDisplayName(
+                                            selectedProtocol as SupportedAuthProtocolTypes
+                                        )
+                                    }
+                                </Code>
+                                protocol to implement login in your applications.
+                            </Trans>)
+                        }
+                    />
+                    <Divider hidden />
+                </Fragment>
+            );
+        };
+
         return (
-            <EmphasizedSegment className="protocol-settings-section" padded="very">
-                {
-                    Object.values(SupportedAuthProtocolTypes).includes(selectedProtocol as SupportedAuthProtocolTypes)
-                        ? (
-                            <InboundFormFactory
-                                certificate={ certificate }
-                                tenantDomain={ tenantName }
-                                allowedOrigins={ allowedOriginList }
-                                metadata={ authProtocolMeta[ selectedProtocol ] }
-                                initialValues={
-                                    get(inboundProtocolConfig, selectedProtocol)
-                                        ? inboundProtocolConfig[ selectedProtocol ]
-                                        : undefined
-                                }
-                                onSubmit={ handleSubmit }
-                                type={ selectedProtocol as SupportedAuthProtocolTypes }
-                                onApplicationRegenerate={ handleApplicationRegenerate }
-                                onApplicationRevoke={ handleApplicationRevoke }
-                                readOnly={
-                                    readOnly
-                                    || !hasRequiredScopes(
-                                        featureConfig?.applications,
-                                        featureConfig?.applications?.scopes?.update,
-                                        allowedScopes
-                                    )
-                                }
-                                template={ template }
-                                data-testid={ `${ testId }-inbound-${ selectedProtocol }-form` }
-                            />
-                        )
-                        : (
-                            <InboundFormFactory
-                                certificate={ certificate }
-                                metadata={ authProtocolMeta[ selectedProtocol ] }
-                                initialValues={
-                                    get(inboundProtocolConfig, selectedProtocol)
-                                        ? inboundProtocolConfig[ selectedProtocol ]
-                                        : undefined
-                                }
-                                onSubmit={ handleSubmit }
-                                type={ SupportedAuthProtocolTypes.CUSTOM }
-                                readOnly={
-                                    !hasRequiredScopes(
-                                        featureConfig?.applications,
-                                        featureConfig?.applications?.scopes?.update,
-                                        allowedScopes
-                                    )
-                                }
-                                template={ template }
-                                data-testid={ `${ testId }-inbound-custom-form` }
-                            />
-                        )
-                }
+            <EmphasizedSegment
+                className="protocol-settings-section form-wrapper"
+                padded="very"
+                ref={ emphasizedSegmentRef }
+            >
+                <div className="form-container with-max-width">
+                    { !isLoading? resolveProtocolBanner() : null }
+                    { renderProtocolIntegrationHelpMessage() }
+                    {
+                        Object
+                            .values(SupportedAuthProtocolTypes)
+                            .includes(selectedProtocol as SupportedAuthProtocolTypes)
+                            ? (
+                                <InboundFormFactory
+                                    onUpdate={ onUpdate }
+                                    application={ application }
+                                    isLoading={ isLoading }
+                                    setIsLoading={ setIsLoading }
+                                    certificate={ certificate }
+                                    tenantDomain={ tenantName }
+                                    allowedOrigins={ allowedOriginList }
+                                    metadata={
+                                        authProtocolMeta[
+                                            // There's no separate meta for `OAuth2/OIDC` Apps.
+                                            // Need to use `OIDC` for noe.
+                                            selectedProtocol === SupportedAuthProtocolTypes.OAUTH2_OIDC
+                                                ? SupportedAuthProtocolTypes.OIDC
+                                                : selectedProtocol
+                                        ]
+                                    }
+                                    initialValues={
+                                        get(
+                                            inboundProtocolConfig,
+                                            selectedProtocol === SupportedAuthProtocolTypes.OAUTH2_OIDC
+                                                ? SupportedAuthProtocolTypes.OIDC
+                                                : selectedProtocol
+                                        )
+                                            ? inboundProtocolConfig[
+                                                selectedProtocol === SupportedAuthProtocolTypes.OAUTH2_OIDC
+                                                    ? SupportedAuthProtocolTypes.OIDC
+                                                    : selectedProtocol
+                                            ]
+                                            : undefined
+                                    }
+                                    onSubmit={ handleSubmit }
+                                    type={ selectedProtocol as SupportedAuthProtocolTypes }
+                                    onApplicationRegenerate={ handleApplicationRegenerate }
+                                    onApplicationRevoke={ handleApplicationRevoke }
+                                    readOnly={
+                                        readOnly
+                                        || !hasRequiredScopes(
+                                            featureConfig?.applications,
+                                            featureConfig?.applications?.scopes?.update,
+                                            allowedScopes
+                                        )
+                                    }
+                                    showSAMLCreation={ selectedProtocol === SupportedAuthProtocolTypes.SAML }
+                                    SAMLCreationOption={
+                                        (selectedProtocol === SupportedAuthProtocolTypes.SAML) && samlCreationOption }
+                                    template={ template }
+                                    data-testid={ `${ testId }-inbound-${ selectedProtocol }-form` }
+                                    containerRef={ emphasizedSegmentRef }
+                                />
+                            )
+                            : (
+                                <InboundFormFactory
+                                    onUpdate={ onUpdate }
+                                    application={ application }
+                                    isLoading={ isLoading }
+                                    setIsLoading={ setIsLoading }
+                                    certificate={ certificate }
+                                    metadata={
+                                        // There's no separate meta for `OAuth2/OIDC` Apps. Need to use `OIDC` for noe.
+                                        authProtocolMeta[
+                                            selectedProtocol === SupportedAuthProtocolTypes.OAUTH2_OIDC
+                                                ? SupportedAuthProtocolTypes.OIDC
+                                                : selectedProtocol
+                                        ]
+                                    }
+                                    initialValues={
+                                        get(
+                                            inboundProtocolConfig,
+                                            selectedProtocol === SupportedAuthProtocolTypes.OAUTH2_OIDC
+                                                ? SupportedAuthProtocolTypes.OIDC
+                                                : selectedProtocol
+                                        )
+                                            ? inboundProtocolConfig[
+                                                selectedProtocol === SupportedAuthProtocolTypes.OAUTH2_OIDC
+                                                    ? SupportedAuthProtocolTypes.OIDC
+                                                    : selectedProtocol
+                                            ]
+                                            : undefined
+                                    }
+                                    onSubmit={ handleSubmit }
+                                    type={ SupportedAuthProtocolTypes.CUSTOM }
+                                    readOnly={
+                                        !hasRequiredScopes(
+                                            featureConfig?.applications,
+                                            featureConfig?.applications?.scopes?.update,
+                                            allowedScopes
+                                        )
+                                    }
+                                    template={ template }
+                                    data-testid={ `${ testId }-inbound-custom-form` }
+                                    containerRef={ emphasizedSegmentRef }
+                                />
+                            )
+                    }
+                </div>
             </EmphasizedSegment>
         );
+    };
+
+    const resolveProtocolBanner =(): ReactElement => {
+
+        if (!supportedProtocolList) {
+            return null;
+        }
+
+        if (allowMultipleProtocol) {
+            return (
+                <Grid.Row>
+                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 10 }>
+                        {
+                            supportedProtocolList.map((protocol: string, index: number) => (
+                                <Popup
+                                    key={ index }
+                                    trigger={ (
+                                        <SemButton
+                                            basic
+                                            color={ selectedProtocol === protocol ? "red" : "grey" }
+                                            content={ selectedProtocol === protocol ? "red" : "grey" }
+                                            className={ "mr-3 protocol-button" }
+                                            onClick={ () => setSelectedProtocol(protocol) }
+                                        >
+                                            <GenericIcon
+                                                fill={ selectedProtocol === protocol ? "primary" : "accent1" }
+                                                inline
+                                                transparent
+                                                icon={ getInboundProtocolLogos()[protocol] }
+                                                size="micro"
+                                                spaced="left"
+                                                verticalAlign="middle"
+                                                className={ "protocol-button-icon" }
+                                            />
+                                            <div
+                                                className={ "protocol-change-title" }
+                                            >
+                                                {
+                                                    ApplicationManagementUtils.resolveProtocolDisplayName(
+                                                        protocol as SupportedAuthProtocolTypes)
+                                                }
+                                            </div>
+                                        </SemButton>
+                                    ) }
+                                    content={
+                                        ApplicationManagementUtils.resolveProtocolDescription(
+                                            protocol as SupportedAuthProtocolTypes)
+                                    }
+                                    position="top center"
+                                    size="mini"
+                                    hideOnScroll
+                                    inverted
+                                />
+                            ))
+                        }
+                        <Divider hidden/>
+                        <Divider/>
+                    </Grid.Column>
+                </Grid.Row>
+            );
+        }
+
+        return (
+            <>
+                <Header as="h3" className="display-flex">
+                    <GenericIcon
+                        transparent
+                        width="auto"
+                        icon={ getInboundProtocolLogos()[ selectedProtocol ] }
+                        size="x30"
+                        verticalAlign="middle"
+                    />
+                    <Header.Content
+                        className={ "mt-1" }
+                    >
+                        <strong> {
+                            ApplicationManagementUtils.resolveProtocolDisplayName(
+                                selectedProtocol as SupportedAuthProtocolTypes)
+                        } </strong>
+                        { /*{TODO: Hide change protocol option}*/ }
+                        { /*{  (supportedProtocolList.length !== 1) &&*/ }
+                        { /*<Header.Subheader*/ }
+                        { /*    className="protocol-banner-sub-title"*/ }
+                        { /*>*/ }
+                        { /*    Choose different protocol?*/ }
+                        { /*    <LinkButton*/ }
+                        { /*        className={ "pl-1" }*/ }
+                        { /*        onClick={ () => setShowProtocolSwitchModal(true) }*/ }
+                        { /*    >*/ }
+                        { /*        Change Protocol*/ }
+                        { /*    </LinkButton>*/ }
+                        { /*</Header.Subheader>*/ }
+                        { /*}*/ }
+                    </Header.Content>
+                </Header>
+                { resolveProtocolDescription() }
+                <Divider hidden/>
+            </>
+        );
+    };
+
+    /**
+     * Resolves the corresponding protocol description and documentation link when a protocol is selected.
+     * @returns Protocol description.
+     */
+    const resolveProtocolDescription =(): ReactElement => {
+
+        // Description for OIDC Protocol tab.
+        if (selectedProtocol === SupportedAuthProtocolTypes.OIDC) {
+            return(
+                <Header as="h6" color="grey" compact>
+                    {
+                        t(
+                            "console:develop.features.applications.forms.inboundOIDC.description",
+                            {
+                                protocol: ApplicationManagementUtils
+                                    .resolveProtocolDisplayName(SupportedAuthProtocolTypes.OIDC)
+                            }
+                        )
+                    }
+                    <DocumentationLink
+                        link={ getLink("develop.applications.editApplication.oidcApplication.protocol.learnMore") }
+                    >
+                        { t("common:learnMore") }
+                    </DocumentationLink>
+                </Header>
+            );
+        }
+
+        // Description for OAuth2/OIDC Protocol tab.
+        if (selectedProtocol === SupportedAuthProtocolTypes.OAUTH2_OIDC) {
+            return(
+                <Header as="h6" color="grey" compact>
+                    {
+                        t(
+                            "console:develop.features.applications.forms.inboundOIDC.description",
+                            {
+                                protocol: ApplicationManagementUtils
+                                    .resolveProtocolDisplayName(SupportedAuthProtocolTypes.OAUTH2_OIDC)
+                            }
+                        )
+                    }
+                    <DocumentationLink
+                        link={ getLink("develop.applications.editApplication.oidcApplication.protocol.learnMore") }
+                    >
+                        { t("common:learnMore") }
+                    </DocumentationLink>
+                </Header>
+            );
+        }
+
+        // Description for SAML Protocol tab.
+        if (selectedProtocol === SupportedAuthProtocolTypes.SAML) {
+            return(
+                <Header as="h6" color="grey" compact>
+                    { t("console:develop.features.applications.forms.inboundSAML.description") }
+                    <DocumentationLink
+                        link={ getLink("develop.applications.editApplication.samlApplication.protocol.learnMore") }
+                    >
+                        { t("common:learnMore") }
+                    </DocumentationLink>
+                </Header>
+            );
+        }
+
+        // Description for other types.
+        return null;
     };
 
     /**
@@ -527,7 +890,7 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
 
         const protocols: string[] = Object.values(SupportedAuthProtocolMetaTypes);
 
-        protocols.map((selected) => {
+        protocols.map((selected: string) => {
 
             if (selected === SupportedAuthProtocolTypes.WS_FEDERATION
                 || selected === SupportedAuthProtocolTypes.WS_TRUST) {
@@ -535,16 +898,16 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
                 return;
             }
 
-            const selectedProtocol = selected as SupportedAuthProtocolMetaTypes;
+            const selectedProtocol: SupportedAuthProtocolMetaTypes = selected as SupportedAuthProtocolMetaTypes;
 
             // Check if the metadata for the selected auth protocol is available in redux store.
             // If not, fetch the metadata related to the selected auth protocol.
             if (!Object.prototype.hasOwnProperty.call(authProtocolMeta, selectedProtocol)) {
                 getAuthProtocolMetadata(selectedProtocol)
-                    .then((response) => {
+                    .then((response: OIDCMetadataInterface) => {
                         dispatch(setAuthProtocolMeta(selectedProtocol, response));
                     })
-                    .catch((error) => {
+                    .catch((error: AxiosError) => {
                         if (error.response && error.response.data && error.response.data.description) {
                             dispatch(addAlert({
                                 description: error.response.data.description,
@@ -568,93 +931,172 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
         });
     }, [ inboundProtocols ]);
 
+    const selectSAMLCreationProtocol = (samlOption: SAMLConfigModes): void =>{
+        setSAMLCreationOption(samlOption);
+        setSelectedProtocol(SupportedAuthProtocolTypes.SAML);
+        inboundProtocolList.push(SupportedAuthProtocolTypes.SAML);
+    };
+
     return (
-        !isLoading
+        !isLoading && !requestLoading && !isInboundProtocolConfigRequestLoading
             ? (
-                <Grid>
-                    { resolveInboundProtocolSelection() }
-                    <Grid.Row>
-                        <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                            { resolveInboundProtocolSettingsForm() }
-                        </Grid.Column>
-                    </Grid.Row>
-                    {
-                        showWizard && (
-                            <ApplicationCreateWizard
-                                title={
-                                    t("console:develop.features.applications.edit.sections.access.addProtocolWizard" +
-                                        ".heading")
-                                }
-                                subTitle={
-                                    t("console:develop.features.applications.edit.sections.access.addProtocolWizard" +
-                                        ".subHeading",
-                                        { appName: appName })
-                                }
-                                closeWizard={ (): void => setShowWizard(false) }
-                                addProtocol={ true }
-                                selectedProtocols={ inboundProtocols }
-                                onUpdate={ onUpdate }
-                                appId={ appId }
-                                data-testid={ `${ testId }-protocol-add-wizard` }
-                            />
-                        )
-                    }
-                    {
-                        showDeleteConfirmationModal && (
-                            <ConfirmationModal
-                                onClose={ (): void => setShowDeleteConfirmationModal(false) }
-                                type="warning"
-                                open={ showDeleteConfirmationModal }
-                                assertion={ protocolToDelete }
-                                assertionHint={ (
-                                    <p>
-                                        <Trans
-                                            i18nKey={
-                                                "console:develop.features.applications.confirmations.deleteProtocol" +
-                                                ".assertionHint"
-                                            }
-                                            tOptions={ { name: protocolToDelete } }
-                                        >
-                                            Please type <strong>{ protocolToDelete }</strong> to confirm.
-                                        </Trans>
-                                    </p>
-                                ) }
-                                assertionType="input"
-                                primaryAction={ t("common:confirm") }
-                                secondaryAction={ t("common:cancel") }
-                                onSecondaryActionClick={ (): void => setShowDeleteConfirmationModal(false) }
-                                onPrimaryActionClick={
-                                    (): void => {
-                                        handleInboundConfigDelete(protocolToDelete);
-                                        setShowDeleteConfirmationModal(false);
-                                    }
-                                }
-                                data-testid={ `${ testId }-protocol-delete-confirmation-modal` }
-                                closeOnDimmerClick={ false }
-                            >
-                                <ConfirmationModal.Header
-                                    data-testid={ `${ testId }-protocol-delete-confirmation-modal-header` }
-                                >
-                                    { t("console:develop.features.applications.confirmations.deleteProtocol.header") }
-                                </ConfirmationModal.Header>
-                                <ConfirmationModal.Message
-                                    attached
-                                    warning
-                                    data-testid={ `${ testId }-protocol-delete-confirmation-modal-message` }
-                                >
-                                    { t("console:develop.features.applications.confirmations.deleteProtocol.message") }
-                                </ConfirmationModal.Message>
-                                <ConfirmationModal.Content
-                                    data-testid={ `${ testId }-protocol-delete-confirmation-modal-content` }
-                                >
-                                    { t("console:develop.features.applications.confirmations.deleteProtocol.content") }
-                                </ConfirmationModal.Content>
-                            </ConfirmationModal>
-                        )
-                    }
-                </Grid>
+                !selectedProtocol
+                && inboundProtocols.length === 0
+                && !allowMultipleProtocol
+                && applicationTemplateId === ApplicationManagementConstants.CUSTOM_APPLICATION_SAML
             )
-            : <ContentLoader/>
+                ?
+                (
+                    <SAMLSelectionLanding
+                        setSAMLProtocol={ selectSAMLCreationProtocol }
+                    />
+                )
+                : (
+                    <Grid>
+                        <>
+                            { loadSupportedProtocols() }
+                            <Grid.Row>
+                                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                    { resolveInboundProtocolSettingsForm() }
+                                </Grid.Column>
+                            </Grid.Row>
+                            {
+                                showWizard && (
+                                    <ApplicationCreateWizard
+                                        title={
+                                            t("console:develop.features.applications.edit.sections" +
+                                                ".access.addProtocolWizard.heading")
+                                        }
+                                        subTitle={
+                                            t("console:develop.features.applications.edit.sections" +
+                                                ".access.addProtocolWizard.subHeading",
+                                            { appName: appName })
+                                        }
+                                        closeWizard={ (): void => setShowWizard(false) }
+                                        addProtocol={ true }
+                                        selectedProtocols={ inboundProtocols }
+                                        onUpdate={ onUpdate }
+                                        appId={ appId }
+                                        data-testid={ `${ testId }-protocol-add-wizard` }
+                                    />
+                                )
+                            }
+                            {
+                                showDeleteConfirmationModal && (
+                                    <ConfirmationModal
+                                        onClose={ (): void => setShowDeleteConfirmationModal(false) }
+                                        type="negative"
+                                        open={ showDeleteConfirmationModal }
+                                        assertion={ protocolToDelete }
+                                        assertionHint={ (
+                                            <p>
+                                                <Trans
+                                                    i18nKey={
+                                                        "console:develop.features.applications.confirmations" +
+                                                        ".deleteProtocol.assertionHint"
+                                                    }
+                                                    tOptions={ { name: protocolToDelete } }
+                                                >
+                                                Please type <strong>{ protocolToDelete }</strong> to confirm.
+                                                </Trans>
+                                            </p>
+                                        ) }
+                                        assertionType="input"
+                                        primaryAction={ t("common:confirm") }
+                                        secondaryAction={ t("common:cancel") }
+                                        onSecondaryActionClick={ (): void => setShowDeleteConfirmationModal(false) }
+                                        onPrimaryActionClick={
+                                            (): void => {
+                                                handleInboundConfigDelete(protocolToDelete);
+                                                setShowDeleteConfirmationModal(false);
+                                            }
+                                        }
+                                        data-testid={ `${ testId }-protocol-delete-confirmation-modal` }
+                                        closeOnDimmerClick={ false }
+                                    >
+                                        <ConfirmationModal.Header
+                                            data-testid={ `${ testId }-protocol-delete-confirmation-modal-header` }
+                                        >
+                                            {
+                                                t("console:develop.features.applications.confirmations" +
+                                                    ".deleteProtocol.header")
+                                            }
+                                        </ConfirmationModal.Header>
+                                        <ConfirmationModal.Message
+                                            attached
+                                            negative
+                                            data-testid={ `${ testId }-protocol-delete-confirmation-modal-message` }
+                                        >
+                                            {
+                                                t("console:develop.features.applications.confirmations" +
+                                                    ".deleteProtocol.message")
+                                            }
+                                        </ConfirmationModal.Message>
+                                        <ConfirmationModal.Content
+                                            data-testid={ `${ testId }-protocol-delete-confirmation-modal-content` }
+                                        >
+                                            {
+                                                t("console:develop.features.applications.confirmations" +
+                                                    ".deleteProtocol.content")
+                                            }
+                                        </ConfirmationModal.Content>
+                                    </ConfirmationModal>
+                                )
+                            }
+                            {
+                                showProtocolSwitchModal && (
+                                    <ConfirmationModal
+                                        onClose={ (): void => setShowDeleteConfirmationModal(false) }
+                                        type="negative"
+                                        open={ showProtocolSwitchModal }
+                                        primaryAction={ t("common:confirm") }
+                                        secondaryAction={ t("common:cancel") }
+                                        onSecondaryActionClick={
+                                            (): void => {
+                                                setShowProtocolSwitchModal(false);
+                                            }
+                                        }
+                                        onPrimaryActionClick={
+                                            (): void => {
+                                                handleInboundConfigSwitch(selectedProtocol);
+                                                setShowProtocolSwitchModal(false);
+                                            }
+                                        }
+                                        data-testid={ `${ testId }-protocol-delete-confirmation-modal` }
+                                        closeOnDimmerClick={ false }
+                                    >
+                                        <ConfirmationModal.Header
+                                            data-testid={ `${ testId }-protocol-delete-confirmation-modal-header` }
+                                        >
+                                            { t("console:develop.features.applications.confirmations." +
+                                            "changeProtocol.header") }
+                                        </ConfirmationModal.Header>
+                                        <ConfirmationModal.Message
+                                            attached
+                                            negative
+                                            data-testid={ `${ testId }-protocol-delete-confirmation-modal-message` }
+                                        >
+                                            { t("console:develop.features.applications.confirmations" +
+                                            ".changeProtocol.message",
+                                            { name: selectedProtocol }) }
+                                        </ConfirmationModal.Message>
+                                        <ConfirmationModal.Content
+                                            data-testid={ `${ testId }-protocol-delete-confirmation-modal-content` }
+                                        >
+                                            { t("console:develop.features.applications.confirmations." +
+                                            "changeProtocol.content") }
+                                        </ConfirmationModal.Content>
+                                    </ConfirmationModal>
+                                )
+                            }
+                        </>
+                    </Grid>
+                ) :
+            (
+                <EmphasizedSegment padded="very">
+                    <ContentLoader inline="centered" active/>
+                </EmphasizedSegment>
+            )
     );
 };
 
@@ -662,5 +1104,6 @@ export const AccessConfiguration: FunctionComponent<AccessConfigurationPropsInte
  * Default props for the application access configuration component.
  */
 AccessConfiguration.defaultProps = {
-    "data-testid": "application-access-configuration"
+    "data-testid": "application-access-configuration",
+    extendedAccessConfig: false
 };

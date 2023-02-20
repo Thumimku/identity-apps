@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2022, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,9 +16,16 @@
  * under the License.
  */
 
-import { AuthenticatedUserInterface } from "@wso2/identity-oidc-js";
-import { CommonAuthReducerStateInterface, CommonConfigReducerStateInterface } from "@wso2is/core/models";
-import { I18nModuleOptionsInterface } from "@wso2is/i18n";
+import { AuthenticatedUserInfo } from "@asgardeo/auth-react";
+import {
+    AlertInterface,
+    CommonAuthReducerStateInterface,
+    CommonConfigReducerStateInterface,
+    CommonGlobalReducerStateInterface,
+    RouteInterface
+} from "@wso2is/core/models";
+import { I18nModuleOptionsInterface, SupportedLanguagesMeta } from "@wso2is/i18n";
+import { System } from "react-notification-system";
 import {
     DeploymentConfigInterface,
     FeatureConfigInterface,
@@ -26,6 +33,9 @@ import {
     UIConfigInterface
 } from "./config";
 import { PortalDocumentationStructureInterface } from "./help-panel";
+import { AppViewTypes } from "./ui";
+import { OrganizationType } from "../../organizations/constants";
+import { OrganizationResponseInterface } from "../../organizations/models";
 
 /**
  * Portal config reducer state interface.
@@ -38,6 +48,17 @@ export type ConfigReducerStateInterface = CommonConfigReducerStateInterface<
     UIConfigInterface>;
 
 /**
+ * Global reducer state interface.
+ */
+export interface GlobalReducerStateInterface extends CommonGlobalReducerStateInterface<
+    AlertInterface,
+    System,
+    SupportedLanguagesMeta> {
+
+    activeView: AppViewTypes;
+}
+
+/**
  * Help panel reducer state interface.
  */
 export interface HelpPanelReducerStateInterface {
@@ -47,4 +68,31 @@ export interface HelpPanelReducerStateInterface {
     visibility: boolean;
 }
 
-export interface AuthReducerStateInterface extends CommonAuthReducerStateInterface, AuthenticatedUserInterface { }
+export interface AccessControlReducerStateInterface {
+    isDevelopAllowed: boolean,
+    isManageAllowed: boolean
+}
+
+/**
+ * Organization Reducer State Interface.
+ */
+export interface OrganizationReducerStateInterface { 
+    currentOrganization: string;
+    organization?: OrganizationResponseInterface;
+    getOrganizationLoading: boolean;
+    isFirstLevelOrganization: boolean;
+    organizationType: OrganizationType;
+}
+
+export interface RoutesReducerStateInterface {
+    manageRoutes: {
+        filteredRoutes: RouteInterface[];
+        sanitizedRoutes: RouteInterface[];
+    };
+    developeRoutes: {
+        filteredRoutes: RouteInterface[];
+        sanitizedRoutes: RouteInterface[];
+    };
+}
+
+export interface AuthReducerStateInterface extends CommonAuthReducerStateInterface, AuthenticatedUserInfo { }

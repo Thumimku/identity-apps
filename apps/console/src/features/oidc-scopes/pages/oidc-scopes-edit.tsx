@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,17 +16,21 @@
  * under the License.
  */
 
-import { getAllExternalClaims, getAllLocalClaims } from "@wso2is/core/api";
+import { AccessControlConstants, Show } from "@wso2is/access-control";
 import { IdentityAppsApiException } from "@wso2is/core/exceptions";
+import { hasRequiredScopes } from "@wso2is/core/helpers";
 import { AlertLevels, Claim, ExternalClaim, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
-import { Field, FormValue, Forms, useTrigger } from "@wso2is/forms";
+import { Field, Form } from "@wso2is/form";
+import { useTrigger } from "@wso2is/forms";
 import { AnimatedAvatar, EmphasizedSegment, ListLayout, PageLayout, PrimaryButton } from "@wso2is/react-components";
+import { AxiosError } from "axios";
 import sortBy from "lodash-es/sortBy";
-import React, { FunctionComponent, ReactElement, useEffect, useRef, useState } from "react";
+import React, { FunctionComponent, MutableRefObject, ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RouteComponentProps } from "react-router";
+import { Dispatch } from "redux";
 import {
     Divider,
     DropdownItemProps,
@@ -38,7 +42,8 @@ import {
     Label,
     Placeholder
 } from "semantic-ui-react";
-import { AppConstants, UIConstants, history, sortList } from "../../core";
+import { getAllExternalClaims, getAllLocalClaims } from "../../claims/api";
+import { AppConstants, AppState, FeatureConfigInterface, UIConstants, history, sortList } from "../../core";
 import { getOIDCScopeDetails, updateOIDCScopeDetails } from "../api";
 import { EditOIDCScope } from "../components";
 import { OIDCScopesManagementConstants } from "../constants";
@@ -56,12 +61,13 @@ interface OIDCScopesEditPagePathParams {
  */
 type OIDCScopesEditPageInterface = TestableComponentInterface;
 
+const FORM_ID: string = "oidc-scope-form";
+
 /**
  * OIDC Scopes Edit page component.
  *
- * @param {OIDCScopesEditPageInterface} props - Props injected to the component.
- *
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns Functional component.
  */
 const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPagePathParams> &
     OIDCScopesEditPageInterface> = (
@@ -79,11 +85,15 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
         /**
          * Sets the attributes by which the list can be sorted
          */
-        const SORT_BY = [
+        const SORT_BY: {
+            key: number;
+            text: string;
+            value: string;
+        }[] = [
             {
                 key: 0,
                 text: t("console:manage.features.claims.external.attributes.attributeURI", { type: "OIDC" }),
-                value: "claimURI"
+                value: "localClaimDisplayName"
             },
             {
                 key: 1,
@@ -92,13 +102,13 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
             }
         ];
 
-        const dispatch = useDispatch();
+        const dispatch: Dispatch = useDispatch();
 
         const [ scope, setScope ] = useState<OIDCScopesListInterface>({});
         const [ claims, setClaims ] = useState<Claim[]>([]);
         const [ isScopeRequestLoading, setScopeRequestLoading ] = useState<boolean>(true);
         const [ isAttributeRequestLoading, setIsAttributeRequestLoading ] = useState<boolean>(true);
-        const [ listItemLimit, setListItemLimit ] = useState<number>(UIConstants.DEFAULT_RESOURCE_LIST_ITEM_LIMIT);
+        const [ listItemLimit ] = useState<number>(UIConstants.DEFAULT_RESOURCE_LIST_ITEM_LIMIT);
         const [ OIDCAttributes, setOIDCAttributes ] = useState<ExternalClaim[]>(undefined);
         const [ selectedAttributes, setSelectedAttributes ] = useState<ExternalClaim[]>([]);
         const [ tempSelectedAttributes, setTempSelectedAttributes ] = useState<ExternalClaim[]>([]);
@@ -106,8 +116,19 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
         const [ triggerAddAttributeModal, setTriggerAttributeModal ] = useTrigger();
         const [ sortOrder, setSortOrder ] = useState(true);
         const [ sortByStrategy, setSortByStrategy ] = useState<DropdownItemProps>(SORT_BY[ 0 ]);
+        const [ attributeSearchQuery, setAttributeSearchQuery ] = useState<string>("");
+        const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
-        const initialRender = useRef(true);
+        const initialRender: MutableRefObject<boolean> = useRef(true);
+
+        const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
+        const featureConfig: FeatureConfigInterface = useSelector((state: AppState) => state.config.ui.features);
+        const SCOPE_DESCRIPTION_MAX_LENGTH: number = 100;
+
+        const isReadOnly: boolean = useMemo(() => (
+            !hasRequiredScopes(
+                featureConfig?.oidcScopes, featureConfig?.oidcScopes?.scopes?.update, allowedScopes)
+        ), [ featureConfig, allowedScopes ]);
 
         useEffect(() => {
             if (initialRender.current) {
@@ -119,10 +140,10 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
 
         useEffect(() => {
             getAllLocalClaims(null)
-                .then((response) => {
+                .then((response: Claim[]) => {
                     setClaims(response);
                 })
-                .catch((error) => {
+                .catch((error: AxiosError) => {
                     dispatch(
                         addAlert({
                             description:
@@ -142,7 +163,7 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
             if (OIDCAttributes) {
                 return;
             }
-            const OIDCAttributeId = OIDCScopesManagementConstants.OIDC_ATTRIBUTE_ID;
+            const OIDCAttributeId: string = OIDCScopesManagementConstants.OIDC_ATTRIBUTE_ID;
 
             if (!claims || claims.length === 0) {
                 return;
@@ -164,15 +185,18 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
                 return;
             }
 
-            const selected = [];
-            scope?.claims?.map((claim) => {
-                selected.push(OIDCAttributes.find((item) => item?.claimURI == claim));
+            const selected: ExternalClaim[] = [];
+
+            scope?.claims?.map((claim: string) => {
+                selected.push(OIDCAttributes.find((item: ExternalClaim) => item?.claimURI == claim));
             });
 
-            const sortedSelected = sortBy(selected, "claimURI");
+            const filteredSelected: ExternalClaim[] = selected.filter((item: ExternalClaim) => !!item);
+            const sortedSelected: ExternalClaim[] = sortBy(filteredSelected, "localClaimDisplayName");
+
             setSelectedAttributes(sortedSelected);
             setTempSelectedAttributes(sortedSelected);
-            setUnselectedAttributes(OIDCAttributes.filter((x) => !selected?.includes(x)));
+            setUnselectedAttributes(OIDCAttributes.filter((x: ExternalClaim) => !filteredSelected?.includes(x)));
         };
 
         /**
@@ -183,18 +207,16 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
                 return;
             }
 
-            const scope = scopeName;
-
-            getScope(scope);
+            getScope(scopeName);
         }, [ scopeName ]);
 
         const getOIDCAttributes = (claimId: string) => {
             setIsAttributeRequestLoading(true);
             getAllExternalClaims(claimId, null)
-                .then((response) => {
-                    response?.forEach((externalClaim) => {
-                        const mappedLocalClaimUri = externalClaim.mappedLocalClaimURI;
-                        const matchedLocalClaim = claims.filter((localClaim) => {
+                .then((response: ExternalClaim[]) => {
+                    response?.forEach((externalClaim: ExternalClaim) => {
+                        const mappedLocalClaimUri: string = externalClaim.mappedLocalClaimURI;
+                        const matchedLocalClaim: Claim[] = claims.filter((localClaim: Claim) => {
                             return localClaim.claimURI === mappedLocalClaimUri;
                         });
 
@@ -204,7 +226,7 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
                     });
                     setOIDCAttributes(response);
                 })
-                .catch((error) => {
+                .catch((error: AxiosError) => {
                     if (error.response && error.response.data && error.response.data.description) {
                         dispatch(
                             addAlert({
@@ -239,12 +261,15 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
                 });
         };
 
-        const searchSelectedAttributes = (event) => {
-            const changeValue = event.target.value;
+        const searchSelectedAttributes = (event: React.ChangeEvent<HTMLInputElement>) => {
+            const changeValue: string = event.target.value;
+
+            setAttributeSearchQuery(changeValue);
             if (changeValue.length > 0) {
                 setTempSelectedAttributes(
                     selectedAttributes.filter(
-                        (claim: ExternalClaim) => claim.claimURI.toLowerCase().indexOf(changeValue.toLowerCase()) !== -1
+                        (claim: ExternalClaim) =>
+                            claim.localClaimDisplayName.toLowerCase().indexOf(changeValue.toLowerCase()) !== -1
                     )
                 );
             } else {
@@ -264,7 +289,7 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
                 .then((response: OIDCScopesListInterface) => {
                     setScope(response);
                 })
-                .catch((error) => {
+                .catch((error: AxiosError) => {
                     if (error.response && error.response.data && error.response.data.description) {
                         dispatch(
                             addAlert({
@@ -310,7 +335,7 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
         /**
         * Handles sort order change.
         *
-        * @param {boolean} isAscending.
+        * @param isAscending - Is ascending or not.
         */
         const handleSortOrderChange = (isAscending: boolean) => {
             setSortOrder(isAscending);
@@ -319,25 +344,95 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
         /**
         * Handle sort strategy change.
         *
-        * @param {React.SyntheticEvent<HTMLElement>} event.
-        * @param {DropdownProps} data.
+        * @param event - Sort event..
+        * @param data - Dropdown data.
         */
         const handleSortStrategyChange = (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
-            setSortByStrategy(SORT_BY.filter(option => option.value === data.value)[ 0 ]);
+            setSortByStrategy(SORT_BY.filter((option: {
+                key: number;
+                text: string;
+                value: string;
+            }) => option.value === data.value)[ 0 ]);
         };
+
+        /**
+         * Handles clearing the searched attributes.
+         */
+        const clearSearchedAttributes = (): void => {
+            setAttributeSearchQuery("");
+            setTempSelectedAttributes(selectedAttributes);
+        };
+
+        const onSubmit = (values: any): void => {
+            setIsSubmitting(true);
+
+            const displayName: string = values?.displayName !== undefined
+                ? values?.displayName?.toString()
+                : scope.displayName;
+
+            updateOIDCScopeDetails(scope.name, {
+                claims: scope.claims,
+                description: values?.description !== undefined ?  values?.description?.toString() : scope.description,
+                displayName: displayName
+            })
+                .then(() => {
+                    dispatch(
+                        addAlert({
+                            description: t(
+                                "console:manage.features.oidcScopes.notifications." +
+                                "updateOIDCScope.success.description", {
+                                    scope: displayName
+                                }
+                            ),
+                            level: AlertLevels.SUCCESS,
+                            message: t(
+                                "console:manage.features.oidcScopes." +
+                                "notifications.updateOIDCScope.success.message"
+                            )
+                        })
+                    );
+                    getScope(scopeName);
+                })
+                .catch((error: IdentityAppsApiException) => {
+                    dispatch(
+                        addAlert({
+                            description:
+                                error?.response?.data?.description ??
+                                t(
+                                    "console:manage.features.oidcScopes." +
+                                    "notifications.updateOIDCScope.genericError." +
+                                    "description"
+                                ),
+                            level: AlertLevels.ERROR,
+                            message:
+                                error?.response?.data?.message ??
+                                t(
+                                    "console:manage.features.oidcScopes." +
+                                    "notifications.updateOIDCScope.genericError." +
+                                    "message"
+                                )
+                        })
+                    );
+                })
+                .finally(() => {
+                    setIsSubmitting(false);
+                });
+        };
+
 
         return (
             <PageLayout
+                pageTitle="Update Scope"
                 isLoading={ isScopeRequestLoading || isAttributeRequestLoading }
                 title={ scope.displayName }
                 contentTopMargin={ true }
                 description={
-                    <>
+                    (<>
                         <Label className="no-margin-left">
                             <code>{ scope.name }</code>
                         </Label>
                         { " " + (scope.description || t("console:manage.pages.oidcScopesEdit.subTitle")) }
-                    </>
+                    </>)
                 }
                 image={ <AnimatedAvatar name={ scope.name } size="tiny" floated="left" /> }
                 backButton={ {
@@ -354,54 +449,17 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
                         <Grid.Row columns={ 1 }>
                             <Grid.Column width={ 6 }>
                                 { !isScopeRequestLoading && !isAttributeRequestLoading ? (
-                                    <Forms
-                                        onSubmit={ (values: Map<string, FormValue>) => {
-                                            updateOIDCScopeDetails(scope.name, {
-                                                claims: scope.claims,
-                                                description: values.get("description").toString(),
-                                                displayName: values.get("displayName").toString()
-                                            })
-                                                .then(() => {
-                                                    dispatch(
-                                                        addAlert({
-                                                            description: t(
-                                                                "console:manage.features.oidcScopes.notifications." +
-                                                                "updateOIDCScope.success.description"
-                                                            ),
-                                                            level: AlertLevels.SUCCESS,
-                                                            message: t(
-                                                                "console:manage.features.oidcScopes." +
-                                                                "notifications.updateOIDCScope.success.message"
-                                                            )
-                                                        })
-                                                    );
-                                                    getScope(scopeName);
-                                                })
-                                                .catch((error: IdentityAppsApiException) => {
-                                                    dispatch(
-                                                        addAlert({
-                                                            description:
-                                                                error?.response?.data?.description ??
-                                                                t(
-                                                                    "console:manage.features.oidcScopes." +
-                                                                    "notifications.updateOIDCScope.genericError." +
-                                                                    "description"
-                                                                ),
-                                                            level: AlertLevels.ERROR,
-                                                            message:
-                                                                error?.response?.data?.message ??
-                                                                t(
-                                                                    "console:manage.features.oidcScopes." +
-                                                                    "notifications.updateOIDCScope.genericError." +
-                                                                    "message"
-                                                                )
-                                                        })
-                                                    );
-                                                });
+                                    <Form
+                                        id={ FORM_ID }
+                                        uncontrolledForm={ false }
+                                        onSubmit={ (values: Record<string, any>): void => {
+                                            onSubmit(values);
                                         } }
+                                        data-testid={ testId }
                                     >
-                                        <Field
-                                            type="text"
+                                        <Field.Input
+                                            ariaLabel="displayName"
+                                            inputType="name"
                                             name="displayName"
                                             label={ t(
                                                 "console:manage.features.oidcScopes.forms.addScopeForm." +
@@ -414,14 +472,17 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
                                             ) }
                                             value={ scope.displayName }
                                             required={ true }
-                                            requiredErrorMessage={ t(
+                                            message={ t(
                                                 "console:manage.features.oidcScopes.forms." +
                                                 "addScopeForm.inputs.displayName.validations.empty"
                                             ) }
                                             maxLength={ 40 }
+                                            minLength={ 3 }
+                                            readOnly={ isReadOnly }
                                         />
-                                        <Field
-                                            type="text"
+                                        <Field.Input
+                                            ariaLabel="description"
+                                            inputType="description"
                                             name="description"
                                             label={ t(
                                                 "console:manage.features.oidcScopes.forms.addScopeForm." +
@@ -434,72 +495,92 @@ const OIDCScopesEditPage: FunctionComponent<RouteComponentProps<OIDCScopesEditPa
                                             ) }
                                             value={ scope.description }
                                             required={ false }
-                                            requiredErrorMessage=""
-                                            maxLength={ 300 }
+                                            maxLength={ SCOPE_DESCRIPTION_MAX_LENGTH }
+                                            minLength={ 3 }
+                                            readOnly={ isReadOnly }
                                         />
-                                        <PrimaryButton type="submit">{ t("common:update") }</PrimaryButton>
-                                    </Forms>
+                                        { !isReadOnly && (
+                                            <Field.Button
+                                                form={ FORM_ID }
+                                                ariaLabel="submit"
+                                                size="small"
+                                                loading={ isSubmitting }
+                                                disabled={ isSubmitting }
+                                                buttonType="primary_btn"
+                                                label={ t("common:update") }
+                                                name="submit"
+                                            />
+                                        ) }
+                                    </Form>
                                 ) : (
-                                        <Placeholder>
-                                            <Placeholder.Line length="medium" />
-                                            <Placeholder.Line length="short" />
-                                        </Placeholder>
-                                    ) }
+                                    <Placeholder>
+                                        <Placeholder.Line length="medium" />
+                                        <Placeholder.Line length="short" />
+                                    </Placeholder>
+                                ) }
                             </Grid.Column>
                         </Grid.Row>
                     </Grid>
                 </EmphasizedSegment>
                 <Divider hidden />
-                <ListLayout
-                    rightActionPanel={
-                        <PrimaryButton
-                            data-testid="user-mgt-roles-list-update-button"
-                            size="medium"
-                            icon={ <Icon name="add" /> }
-                            floated="right"
-                            onClick={ () => setTriggerAttributeModal() }
-                        >
-                            <Icon name="add" />
-                            { t("console:manage.features.oidcScopes.editScope." + "claimList.addClaim") }
-                        </PrimaryButton>
-                    }
-                    showTopActionPanel={ isScopeRequestLoading || !(scope.claims?.length == 0) }
-                    listItemLimit={ listItemLimit }
-                    showPagination={ false }
-                    onPageChange={ () => null }
-                    totalPages={ Math.ceil(scope.claims?.length / listItemLimit) }
-                    data-testid={ `${ testId }-list-layout` }
-                    leftActionPanel={
-                        <div className="advanced-search-wrapper aligned-left fill-default">
-                            <Input
-                                className="advanced-search with-add-on"
-                                data-testid={ `${ testId }-list-search-input` }
-                                icon="search"
-                                iconPosition="left"
-                                onChange={ searchSelectedAttributes }
-                                placeholder={ t("console:manage.features.oidcScopes.editScope."
+                <Header>Manage Attributes</Header>
+                <EmphasizedSegment className="padded">
+                    <ListLayout
+                        rightActionPanel={
+                            (<Show when={ AccessControlConstants.SCOPE_WRITE }>
+                                <PrimaryButton
+                                    data-testid="user-mgt-roles-list-update-button"
+                                    size="medium"
+                                    icon={ <Icon name="add" /> }
+                                    floated="right"
+                                    onClick={ () => setTriggerAttributeModal() }
+                                >
+                                    <Icon name="add" />
+                                    { t("console:manage.features.oidcScopes.editScope." + "claimList.addClaim") }
+                                </PrimaryButton>
+                            </Show>)
+                        }
+                        showTopActionPanel={ isScopeRequestLoading || !(scope.claims?.length == 0) }
+                        listItemLimit={ listItemLimit }
+                        showPagination={ false }
+                        onPageChange={ () => null }
+                        totalPages={ Math.ceil(scope.claims?.length / listItemLimit) }
+                        data-testid={ `${ testId }-list-layout` }
+                        leftActionPanel={
+                            (<div className="advanced-search-wrapper aligned-left fill-default">
+                                <Input
+                                    className="advanced-search with-add-on"
+                                    data-testid={ `${ testId }-list-search-input` }
+                                    icon="search"
+                                    iconPosition="left"
+                                    onChange={ searchSelectedAttributes }
+                                    placeholder={ t("console:manage.features.oidcScopes.editScope."
                                     + "claimList.searchClaims") }
-                                floated="right"
-                                size="small"
-                            />
-                        </div>
-                    }
-                    onSortOrderChange={ handleSortOrderChange }
-                    sortOptions={ SORT_BY }
-                    sortStrategy={ sortBy }
-                    onSortStrategyChange={ handleSortStrategyChange }
-                >
-                    <EditOIDCScope
-                        scope={ scope }
-                        isLoading={ isScopeRequestLoading || isAttributeRequestLoading }
-                        onUpdate={ getScope }
-                        data-testid={ testId }
-                        selectedAttributes={ tempSelectedAttributes }
-                        unselectedAttributes={ unselectedAttributes }
-                        isRequestLoading={ isScopeRequestLoading || isAttributeRequestLoading }
-                        triggerAddAttributeModal={ triggerAddAttributeModal }
-                    />
-                </ListLayout>
+                                    floated="right"
+                                    size="small"
+                                    value={ attributeSearchQuery }
+                                />
+                            </div>)
+                        }
+                        onSortOrderChange={ handleSortOrderChange }
+                        sortOptions={ SORT_BY }
+                        sortStrategy={ sortBy }
+                        onSortStrategyChange={ handleSortStrategyChange }
+                    >
+                        <EditOIDCScope
+                            scope={ scope }
+                            isLoading={ isScopeRequestLoading || isAttributeRequestLoading }
+                            onUpdate={ getScope }
+                            data-testid={ testId }
+                            selectedAttributes={ selectedAttributes }
+                            tempSelectedAttributes ={ tempSelectedAttributes }
+                            unselectedAttributes={ unselectedAttributes }
+                            isRequestLoading={ isScopeRequestLoading || isAttributeRequestLoading }
+                            triggerAddAttributeModal={ triggerAddAttributeModal }
+                            clearSearchedAttributes={ clearSearchedAttributes }
+                        />
+                    </ListLayout>
+                </EmphasizedSegment>
             </PageLayout>
         );
     };

@@ -16,6 +16,41 @@
  * under the License.
  */
 
+import { IdentityAppsError } from "@wso2is/core/errors";
+
+/**
+ * Class containing user store management constants.
+ */
+export class UserStoreManagementConstants {
+
+    /**
+     * Private constructor to avoid object instantiation from outside
+     * the class.
+     *
+     * @hideconstructor
+     */
+    /* eslint-disable @typescript-eslint/no-empty-function */
+    private constructor() { }
+
+    /**
+     * User store create limit reached error.
+     * @constant
+     * @type IdentityAppsError
+     * @default
+     */
+    public static readonly ERROR_CREATE_LIMIT_REACHED = new IdentityAppsError(
+        "SUS-60011",
+        "console:manage.features.userstores.notifications.apiLimitReachedError.error.description",
+        "console:manage.features.userstores.notifications.apiLimitReachedError.error.message",
+        "165d6b4b-d384-4335-9706-19ab034a5397"
+    );
+
+    /**
+     * The error code that is returned when there is no item in the list.
+     */
+    public static readonly RESOURCE_NOT_FOUND_ERROR_MESSAGE: string = "Resource not found.";
+}
+
 /**
  * The ID of the userstore type JDBC.
  *
@@ -24,8 +59,9 @@
  * @type {string}
  */
 export const JDBC = "JDBC";
-export const CONSUMER_USERSTORE_ID = "Q09OU1VNRVI";
-export const CONSUMER_USERSTORE_TYPE = "AsgardeoConsumerUserStoreManager";
+export const CONSUMER_USERSTORE_ID = "REVGQVVMVA";
+export const DEFAULT_USERSTORE_TYPE_IMAGE = "default";
+export const DEFAULT_DESCRIPTION_CUSTOM_USERSTORE = "This is a custom userstore manager implementation";
 
 export const USER_STORE_TYPE_DESCRIPTIONS = {
     ActiveDirectoryUserStoreManager: "Active Directory based userstore.",
@@ -98,4 +134,11 @@ export const DISABLED = "Disabled";
  * @constant
  * @type {string}
  */
-export const CONSUMER_USERSTORE = "CONSUMER";
+export const CONSUMER_USERSTORE = "DEFAULT";
+
+/**
+ * Name of the primary userstore.
+ * @constant
+ * @type {string}
+ */
+export const PRIMARY_USERSTORE = "PRIMARY";

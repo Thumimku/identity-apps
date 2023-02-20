@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +18,12 @@
 
 import { ConsoleNS } from "../../../models";
 
+/**
+ * NOTES: No need to care about the max-len for this file since it's easier to
+ * translate the strings to other languages easily with editor translation tools.
+ */
+/* eslint-disable max-len */
+/* eslint-disable sort-keys */
 export const console: ConsoleNS = {
     common: {
         advancedSearch: {
@@ -62,8 +68,36 @@ export const console: ConsoleNS = {
             },
             resultsIndicator: "Afficher les résultats de la requête \"{{query}}\""
         },
+        cookieConsent: {
+            confirmButton: "J'ai compris",
+            content: "Nous utilisons des cookies pour vous garantir la meilleure expérience globale. Ces cookies " +
+                "sont utilisés pour maintenir une session continue ininterrompue tout en offrant des services " +
+                "fluides et personnalisés. Pour En savoir plus sur la façon dont nous utilisons les cookies, " +
+                "reportez-vous à notre <1>Politique relative aux cookies</1>."
+        },
+        dateTime: {
+            humanizedDateString: "Dernière modification {{date}} depuis"
+        },
         header: {
-            tenantSwitchHeader: "Changer de locataire"
+            appSwitch: {
+                console: {
+                    description: "Gérer en tant que développeurs ou administrateurs",
+                    name: "Console"
+                },
+                myAccount: {
+                    description: "Gérez votre propre compte",
+                    name: "My Account"
+                },
+                tooltip: "Apps"
+            },
+            organizationSwitch: {
+                breadcrumbError: {
+                    description: "Une erreur s'est produite lors de la récupération de la hiérarchie de l'organisation.",
+                    message: "Quelque chose s'est mal passé"
+                },
+                emptyOrgListMessage: "Aucune organisation disponible",
+                orgSearchPlaceholder: "Rechercher par nom d'organisation"
+            }
         },
         modals: {
             editAvatarModal: {
@@ -116,14 +150,15 @@ export const console: ConsoleNS = {
                 secondaryButton: "Annuler"
             },
             sessionTimeoutModal: {
-                description: "Vous serez déconnecté de la session en cours pour cause d'inactivité." +
-                    "Veuillez choisir 'Rester connecté' si vous souhaitez poursuivre la session.",
-                heading: "Vous serez déconnecté(e) dans <1>{{ time }}</1>.",
-                primaryButton: "Rester connecté",
-                secondaryButton: "Déconnexion",
+                description: "Lorsque vous cliquez sur <1>Retour</1>, nous essaierons de récupérer la session " +
+                    "si elle existe. Si vous n'avez pas de session active, vous serez redirigé vers la page " +
+                    "de connexion.",
+                heading: "Il semble que vous ayez été inactif pendant longtemps.",
                 loginAgainButton: "Connectez-vous à nouveau",
-                sessionTimedOutHeading: "La session utilisateur a expiré en raison d'une inactivité.",
-                sessionTimedOutDescription: "Veuillez vous reconnecter pour reprendre là où vous vous étiez arrêté."
+                primaryButton: "Retourner",
+                secondaryButton: "Déconnexion",
+                sessionTimedOutDescription: "Veuillez vous reconnecter pour reprendre là où vous vous étiez arrêté.",
+                sessionTimedOutHeading: "La session utilisateur a expiré en raison d'une inactivité."
             }
         },
         notifications: {
@@ -247,7 +282,7 @@ export const console: ConsoleNS = {
                     para1: "This policy describes how WSO2 IS captures your personal information, the purposes of" +
                         " collection, and information about the retention of your personal information.",
                     para2: "Please note that this policy is for reference only, and is applicable for the software " +
-                        "as a product. WSO2 Inc. and its developers have no access to the information held within " +
+                        "as a product. WSO2 LLC. and its developers have no access to the information held within " +
                         "WSO2 IS. Please see the <1>disclaimer</1> section for more information.",
                     para3: "Entities, organizations or individuals controlling the use and administration of WSO2 IS " +
                         "should create their own privacy policies setting out the manner in which data is controlled " +
@@ -342,8 +377,8 @@ export const console: ConsoleNS = {
                     requestRemoval: {
                         description: {
                             para1: "You can request the administrator to delete your account. The administrator is " +
-                                "the administrator of the tenant you are registered under, or the " +
-                                "super-administrator if you do not use the tenant feature.",
+                                "the administrator of the organization you are registered under, or the " +
+                                "super-administrator if you do not use the organization feature.",
                             para2: "Additionally, you can request to anonymize all traces of your activities " +
                                 "that WSO2 IS may have retained in logs, databases or analytical storage."
                         },
@@ -419,7 +454,7 @@ export const console: ConsoleNS = {
             }
         },
         sidePanel: {
-            privacy: "Confidentialité",
+            privacy: "Confidentialité"
         },
         validations: {
             inSecureURL: {
@@ -544,7 +579,7 @@ export const console: ConsoleNS = {
                             }
                         }
                     },
-                    placeholder: "Chercher par nom d'application"
+                    placeholder: "Chercher des applications par nom, clientId, ou émetteur"
                 },
                 confirmations: {
                     addSocialLogin: {
@@ -553,6 +588,22 @@ export const console: ConsoleNS = {
                             "seront perdues. Veuillez confirmer.",
                         header: "Êtes-vous sûr?",
                         subHeader: "Cette action est irréversible."
+                    },
+                    certificateDelete: {
+                        assertionHint: "Veuillez confirmer votre action.",
+                        content: "N/A",
+                        header: "Es-tu sûr?",
+                        message: "Cette action est irréversible et supprimera définitivement le certificat.",
+                        primaryAction: "Effacer",
+                        secondaryAction: "Annuler"
+                    },
+                    changeProtocol: {
+                        assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
+                        content: "Cette action est irréversible et supprimera définitivement " +
+                            "les configurations de protocole actuelles",
+                        header: "Êtes-vous sûr?",
+                        message: "Si vous passez à un autre protocole, " +
+                            "les configurations {{name}} seront supprimées. Veuillez procéder avec prudence."
                     },
                     clientSecretHashDisclaimer: {
                         forms: {
@@ -587,7 +638,7 @@ export const console: ConsoleNS = {
                         }
                     },
                     deleteApplication: {
-                        assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
+                        assertionHint: "Veuillez confirmer votre action.",
                         content: "Toutes les applications qui en dépendent risquent également " +
                             "de ne plus fonctionner. Veuillez procéder avec prudence.",
                         header: "Etes-vous sûr ?",
@@ -595,15 +646,16 @@ export const console: ConsoleNS = {
                     },
                     deleteOutboundProvisioningIDP: {
                         assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
-                        content: "Si vous supprimez cet IDP de provisionnement sortant, vous ne pourrez pas le récupérer. " +
-                            "Veuillez procéder avec prudence.",
+                        content: "Si vous supprimez cet IDP de provisionnement sortant, vous ne pourrez pas " +
+                            "le récupérer. Veuillez procéder avec prudence.",
                         header: "Etes-vous sûr ?",
                         message: "Cette action est irréversible et supprimera définitivement l'IDP."
                     },
                     deleteProtocol: {
                         assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
                         content: "Si vous supprimez ce protocole, vous ne pourrez pas le récupérer. Toutes les " +
-                            "applications qui en dépendent risquent également de ne plus fonctionner. Veuillez procéder avec prudence.",
+                            "applications qui en dépendent risquent également de ne plus fonctionner. " +
+                            "Veuillez procéder avec prudence.",
                         header: "Etes-vous sûr ?",
                         message: "Cette action est irréversible et supprimera définitivement le protocole."
                     },
@@ -621,6 +673,22 @@ export const console: ConsoleNS = {
                         header: "Etes-vous sûr ?",
                         message: "Veuillez vérifier vos valeurs."
                     },
+                    reactivateOIDC: {
+                        assertionHint: "Veuillez saisir <1> {{id}} </1> pour réactiver l'application.",
+                        content: "Si vous réactivez l'application, un nouveau secret client sera " +
+                            "généré. Veuillez mettre à jour le secret du client d'application " +
+                            "sur votre application cliente.",
+                        header: "Êtes-vous sûr?",
+                        message: ""
+                    },
+                    reactivateSPA: {
+                        assertionHint: "Veuillez saisir <1> {{id}} </1> pour réactiver l'application.",
+                        content: "Si vous réactivez l'application, les flux d'authentification pour " +
+                            "cette application commenceront à fonctionner. Veuillez procéder " +
+                            "avec prudence.",
+                        header: "Êtes-vous sûr?",
+                        message: "Cette action peut être annulée en révoquant l'ID client ultérieurement."
+                    },
                     regenerateSecret: {
                         assertionHint: "Veuillez saisir <1> {{id}} </1> pour régénérer le secret client.",
                         content: "Si vous régénérez le secret client, les flux d'authentification " +
@@ -631,25 +699,14 @@ export const console: ConsoleNS = {
                         message: "Cette action est irréversible et modifie définitivement " +
                                  "le secret client. Veuillez procéder avec prudence."
                     },
-                    reactivateSPA: {
-                        assertionHint: "Veuillez saisir <1> {{id}} </1> pour réactiver l'application.",
-                        content: "Si vous réactivez l'application, les flux d'authentification pour " +
-                                 "cette application commenceront à fonctionner. Veuillez procéder " +
-                                 "avec prudence.",
-                        header: "Êtes-vous sûr?",
-                        message: "Cette action peut être annulée en révoquant l'ID client ultérieurement."
-                    },
-                    reactivateOIDC: {
-                        assertionHint: "Veuillez saisir <1> {{id}} </1> pour réactiver l'application.",
-                        content: "Si vous réactivez l'application, un nouveau secret client sera " +
-                                 "généré. Veuillez mettre à jour le secret du client d'application " +
-                                 "sur votre application cliente.",
-                        header: "Êtes-vous sûr?",
-                        message: ""
-                    },
                     removeApplicationUserAttribute: {
                         content : "Si vous supprimez cela, l'attribut d'objet sera défini sur " +
                             "<1>{{ default }}</1>",
+                        header: "Etes-vous sûr ?",
+                        subHeader: "Vous essayez de supprimer l'attribut d'objet"
+                    },
+                    removeApplicationUserAttributeMapping: {
+                        content : "Si vous confirmez cette action, vous devez sélectionner un nouvel attribut de sujet",
                         header: "Etes-vous sûr ?",
                         subHeader: "Vous essayez de supprimer l'attribut d'objet"
                     },
@@ -667,7 +724,7 @@ export const console: ConsoleNS = {
                         actionTitle: "Supprimer",
                         header: "Supprimer l'application",
                         subheader: "Une fois l'application supprimée, elle ne peut pas être récupérée et les " +
-                            "clients utilisant cette application ne fonctionneront plus.",
+                            "clients utilisant cette application ne fonctionneront plus."
                     },
                     header: "Zone de danger"
                 },
@@ -698,6 +755,10 @@ export const console: ConsoleNS = {
                                 },
                                 subHeading: "Ajouter un nouveau protocole à l'application {{appName}}"
                             },
+                            protocolLanding: {
+                                heading: "Quel protocole utilisez-vous?",
+                                subHeading: "Sélectionnez le protocole de connexion de votre application."
+                            },
                             tabName: "Protocole"
                         },
                         advanced: {
@@ -710,13 +771,21 @@ export const console: ConsoleNS = {
                                     message: "Mappage d'attributs modifié"
                                 }
                             },
+                            emptySearchResults: {
+                                subtitles: {
+                                    0: "Nous n'avons trouvé aucun résultat pour '{{ searchQuery }}'",
+                                    1: "Veuillez essayer un autre terme de recherche."
+                                },
+                                title: "Aucun résultat trouvé"
+                            },
                             forms: {
                                 fields: {
                                     dynamic: {
                                         applicationRole: {
                                             label: "Rôle applicatif",
                                             validations: {
-                                                duplicate: "Ce rôle est déjà associé. Veuillez sélectionner un autre rôle",
+                                                duplicate: "Ce rôle est déjà associé. Veuillez sélectionner " +
+                                                    "un autre rôle",
                                                 empty: "Veuillez entrer un attribut à associer"
                                             }
                                         },
@@ -748,18 +817,33 @@ export const console: ConsoleNS = {
                                             }
                                         }
                                     },
-                                    subHeading: "Sélectionnez les attributs utilisateur à inclure dans la réponse d'authentification."
+                                    subHeading: "Sélectionnez les attributs utilisateur à inclure dans la " +
+                                        "réponse d'authentification."
                                 },
-                                heading: "Sélection des attributs utilisateur",
                                 attributeComponentHint: "Gérez les attributs utilisateur que vous souhaitez partager" +
                                     " avec cette application.",
-                                mandatoryAttributeHint: "Marquez les attributs que l'utilisateur doit partager avec" +
-                                    " l'application. Lors de la connexion, Asgardeo invite l'utilisateur à saisir la" +
-                                    " valeur de l'attribut si elle n'est pas déjà fournie dans le profil de" +
-                                    " l'utilisateur.",
+                                attributeComponentHintAlt: "Utilisez les étendues <1>OpenID Connect</1> pour ajouter/supprimer un attribut utilisateur " +
+                                    "à une étendue. Vous pouvez ajouter de nouveaux attributs en accédant à <3>Attributs.</3>",
+                                description: "Sélectionnez les étendues, c'est-à-dire les attributs utilisateur groupés qui sont autorisés à être " +
+                                    "partagés avec cette application.",
+                                heading: "Sélection des attributs utilisateur",
+                                scopelessAttributes: {
+                                    description: "Afficher les attributs sans étendue",
+                                    displayName: "Attributs sans portée",
+                                    name: "",
+                                    hint: "Impossible de récupérer ces attributs utilisateur en demandant " +
+                                        "des étendues OIDC. Pour récupérer, ajoutez les attributs requis à une étendue pertinente."
+                                },
+                                selectedScopesComponentHint: "Demandez ces étendues à partir de votre application pour récupérer " +
+                                    "les attributs utilisateur sélectionnés.",
+                                howToUseScopesHint: "Comment utiliser les portées",
+                                mandatoryAttributeHint: "Marquez les attributs utilisateur qui doivent " +
+                                    "obligatoirement être partagés avec l'application. Lors de la connexion, " +
+                                    "{{productName}} invite l'utilisateur à saisir ces valeurs d'attribut, si elles " +
+                                    "ne sont pas déjà fournies dans le profil de l'utilisateur.",
                                 mappingTable: {
                                     actions: {
-                                        enable: "Activer l'association"
+                                        enable: "Activer le mappage des noms d'attributs"
                                     },
                                     columns: {
                                         appAttribute: "Attribut utilisateur de l'application mappée",
@@ -771,11 +855,16 @@ export const console: ConsoleNS = {
                                         actions: {
                                             makeMandatory: "Rendre obligatoire",
                                             makeRequested: "Rendre demandable",
+                                            makeScopeRequested: "Rendre la portée demandée",
                                             removeMandatory: "Retirer l'obligation",
                                             removeRequested: "Retirer la demandabilité",
+                                            removeScopeRequested: "Supprimer l'étendue demandée",
                                             subjectDisabledSelection: "Cet attribut est obligatoire car il " +
                                                 "s'agit de l'attribut sujet."
                                         },
+                                        faultyAttributeMapping: "Mappage d'attribut OpenID Connect manquant",
+                                        faultyAttributeMappingHint: "La valeur d'attribut ne sera pas partagée" +
+                                            " avec l'application lors de la connexion de l'utilisateur.",
                                         fields: {
                                             claim: {
                                                 label: "Veuillez entrer une valeur",
@@ -783,8 +872,8 @@ export const console: ConsoleNS = {
                                             }
                                         }
                                     },
-                                    mappedAtributeHint: "Au lieu d'envoyer l'attribut par défaut, l'attribut mappé "  +
-                                        "personnalisé sera envoyé",
+                                    mappedAtributeHint: "Entrez le nom de l'attribut personnalisé à utiliser dans "  +
+                                        "l'assertion envoyée à l'application.",
                                     mappingRevert: {
                                         confirmPrimaryAction: "Confirmer",
                                         confirmSecondaryAction: "Annuler",
@@ -797,20 +886,30 @@ export const console: ConsoleNS = {
                                         confirmationMessage: "Cette action rétablira les valeurs mappées aux " +
                                             "valeurs par défaut."
                                     },
-                                    searchPlaceholder: "Attributs de recherche"
+                                    searchPlaceholder: "Rechercher des attributs d'utilisateur par nom, nom d'affichage ou détails de portée"
                                 },
                                 selectAll: "Sélectionnez tous les attributs"
                             },
-                            tabName: "Attributs"
+                            tabName: "Attributs Utilisateur"
                         },
                         general: {
                             tabName: "Général"
                         },
+                        info: {
+                            oidcHeading: "Points de terminaison du serveur",
+                            oidcSubHeading: "Les points de terminaison de serveur suivants vous seront utiles pour " +
+                                "implémenter et configurer l'authentification pour votre application à l'aide " +
+                                "d'OpenID Connect.",
+                            samlHeading: "Détails du fournisseur d'identité",
+                            samlSubHeading: "Les détails de l'IdP suivants vous seront utiles pour implémenter et " +
+                                "configurer l'authentification pour votre application à l'aide de SAML 2.0.",
+                            tabName: "Info"
+                        },
                         provisioning: {
                             inbound: {
                                 heading: "Provisionnement entrant",
-                                subHeading: "Provisionner des utilisateurs ou des groupes vers un annuaire de WSO2 Identity Server’ via une " +
-                                    "application."
+                                subHeading: "Provisionner des utilisateurs ou des groupes vers un annuaire de " +
+                                    "WSO2 Identity Server’ via une application."
                             },
                             outbound: {
                                 actions: {
@@ -825,13 +924,44 @@ export const console: ConsoleNS = {
                                     steps: {
                                         details: "Détails de l'IDP"
                                     },
-                                    subHeading: "Sélectionnez l'IDP pour approvisionner les utilisateurs qui s'auto-enregistrent dans votre application."
+                                    subHeading: "Sélectionnez l'IDP pour approvisionner les utilisateurs qui " +
+                                        "s'auto-enregistrent dans votre application."
                                 },
                                 heading: "Provisionnement sortant",
-                                subHeading: "Configurer un fournisseur d'identité pour l'aprovisionnement sortant des " +
-                                    "utilisateurs de cette application."
+                                subHeading: "Configurer un fournisseur d'identité pour l'aprovisionnement " +
+                                    "sortant des utilisateurs de cette application."
                             },
                             tabName: "Provisionnement"
+                        },
+                        shareApplication: {
+                            addSharingNotification: {
+                                genericError: {
+                                    description: "Le partage d'application a échoué. Veuillez réessayer",
+                                    message: "Le partage d'application a échoué!"
+                                },
+                                success: {
+                                    description: "Application partagée avec succès avec l'organisation ou les organisations",
+                                    message: "Application partagée!"
+                                }
+                            },
+                            getSharedOrganizations: {
+                                genericError: {
+                                    description: "Échec de l'obtention de la liste des organisations partagées!",
+                                    message: "Échec de l'obtention de la liste des organisations partagées!"
+                                }
+                            },
+                            heading: "Partager l'application",
+                            shareApplication: "Partager l'application",
+                            stopSharingNotification: {
+                                genericError: {
+                                    description: "Échec de l'arrêt du partage d'application pour {{organization}}",
+                                    message: "Échec de l'arrêt du partage d'application!"
+                                },
+                                success: {
+                                    description: "Le partage d'application s'est arrêté avec succès avec l'{{organisation}}",
+                                    message: "L'application partagée s'est arrêtée avec succès!"
+                                }
+                            }
                         },
                         signOnMethod: {
                             sections: {
@@ -839,11 +969,58 @@ export const console: ConsoleNS = {
                                     heading: "Flux d'authentification",
                                     sections: {
                                         scriptBased: {
+                                            accordion: {
+                                                title: {
+                                                    description: "Contrôlez votre flux d'authentification à l'aide " +
+                                                        "d'un script.",
+                                                    heading: "Authentification conditionnelle"
+                                                }
+                                            },
+                                            conditionalAuthTour: {
+                                                steps: {
+                                                    0: {
+                                                        content: {
+                                                            0: "Configurez le flux de connexion pour l'adapter " +
+                                                                "à la situation ou à l'utilisateur pendant le " +
+                                                                "processus d'authentification.",
+                                                            1: "Cliquez sur le bouton <1>Suivant</1> pour en savoir " +
+                                                                "plus sur le processus."
+                                                        },
+                                                        heading: "Authentification conditionnelle"
+                                                    },
+                                                    1: {
+                                                        content: {
+                                                            0: "Cliquez sur ce bouton pour ajouter les options " +
+                                                                "d'authentification requises à l'étape."
+                                                        },
+                                                        heading: "Ajouter une authentification"
+                                                    },
+                                                    2: {
+                                                        content: {
+                                                            0: "Cliquez ici si vous devez ajouter d'autres étapes " +
+                                                                "au flux. Une fois que vous avez ajouté une nouvelle " +
+                                                                "étape, <1>executeStep(STEP_NUMBER);</1> apparaîtra " +
+                                                                "dans l'éditeur de script."
+                                                        },
+                                                        heading: "Ajouter une nouvelle étape"
+                                                    }
+                                                }
+                                            },
                                             editor: {
+                                                apiDocumentation: "Documentation API",
+                                                changeConfirmation: {
+                                                    content: "Le modèle sélectionné remplacera le script existant " +
+                                                        "dans l'éditeur ainsi que les étapes de connexion que " +
+                                                        "vous avez configurées. Cliquez sur <1>Confirmer</1> pour " +
+                                                        "continuer.",
+                                                    heading: "Êtes-vous sûr?",
+                                                    message: "Cette action est irréversible."
+                                                },
+                                                goToApiDocumentation: "Accéder à la documentation API",
                                                 resetConfirmation: {
-                                                    content: "Cette action réinitialisera le script d'authentification" +
-                                                        " adaptative par défaut. Cliquez sur «Confirmer» pour" +
-                                                        " continuer.",
+                                                    content: "Cette action réinitialisera le script existant dans " +
+                                                        "l'éditeur par défaut. Cliquez sur <1>Confirmer</1> " +
+                                                        "pour continuer.",
                                                     heading: "Êtes-vous sûr?",
                                                     message: "Cette action est irréversible."
                                                 },
@@ -853,17 +1030,77 @@ export const console: ConsoleNS = {
                                                 }
                                             },
                                             heading: "Configuration basée sur des scripts",
-                                            hint: "Définissez le flux d'authentification via un script adaptatif. Vous pouvez " +
-                                                "sélectionner l'un des modèles du panneau pour commencer."
+                                            hint: "Définissez le flux d'authentification via un script adaptatif. " +
+                                                "Vous pouvez sélectionner l'un des modèles du panneau pour commencer.",
+                                            secretsList: {
+                                                create: "Créer un nouveau secret",
+                                                emptyPlaceholder: "Aucun secret disponible",
+                                                search: "Recherche par nom secret",
+                                                tooltips: {
+                                                    keyIcon: "Stockez en toute sécurité les clés d'accès en tant que " +
+                                                        "secrets. Les secrets peuvent remplacer le secret du " +
+                                                        "consommateur dans la fonction <1>callChoreo</1> pour " +
+                                                        "l'authentification conditionnelle.",
+                                                    plusIcon: "Ajouter au script"
+                                                }
+                                            }
                                         },
                                         stepBased: {
                                             actions: {
+                                                addAuthentication: "Ajouter une authentification",
+                                                addNewStep: "Ajouter une nouvelle étape",
                                                 addStep: "Nouvelle étape d'authentification",
                                                 selectAuthenticator: "Sélectionner un authentificateur"
+                                            },
+                                            addAuthenticatorModal: {
+                                                content: {
+                                                    addNewAuthenticatorCard: {
+                                                        title: "Configurer un nouveau fournisseur d'identité"
+                                                    },
+                                                    authenticatorGroups: {
+                                                        basic: {
+                                                            description: "Ensemble d'authentificateurs de base " +
+                                                                "pris en charge par {{productName}}.",
+                                                            heading: "De base"
+                                                        },
+                                                        enterprise: {
+                                                            description: "Connexion d'entreprise via des protocoles " +
+                                                                "standard.",
+                                                            heading: "Connexion Entreprise"
+                                                        },
+                                                        mfa: {
+                                                            description: "Ajoutez une couche de sécurité " +
+                                                                "supplémentaire à votre flux de connexion.",
+                                                            heading: "Options multifactorielles"
+                                                        },
+                                                        social: {
+                                                            description: "Utiliser les informations de connexion " +
+                                                                "existantes d'un fournisseur de réseau social.",
+                                                            heading: "Connexion sociale"
+                                                        }
+                                                    },
+                                                    goBackButton: "Revenir à la Sélection",
+                                                    search: {
+                                                        placeholder: "Rechercher des authentificateurs"
+                                                    },
+                                                    stepSelectDropdown: {
+                                                        hint: "Sélectionnez l'étape à laquelle vous souhaitez " +
+                                                            "ajouter des authentificateurs.",
+                                                        label:  "Sélectionnez l'étape",
+                                                        placeholder: "Sélectionnez l'étape"
+                                                    }
+                                                },
+                                                description: null,
+                                                heading: "Ajouter une authentification",
+                                                primaryButton: null,
+                                                secondaryButton: null
                                             },
                                             authenticatorDisabled: "Vous devez configurer cet authentificateur en " +
                                                 "fournissant un identifiant et un secret client, à utiliser avec " +
                                                 "vos applications.",
+                                            firstFactorDisabled: "L'authentificateur Identifier First " +
+                                                "et l'authentificateur Nom d'utilisateur et mot de passe " +
+                                                "ne peuvent pas être ajoutés à la même étape.",
                                             forms: {
                                                 fields: {
                                                     attributesFrom: {
@@ -871,17 +1108,144 @@ export const console: ConsoleNS = {
                                                         placeholder: "Sélectionner une étape"
                                                     },
                                                     subjectIdentifierFrom: {
-                                                        label: "Utiliser l'identifiant du sujet de",
+                                                        label: "Choisissez l'identifiant de l'utilisateur à partir " +
+                                                            "de cette étape",
                                                         placeholder: "Sélectionner une étape"
                                                     }
                                                 }
                                             },
                                             heading: "Configuration par étapes",
-                                            hint: "Créez des étapes d'authentification en faisant glisser les authentificateurs " +
-                                                "locaux/fédérés vers les étapes correspondantes.",
-                                            secondFactorDisabled: "Les authentificateurs de second facteur ne peuvent " +
-                                                "être utilisés que si l'authentificateur de base a été ajouté à une" +
-                                                " étape précédente."
+                                            hint: "Créez des étapes d'authentification en faisant glisser les " +
+                                                "authentificateurs locaux/fédérés vers les étapes correspondantes.",
+                                            secondFactorDisabled: "Les authentificateurs de second facteur ne " +
+                                                "peuvent être utilisés que si <1>Nom d’utilisateur et mot de passe" +
+                                                "</1> ou tout autre gestionnaire tel que <3>Identifiant d’abord " +
+                                                "</3>qui peut gérer ces facteurs est présent dans une étape " +
+                                                "précédente.",
+                                            secondFactorDisabledDueToProxyMode: "Pour configurer" +
+                                                " <1>{{auth}}</1>, vous devez activer le paramètre" +
+                                                " d'approvisionnement juste-à-temps à partir des" +
+                                                " fournisseurs d'identité suivants.",
+                                            secondFactorDisabledInFirstStep: "Les authentificateurs de deuxième " +
+                                                "facteur ne peuvent pas être utilisés dans la première étape."
+                                        }
+                                    }
+                                },
+                                customization: {
+                                    heading: "Personnaliser la méthode de connexion",
+                                    revertToDefaultButton: {
+                                        hint: "Revenir à la configuration par défaut (nom d'utilisateur et " +
+                                            "mot de passe)",
+                                        label: "Rétablir la valeur par défaut"
+                                    }
+                                },
+                                landing: {
+                                    defaultConfig: {
+                                        description: {
+                                            0: "Votre application est déjà configurée pour fonctionner avec " +
+                                                "l'authentification par nom d'utilisateur et mot de passe.",
+                                            1: "Sélectionnez l'une des options disponibles sur le côté droit pour " +
+                                                "commencer la personnalisation."
+                                        },
+                                        heading: "Application configurée avec nom d'utilisateur et mot de passe " +
+                                            "de connexion"
+                                    },
+                                    flowBuilder: {
+                                        addMissingSocialAuthenticatorModal: {
+                                            content: {
+                                                body: "Vous n'avez pas de connexion sociale" +
+                                                    " active configurée avec " +
+                                                    "<1>{{authenticator}} Authenticator</1>. Cliquez sur " +
+                                                    "<3>Configurer</3> bouton pour lancer le" +
+                                                    " processus de " +
+                                                    "configuration ou accéder à la" +
+                                                    " section <5>{{authenticator}} " +
+                                                    "Connexion Sociale</5> manuellement.",
+                                                message: "Aucun fournisseur Connexion sociale" +
+                                                    " {{authenticator}} configuré"
+                                            },
+                                            description: "",
+                                            heading: "Configurer le fournisseur Connexion " +
+                                                "sociale {{authenticator}}",
+                                            primaryButton: "Configurer",
+                                            secondaryButton: "Annuler"
+                                        },
+                                        duplicateSocialAuthenticatorSelectionModal: {
+                                            content: {
+                                                body: "Vous avez plusieurs fournisseurs " +
+                                                    "Connexions sociales" +
+                                                    " configurés " +
+                                                    "avec <1> {{authenticator}} Authenticator </1>. " +
+                                                    "Sélectionnez celui de votre choix dans la sélection " +
+                                                    "ci-dessous pour continuer.",
+                                                message: "Plusieurs fournisseurs Connexions" +
+                                                    " sociales trouvés avec " +
+                                                    "{{authenticator}} Authenticator."
+                                            },
+                                            description: "",
+                                            heading: "Sélectionnez le fournisseur Connexion" +
+                                                " sociale {{authenticator}}",
+                                            primaryButton: "Continuer",
+                                            secondaryButton: "Annuler"
+                                        },
+                                        heading: "Commencez à créer votre flux de connexion",
+                                        headings: {
+                                            default: "Connexion par défaut",
+                                            multiFactorLogin: "Connexion multi-facteurs",
+                                            passwordlessLogin: "Connexion sans mot de passe",
+                                            socialLogin: "Connexion sociale"
+                                        },
+                                        types: {
+                                            defaultConfig: {
+                                                description: "Créez votre flux de connexion en commençant par la " +
+                                                    "connexion Nom d'utilisateur et mot de passe.",
+                                                heading: "Commencer avec la configuration par défaut"
+                                            },
+                                            facebook: {
+                                                description: "Permettre aux utilisateurs de se connecter avec " +
+                                                    "Facebook.",
+                                                heading: "Ajouter une connexion Facebook"
+                                            },
+                                            github: {
+                                                description: "Autorisez les utilisateurs à se connecter avec GitHub.",
+                                                heading: "Ajouter une connexion GitHub"
+                                            },
+                                            google: {
+                                                description: "Permettre aux utilisateurs de se connecter avec Google.",
+                                                heading: "Ajouter une connexion Google"
+                                            },
+                                            magicLink: {
+                                                description: "Permettre aux utilisateurs de se connecter " +
+                                                    "en utilisant un lien magique envoyé à leur adresse e-mail.",
+                                                heading: "Ajouter une connexion Magic Link"
+                                            },
+                                            microsoft: {
+                                                description: "Autoriser les utilisateurs à se connecter avec Microsoft.",
+                                                heading: "Ajouter une connexion Microsoft"
+                                            },
+                                            totp: {
+                                                description: "Activez une couche d'authentification supplémentaire " +
+                                                    "avec OTP basé sur le temps.",
+                                                heading: "Ajouter TOTP comme deuxième facteur"
+                                            },
+                                            usernameless: {
+                                                description: "Permettre aux utilisateurs de se connecter à " +
+                                                    "l'aidAjouter une connexion sans nom d'utilisateuré " +
+                                                    "FIDO2, de la biométrie ou de clés d'accès.",
+                                                heading: "Ajouter une clé de sécurité/connexion biométrique",
+                                                info: "Pour vous connecter avec une authentification sans mot " +
+                                                    "de passe, vos utilisateurs doivent avoir leurs clés de " +
+                                                    "sécurité FIDO2 ou leurs données biométriques enregistrées " +
+                                                    "via Mon compte."
+                                            },
+                                            emailOTP: {
+                                                description: "Activez une couche supplémentaire d'authentification avec OTP basé sur Email.",
+                                                heading: "Ajouter Email OTP comme deuxième facteur"
+                                            },
+                                            smsOTP: {
+                                                description: "Activez une couche supplémentaire d'authentification avec OTP basé sur SMS.",
+                                                heading: "Ajouter SMS OTP comme deuxième facteur"
+                                            }
                                         }
                                     }
                                 },
@@ -949,7 +1313,8 @@ export const console: ConsoleNS = {
                             subject: {
                                 fields:{
                                     subjectAttribute: {
-                                        hint: "Choisissez l'attribut",
+                                        hint: "Sélectionnez les attributs partagés que vous souhaitez utiliser " +
+                                            "comme identifiant de sujet de l'utilisateur.",
                                         hintOIDC: "Sélectionnez les attributs partagés que vous souhaitez utiliser " +
                                             "comme identifiant de sujet de l'utilisateur. Cela représente la " +
                                             "revendication <1>sub</1> du <1>id_token</1>.",
@@ -962,23 +1327,24 @@ export const console: ConsoleNS = {
                                         }
                                     },
                                     subjectIncludeTenantDomain: {
-                                        hint: "Cette option ajoutera le domaine d'identité à l'identifiant du sujet",
-                                        label: "Inclure le domaine du locataire",
+                                        hint: "Cette option ajoutera le nom de l'organisation à l'identifiant du" +
+                                            " sujet local",
+                                        label: "Inclure le nom de l'organisation",
                                         validations: {
                                             empty: "Ceci est un champ obligatoire."
                                         }
                                     },
                                     subjectIncludeUserDomain: {
-                                        hint: "Cette option ajoutera le domaine de l'annuaire dans lequel l'utilisateur réside " +
-                                            "dans l'identifiant du sujet",
+                                        hint: "Cette option ajoutera le domaine de l'annuaire dans lequel " +
+                                            "l'utilisateur réside dans l'identifiant du sujet",
                                         label: "Inclure le domaine de l'utilisateur",
                                         validations: {
                                             empty: "Ceci est un champ obligatoire."
                                         }
                                     },
                                     subjectUseMappedLocalSubject: {
-                                        hint: "Cette option utilisera l'identifiant local associé comme sujet pour revendiquer " +
-                                            "l'identité",
+                                        hint: "Cette option utilisera l'identifiant local associé comme sujet " +
+                                            "pour revendiquer l'identité",
                                         label: "Utiliser un sujet local associé",
                                         validations: {
                                             empty: "Ceci est un champ obligatoire."
@@ -992,26 +1358,26 @@ export const console: ConsoleNS = {
                     advancedConfig: {
                         fields: {
                             enableAuthorization: {
-                                hint: "Décide si les politiques d'autorisation doivent être engagées pendant les flux " +
-                                    "d'authentification.",
+                                hint: "Décide si les politiques d'autorisation doivent être engagées " +
+                                    "pendant les flux d'authentification.",
                                 label: "Activer les autorisations",
                                 validations: {
                                     empty: "Ceci est un champ obligatoire."
                                 }
                             },
                             returnAuthenticatedIdpList: {
-                                hint: " La liste des fournisseurs d'identité authentifiés sera renvoyée dans la réponse " +
-                                    "d'authentification.",
+                                hint: "La liste des fournisseurs d'identité authentifiés sera renvoyée dans " +
+                                    "la réponse d'authentification.",
                                 label: "Retourne la liste des IDP authentifiés",
                                 validations: {
                                     empty: "Ceci est un champ obligatoire."
                                 }
                             },
                             saas: {
-                                hint: "Par défaut, les applications ne peuvent être utilisées que par les " +
-                                    "utilisateurs appartenant au locataire de l'application. Si cette application " +
-                                    "est compatible SaaS, elle sera accessible à tous les utilisateurs de tous les " +
-                                    "locataires.",
+                                hint: "Par défaut, les applications ne peuvent être utilisées que par les" +
+                                    " utilisateurs appartenant à l'organisation de l'application. Si cette" +
+                                    " application est compatible SaaS, elle sera accessible à tous les utilisateurs" +
+                                    " de toutes les organisations.",
                                 label: "Application SaaS",
                                 validations: {
                                     empty: "Ceci est un champ obligatoire."
@@ -1025,7 +1391,8 @@ export const console: ConsoleNS = {
                                 }
                             },
                             skipConsentLogout: {
-                                hint: "Le consentement de l'utilisateur sera ignoré pendant le processus de déconnexion.",
+                                hint: "Le consentement de l'utilisateur sera ignoré pendant le processus de " +
+                                    "déconnexion.",
                                 label: "Sauter le consentement à la déconnexion",
                                 validations: {
                                     empty: "Ceci est un champ obligatoire."
@@ -1036,9 +1403,9 @@ export const console: ConsoleNS = {
                             certificate: {
                                 fields: {
                                     jwksValue: {
+                                        description: "L'URL utilisée pour obtenir une clé publique JWKS.",
                                         label: "URL",
                                         placeholder: "https://myapp.io/jwks",
-                                        description: "L'URL utilisée pour obtenir une clé publique JWKS.",
                                         validations: {
                                             empty: "Ceci est un champ obligatoire.",
                                             invalid: "Ceci n'est pas une URL valide"
@@ -1048,13 +1415,14 @@ export const console: ConsoleNS = {
                                         actions: {
                                             view: "Voir les informations sur le certificat"
                                         },
+                                        description: "La valeur texte du certificat au format PEM.",
                                         hint: "Le certificat ( au format PEM ) de l'application.",
                                         label: "Certificat",
                                         placeholder: "Certificat au format PEM.",
-                                        description: "La valeur texte du certificat au format PEM.",
                                         validations: {
                                             empty: "Ceci est un champ obligatoire.",
-                                            invalid: "Entrez un certificat valide au format PEM"                                        }
+                                            invalid: "Entrez un certificat valide au format PEM"
+                                        }
                                     },
                                     type: {
                                         children: {
@@ -1069,8 +1437,20 @@ export const console: ConsoleNS = {
                                     }
                                 },
                                 heading: "Certificat",
-                                hint: "Ce certificat permet de valider les signatures des requêtes signées et de " +
-                                    "décrypter les requêtes cryptées de l'application vers {{productName}}."
+                                hint: {
+                                    customOidc: "Ce certificat est utilisé pour chiffrer le <1>id_token</1>" +
+                                        " renvoyé après l'authentification.",
+                                    customSaml: "Ce certificat permet de valider les signatures des " +
+                                        "requêtes signées et de chiffrer les assertions SAML renvoyées " +
+                                        "après authentification."
+                                },
+                                invalidOperationModal: {
+                                    header: "Opération invalide",
+                                    message: "Vous devez désactiver la validation de la signature de la demande pour"+
+                                        " supprimer le certificat. Si la signature de requête ou de réponse est" +
+                                        " activée, il est essentiel de disposer d'un certificat valide" +
+                                        " pour vérifier la signature."
+                                }
                             }
                         }
                     },
@@ -1091,7 +1471,6 @@ export const console: ConsoleNS = {
                             },
                             description: {
                                 label: "Description",
-                                description: "Une description textuelle de l'application.",
                                 placeholder: "Saisissez une description pour l'application"
                             },
                             discoverable: {
@@ -1100,22 +1479,31 @@ export const console: ConsoleNS = {
                                 label: "Application découvrable"
                             },
                             imageUrl: {
-                                label: "Logo",
                                 description: "Une URL d'image pour l'application. Si cela n'est pas fourni, nous " +
                                     "afficherons une vignette générée à la place. Taille recommandée: 200x200 pixels",
+                                label: "Logo",
                                 placeholder: "https://myapp-resources.io/my_app_image.png",
                                 validations: {
                                     invalid: "Ceci n'est pas une URL d'image valide"
                                 }
                             },
+                            isManagementApp: {
+                                hint: "Activez pour autoriser l'application à accéder à l'API de gestion de cette " +
+                                "organisation.",
+                                label: "Application de gestion"
+                            },
                             name: {
                                 label: "Nom",
                                 placeholder: "Mon appli",
                                 validations: {
-                                    empty: "Ceci est un champ obligatoire."
+                                    empty: "Ceci est un champ obligatoire.",
+                                    reserved: "{{appName}} est un nom d'application réservé. Veuillez entrer un nom " +
+                                        "différent"
                                 }
                             }
-                        }
+                        },
+                        managementAppBanner: "L'application est autorisée à accéder aux API de gestion de cette " +
+                            "organisation."
                     },
                     inboundCustom: {
                         fields: {
@@ -1148,10 +1536,13 @@ export const console: ConsoleNS = {
                         }
                     },
                     inboundOIDC: {
+                        description: "Ci-dessous sont les paramètres {{protocol}} pour votre application",
+                        documentation: "Lisez notre <1>documentation</1> pour en savoir plus sur l'utilisation " +
+                            "du protocole <3>{{protocol}}</3> pour implémenter la connexion dans vos applications.",
                         fields: {
                             allowedOrigins: {
-                                hint: "Les origines autorisées sont des URL qui seront autorisées à effectuer des requêtes " +
-                                    "depuis des origines tierces vers les APIs de {{productName}} ",
+                                hint: "Les origines autorisées sont des URL qui seront autorisées à effectuer " +
+                                    "des requêtes depuis des origines tierces vers les APIs de {{productName}} ",
                                 label: "Origines autorisées",
                                 placeholder: "https://myapp.io",
                                 validations: {
@@ -1165,23 +1556,24 @@ export const console: ConsoleNS = {
                                     "doit spécifier l'URL de redirection dans la demande d'autorisation ou de " +
                                     "déconnexion et {{productName}} la validera par rapport aux URL de redirection " +
                                     "entrées ici.",
+                                info: "Vous n’avez pas d’application? Essayez un exemple d'application " +
+                                    "en utilisant {{callBackURLFromTemplate}} comme URL autorisée.",
                                 label: "URI autorisés",
                                 placeholder: "https://myapp.io/login",
                                 validations: {
-                                    empty: "Veuillez ajouter une URL valide.",
+                                    empty: "Ceci est un champ obligatoire.",
+                                    invalid: "L'URL saisie n'est ni HTTP ni HTTPS. Veuillez ajouter une URL valide.",
                                     required: "Ce champ est obligatoire pour une application fonctionnelle. " +
                                         "Toutefois, si vous prévoyez d'essayer l'exemple d'application, " +
                                         "ce champ peut être ignoré."
-                                },
-                                info: "Vous n’avez pas d’application? Essayez un exemple d'application " +
-                                "en utilisant {{callBackURLFromTemplate}} comme URL autorisée."
+                                }
                             },
                             clientID: {
                                 label: "Identifiant du client"
                             },
                             clientSecret: {
-                                hashedDisclaimer: "Le secret du client est haché. Si vous avez besoin de le récupérer, " +
-                                    "veuillez régénérer à nouveau le secret.",
+                                hashedDisclaimer: "Le secret du client est haché. Si vous avez besoin de le " +
+                                    "récupérer, veuillez régénérer à nouveau le secret.",
                                 hideSecret: "Cacher le secret",
                                 label: "Secret du client",
                                 message: "{{productName}} n'émet pas de <1>client_secret</1>" +
@@ -1195,26 +1587,28 @@ export const console: ConsoleNS = {
                             },
                             grant: {
                                 children: {
+                                    client_credential: {
+                                        hint: "Ce type d'octroi ne prend pas en charge la portée 'openid'.",
+                                        label: "(portée openid non autorisée)"
+                                    },
                                     implicit: {
-                                        hint: "L'utilisation de l'octroi implicite avec des applications publiques " +
-                                            "n'est pas recommandée.",
+                                        hint: "Ce type de subvention n'est pas recommandé.",
                                         label: "{{grantType}} (non recommandé)"
                                     },
                                     password: {
-                                        hint: "L'utilisation de l'octroi de mot de passe avec des applications " +
-                                            "publiques n'est pas recommandée.",
+                                        hint: "Ce type de subvention n'est pas recommandé.",
                                         label: "{{grantType}} (non recommandé)"
                                     }
                                 },
                                 hint: "Cela déterminera la manière dont l'application communique avec le service " +
                                     "de jetons.",
-                                label: "Grant type autorisés",
-                                validations: {
-                                    empty: "Sélectionnez au minimum un grant type"
-                                },
-                                vvalidation: {
+                                label: "Types de subvention autorisés",
+                                validation: {
                                     refreshToken:"Le type d'octroi Refresh token doit être sélectionné uniquement " +
                                     "avec les types d'octroi qui fournissent un jeton d'actualisation."
+                                },
+                                validations: {
+                                    empty: "Sélectionnez au moins un type de subvention"
                                 }
                             },
                             public: {
@@ -1229,15 +1623,36 @@ export const console: ConsoleNS = {
                             }
                         },
                         messages: {
+                            customInvalidMessage: "Veuillez saisir un URI valide. Les formats valides incluent " +
+                                "HTTP, HTTPS ou le schéma d'URI à usage privé.",
                             revokeDisclaimer: {
-                                content: "விண்ணப்பம் ரத்து செய்யப்பட்டது. நீங்கள் பயன்பாட்டை மீண்டும் இயக்க விரும்பினால் " +
-                                    "ரகசியத்தை மீண்டும் உருவாக்கவும்.",
+                                content: "La demande a été révoquée. Réactivez l'application pour permettre " +
+                                    "aux utilisateurs de se connecter.",
                                 heading: "La demande est révoquée"
                             }
+                        },
+                        mobileApp: {
+                            discoverableHint: "Si cette option est activée et qu'une URL accessible sur le " +
+                                "Web (lien profond) est fournie, les clients peuvent accéder à cette " +
+                                "application à partir du portail <1>{{ myAccount }}</1>.",
+                            mobileAppPlaceholder: "myapp://oauth2"
                         },
                         sections: {
                             accessToken: {
                                 fields: {
+                                    applicationTokenExpiry: {
+                                        hint: "Précisez la période de validité du " +
+                                            "<1>jeton d'accès à l'application</1> en secondes.",
+                                        label: "Délai d'expiration du jeton d'accès à l'application",
+                                        placeholder: "Saisissez l'heure d'expiration du jeton d'accès à l'application",
+                                        validations: {
+                                            empty: "Veuillez remplir le délai d'expiration du jeton d'accès " +
+                                                "à l'application",
+                                            invalid: "Le délai d'expiration du jeton d'accès à l'application " +
+                                                "doit être en secondes. Les décimales et les nombres " +
+                                                "négatifs ne sont pas autorisés."
+                                        }
+                                    },
                                     bindingType: {
                                         children: {
                                             ssoBinding: {
@@ -1255,7 +1670,6 @@ export const console: ConsoleNS = {
                                                 "et httpOnly.",
                                             none: "Pas de liaison. {{productName}} émettra un nouveau jeton d'accès " +
                                                 "uniquement lorsque le jeton expirera ou sera révoqué.",
-                                            // eslint-disable-next-line @typescript-eslint/camelcase
                                             sso_session: "Lie le jeton d'accès à la session de connexion. " +
                                                 "{{productName}} émettra un nouveau jeton d'accès pour chaque " +
                                                 "nouvelle connexion et le révoquera lors de la déconnexion."
@@ -1294,6 +1708,10 @@ export const console: ConsoleNS = {
                                 hint: " Configurez l'émetteur du jeton d'accès, l'heure d'expiration du jeton " +
                                     "d'accès de l'utilisateur, l'heure d'expiration du jeton d'accès de "+
                                     "l'application, etc."
+                            },
+                            certificates: {
+                                disabledPopup: "Ce certificat est utilisé pour chiffrer le <1>id_token</1>." +
+                                    " Tout d'abord, vous devez désactiver le cryptage <3>id_token</3> pour continuer."
                             },
                             idToken: {
                                 fields: {
@@ -1372,7 +1790,7 @@ export const console: ConsoleNS = {
                                             empty: "Veuillez renseigner l'URL de déconnexion aval",
                                             invalid: "Veuillez ajouter une URL valide"
                                         }
-                                    },
+                                    }
                                 },
                                 heading: "PKCE"
                             },
@@ -1426,16 +1844,16 @@ export const console: ConsoleNS = {
                                 heading: "jeton de rafraîchissement"
                             },
                             requestObjectSignature: {
-                                heading: "Objet de requête HTTP",
                                 description: "{{productName}} prend en charge la réception des paramètres de " +
                                     "demande d'authentification OIDC des clients dans un objet de demande. " +
                                     "Activez la validation de signature pour n'accepter que les objets " +
                                     "de demande signés dans la demande d'autorisation.",
                                 fields: {
                                     signatureValidation: {
-                                        label: "Activer la validation de la signature",
+                                        label: "Activer la validation de la signature"
                                     }
-                                }
+                                },
+                                heading: "Objet de requête HTTP"
                             },
                             scopeValidators: {
                                 fields: {
@@ -1451,15 +1869,25 @@ export const console: ConsoleNS = {
                         }
                     },
                     inboundSAML: {
+                        description: "Vous trouverez ci-dessous les paramètres SAML de votre application.",
+                        documentation: "Lisez notre <1>documentation</1> pour en savoir plus sur l'utilisation " +
+                            "du protocole <3>{{protocol}}</3> pour implémenter la connexion dans vos applications.",
                         fields: {
                             assertionURLs: {
                                 hint: "Elle précise les URL des consommateurs vers lesquels le navigateur " +
                                     "doit être redirigé une fois l'authentification réussie. Il s'agit de l'URL " +
                                     "du service consommateur d'assertions (ACS) de l'application.",
+                                info: "Vous n’avez pas d’application? Essayez un exemple d'application en utilisant" +
+                                    " {{assertionURLFromTemplate}} comme URL de réponse d'assertion. (Vous pouvez" +
+                                    " télécharger et exécuter un exemple ultérieurement.)",
                                 label: "URL du réponse d'assertions",
-                                placeholder: "http://localhost:8080/sample-app",
+                                placeholder: "https://myapp.io/login",
                                 validations: {
-                                    invalid: "Veuillez ajouter une URL valide"
+                                    empty: "Ceci est un champ obligatoire.",
+                                    invalid: "L'URL saisie n'est ni HTTP ni HTTPS. Veuillez ajouter une URL valide.",
+                                    required: "Ce champ est obligatoire pour une application fonctionnelle." +
+                                        " Toutefois, si vous prévoyez d'essayer l'exemple d'application, ce champ" +
+                                        " peut être ignoré."
                                 }
                             },
                             defaultAssertionURL: {
@@ -1472,19 +1900,22 @@ export const console: ConsoleNS = {
                                 }
                             },
                             idpEntityIdAlias: {
-                                hint: "Cette valeur peut remplacer l'identifiant de l'entité du fournisseur d'identité qui est " +
-                                    "spécifié dans la configuration d'authentification entrante SAML SSO du fournisseur " +
-                                    "d'identité résident. L'identifiant de l'entité du fournisseur d'identité " +
-                                    "est utilisé comme émetteur de la réponse SAML qui est générée.",
+                                hint: "Cette valeur peut remplacer l'identifiant de l'entité du fournisseur " +
+                                    "d'identité qui est spécifié dans la configuration d'authentification entrante " +
+                                    "SAML SSO du fournisseur d'identité résident. L'identifiant de l'entité du " +
+                                    "fournisseur d'identité est utilisé comme émetteur de la réponse SAML qui " +
+                                    "est générée. Il doit s'agir d'un URI/URL valide.",
                                 label: "Alias IDP entityId",
                                 placeholder: "Saisir alias",
                                 validations: {
-                                    empty: "Ceci est un champ obligatoire."
+                                    empty: "Ceci est un champ obligatoire.",
+                                    invalid: "Il doit s'agir d'un URI/URL valide."
                                 }
                             },
                             issuer: {
-                                hint: "Ceci précise l'émetteur. C'est l'élément 'saml:Issuer' qui contient l'identifiant " +
-                                    "unique de la demande. C'est également la valeur de l'émetteur" +
+                                errorMessage: "L'émetteur existe déjà.",
+                                hint: "Ceci précise l'émetteur. C'est l'élément 'saml:Issuer' qui contient " +
+                                    "l'identifiant unique de la demande. C'est également la valeur de l'émetteur" +
                                     "spécifiée dans la demande d'authentification SAML émise par l'application.",
                                 label: "Emetteur",
                                 placeholder: "sample-app.com",
@@ -1493,6 +1924,7 @@ export const console: ConsoleNS = {
                                 }
                             },
                             metaURL: {
+                                errorMessage: "L'URL des métadonnées n'est pas valide",
                                 hint: "URL du fichier de métadonnées",
                                 label: "URL des métadonnées",
                                 placeholder: "Saisir l'URL du fichier de métadonnées",
@@ -1536,13 +1968,13 @@ export const console: ConsoleNS = {
                                         label: "Audience",
                                         placeholder: "Saisir l'audience",
                                         validations: {
-                                            invalid: "Veuillez ajouter une URL valide"
+                                            invalid: "Veuillez ajouter une URI valide"
                                         }
                                     },
                                     nameIdFormat: {
                                         hint: "Elle définit le format des identifiants pris en charge par le " +
-                                            "fournisseur d'identité. Les identifiants sont utilisés pour fournir des informations" +
-                                            "concernant un utilisateur.",
+                                            "fournisseur d'identité. Les identifiants sont utilisés pour fournir " +
+                                            "des informations concernant un utilisateur.",
                                         label: "Format des identifiants",
                                         placeholder: "Saisir le format d'identifiant",
                                         validations: {
@@ -1554,7 +1986,7 @@ export const console: ConsoleNS = {
                                         label: "Destinataires",
                                         placeholder: "Saisir les destinataires",
                                         validations: {
-                                            invalid: "Veuillez ajouter une URL valide"
+                                            invalid: "Veuillez ajouter une URI valide"
                                         }
                                     }
                                 },
@@ -1564,19 +1996,21 @@ export const console: ConsoleNS = {
                                 fields: {
                                     enable: {
                                         hint: "WSO2 Identity Server prend en charge un profil d'attribut de base " +
-                                            "dans lequel le fournisseur d'identité peut inclure les attributs de l'utilisateur" +
-                                            "dans les assertions SAML en tant que déclaration d'attributs.",
+                                            "dans lequel le fournisseur d'identité peut inclure les attributs " +
+                                            "de l'utilisateur dans les assertions SAML en tant que déclaration " +
+                                            "d'attributs.",
                                         label: "Activer"
                                     },
                                     includeAttributesInResponse: {
-                                        hint: "Une fois que vous avez coché la case 'Toujours inclure les attributs dans la réponse' " +
-                                            ", le fournisseur d'identité incluera toujours les valeurs des attributs " +
-                                            "relatifs aux claims sélectionnées dans la déclaration d'attributs SAML.",
+                                        hint: "Une fois que vous avez coché la case 'Toujours inclure les " +
+                                            "attributs dans la réponse' , le fournisseur d'identité incluera " +
+                                            "toujours les valeurs des attributs relatifs aux claims sélectionnées " +
+                                            "dans la déclaration d'attributs SAML.",
                                         label: "Toujours inclure les attributs dans la réponse"
                                     },
                                     serviceIndex: {
-                                        hint: "Il s'agit d'un champ optionnel, s'il n'est pas fourni, une valeur sera " +
-                                            "générée automatiquement.",
+                                        hint: "Il s'agit d'un champ optionnel, s'il n'est pas fourni, une " +
+                                            "valeur sera générée automatiquement.",
                                         label: "Indice de l'attribut consommant le service",
                                         placeholder: "Saisir l'indice de l'attribut consommant le service",
                                         validations: {
@@ -1586,13 +2020,26 @@ export const console: ConsoleNS = {
                                 },
                                 heading: "Profil des attributs"
                             },
+                            certificates: {
+                                disabledPopup: "Assurez-vous que la validation de la signature de la " +
+                                    "demande et le chiffrement des assertions sont désactivés pour continuer.",
+                                certificateRemoveConfirmation: {
+                                    header: "Supprimer le certificat actuel?",
+                                    content: "Définir le type de certificat sur aucun supprimera le certificat " +
+                                        "actuel fourni pour cette application. Procéder avec prudence."
+                                }
+                            },
                             encryption: {
                                 fields: {
                                     assertionEncryption: {
+                                        hint: "Sélectionnez pour chiffrer les assertions SAML2 renvoyées après " +
+                                            "l'authentification. Pour utiliser le cryptage, configurez le " +
+                                            "certificat de votre application dans la section Certificat ci-dessous.",
                                         label: "Activer",
                                         validations: {
                                             empty: "Ce champ est obligatoire."
                                         }
+
                                     },
                                     assertionEncryptionAlgorithm: {
                                         label: "Algorithme de chiffrement des assertions",
@@ -1612,8 +2059,8 @@ export const console: ConsoleNS = {
                             idpInitiatedSLO: {
                                 fields: {
                                     enable: {
-                                        hint: "Lorsque cette option est activée, le fournisseur de services n'est pas tenu d'envoyer " +
-                                            "la requête SAML.",
+                                        hint: "Lorsque cette option est activée, le fournisseur de services " +
+                                            "n'est pas tenu d'envoyer la requête SAML.",
                                         label: "Activer",
                                         validations: {
                                             empty: "Ce champ est obligatoire."
@@ -1643,7 +2090,8 @@ export const console: ConsoleNS = {
                             requestValidation: {
                                 fields: {
                                     signatureValidation: {
-                                        hint: "Cela précise si le fournisseur d'identité doit valider la signature de la  " +
+                                        hint: "Cela précise si le fournisseur d'identité doit valider " +
+                                            "la signature de la  " +
                                             "demande d'authentification SAML2 et de la demande de " +
                                             "déconnexion SAML2 qui sont envoyées par l'application.",
                                         label: "Activer la validation de la signature de la requête",
@@ -1652,8 +2100,8 @@ export const console: ConsoleNS = {
                                         }
                                     },
                                     signatureValidationCertAlias: {
-                                        hint: "Si un certificat applicatif est fourni, il sera utilisé et le certificat " +
-                                            "sélectionné ci-dessus sera ignoré.",
+                                        hint: "Si un certificat applicatif est fourni, il sera utilisé et " +
+                                            "le certificat sélectionné ci-dessus sera ignoré.",
                                         label: "Alias du certificat de validation de la requête",
                                         validations: {
                                             empty: "Ceci est un champ obligatoire."
@@ -1671,7 +2119,8 @@ export const console: ConsoleNS = {
                                         }
                                     },
                                     responseSigning: {
-                                        hint: "Signez les réponses SAML2 renvoyées après le processus d'authentification.",
+                                        hint: "Signez les réponses SAML2 renvoyées après le processus " +
+                                            "d'authentification.",
                                         label: "Signer les réponses SAML"
                                     },
                                     signingAlgorithm: {
@@ -1786,7 +2235,8 @@ export const console: ConsoleNS = {
                     outboundProvisioning: {
                         fields: {
                             blocking: {
-                                hint: "Bloquer le flux d'authentification jusqu'à ce que le provisionnement soit terminé.",
+                                hint: "Bloquer le flux d'authentification jusqu'à ce que le provisionnement " +
+                                    "soit terminé.",
                                 label: "Blocage"
                             },
                             connector: {
@@ -1804,7 +2254,8 @@ export const console: ConsoleNS = {
                                 }
                             },
                             jit: {
-                                hint: "Approvisionnement des utilisateurs de l'annuaire par un approvisionnement juste à temps.",
+                                hint: "Approvisionnement des utilisateurs de l'annuaire par un " +
+                                    "approvisionnement juste à temps.",
                                 label: "JIT vers l'extérieur"
                             },
                             rules: {
@@ -1821,7 +2272,8 @@ export const console: ConsoleNS = {
                                 label: "Mode Proxy"
                             },
                             userstoreDomain: {
-                                hint: "Sélectionnez un nom de domaine utilisateur pour fournir des utilisateurs et des groupes.",
+                                hint: "Sélectionnez un nom de domaine utilisateur pour fournir des " +
+                                    "utilisateurs et des groupes.",
                                 label: "Approvisionnement du domaine utilisateur"
                             }
                         }
@@ -1840,7 +2292,8 @@ export const console: ConsoleNS = {
                                 validations: {
                                     invalid: "The application name should contain letters, numbers."
                                 }
-                            }
+                            },
+                            urlDeepLinkError: "L'URL saisie n'est pas un lien profond."
                         }
                     }
                 },
@@ -1872,13 +2325,13 @@ export const console: ConsoleNS = {
                                     downloadSample: {
                                         btn: "Télécharger l'exemple",
                                         subTitle: "Cet exemple d'application montre l'utilisation du SDK " +
-                                            "WSO2 Identity Server SDK et comment vous pouvez intégrer n'importe quelle  " +
-                                            "application avec lui.",
+                                            "WSO2 Identity Server SDK et comment vous pouvez intégrer " +
+                                            "n'importe quelle application avec lui.",
                                         title: "Essayer l'exemple"
                                     },
                                     goBack: "Revenir en arrière",
-                                    subTitle: "Commencez rapidement le prototypage en téléchargeant notre application " +
-                                        "d'exemple préconfigurée.",
+                                    subTitle: "Commencez rapidement le prototypage en téléchargeant notre " +
+                                        "application d'exemple préconfigurée.",
                                     title: "Exemple d'application"
                                 },
                                 technology: {
@@ -1913,8 +2366,10 @@ export const console: ConsoleNS = {
                                         authorize: "Authorize",
                                         endSession: "Se déconnecter",
                                         introspection: "Introspection",
-                                        keystore: "Key Set",
+                                        issuer: "Émetteur",
                                         jwks: "JWKS",
+                                        keystore: "Key Set",
+                                        revoke: "Révoquer",
                                         token: "Token",
                                         userInfo: "UserInfo",
                                         wellKnown: "Discovery"
@@ -1935,8 +2390,9 @@ export const console: ConsoleNS = {
                                 },
                                 trySample: {
                                     btn: "Explorez les examples",
-                                    subTitle: "Vous pouvez essayer les examples qui démontreront le flux d'authentification. " +
-                                        "Cliquez sur le bouton ci-dessous pour télécharger et déployer l'exemple d'application.",
+                                    subTitle: "Vous pouvez essayer les examples qui démontreront le flux " +
+                                        "d'authentification. Cliquez sur le bouton ci-dessous pour télécharger " +
+                                        "et déployer l'exemple d'application.",
                                     title: "Essayer avec un exemple"
                                 },
                                 useSDK: {
@@ -1944,8 +2400,8 @@ export const console: ConsoleNS = {
                                         withSDK: "Utiliser le SDK",
                                         withoutSDK: "Manuellement"
                                     },
-                                    subTitle: "Installez et utilisez nos SDK pour intégrer l'authentification à votre " +
-                                        "application avec un nombre minimum de lignes de code.",
+                                    subTitle: "Installez et utilisez nos SDK pour intégrer l'authentification " +
+                                        "à votre application avec un nombre minimum de lignes de code.",
                                     title: "Intégrez votre propre application"
                                 }
                             },
@@ -1955,11 +2411,66 @@ export const console: ConsoleNS = {
                 },
                 list: {
                     actions: {
-                        add: "Nouvelle Application"
+                        add: "Nouvelle Application",
+                        custom: "Personnalisé",
+                        predefined: "Utiliser prédéfini"
                     },
                     columns: {
-                        actions: "Actions",
-                        name: "Nom"
+                        actions: "",
+                        name: "Nom",
+                        inboundKey: "Clé entrante"
+                    },
+                    labels: {
+                        fragment: "Application partagée"
+                    }
+                },
+                myaccount: {
+                    description: "Portail libre-service pour les utilisateurs d'Asgardeo",
+                    popup: "Partagez ce lien avec vos utilisateurs pour autoriser" +
+                    " l'accès à Mon compte et gérer leurs comptes.",
+                    title: "Mon compte",
+                    enable: {
+                        0: "Activé",
+                        1: "Désactivé"
+                    },
+                    Confirmation: {
+                        enableConfirmation: {
+                            content: "Le portail Mon compte est en mode aperçu et il est recommandé de le désactiver " +
+                                "lorsque votre organisation passe en production.",
+                            heading: "Êtes-vous sûr?",
+                            message: "Activer le portail Mon compte."
+                        },
+                        disableConfirmation: {
+                            content: "Le portail Mon compte est en mode aperçu et il est recommandé de le désactiver " +
+                                "lorsque votre organisation passe en production. Lorsque le portail Mon compte est " +
+                                "désactivé, les utilisateurs de votre organisation ne pourront pas y accéder.",
+                            heading: "Êtes-vous sûr?",
+                            message: "Désactiver le portail Mon compte."
+                        }
+                    },
+                    notifications: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur de mise à jour"
+                        },
+                        genericError: {
+                            description: "Échec de la mise à jour de l'état du portail Mon compte.",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        success: {
+                            description: "Le statut du portail Mon compte a été mis à jour avec succès",
+                            message: "Mise à jour réussie"
+                        }
+                    },
+                    fetchMyAccountStatus: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur de récupération"
+                        },
+                        genericError: {
+                            description: "Impossible de récupérer l'état du portail Mon compte.",
+                            message: "Quelque chose s'est mal passé"
+                        }
                     }
                 },
                 notifications: {
@@ -1977,6 +2488,12 @@ export const console: ConsoleNS = {
                             message: "Création réussie"
                         }
                     },
+                    apiLimitReachedError: {
+                        error: {
+                            description: "Vous avez atteint le nombre maximum de candidatures autorisé.",
+                            message: "Échec de la création de l'application"
+                        }
+                    },
                     authenticationStepDeleteErrorDueToSecondFactors: {
                         genericError: {
                             description: "Les authentificateurs de second facteur nécessitent d'avoir" +
@@ -1989,6 +2506,11 @@ export const console: ConsoleNS = {
                             description: "Au moins une étape d'authentification est requise.",
                             message: "Erreur de suppression"
                         }
+                    },
+                    conditionalScriptLoopingError: {
+                        description: "Les constructions en boucle telles que <1>for</1>, <3>while</3> et " +
+                            "<5>forEach</5> ne sont pas autorisées dans le script d'authentification conditionnelle.",
+                        message: "Échec de la mise à jour du script"
                     },
                     deleteApplication: {
                         error: {
@@ -2004,13 +2526,38 @@ export const console: ConsoleNS = {
                             message: "Application supprimée"
                         }
                     },
+                    deleteCertificateGenericError: {
+                        description: "Quelque chose s'est mal passé. Nous n'avons pas pu supprimer le" +
+                            " certificat d'application.",
+                        message: "Échec de la mise à jour de l'application"
+                    },
+                    deleteCertificateSuccess: {
+                        description: "Suppression réussie du certificat d'application.",
+                        message: "Certificat supprimé"
+                    },
+                    deleteOptionErrorDueToSecondFactorsOnRight: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Impossible de supprimer cet authentificateur"
+                        },
+                        genericError: {
+                            description: "Il existe des authentificateurs dans d'autres étapes " +
+                                "qui dépendent de cet authentificateur.",
+                            message: "Impossible de supprimer cet authentificateur"
+                        },
+                        success: {
+                            description: "Suppression réussie de l'authentificateur de l'étape {{stepNo}}.",
+                            message: "Suppression réussie"
+                        }
+                    },
                     deleteProtocolConfig: {
                         error: {
                             description: "{{description}}",
                             message: "Erreur de suppression"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la suppression des configurations de protocole entrant.",
+                            description: "Une erreur s'est produite lors de la suppression des configurations " +
+                                "de protocole entrant.",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
@@ -2020,14 +2567,15 @@ export const console: ConsoleNS = {
                     },
                     duplicateAuthenticationStep: {
                         genericError: {
-                            description: "Le même authentificateur n'est pas autorisé plus d'une fois en une seule étape.",
+                            description: "Le même authentificateur n'est pas autorisé plus d'une fois en une " +
+                                "seule étape.",
                             message: "Non autorisé"
                         }
                     },
                     emptyAuthenticationStep: {
                         genericError: {
-                            description: "Il y a une étape d'authentification vide.Veuillez la supprimer ou ajouter des " +
-                                "authentificateurs pour continuer.",
+                            description: "Il y a des étapes d'authentification vides. Veuillez les supprimer ou" +
+                                " ajouter des authentifiants pour continuer.",
                             message: "Erreur de mise à jour"
                         }
                     },
@@ -2079,7 +2627,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des protocoles entrants personnalisés.",
+                            description: "Une erreur s'est produite lors de la récupération des protocoles " +
+                                "entrants personnalisés.",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2093,7 +2642,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des protocoles entrants disponibles.",
+                            description: "Une erreur s'est produite lors de la récupération des protocoles " +
+                                "entrants disponibles.",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2129,7 +2679,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des métadonnées du protocole.",
+                            description: "Une erreur s'est produite lors de la récupération des " +
+                                "métadonnées du protocole.",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2143,7 +2694,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des configurations IDP pour l'application SAML.",
+                            description: "Une erreur s'est produite lors de la récupération des " +
+                                "configurations IDP pour l'application SAML.",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2157,7 +2709,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des données du modèle d'application",
+                            description: "Une erreur s'est produite lors de la récupération des données " +
+                                "du modèle d'application",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
@@ -2177,6 +2730,12 @@ export const console: ConsoleNS = {
                         success: {
                             description: "Les modèles d'application ont été récupérés avec succès.",
                             message: "Récupération réussie"
+                        }
+                    },
+                    firstFactorAuthenticatorToSecondStep: {
+                        genericError: {
+                            description: "Cet authentificateur ne peut être ajouté qu'à la première étape.",
+                            message: "Impossible d'ajouter à cette étape"
                         }
                     },
                     getInboundProtocolConfig: {
@@ -2228,6 +2787,16 @@ export const console: ConsoleNS = {
                             message: "Impossible d'ajouter à cette étape"
                         }
                     },
+                    tierLimitReachedError: {
+                        emptyPlaceholder: {
+                            action: "Voir les forfaits",
+                            subtitles: "Vous pouvez contacter l'administrateur de l'organisation ou (si vous êtes l'" +
+                                "administrateur) mettre à niveau votre abonnement pour augmenter la limite autorisée.",
+                            title: "Il semble que vous ayez atteint le nombre maximal d'applications " +
+                                "autorisées pour cette organisation."
+                        },
+                        heading: "Vous avez atteint la limite maximale d'applications"
+                    },
                     updateAdvancedConfig: {
                         error: {
                             description: "{{description}}",
@@ -2262,7 +2831,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour du flux d'authentification de l'application",
+                            description: "Une erreur s'est produite lors de la mise à jour du flux " +
+                                "d'authentification de l'application",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
@@ -2272,7 +2842,7 @@ export const console: ConsoleNS = {
                     },
                     updateClaimConfig: {
                         error: {
-                            description: "{{description}}",
+                            description: "Les attributs utilisateur mappés ne peuvent pas être dupliqués.",
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
@@ -2290,7 +2860,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour des configurations des protocoles entrants.",
+                            description: "Une erreur s'est produite lors de la mise à jour des " +
+                                "configurations des protocoles entrants.",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
@@ -2311,6 +2882,11 @@ export const console: ConsoleNS = {
                             description: "Mise à jour réussie des configurations d'approvisionnement.",
                             message: "Mise à jour réussie"
                         }
+                    },
+                    updateOnlyIdentifierFirstError: {
+                        description: "Identifiant Le premier authentificateur ne peut pas être le seul " +
+                            "authentificateur. Il nécessite une étape supplémentaire.",
+                        message: "Erreur de mise à jour"
                     },
                     updateOutboundProvisioning: {
                         genericError: {
@@ -2341,8 +2917,8 @@ export const console: ConsoleNS = {
                     },
                     emptyAuthenticatorStep: {
                         subtitles: {
-                            0: "Faites glisser et déposez l'un des authentificateurs ci-dessus",
-                            1: "pour construire une séquence d'authentification."
+                            0: "Cliquez sur le bouton <1>Ajouter une authentification</1> pour ajouter des options " +
+                                "à cette étape"
                         },
                         title: null
                     },
@@ -2403,15 +2979,195 @@ export const console: ConsoleNS = {
                     },
                     quickSetup: {
                         heading: "Configuration rapide",
-                        subHeading: "Ensemble prédéfini de modèles d'application pour accélérer la création de votre application."
+                        subHeading: "Ensemble prédéfini de modèles d'application pour accélérer la création " +
+                            "de votre application."
                     }
                 },
                 wizards: {
+                    applicationCertificateWizard: {
+                        emptyPlaceHolder: {
+                            description1: "Cette application n'a pas de certificat ajouté.",
+                            description2: "Ajoutez un certificat pour le voir ici",
+                            title: "Pas de certificat"
+                        },
+                        heading: "Ajouter un nouveau certificat",
+                        subHeading: "Ajouter un nouveau certificat à l'application"
+                    },
                     minimalAppCreationWizard: {
                         help: {
                             heading: "Aide",
-                            subHeading: "Utilisez les descriptions ci-dessous pour vous guider"
+                            subHeading: "Utilisez les descriptions ci-dessous pour vous guider",
+                            template: {
+                                common: {
+                                    authorizedRedirectURLs: {
+                                        example: "par ex., https://myapp.io/login",
+                                        subTitle: "URL vers laquelle le code d'autorisation est envoyé lors de" +
+                                            " l'authentification et vers laquelle l'utilisateur est redirigé lors de" +
+                                            " la déconnexion.",
+                                        title: "URL de redirection autorisées"
+                                    },
+                                    heading: {
+                                        example: "par ex., My App",
+                                        subTitle: "Un nom unique pour identifier votre application.",
+                                        title: "Nom"
+                                    },
+                                    protocol: {
+                                        subTitle: "Le protocole de configuration d'accès qui sera utilisé pour se" +
+                                            " connecter à l'application en utilisant SSO.",
+                                        title: "Protocole"
+                                    }
+                                },
+                                label: "Modèles de panneau d'aide de l'assistant de création d'application minimale.",
+                                samlWeb: {
+                                    assertionResponseURLs: {
+                                        example: "par ex., https://my-app.com/home.jsp",
+                                        subTitle: "URL vers lesquelles le navigateur est redirigé une fois" +
+                                            " l'authentification réussie. Également connue sous le nom d'URL" +
+                                            " Assertion Consumer Service (ACS) du fournisseur de services.",
+                                        title: "URL de réponse d'assertion"
+                                    },
+                                    issuer: {
+                                        example: "par ex., my-app.com",
+                                        subTitle: "L'élément <1>saml: Issuer</1> qui contient l'identifiant unique de" +
+                                            " l'application. La valeur ajoutée ici doit être spécifiée dans la" +
+                                            " demande d'authentification SAML envoyée depuis l'application cliente.",
+                                        title: "Émetteur"
+                                    },
+                                    metaFile: {
+                                        subTitle: "Téléchargez le fichier méta pour la configuration SAML.",
+                                        title: "Télécharger le fichier de métadonnées"
+                                    },
+                                    metaURL: {
+                                        subTitle: "Lien méta URL à partir duquel les configurations SAML " +
+                                            "peuvent être récupérées.",
+                                        title: "URL méta"
+                                    }
+                                }
+                            }
                         }
+                    }
+                }
+            },
+            authenticationProvider: {
+                templates: {
+                    enterprise: {
+                        addWizard: {
+                            subtitle: "Configurez un fournisseur d'identité pour se connecter avec des " +
+                            "protocoles d'authentification standard.",
+                            title: "Fournisseurs d'identité basés sur des normes"
+                        },
+                        validation: {
+                            invalidName: "{{idpName}} n'est pas un nom valide. " +
+                                "Il ne doit pas contenir d'autres caractères alphanumériques, " +
+                                "à l'exception des points (.), des tirets (-), " +
+                                "des traits de soulignement (_) et des espaces.",
+                            name: "Merci d'entrer un nom valide"
+                        }
+                    },
+                    expert: {
+                        wizardHelp: {
+                            description: {
+                                connectionDescription: "Fournir un nom unique pour la connexion.",
+                                heading: "Nom",
+                                idpDescription: "Fournir un nom unique pour le fournisseur d'identité."
+                            },
+                            heading: "Aider",
+                            name: {
+                                connectionDescription: "Fournissez une description de la connexion pour en expliquer plus à ce sujet.",
+                                heading: "La description",
+                                idpDescription: "Fournir une description au fournisseur d'identité pour en expliquer davantage."
+                            },
+                            subHeading: "Utilisez le guide ci-dessous"
+                        }
+                    },
+                    organizationIDP: {
+                        wizardHelp: {
+                            name: {
+                                description: "Fournissez un nom unique au fournisseur d'authentification d'entreprise" +
+                                    " afin qu'il puisse être facilement identifié.",
+                                heading: "Nom"
+                            },
+                            description: {
+                                description: "Fournissez une description du fournisseur d'authentification" +
+                                    " d'entreprise pour en savoir plus à ce sujet.",
+                                heading: "La description",
+                                example: "Par exemple, il s'agit de l'authentificateur pour MyOrg, qui agit en tant" +
+                                    " qu'IDP pour MyApp."
+                            }
+                        }
+                    }
+                },
+                wizards: {
+                    addAuthenticator: {
+                        header: "Remplissez les informations de base sur l'authentificateur.",
+                        steps: {
+                            authenticatorConfiguration: {
+                                title: "Configuration d'authentificateur"
+                            },
+                            authenticatorSelection: {
+                                manualSetup: {
+                                    subTitle: "Ajoutez un nouvel authentificateur avec des configurations personnalisées.",
+                                    title: "Configuration manuelle"
+                                },
+                                quickSetup: {
+                                    subTitle: "Modèles d'authentificateur prédéfinis pour accélérer le processus.",
+                                    title: "Installation rapide"
+                                },
+                                title: "Sélection des authentificateurs"
+                            },
+                            authenticatorSettings: {
+                                emptyPlaceholder: {
+                                    subtitles: [
+                                        "Cet authentificateur n'a aucun paramètre disponible pour être",
+                                        "configuré à ce niveau.Cliquez simplement sur <11> Terminer </1>."
+                                    ],
+                                    title: "Aucun paramètre disponible pour cet authentificateur."
+                                }
+                            },
+                            summary: {
+                                title: "Sommaire"
+                            }
+                        }
+                    },
+                    addIDP: {
+                        header: "Remplissez les informations de base sur le fournisseur d'identité.",
+                        steps: {
+                            authenticatorConfiguration: {
+                                title: "Configuration d'authentificateur"
+                            },
+                            generalSettings: {
+                                title: "Réglages généraux"
+                            },
+                            provisioningConfiguration: {
+                                title: "Configuration de l'approvisionnement"
+                            },
+                            summary: {
+                                title: "Sommaire"
+                            }
+                        }
+                    },
+                    addProvisioningConnector: {
+                        header: "Remplissez les informations de base sur le connecteur d'approvisionnement.",
+                        steps: {
+                            connectorConfiguration: {
+                                title: "Détails du connecteur"
+                            },
+                            connectorSelection: {
+                                defaultSetup: {
+                                    subTitle: "Sélectionnez le type du nouveau connecteur d'approvisionnement sortant",
+                                    title: "Types de connecteur"
+                                },
+                                title: "Sélection du connecteur"
+                            },
+                            summary: {
+                                title: "Sommaire"
+                            }
+                        }
+                    },
+                    buttons: {
+                        finish: "Finir",
+                        next: "Prochaine",
+                        previous: "Précédente"
                     }
                 }
             },
@@ -2434,7 +3190,8 @@ export const console: ConsoleNS = {
                 notifications: {
                     pin: {
                         success: {
-                            description: "Le panneau d'aide apparaîtra toujours {{state}} sauf si vous le modifiez explicitement.",
+                            description: "Le panneau d'aide apparaîtra toujours {{state}} sauf si vous le " +
+                                "modifiez explicitement.",
                             message: "Panneau d'aide {{state}}"
                         }
                     }
@@ -2467,8 +3224,9 @@ export const console: ConsoleNS = {
                 confirmations: {
                     deleteAuthenticator: {
                         assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
-                        content: "Si vous supprimez cet authentificateur, vous ne pourrez pas le récupérer. Toutes les applications" +
-                            "qui en dépendent risquent également de ne plus fonctionner. Veuillez procéder avec prudence.",
+                        content: "Si vous supprimez cet authentificateur, vous ne pourrez pas le récupérer. " +
+                            "Toutes les applications qui en dépendent risquent également de ne plus fonctionner. " +
+                            "Veuillez procéder avec prudence.",
                         header: "Etes-vous sûr ?",
                         message: "Cette action est irréversible et supprimera définitivement l'authentificateur."
                     },
@@ -2480,7 +3238,7 @@ export const console: ConsoleNS = {
                         message: "Cette action est irréversible et supprimera définitivement le connecteur."
                     },
                     deleteIDP: {
-                        assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
+                        assertionHint: "Veuillez confirmer votre action.",
                         content: "Si vous supprimez ce fournisseur d'identité, vous ne pourrez pas le récupérer. " +
                             "Veuillez procéder avec prudence.",
                         header: "Etes-vous sûr ?",
@@ -2493,18 +3251,32 @@ export const console: ConsoleNS = {
                         message: "Il existe des applications utilisant ce fournisseur d'identité."
                     }
                 },
+                connectedApps: {
+                    action: "Aller à la méthode de connexion",
+                    header: "Applications connectées de {{idpName}}",
+                    subHeader: "Les applications connectées à {{idpName}} sont listées ici.",
+                    placeholders: {
+                        search: "Rechercher par nom d'application",
+                        emptyList: "Il n'y a pas d'applications connectées à {{idpName}} pour le moment."
+                    },
+                    applicationEdit: {
+                        back: "Revenir à {{idpName}}"
+                    },
+                    genericError: {
+                        description: "Une erreur s'est produite lors de la tentative de récupération des applications connectées.",
+                        message: "Erreur est survenue."
+                    }
+                },
                 dangerZoneGroup: {
                     deleteIDP: {
-                        actionTitle: "Supprimer le fournisseur d'identité",
-                        header: "Supprimer le fournisseur d'identité",
-                        subheader: "Une fois que vous avez supprimé un fournisseur d'identité, il est impossible." +
-                            " Soyez-en certain."
+                        actionTitle: "Effacer",
+                        header: "Supprimer la connexion",
+                        subheader: "Une fois supprimé, il ne peut pas être récupéré. S'il vous plaît soyez certain."
                     },
                     disableIDP: {
-                        actionTitle: "Activer le fournisseur d'identité",
-                        header: "Activer le fournisseur d'identité",
-                        subheader: "Une fois que vous avez désactivé un fournisseur d'identité, il ne peut plus être " +
-                            "utilisé jusqu'à ce que vous l'activiez à nouveau. Soyez-en certain."
+                        actionTitle: "Désactiver la connexion",
+                        header: "Désactiver la connexion",
+                        subheader: "Une fois désactivé, il ne peut plus être utilisé jusqu'à ce que vous le réactiviez."
                     },
                     header: "Zone de danger"
                 },
@@ -2587,15 +3359,16 @@ export const console: ConsoleNS = {
                     },
                     common: {
                         customProperties: "Propriétés personnalisées",
+                        internetResolvableErrorMessage: "L'URL doit pouvoir être résolue par Internet.",
                         invalidQueryParamErrorMessage: "Ce ne sont pas des paramètres de requête valables",
                         invalidURLErrorMessage: "Ceci n'est pas une URL valide",
                         requiredErrorMessage: "Ceci est requis"
                     },
                     generalDetails: {
                         description: {
-                            hint: "Une description significative du fournisseur d'identité.",
+                            hint: "Une description textuelle de la connexion.",
                             label: "Description",
-                            placeholder: "Saisir un e description pour le fournisseur d'identité."
+                            placeholder: "Une description textuelle de la connexion."
                         },
                         image: {
                             hint: "Une URL pour récupérer l'image du fournisseur d'identité.",
@@ -2603,9 +3376,9 @@ export const console: ConsoleNS = {
                             placeholder: "Par exemple: https://example.com/image.png"
                         },
                         name: {
-                            hint: "Entrez un nom unique pour ce fournisseur d'identité.",
+                            hint: "Saisissez un nom unique pour cette connexion.",
                             label: "Nom du fournisseur d'identité",
-                            placeholder: "Saisissez un nom pour le fournisseur d'identité.",
+                            placeholder: "Saisissez un nom unique pour cette connexion.",
                             validations: {
                                 duplicate: "Un fournisseur d'identité existe déjà avec ce nom",
                                 empty: "Le nom du fournisseur d'identité est requis",
@@ -2616,9 +3389,13 @@ export const console: ConsoleNS = {
                     },
                     jitProvisioning: {
                         enableJITProvisioning: {
-                            hint: "Précise si les utilisateurs fédérés à partir de ce fournisseur " +
-                                "d'identité doivent être approvisionnés localement.",
-                            label: "Activer l' approvisionnement juste à temps"
+                            disabledMessageContent: "Vous ne pouvez pas désactiver le" +
+                                " paramètre de provisionnement d'utilisateurs juste-à-temps" +
+                                " car les applications suivantes nécessitent son activation.",
+                            disabledMessageHeader: "Opération non autorisée",
+                            hint: "Spécifiez si les utilisateurs fédérés à partir de ce" +
+                                " fournisseur d'identité doivent être mandatés.",
+                            label: "Provisionnement d'utilisateurs juste à temps"
                         },
                         provisioningScheme: {
                             children: {
@@ -2712,7 +3489,7 @@ export const console: ConsoleNS = {
                     },
                     addCertificate: {
                         subTitle: "Ajouter un nouveau certificat au fournisseur d'identité : {{ idpName }}",
-                        title: "Ajouter un nouveau certificat"
+                        title: "Configurer les certificats"
                     },
                     addProvisioningConnector: {
                         subTitle: "Suivre les étapes pour ajouter un nouveau connecteur d'approvisionnement sortant",
@@ -2747,12 +3524,18 @@ export const console: ConsoleNS = {
                             message: "Erreur de création"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la création du fournisseur d'identité.",
+                            description: "Une erreur s'est produite lors de la création de la connexion.",
                             message: "Erreur de création"
                         },
                         success: {
-                            description: "Création réussie du fournisseur d'identité.",
+                            description: "Création réussie de la connexion.",
                             message: "Créer avec succès"
+                        }
+                    },
+                    apiLimitReachedError: {
+                        error: {
+                            description: "Vous avez atteint le nombre maximum de fournisseurs d'identité autorisés.",
+                            message: "Échec de la création du fournisseur d'identité"
                         }
                     },
                     changeCertType: {
@@ -2791,7 +3574,8 @@ export const console: ConsoleNS = {
                     },
                     deleteDefaultConnector: {
                         error: {
-                            description: "Le connecteur d'approvisionnement sortant par défaut ne peut pas être supprimé.",
+                            description: "Le connecteur d'approvisionnement sortant par défaut ne peut pas " +
+                                "être supprimé.",
                             message: "Erreur de suppression du connecteur sortant"
                         },
                         genericError: null,
@@ -2827,7 +3611,8 @@ export const console: ConsoleNS = {
                     },
                     disableOutboundProvisioningConnector: {
                         error: {
-                            description: "ous ne pouvez pas désactiver le connecteur d'approvisionnement sortant par défaut.",
+                            description: "ous ne pouvez pas désactiver le connecteur d'approvisionnement " +
+                                "sortant par défaut.",
                             message: "Erreur de validation des données"
                         },
                         genericError: {
@@ -2887,7 +3672,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des métadonnées d'authentification.",
+                            description: "Une erreur s'est produite lors de la récupération des métadonnées " +
+                                "d'authentification.",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2915,7 +3701,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des données du fournisseur d'identité",
+                            description: "Une erreur s'est produite lors de la récupération des données du " +
+                                "fournisseur d'identité",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2929,7 +3716,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des fournisseurs d'identité",
+                            description: "Une erreur s'est produite lors de la récupération des fournisseurs " +
+                                "d'identité",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2957,7 +3745,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de l'extraction de la liste des modèles de fournisseurs d'identités",
+                            description: "Une erreur s'est produite lors de l'extraction de la liste des modèles " +
+                                "de fournisseurs d'identités",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2971,7 +3760,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des détails du connecteur d'approvisionnement sortant.",
+                            description: "Une erreur s'est produite lors de la récupération des détails du " +
+                                "connecteur d'approvisionnement sortant.",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2985,7 +3775,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des métadonnées du connecteur d'approvisionnement sortant.",
+                            description: "Une erreur s'est produite lors de la récupération des métadonnées " +
+                                "du connecteur d'approvisionnement sortant.",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -2999,7 +3790,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération de la liste des connecteurs d'approvisionnement sortant.",
+                            description: "Une erreur s'est produite lors de la récupération de la liste " +
+                                "des connecteurs d'approvisionnement sortant.",
                             message: "Erreur de récupération"
                         },
                         success: {
@@ -3035,13 +3827,24 @@ export const console: ConsoleNS = {
                             message: ""
                         }
                     },
+                    tierLimitReachedError: {
+                        emptyPlaceholder: {
+                            action: "Voir les forfaits",
+                            subtitles: "Vous pouvez contacter l'administrateur de l'organisation ou (si vous êtes l'" +
+                                "administrateur) mettre à niveau votre abonnement pour augmenter la limite autorisée.",
+                            title: "Vous avez atteint le nombre maximum de fournisseurs IdPs " +
+                                "autorisés pour cette organisation."
+                        },
+                        heading: "Vous avez atteint la limite maximale d'IdP"
+                    },
                     updateClaimsConfigs: {
                         error: {
                             description: "{{ description }}",
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour des configurations des claims.",
+                            description: "Une erreur s'est produite lors de la mise à jour des configurations " +
+                                "des claims.",
                             message: "Erreur de mise à jour"
                         },
                         success: {
@@ -3055,7 +3858,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour de l'authentificateur fédéré.",
+                            description: "Une erreur s'est produite lors de la mise à jour de " +
+                                "l'authentificateur fédéré.",
                             message: "Erreur de mise à jour"
                         },
                         success: {
@@ -3069,7 +3873,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "sUne erreur s'est produite lors de la mise à jour des authentificateurs fédérés.",
+                            description: "sUne erreur s'est produite lors de la mise à jour des " +
+                                "authentificateurs fédérés.",
                             message: "Erreur de mise à jour"
                         },
                         success: {
@@ -3083,11 +3888,11 @@ export const console: ConsoleNS = {
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour du fournisseur d'identité.",
+                            description: "Une erreur s'est produite lors de la mise à jour de la connexion.",
                             message: "Erreur de mise à jour"
                         },
                         success: {
-                            description: "Mise à jour réussie du fournisseur d'identité.",
+                            description: "La connexion a été mise à jour avec succès.",
                             message: "Mise à jour réussie"
                         }
                     },
@@ -3097,7 +3902,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour du certificat du fournisseur d'identité.",
+                            description: "Une erreur s'est produite lors de la mise à jour du certificat " +
+                                "du fournisseur d'identité.",
                             message: "Erreur de mise à jour"
                         },
                         success: {
@@ -3111,11 +3917,13 @@ export const console: ConsoleNS = {
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour des configurations des rôles pour le provisionnement sortant.",
+                            description: "Une erreur s'est produite lors de la mise à jour des " +
+                                "configurations des rôles pour le provisionnement sortant.",
                             message: "Erreur de mise à jour"
                         },
                         success: {
-                            description: "Mise à jour réussie des configurations des rôles pour le provisionnement sortant.",
+                            description: "Mise à jour réussie des configurations des rôles pour le " +
+                                "provisionnement sortant.",
                             message: "Mise à jour réussie"
                         }
                     },
@@ -3125,7 +3933,8 @@ export const console: ConsoleNS = {
                             message: ""
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour des configurations de provisionnement JIT.",
+                            description: "Une erreur s'est produite lors de la mise à jour des " +
+                                "configurations de provisionnement JIT.",
                             message: "Erreur de mise à jour"
                         },
                         success: {
@@ -3139,7 +3948,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour du connecteur d'approvisionnement sortant.",
+                            description: "Une erreur s'est produite lors de la mise à jour du" +
+                                " connecteur d'approvisionnement sortant.",
                             message: "Erreur de mise à jour"
                         },
                         success: {
@@ -3153,7 +3963,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour des connecteurs d'approvisionnement sortant.",
+                            description: "Une erreur s'est produite lors de la mise à jour des " +
+                                "connecteurs d'approvisionnement sortant.",
                             message: "Erreur de mise à jour"
                         },
                         success: {
@@ -3214,7 +4025,8 @@ export const console: ConsoleNS = {
                     },
                     quickSetup: {
                         heading: "Installation rapide",
-                        subHeading: "Ensemble prédéfini de modèles pour accélérer la création de votre fournisseur d'identité."
+                        subHeading: "Ensemble prédéfini de modèles pour accélérer la création de " +
+                            "votre fournisseur d'identité."
                     }
                 },
                 wizards: {
@@ -3226,7 +4038,8 @@ export const console: ConsoleNS = {
                             },
                             authenticatorSelection: {
                                 manualSetup: {
-                                    subTitle: "Ajouter un nouvel authentificateur avec des configurations personnalisées.",
+                                    subTitle: "Ajouter un nouvel authentificateur avec des configurations " +
+                                        "personnalisées.",
                                     title: "Configuration manuelle"
                                 },
                                 quickSetup: {
@@ -3285,14 +4098,16 @@ export const console: ConsoleNS = {
             overview: {
                 banner: {
                     heading: "WSO2 Identity Server pour les développeurs",
-                    subHeading: "Utiliser les SDK et autres outils de développement pour construire une expérience personnalisée",
+                    subHeading: "Utiliser les SDK et autres outils de développement pour construire " +
+                        "une expérience personnalisée",
                     welcome: "Bienvenue, {{username}}"
                 },
                 quickLinks: {
                     cards: {
                         applications: {
                             heading: "Applications",
-                            subHeading: "Créer des applications à l'aide de modèles prédéfinis et gérer leurs configurations."
+                            subHeading: "Créer des applications à l'aide de modèles prédéfinis et " +
+                                "gérer leurs configurations."
                         },
                         idps: {
                             heading: "Fournisseurs d'identité",
@@ -3301,8 +4116,178 @@ export const console: ConsoleNS = {
                         },
                         remoteFetch: {
                             heading: "Récupérer à distance",
-                            subHeading: "Configurer un référentiel distant pour qu'il fonctionne de manière transparente avec WSO2 Identity Server."
+                            subHeading: "Configurer un référentiel distant pour qu'il fonctionne de " +
+                                "manière transparente avec WSO2 Identity Server."
                         }
+                    }
+                }
+            },
+            secrets: {
+                advancedSearch: {
+                    form: {
+                        inputs: {
+                            filterAttribute: {
+                                placeholder: "Par exemple, nom, description, etc."
+                            },
+                            filterCondition: {
+                                placeholder: "Par exemple, commence par etc."
+                            },
+                            filterValue: {
+                                placeholder: "Saisir une valeur à rechercher"
+                            }
+                        }
+                    },
+                    placeholder: "Chercher par nom d'secret"
+                },
+                alerts: {
+                    createdSecret: {
+                        description: "Le secret a été créé avec succès.",
+                        message: "Création réussie."
+                    },
+                    deleteSecret: {
+                        description: "Le secret a été supprimé avec succès.",
+                        message: "Suppression réussie."
+                    },
+                    updatedSecret: {
+                        description: "Le secret a été mis à jour avec succès.",
+                        message: "Mise à jour réussie."
+                    }
+                },
+                banners: {
+                    adaptiveAuthSecretType: {
+                        content: "Ces secrets peuvent être utilisés dans le script d'authentification adaptative " +
+                            "d'une application enregistrée lors de l'accès à des API externes.",
+                        title: "Secrets d'authentification adaptative"
+                    },
+                    secretIsHidden: {
+                        content: "Une fois créé, vous ne pourrez plus voir la valeur secrète. Vous ne pourrez " +
+                            "supprimer que le secret.",
+                        title: "Pourquoi ne puis-je pas voir le secret ?"
+                    }
+                },
+                emptyPlaceholders: {
+                    buttons: {
+                        addSecret: {
+                            ariaLabel: "Ajoutez un nouveau secret.",
+                            label: "Nouveau secret"
+                        },
+                        backToSecrets: {
+                            ariaLabel: "Accédez à la liste des secrets.",
+                            label: "Ramène-moi à Secrets"
+                        }
+                    },
+                    emptyListOfSecrets: {
+                        messages: [
+                            "Il n'y a pas de secrets disponibles pour le moment."
+                        ]
+                    },
+                    resourceNotFound: {
+                        messages: [
+                            "Oups! nous n'avons pas pu trouver le secret demandé !",
+                            "Peut-être avez-vous atterri sur une URL invalide..."
+                        ]
+                    }
+                },
+                errors: {
+                    generic: {
+                        description: "Nous n'avons pas pu répondre à cette demande. Veuillez réessayer.",
+                        message: "Quelque chose ne tourne pas rond."
+                    }
+                },
+                forms: {
+                    actions: {
+                        submitButton: {
+                            ariaLabel: "Mettre à jour pour enregistrer le formulaire",
+                            label: "Mettre à jour"
+                        }
+                    },
+                    editSecret: {
+                        page: {
+                            description: "Modifier le secret"
+                        },
+                        secretDescriptionField: {
+                            ariaLabel: "Description secrète",
+                            hint: "Donnez une description de ce secret (c'est-à-dire, quand utiliser ce secret).",
+                            label: "Description secrète",
+                            placeholder: "Entrez une description secrète"
+                        },
+                        secretValueField: {
+                            ariaLabel: "Entrez une valeur secrète",
+                            cancelButton: "Annuler",
+                            editButton: "Modifier la valeur secrète",
+                            hint: "Vous pouvez saisir une valeur comprise entre {{minLength}} et {{maxLength}}.",
+                            label: "Valeur secrète",
+                            placeholder: "Entrez une valeur secrète",
+                            updateButton: "Mettre à jour la valeur secrète"
+                        }
+                    }
+                },
+                modals: {
+                    deleteSecret: {
+                        assertionHint: "Oui je comprends. Je veux le supprimer.",
+                        content: "Cette action est irréversible et supprimera définitivement le secret.",
+                        primaryActionButtonText: "Confirmer",
+                        secondaryActionButtonText: "Annuler",
+                        title: "Es-tu sûr?",
+                        warningMessage: "Si vous supprimez ce secret, les scripts d'authentification conditionnelle " +
+                            "en fonction de cette valeur cesseront de fonctionner. Veuillez procéder avec prudence."
+                    }
+                },
+                page: {
+                    description: "Créer et gérer des secrets pour l'authentification conditionnelle",
+                    primaryActionButtonText: "Nouveau secret",
+                    subFeatureBackButton: "Retourner à Secrets",
+                    title: "Secrets"
+                },
+                routes: {
+                    category: "secrets",
+                    name: "Secrets",
+                    sidePanelChildrenNames: [
+                        "Modifier le secret"
+                    ]
+                },
+                wizards: {
+                    actions: {
+                        cancelButton: {
+                            ariaLabel: "Annuler et fermer le modal",
+                            label: "Annuler"
+                        },
+                        createButton: {
+                            ariaLabel: "Créer et soumettre",
+                            label: "Créer"
+                        }
+                    },
+                    addSecret: {
+                        form: {
+                            secretDescriptionField: {
+                                ariaLabel: "Description secrète",
+                                hint: "Donnez une description de ce secret (c'est-à-dire, quand utiliser ce secret).",
+                                label: "Description secrète",
+                                placeholder: "Entrez une description secrète"
+                            },
+                            secretNameField: {
+                                alreadyPresentError: "Ce nom secret est déjà ajouté",
+                                ariaLabel: "Nom secret pour le type de secret",
+                                hint: "Donnez un nom significatif à ce secret. Notez qu'une fois que vous avez créé " +
+                                    "ce secret avec le nom ci-dessus, vous ne pouvez plus le modifier par la suite.",
+                                label: "Nom secret",
+                                placeholder: "Entrez un nom secret"
+                            },
+                            secretTypeField: {
+                                ariaLabel: "Sélectionnez le type de secret",
+                                hint: "Sélectionnez un type de secret auquel appartient ce secret.",
+                                label: "Sélectionnez le type de secret"
+                            },
+                            secretValueField: {
+                                ariaLabel: "Entrez une valeur secrète",
+                                hint: "C'est la valeur du secret. Vous pouvez saisir une valeur comprise entre " +
+                                    "{{minLength}} et {{maxLength}}.",
+                                label: "Valeur secrète",
+                                placeholder: "Entrez une valeur secrète"
+                            }
+                        },
+                        heading: "Créer un secret",
+                        subheading: "Créer un nouveau secret pour les scripts d'authentification adaptative"
                     }
                 }
             },
@@ -3332,7 +4317,7 @@ export const console: ConsoleNS = {
                     subtitles: "Veuillez ajouter des modèles à afficher ici.",
                     title: "Pas de modèles à afficher."
                 }
-            },
+            }
         },
         notifications: {
             endSession: {
@@ -3381,11 +4366,13 @@ export const console: ConsoleNS = {
         pages: {
             applicationTemplate: {
                 backButton: "Retour aux applications",
-                subTitle: "Choisissez l'un des types prédéfinis pour intégrer une application.",
-                title: "Choisissez le type d'application"
+                subTitle: "Enregistrez une demande en utilisant l'un des modèles ci-dessous. Si rien ne correspond " +
+                    "à votre type d'application, commencez par le modèle d'application standard.",
+                title: "Enregistrer une nouvelle candidature"
             },
             applications: {
-                subTitle: "Gérez les applications à l'aide de modèles et configurez l'authentification.",
+                alternateSubTitle: "Gérez vos applications et personnalisez les flux de connexion.",
+                subTitle: "Enregistrez et gérez vos applications et configurez la connexion.",
                 title: "Applications"
             },
             applicationsEdit: {
@@ -3408,7 +4395,8 @@ export const console: ConsoleNS = {
                 title: "Sélectionnez le fournisseur d'identité"
             },
             overview: {
-                subTitle: "Configurer et gérer les applications, les fournisseurs d'identité, les utilisateurs et les rôles, les dialectes d'attributs, " +
+                subTitle: "Configurer et gérer les applications, les fournisseurs d'identité, les utilisateurs " +
+                    "et les rôles, les dialectes d'attributs, " +
                     "etc.",
                 title: "Bienvenue, {{firstName}}"
             }
@@ -3443,20 +4431,6 @@ export const console: ConsoleNS = {
     },
     manage: {
         features: {
-            businessGroups: {
-                fields: {
-                    groupName: {
-                        label: "Nome de {{type}}",
-                        placeholder: "Saisir un nom de {{type}}",
-                        validations: {
-                            duplicate: "Un {{type}} avec ce nom existe déjà.",
-                            empty: "Le nom de {{type}} est obligatoire",
-                            invalid: "Un nom {{type}} ne peut contenir que des caractères alphanumériques, - et _. "+
-                                "Et doit avoir une longueur comprise entre 3 et 30 caractères."
-                        }
-                    }
-                }
-            },
             approvals: {
                 list: {
                     columns: {
@@ -3465,9 +4439,17 @@ export const console: ConsoleNS = {
                     }
                 },
                 modals: {
+                    approvalProperties: {
+                        "Claims": "Réclamations",
+                        "REQUEST ID": "Identifiant de la demande",
+                        "Roles": "Rôles",
+                        "User Store Domain": "Domaine du magasin d'utilisateurs",
+                        "Username": "Nom d'utilisateur"
+                    },
                     taskDetails: {
-                        header: "Tâche d'approbation",
-                        description: "Vous avez une demande d'approbation d'une action opérationnelle d'un utilisateur.",
+                        description: "Vous avez une demande d'approbation d'une action opérationnelle " +
+                            "d'un utilisateur.",
+                        header: "Tâche d'approbation"
                     }
                 },
                 notifications: {
@@ -3515,15 +4497,6 @@ export const console: ConsoleNS = {
                     }
                 },
                 placeholders: {
-                    emptyApprovalList: {
-                        action: "",
-                        subtitles: {
-                            0: "Il n'y a actuellement aucune approbation à examiner.",
-                            1: "Veuillez vérifier si vous avez ajouté un flux de travail pour",
-                            2: "contrôler les tâches dans le système."
-                        },
-                        title: "Aucune approbation"
-                    },
                     emptyApprovalFilter: {
                         action: "Voir tout",
                         subtitles: {
@@ -3533,6 +4506,15 @@ export const console: ConsoleNS = {
                         },
                         title: "Aucune {{status}} approbation"
                     },
+                    emptyApprovalList: {
+                        action: "",
+                        subtitles: {
+                            0: "Il n'y a actuellement aucune approbation à examiner.",
+                            1: "Veuillez vérifier si vous avez ajouté un flux de travail pour",
+                            2: "contrôler les tâches dans le système."
+                        },
+                        title: "Aucune approbation"
+                    },
                     emptySearchResults: {
                         action: "Voir tout",
                         subtitles: {
@@ -3541,6 +4523,20 @@ export const console: ConsoleNS = {
                             2: "le système."
                         },
                         title: "Aucun résultat trouvé"
+                    }
+                }
+            },
+            businessGroups: {
+                fields: {
+                    groupName: {
+                        label: "Nome de {{type}}",
+                        placeholder: "Saisir un nom de {{type}}",
+                        validations: {
+                            duplicate: "Un {{type}} avec ce nom existe déjà.",
+                            empty: "Le nom de {{type}} est obligatoire",
+                            invalid: "Un nom {{type}} ne peut contenir que des caractères alphanumériques, - et _. "+
+                                "Et doit avoir une longueur comprise entre 3 et 30 caractères."
+                        }
                     }
                 }
             },
@@ -3573,10 +4569,10 @@ export const console: ConsoleNS = {
                         hint: "Veuillez saisir <1>{{ name }}</1> pour confirmer.",
                         message: "Cette action est irréversible et supprimera définitivement le certificat.",
                         primaryAction: "Confirmer",
-                        tenantContent: "Ceci supprimera définitivement le certificat du locataire."
-                            + "Une fois supprimé, vous ne pourrez plus accéder aux applications du portail, "
-                            + "à moins d'en importer un nouveau certificat. "
-                            + "Pour confirmer la suppression, veuillez saisir l'alias du certificat et cliquez sur 'Supprimer'."
+                        tenantContent: "Cela supprimera définitivement le certificat d'locataire. Une fois" +
+                            " supprimé, à moins que vous n'importiez un nouveau certificat d'locataire, vous ne" +
+                            " pourrez pas accéder aux applications du portail.Pour continuer la suppression, entrez" +
+                            " l'alias du certificat et cliquez sur supprimer."
                     },
                     errorCertificate: "Une erreur s'est produite lors de l'ouverture du certificat"
                         + " Veuillez vous assurer que le certificat est valide.",
@@ -3641,13 +4637,14 @@ export const console: ConsoleNS = {
                         },
                         getPublicCertificate: {
                             genericError: {
-                                description: "Une erreur s'est produite lors de la récupération du certificat du locataire",
+                                description: "Une erreur s'est produite lors de la récupération du certificat" +
+                                    " d'organisation.",
                                 message: "Quelque chose s'est mal passé !"
                             }
                         }
                     },
                     pageLayout: {
-                        description: "Créer et gérer des certificats dans le magasin de clés",
+                        description: "Gérer les certificats dans le keystore",
                         primaryAction: "Importer un certificat",
                         title: "Certificats"
                     },
@@ -3750,23 +4747,34 @@ export const console: ConsoleNS = {
                     },
                     confirmations: {
                         action: "Confirmer",
-                        content: "Si vous supprimez ce mappage d'attributs, tous les attributs {{type}} associés seront "
-                            + "également supprimés, veuillez procéder avec prudence.",
+                        content: "Si vous supprimez ce mappage d'attributs, tous les attributs {{type}} " +
+                            "associés seront également supprimés, veuillez procéder avec prudence.",
                         header: "Êtes-vous sûr ?",
                         hint: "Veuillez saisir <1>{{ name }}</1> pour confirmer.",
-                        message: "Cette action est irréversible et supprimera définitivement le mappage d'attributs sélectionné."
+                        message: "Cette action est irréversible et supprimera définitivement le mappage " +
+                            "d'attributs sélectionné."
                     },
                     dangerZone: {
                         actionTitle: "Supprimer le mappage d'attributs {{type}}",
                         header: "Supprimer le mappage d'attributs {{type}}",
-                        subheader: "Une fois que vous supprimez ce mappage d'attribut {{type}}, il n'y a plus de retour en arrière." +
-                            "Soyez certain."
+                        subheader: "Une fois que vous supprimez ce mappage d'attribut {{type}}, il n'y a plus " +
+                            "de retour en arrière. Soyez certain."
                     },
                     forms: {
                         dialectURI: {
                             label: "{{type}} URI de mappage d'attributs",
                             placeholder: "Saisir une URI de dialecte",
                             requiredErrorMessage: "L'URI de dialecte est obligatoire"
+                        },
+                        fields: {
+                            attributeName: {
+                                validation: {
+                                    alreadyExists: "Un attribut existe déjà avec le nom d'attribut donné.",
+                                    invalid: "Le nom d'attribut ne peut contenir que des caractères "
+                                        +"alphanumériques et _. Et doit avoir une longueur comprise "
+                                        +"entre 3 et 30 caractères."
+                                }
+                            }
                         },
                         submit: "Mettre à jour"
                     },
@@ -3777,8 +4785,8 @@ export const console: ConsoleNS = {
                                 message: "Quelque chose s'est mal passé"
                             },
                             genericError: {
-                                description: "Le mappage d'attributs a été ajouté avec succès, mais ce n'est pas le cas pour "
-                                    + "tous les attributs {{type}}",
+                                description: "Le mappage d'attributs a été ajouté avec succès, mais ce n'est pas " +
+                                    "le cas pour tous les attributs {{type}}",
                                 message: "Des attributs externes n'ont pas pu être ajoutés"
                             },
                             success: {
@@ -3841,8 +4849,9 @@ export const console: ConsoleNS = {
                             updateExternalAttributes: "Mettre à jour le mappage d'attributs {{type}}"
                         },
                         list: {
-                            description: "Affichez et gérez la façon dont les attributs utilisateur d'{{productName}} " +
-                                "sont mappés et transformés lors de l'interaction avec les API ou vos applications.",
+                            description: "Affichez et gérez la façon dont les attributs utilisateur " +
+                                "d'{{productName}} sont mappés et transformés lors de l'interaction avec les " +
+                                "API ou vos applications.",
                             primaryAction: "Nouveau mappage d'attributse",
                             title: "Les attributs",
                             view: "Voir les claims locaux"
@@ -3923,15 +4932,21 @@ export const console: ConsoleNS = {
                             validationErrorMessages: {
                                 duplicateName: "L'URI de l'attribut {{type}} existe déjà.",
                                 invalidName: "Le nom que vous avez entré contient des caractères non autorisés. " +
-                                    "Seuls les alphabets, les nombres, «#», «_» sont autorisés."
+                                    "Seuls les alphabets, les nombres, «#», «_» sont autorisés.",
+                                scimInvalidName: "Le caractère de départ du nom doit être une lettre. " +
+                                    "Les caractères restants peuvent inclure des lettres, des chiffres, " +
+                                    "un tiret (-) et un trait de soulignement (_)."
                             }
                         },
+                        emptyMessage: "Tous les attributs SCIM sont mappés sur des revendications locales.",
                         localAttribute: {
                             label: "Attribut URI à mapper",
                             placeholder: "Sélectionnez un attribut",
                             requiredErrorMessage: "Sélectionnez un attribut auquel mapper"
                         },
-                        submit: "Ajouter un mappage d'attributs"
+                        submit: "Ajouter un mappage d'attributs",
+                        warningMessage: "Aucun attribut local n'est disponible pour le mappage. " +
+                            "Ajouter de nouveaux attributs locaux à partir d'ici"
                     },
                     notifications: {
                         addExternalAttribute: {
@@ -4002,8 +5017,8 @@ export const console: ConsoleNS = {
                 list: {
                     columns: {
                         actions: "Actions",
-                        claimURI: "URI du claim",
-                        dialectURI: "URI du dialecte",
+                        claimURI: "Attribut SCIM",
+                        dialectURI: "Attribut mappé",
                         name: "Nom"
                     },
                     confirmation: {
@@ -4019,7 +5034,7 @@ export const console: ConsoleNS = {
                             name: "attribut {{type}}"
                         },
                         header: "Êtes-vous sûr ?",
-                        hint: "Veuillez saisir <1>{{assertion}}</1> pour confirmer.",
+                        hint: "Veuillez confirmer votre action.",
                         local: {
                             message: "Si vous supprimez cet attribut local, les données de l'utilisateur appartenant "
                                 + "à cet attribut seront également supprimés.",
@@ -4035,7 +5050,8 @@ export const console: ConsoleNS = {
                                 local: "Nouvel attribut local"
                             },
                             subtitle: "Il n'y a actuellement aucun résultat disponible."
-                                + "Vous pouvez ajouter un nouvel élément facilement en suivant les étapes de l'assistant de création.",
+                                + "Vous pouvez ajouter un nouvel élément facilement en suivant les étapes " +
+                                "de l'assistant de création.",
                             title: {
                                 dialect: "Ajouter un dialecte {{type}}",
                                 external: "Ajouter un attribut {{type}}",
@@ -4081,17 +5097,20 @@ export const console: ConsoleNS = {
                         attributeURI: "URI d'attribut"
                     },
                     confirmation: {
-                        content: "Si vous supprimez cet attribut local, les données utilisateur appartenant à cet attribut "
+                        content: "Si vous supprimez cet attribut local, les données utilisateur appartenant à " +
+                            "cet attribut "
                             + "seront également supprimés. Veuillez procéder avec prudence.",
                         header: "Êtes-vous sûr ?",
-                        hint: "Veuillez saisir <1>{{nom}}</1> pour confirmer.",
-                        message: "Cette action est irréversible et supprimera définitivement l'attribut local sélectionné.",
+                        hint: "Veuillez confirmer votre action.",
+                        message: "Cette action est irréversible et supprimera définitivement l'attribut local " +
+                            "sélectionné.",
                         primaryAction: "Confirmer"
                     },
                     dangerZone: {
                         actionTitle: "Supprimer l'attribut local",
                         header: "Supprimer l'attribut local",
-                        subheader: "Une fois que vous avez supprimé un attribut local, il est impossible de revenir en arrière. "
+                        subheader: "Une fois que vous avez supprimé un attribut local, il est impossible " +
+                            "de revenir en arrière. "
                             + "Soyez certains de vous."
                     },
                     forms: {
@@ -4111,12 +5130,19 @@ export const console: ConsoleNS = {
                             placeholder: "Saisir une description",
                             requiredErrorMessage: "Description est requis"
                         },
+                        descriptionHint: "Une description significative de l'attribut.",
                         displayOrder: {
                             label: "Ordre d'affichage",
                             placeholder: "Saisir l'ordre d'affichage"
                         },
                         displayOrderHint: "Ceci détermine la position à laquelle cet attribut est affiché "
                             + "dans le profil de l'utilisateur et la page d'enregistrement de l'utilisateur",
+                        infoMessages: {
+                            configApplicabilityInfo: "Veuillez noter que les configurations d'attributs suivantes " +
+                                "n'affecteront que les profils d'utilisateurs des clients.",
+                            disabledConfigInfo: "Veuillez noter que la section ci-dessous est désactivée car aucun" +
+                                " mappage de revendication externe n'a été trouvé pour cet attribut de revendication."
+                        },
                         name: {
                             label: "Nom",
                             placeholder: "Saisir un nom pour l'attribut",
@@ -4133,20 +5159,28 @@ export const console: ConsoleNS = {
                         readOnly: {
                             label: "Mettre cet attribut en lecture seule"
                         },
+                        readOnlyHint: "Si cette option est sélectionnée, la valeur de cet attribut est en " +
+                        "lecture seule dans un profil utilisateur. Assurez-vous de sélectionner cette " +
+                        "option si la valeur de l'attribut est définie par le système.",
                         regEx: {
                             label: "Expression régulière",
                             placeholder: "Entrez une expression régulière"
                         },
-                        regExHint: "Cette expression régulière est utilisée pour valider le format que cet attribut peut prendre",
+                        regExHint: "Cette expression régulière est utilisée pour valider le format que cet " +
+                            "attribut peut prendre",
                         required: {
                             label: "Rendre cet attribut obligatoire lors de l'inscription de l'utilisateur"
                         },
+                        requiredHint: "S'il est sélectionné, l'utilisateur doit spécifier une valeur pour " +
+                        "cet attribut sur le profil.",
                         supportedByDefault: {
-                            label: "Afficher cet attribut sur le profil de l'utilisateur et la page d'enregistrement de l'utilisateur"
+                            label: "Afficher cet attribut sur le profil de l'utilisateur et la page " +
+                                "d'enregistrement de l'utilisateur"
                         }
                     },
                     mappedAttributes: {
-                        hint: "Saisissez l'attribut de chaque magasin d'utilisateurs que vous voulez associer à cet attribut."
+                        hint: "Saisissez l'attribut de chaque magasin d'utilisateurs que vous voulez associer " +
+                            "à cet attribut."
                     },
                     notifications: {
                         addLocalClaim: {
@@ -4224,7 +5258,7 @@ export const console: ConsoleNS = {
                         },
                         local: {
                             action: "Nouvel attribut local",
-                            back: "Revenir aux attributs et mappages",
+                            back: "Revenir aux Attributs et Mappages",
                             description: "Créer et gérer les attributs locaux",
                             title: "Attributs locaux"
                         }
@@ -4243,10 +5277,22 @@ export const console: ConsoleNS = {
                             readOnly: "Cet attribut est en lecture seule",
                             regEx: "Expression régulière",
                             required: "Cet attribut est requis lors de l'inscription de l'utilisateur",
-                            supportedByDefault: "Cet attribut est affiché sur le profil de l'utilisateur et sur la page d'enregistrement de l'utilisateur",
+                            supportedByDefault: "Cet attribut est affiché sur le profil de l'utilisateur et sur " +
+                                "la page d'enregistrement de l'utilisateur",
                             userstore: "Annuaire"
                         }
                     }
+                },
+                scopeMappings: {
+                    deletionConfirmationModal: {
+                        assertionHint: "Veuillez confirmer votre action.",
+                        content: "Si vous supprimez cette revendication, la revendication ne sera pas " +
+                            "disponible dans le jeton. Veuillez procéder avec prudence.",
+                        header: "Êtes-vous sûr?",
+                        message: "Cette action est irréversible et supprimera définitivement le mappage " +
+                            "de revendication de champ d'application"
+                    },
+                    saveChangesButton: "Sauvegarder les modifications"
                 }
             },
             emailLocale: {
@@ -4261,7 +5307,7 @@ export const console: ConsoleNS = {
                                 label: "Corps",
                                 validations: {
                                     empty: "Le corps de l'e-mail ne peut pas être vide."
-    }
+                                }
                             },
                             locale: {
                                 label: "Langue",
@@ -4272,7 +5318,7 @@ export const console: ConsoleNS = {
                             },
                             signatureEditor: {
                                 label: "Signature du courrier",
-                                 validations: {
+                                validations: {
                                     empty: "La signature électronique ne peut pas être vide."
                                 }
                             },
@@ -4440,7 +5486,8 @@ export const console: ConsoleNS = {
                         content: "En supprimant ce modèle d'e-mail, tous les processus associés ne disposeront " +
                             "plus de modèle valide pour fonctionner. Veuillez procéder avec prudence.",
                         header: "Êtes-vous sûr ?",
-                        message: "Cette action est irréversible et supprimera définitivement le modèle d'e-mail sélectionné."
+                        message: "Cette action est irréversible et supprimera définitivement le modèle " +
+                            "d'e-mail sélectionné."
                     }
                 },
                 editor: {
@@ -4556,6 +5603,571 @@ export const console: ConsoleNS = {
             governanceConnectors: {
                 categories: "Catégories",
                 connectorSubHeading: "Configurer les paramètre {{ name }}.",
+                connectorCategories: {
+                    passwordPolicies : {
+                        name: "Politiques de mot de passe",
+                        connectors: {
+                            passwordHistory: {
+                                friendlyName: "Historique du mot de passe",
+                                properties: {
+                                    passwordHistoryEnable: {
+                                        hint: "L'utilisateur ne sera pas autorisé à utiliser les mots de passe précédemment utilisés.",
+                                        label: "Valider l'historique des mots de passe"
+                                    },
+                                    passwordHistoryCount: {
+                                        hint: "Restreindre l'utilisation de ce nombre de derniers mots de passe utilisés pendant la mise à jour du mot de passe.",
+                                        label: "Compte de validation de l'historique des mots de passe"
+                                    }
+                                }
+                            },
+                            passwordPolicy: {
+                                friendlyName: "Modèles de mot de passe",
+                                properties: {
+                                    passwordPolicyEnable: {
+                                        hint: "Valider les mots de passe utilisateur contre une politique",
+                                        label: "Valider les mots de passe en fonction d'un modèle de stratégie"
+                                    },
+                                    passwordPolicyMinLength: {
+                                        hint: "Nombre minimum de caractères dans le mot de passe.",
+                                        label: "Nombre minimum de caractères"
+                                    },
+                                    passwordPolicyMaxLength: {
+                                        hint: "Nombre maximum de caractères dans le mot de passe.",
+                                        label: "Nombre maximum de caractères"
+                                    },
+                                    passwordPolicyPattern: {
+                                        hint: "Le modèle d'expression régulière pour valider le mot de passe.",
+                                        label: "Motif de mot de passe regex"
+                                    },
+                                    passwordPolicyErrorMsg: {
+                                        hint: "Ce message d'erreur sera affiché lorsqu'une violation de modèle est détectée.",
+                                        label: "Message d'erreur sur la violation du modèle"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    userOnboarding : {
+                        name: "Intégration de l'utilisateur",
+                        connectors: {
+                            selfSignUp: {
+                                friendlyName: "Auto-inscription",
+                                properties: {
+                                    selfRegistrationEnable: {
+                                        hint: "Autoriser les utilisateurs à s'inscrire au système.",
+                                        label: "Auto-inscription utilisateur"
+                                    },
+                                    selfRegistrationLockOnCreation: {
+                                        hint: "Verrouillez le compte d'utilisateur auto-enregistré jusqu'à la vérification par e-mail.",
+                                        label: "Verrouiller le compte d'utilisateur sur la création"
+                                    },
+                                    selfRegistrationSendConfirmationOnCreation: {
+                                        hint: "Activer la confirmation du compte utilisateur lorsque le compte d'utilisateur n'est pas verrouillé sur la création",
+                                        label: "Activer la confirmation du compte sur la création"
+                                    },
+                                    selfRegistrationNotificationInternallyManage: {
+                                        hint: "Désactiver si la demande client gère la notification envoyée",
+                                        label: "Gérer les notifications envoyées en interne"
+                                    },
+                                    selfRegistrationReCaptcha: {
+                                        hint: "Activer la vérification de recaptcha pendant l'auto-enregistrement.",
+                                        label: "Recaptcha rapide"
+                                    },
+                                    selfRegistrationVerificationCodeExpiryTime: {
+                                        hint: "Spécifiez le temps d'expiration en quelques minutes pour le lien de vérification.",
+                                        label: "Lien de vérification de l'auto-enregistrement des utilisateurs Temps d'expiration"
+                                    },
+                                    selfRegistrationVerificationCodeSmsotpExpiryTime: {
+                                        hint: "Spécifiez le temps d'expiration en quelques minutes pour le SMS OTP.",
+                                        label: "SMS d'auto-enregistrement des utilisateurs OTP Temps d'expiration"
+                                    },
+                                    selfRegistrationSmsotpRegex: {
+                                        hint: "Regex pour SMS OTP au format [caractères autorisés] {longueur}.Les gammes de caractères prises en charge sont A-Z, A-Z, 0-9.La longueur minimale de OTP est 4",
+                                        label: "SMS d'auto-enregistrement des utilisateurs otp regex"
+                                    },
+                                    selfRegistrationCallbackRegex: {
+                                        hint: "Ce préfixe sera utilisé pour valider l'URL de rappel.",
+                                        label: "URL de rappel d'auto-enregistrement utilisateur Regex"
+                                    },
+                                    urlListPurposeSelfSignUp: {
+                                        hint: "Cliquez ici pour gérer les objectifs d'auto-signature",
+                                        label: "Gérer les objectifs d'auto-signature"
+                                    },
+                                    selfRegistrationNotifyAccountConfirmation: {
+                                        hint: "Activer l'envoi de notification pour la confirmation d'auto-inscription.",
+                                        label: "Envoyer un e-mail de confirmation d'inscription"
+                                    },
+                                    selfRegistrationResendConfirmationReCaptcha: {
+                                        hint: "Vérification RecaptCha rapide pour la confirmation de renvoi",
+                                        label: "Recaptcha rapide sur la confirmation de re-end"
+                                    },
+                                    selfRegistrationAutoLoginEnable: {
+                                        hint: "L'utilisateur sera connecté automatiquement après avoir terminé la confirmation du compte",
+                                        label: "Activer la connexion automatique après la confirmation du compte"
+                                    },
+                                    selfRegistrationAutoLoginAliasName: {
+                                        hint: "Alias de la clé utilisée pour signer au cookie.La clé publique doit être importée sur le stade de clés.",
+                                        label: "Alias de la clé utilisée pour signer au cookie"
+                                    }
+                                }
+                            },
+                            liteUserSignUp: {
+                                friendlyName: "Enregistrement de l'utilisateur Lite",
+                                properties: {
+                                    liteRegistrationEnable: {
+                                        hint: "Autoriser les utilisateurs à s'inscrire au système sans mot de passe.",
+                                        label: "Enregistrement de l'utilisateur Lite"
+                                    },
+                                    liteRegistrationLockOnCreation: {
+                                        hint: "Verrouillez le compte d'utilisateur auto-enregistré jusqu'à la vérification par e-mail.",
+                                        label: "Verrouiller le compte d'utilisateur sur la création"
+                                    },
+                                    liteRegistrationNotificationInternallyManage: {
+                                        hint: "Désactiver si la demande client gère la notification envoyée",
+                                        label: "Gérer les notifications envoyées en interne"
+                                    },
+                                    liteRegistrationReCaptcha: {
+                                        hint: "Activer la vérification de Recaptcha pendant l'auto-enregistrement.",
+                                        label: "Recaptcha rapide"
+                                    },
+                                    liteRegistrationVerificationCodeExpiryTime: {
+                                        hint: "Spécifiez le temps d'expiration en quelques minutes pour le lien de vérification.",
+                                        label: "Lite des utilisateurs d'enregistrement des utilisateurs lien d'expiration du lien d'expiration"
+                                    },
+                                    liteRegistrationVerificationCodeSmsotpExpiryTime: {
+                                        hint: "Spécifiez le temps d'expiration en quelques minutes pour le SMS OTP.",
+                                        label: "Enregistrement des utilisateurs Lite SMS OTP Temps d'expiration"
+                                    },
+                                    liteRegistrationSmsotpRegex: {
+                                        hint: "Regex pour SMS OTP au format [caractères autorisés] {longueur}.Les gammes de caractères prises en charge sont A-Z, A-Z, 0-9.La longueur minimale de OTP est 4",
+                                        label: "Enregistrement des utilisateurs Lite SMS OTP Regex"
+                                    },
+                                    liteRegistrationCallbackRegex: {
+                                        hint: "Ce préfixe sera utilisé pour valider l'URL de rappel.",
+                                        label: "URL de rappel d'enregistrement de l'utilisateur Lite Regex"
+                                    },
+                                    urlListPurposeLiteUserSignUp: {
+                                        hint: "Cliquez ici pour gérer les objectifs de sign",
+                                        label: "Gérer les objectifs lite-sign"
+                                    }
+                                }
+                            },
+                            userEmailVerification: {
+                                friendlyName: "Demander le mot de passe",
+                                properties: {
+                                    emailVerificationEnable: {
+                                        hint: "Une notification de vérification sera déclenchée pendant la création d'utilisateurs.",
+                                        label: "Activer la vérification de l'e-mail utilisateur"
+                                    },
+                                    emailVerificationLockOnCreation: {
+                                        hint: "Le compte d'utilisateur sera verrouillé pendant la création d'utilisateurs.",
+                                        label: "Activer le verrouillage du compte sur la création"
+                                    },
+                                    emailVerificationNotificationInternallyManage: {
+                                        hint: "Désactiver si la demande client gère la notification envoyée.",
+                                        label: "Gérer les notifications envoyées en interne"
+                                    },
+                                    emailVerificationExpiryTime: {
+                                        hint: "Réglez la durée que l'e-mail de vérification serait valide, en quelques minutes.(Pour une période de validité infinie, réglé -1)",
+                                        label: "Code de vérification par e-mail Heure d'expiration"
+                                    },
+                                    emailVerificationAskPasswordExpiryTime: {
+                                        hint: "Définissez la durée de l'e-mail de mot de passe de demande serait valide, en quelques minutes.(Pour une période de validité infinie, réglé -1)",
+                                        label: "Demandez l'heure d'expiration du code de mot de passe"
+                                    },
+                                    emailVerificationAskPasswordPasswordGenerator: {
+                                        hint: "Point d'extension de génération de mots de passe temporaire dans la fonction de mot de passe de demande.",
+                                        label: "Classe d'extension de génération de mots de passe temporaire"
+                                    },
+                                    urlListPurposeJitProvisioning: {
+                                        hint: "Cliquez ici pour gérer juste les fins de provisioning à temps.",
+                                        label: "Gérer les objectifs de l'approvisionnement JIT"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    loginAttemptsSecurity : {
+                        name: "La connexion tente la sécurité",
+                        connectors: {
+                            accountLockHandler: {
+                                friendlyName: "Verrouillage du compte",
+                                properties: {
+                                    accountLockHandlerLockOnMaxFailedAttemptsEnable: {
+                                        hint: "Verrouiller les comptes d'utilisateurs sur les tentatives de connexion ratées",
+                                        label: "Lock user accounts on maximum failed attempts"
+                                    },
+                                    accountLockHandlerOnFailureMaxAttempts: {
+                                        hint: "Le nombre de tentatives de connexion échouées autorisées jusqu'à verrouillage du compte.",
+                                        label: "Tentatives de connexion échoue maximale"
+                                    },
+                                    accountLockHandlerTime: {
+                                        hint: "Période de verrouillage du compte initial en quelques minutes.Le compte sera automatiquement déverrouillé après cette période.",
+                                        label: "Durée initiale du verrouillage du compte"
+                                    },
+                                    accountLockHandlerLoginFailTimeoutRatio: {
+                                        hint: "La durée du verrouillage du compte sera augmentée de ce facteur.Ex: Durée initiale: 5m;Facteur d'incrément: 2;Durée du verrouillage suivant: 5 x 2 = 10m",
+                                        label: "Facteur d'incrément de durée de verrouillage du compte"
+                                    },
+                                    accountLockHandlerNotificationManageInternally: {
+                                        hint: "Désactiver si la demande client gère la notification envoyée",
+                                        label: "Gérer la notification Envoi en interne"
+                                    },
+                                    accountLockHandlerNotificationNotifyOnLockIncrement: {
+                                        hint: "Informer l'utilisateur lorsque la durée de verrouillage du compte est augmentée en raison des tentatives de connexion en échec continu.",
+                                        label: "Informer l'utilisateur lorsque le temps de verrouillage est augmenté"
+                                    }
+                                }
+                            },
+                            ssoLoginRecaptcha: {
+                                friendlyName: "recaptcha pour la connexion SSO",
+                                properties: {
+                                    ssoLoginRecaptchaEnableAlways: {
+                                        hint: "Toujours une vérification de recaptcha rapide pendant le flux de connexion SSO.",
+                                        label: "Toujours recaptcha rapide"
+                                    },
+                                    ssoLoginRecaptchaEnable: {
+                                        hint: "Vérification rapide du recaptcha pendant le flux de connexion SSO uniquement après que les tentatives d'échec max ont dépassé.",
+                                        label: "Recaptcha rapide après les tentatives d'échec max"
+                                    },
+                                    ssoLoginRecaptchaOnMaxFailedAttempts: {
+                                        hint: "Nombre de tentatives infructueuses autorisées sans inciter à la vérification de RECAPTCHA.",
+                                        label: "Max Échec des tentatives pour recaptcha"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    accountManagement : {
+                        name: "Gestion de compte",
+                        connectors: {
+                            suspensionNotification: {
+                                friendlyName: "Suspende du compte inactif",
+                                properties: {
+                                    suspensionNotificationEnable: {
+                                        hint: "Verrouiller le compte d'utilisateur après une période d'inactivité donnée.",
+                                        label: "Suspendre les comptes d'utilisateurs inactifs"
+                                    },
+                                    suspensionNotificationAccountDisableDelay: {
+                                        hint: "Période dans des jours avant de verrouiller le compte d'utilisateur.",
+                                        label: "Autorisation du temps inactif dans les jours"
+                                    },
+                                    suspensionNotificationDelays: {
+                                        hint: "Envoyez des alertes d'avertissement aux utilisateurs avant de verrouiller le compte, après chaque période.La virgule séparée plusieurs valeurs acceptées.",
+                                        label: "Alerte d'envoi de périodes en jours"
+                                    }
+                                }
+                            },
+                            accountDisableHandler: {
+                                friendlyName: "Compte désactiver",
+                                properties: {
+                                    accountDisableHandlerEnable: {
+                                        hint: "Allow an administrative user to disable user accounts",
+                                        label: "Activer la désactivation du compte"
+                                    },
+                                    accountDisableHandlerNotificationManageInternally: {
+                                        hint: "Désactiver, si la demande client gère la notification",
+                                        label: "Gérer la notification Envoi en interne"
+                                    }
+                                }
+                            },
+                            multiattributeLoginHandler: {
+                                friendlyName: "Connexion multi-attribut",
+                                properties: {
+                                    accountMultiattributeloginHandlerEnable: {
+                                        hint: "Activer l'utilisation de plusieurs attributs comme identifiant de connexion",
+                                        label: "Activer la connexion multi-attribut"
+                                    },
+                                    accountMultiattributeloginHandlerAllowedattributes: {
+                                        hint: "Liste des réclamations autorisées séparées par des virgules",
+                                        label: "Liste des réclamations d'attribut autorisée"
+                                    }
+                                }
+                            },
+                            accountRecovery: {
+                                friendlyName: "Gestion de compte",
+                                properties: {
+                                    recoveryNotificationPasswordEnable: {
+                                        label: "Récupération de mot de passe basée sur la notification"
+                                    },
+                                    recoveryReCaptchaPasswordEnable: {
+                                        label: "Activer RecaptCha pour la récupération de mot de passe"
+                                    },
+                                    recoveryQuestionPasswordEnable: {
+                                        label: "Récupération de mot de passe basée sur les questions de sécurité"
+                                    },
+                                    recoveryQuestionPasswordMinAnswers: {
+                                        label: "Nombre de questions requises pour la récupération du mot de passe"
+                                    },
+                                    recoveryQuestionAnswerRegex: {
+                                        hint: "Security question answer regex",
+                                        label: "Question de sécurité Réponse Regex"
+                                    },
+                                    recoveryQuestionAnswerUniqueness: {
+                                        hint: "Enforce security question answer uniqueness",
+                                        label: "Appliquer la question de sécurité Réponse l'unicité"
+                                    },
+                                    recoveryQuestionPasswordReCaptchaEnable: {
+                                        hint: "Prompt reCaptcha for security question based password recovery",
+                                        label: "Activer RecaptCha pour la récupération de mot de passe basée sur les questions de sécurité"
+                                    },
+                                    recoveryQuestionPasswordReCaptchaMaxFailedAttempts: {
+                                        label: "Max Échec des tentatives pour recaptcha"
+                                    },
+                                    recoveryNotificationUsernameEnable: {
+                                        label: "Récupération du nom d'utilisateur"
+                                    },
+                                    recoveryReCaptchaUsernameEnable: {
+                                        label: "Activer RecaptCha pour la récupération du nom d'utilisateur"
+                                    },
+                                    recoveryNotificationInternallyManage: {
+                                        hint: "Désactiver si la demande client gère la notification envoyée",
+                                        label: "Gérer les notifications envoyées en interne"
+                                    },
+                                    recoveryNotifySuccess: {
+                                        label: "Aviser quand le succès de la récupération"
+                                    },
+                                    recoveryQuestionPasswordNotifyStart: {
+                                        label: "Informer quand la récupération basée sur les questions de sécurité commence"
+                                    },
+                                    recoveryExpiryTime: {
+                                        label: "Lien de récupération Expiration Temps en quelques minutes"
+                                    },
+                                    recoveryNotificationPasswordExpiryTimeSmsOtp: {
+                                        hint: "Temps d'expiration du code OTP SMS pour la récupération de mot de passe",
+                                        label: "Temps d'expiration SMS OTP"
+                                    },
+                                    recoveryNotificationPasswordSmsOtpRegex: {
+                                        hint: "Regex pour SMS OTP au format [caractères autorisés] {longueur}.Les gammes de caractères prises en charge sont A-Z, A-Z, 0-9.La longueur minimale de OTP est 4",
+                                        label: "smsOtpRegex"
+                                    },
+                                    recoveryQuestionPasswordForcedEnable: {
+                                        hint: "Force les utilisateurs à fournir des réponses aux questions de sécurité pendant la connexion",
+                                        label: "Enable forced security questions"
+                                    },
+                                    recoveryQuestionMinQuestionsToAnswer: {
+                                        hint: "Forcer les utilisateurs à fournir des réponses aux questions de sécurité pendant la connexion si l'utilisateur a répondu moins que cette valeur",
+                                        label: "Nombre minimum de questions de sécurité forcées à répondre"
+                                    },
+                                    recoveryCallbackRegex: {
+                                        hint: "URL de rappel de récupération Regex",
+                                        label: "URL de rappel de récupération Regex"
+                                    },
+                                    recoveryAutoLoginEnable: {
+                                        hint: "L'utilisateur sera connecté automatiquement après avoir terminé l'assistant de réinitialisation du mot de passe",
+                                        label: "Activer la connexion automatique après réinitialisation du mot de passe"
+                                    }
+                                }
+                            },
+                            adminForcedPasswordReset: {
+                                friendlyName: "Réinitialisation du mot de passe",
+                                properties: {
+                                    recoveryAdminPasswordResetRecoveryLink: {
+                                        hint: "L'utilisateur est averti avec un lien pour réinitialiser le mot de passe",
+                                        label: "Activer la réinitialisation du mot de passe via l'e-mail de récupération"
+                                    },
+                                    recoveryAdminPasswordResetOtp: {
+                                        hint: "L'utilisateur est averti avec un mot de passe unique pour essayer avec la connexion SSO",
+                                        label: "Activer la réinitialisation du mot de passe via OTP"
+                                    },
+                                    recoveryAdminPasswordResetOffline: {
+                                        hint: "Un OTP généré et stocké dans les revendications des utilisateurs",
+                                        label: "Activer la réinitialisation du mot de passe hors ligne"
+                                    },
+                                    recoveryAdminPasswordResetExpiryTime: {
+                                        hint: "Le temps de validité de l'administrateur de réinitialisation du mot de passe forcé en quelques minutes",
+                                        label: "Administrateur de réinitialisation de mot de passe forcé le code d'expiration du code"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    otherSettings : {
+                        name: "Autres réglages",
+                        connectors: {
+                            piiController: {
+                                friendlyName: "Contrôleur d'information sur le consentement",
+                                properties: {
+                                    piiController: {
+                                        hint: "Nom du premier contrôleur qui collecte les données",
+                                        label: "Nom du contrôleur"
+                                    },
+                                    contact: {
+                                        hint: "Nom de contact du contrôleur",
+                                        label: "Nom du contact"
+                                    },
+                                    email: {
+                                        hint: "Adresse e-mail de contact du contrôleur",
+                                        label: "Adresse e-mail"
+                                    },
+                                    phone: {
+                                        hint: "Numéro de téléphone de contact du contrôleur",
+                                        label: "Numéro de téléphone"
+                                    },
+                                    onBehalf: {
+                                        hint: "Un processeur d'informations utilisateur (PII) agissant au nom d'un contrôleur ou d'un processeur PII",
+                                        label: "De la part de"
+                                    },
+                                    piiControllerUrl: {
+                                        hint: "Une URL pour contacter le contrôleur",
+                                        label: "URL"
+                                    },
+                                    addressCountry: {
+                                        hint: "Pays du contrôleur",
+                                        label: "Pays"
+                                    },
+                                    addressLocality: {
+                                        hint: "Localité du contrôleur",
+                                        label: "Localité"
+                                    },
+                                    addressRegion: {
+                                        hint: "Région du contrôleur",
+                                        label: "Région"
+                                    },
+                                    postOfficeBoxNumber: {
+                                        hint: "Numéro de boîte de bureau du contrôleur",
+                                        label: "Numéro de boîte de bureau"
+                                    },
+                                    postalCode: {
+                                        hint: "Code postal du contrôleur",
+                                        label: "code postal"
+                                    },
+                                    streetAddress: {
+                                        hint: "Adresse de rue du contrôleur",
+                                        label: "Adresse de rue"
+                                    }
+                                }
+                            },
+                            analyticsEngine: {
+                                friendlyName: "Analyse des serveurs d'identité [dépréciés]",
+                                messages: {
+                                    deprecation: {
+                                        description: "WSO2 Identity Server Analytics est désormais obsolète. Utilisez <1> ELK Analytics </1> à la place.",
+                                        heading: "Décousue"
+                                    }
+                                },
+                                properties: {
+                                    adaptiveAuthenticationAnalyticsReceiver: {
+                                        hint: "Hôte cible",
+                                        label: "Hôte cible"
+                                    },
+                                    adaptiveAuthenticationAnalyticsBasicAuthEnabled: {
+                                        hint: "Activer l'authentification de base",
+                                        label: "Activer l'authentification de base"
+                                    },
+                                    adaptiveAuthenticationAnalyticsBasicAuthUsername: {
+                                        hint: "Target Host Secured User ID",
+                                        label: "Identifiant d'utilisateur"
+                                    },
+                                    secretAdaptiveAuthenticationAnalyticsBasicAuthPassword: {
+                                        hint: "Secret sécurisé l'hôte cible",
+                                        label: "Secrète"
+                                    },
+                                    adaptiveAuthenticationAnalyticsHttpConnectionTimeout: {
+                                        hint: "Délai de connexion HTTP en millisecondes",
+                                        label: "Délai d'expiration de la connexion HTTP"
+                                    },
+                                    adaptiveAuthenticationAnalyticsHttpReadTimeout: {
+                                        hint: "HTTP Read Timeout en millisecondes",
+                                        label: "httpReadTimeout"
+                                    },
+                                    adaptiveAuthenticationAnalyticsHttpConnectionRequestTimeout: {
+                                        hint: "Timeout de demande de connexion HTTP en millisecondes",
+                                        label: "Timeout de demande de connexion HTTP"
+                                    },
+                                    adaptiveAuthenticationAnalyticsHostnameVerfier: {
+                                        hint: "Vérification du nom d'hôte.(Strict, perte_all)",
+                                        label: "Vérification du nom d'hôte"
+                                    }
+                                }
+                            },
+                            elasticAnalyticsEngine: {
+                                friendlyName: "Analytique des wapitis",
+                                properties: {
+                                    adaptiveAuthenticationElasticReceiver: {
+                                        hint: "Hôte elasticsearch",
+                                        label: "Hôte elasticsearch"
+                                    },
+                                    adaptiveAuthenticationElasticBasicAuthEnabled: {
+                                        hint: "Activer l'authentification de base",
+                                        label: "Activer l'authentification de base"
+                                    },
+                                    adaptiveAuthenticationElasticBasicAuthUsername: {
+                                        hint: "Nom d'utilisateur Elasticsearch",
+                                        label: "Nom d'utilisateur Elasticsearch"
+                                    },
+                                    secretAdaptiveAuthenticationElasticBasicAuthPassword: {
+                                        hint: "Mot de passe de l'utilisateur Elasticsearch",
+                                        label: "Mot de passe Elasticsearch"
+                                    },
+                                    adaptiveAuthenticationElasticHttpConnectionTimeout: {
+                                        hint: "Délai de connexion HTTP en millisecondes",
+                                        label: "Délai d'expiration de la connexion HTTP"
+                                    },
+                                    adaptiveAuthenticationElasticHttpReadTimeout: {
+                                        hint: "HTTP Read Timeout en millisecondes",
+                                        label: "httpReadTimeout"
+                                    },
+                                    adaptiveAuthenticationElasticHttpConnectionRequestTimeout: {
+                                        hint: "Timeout de demande de connexion HTTP en millisecondes",
+                                        label: "Timeout de demande de connexion HTTP"
+                                    },
+                                    adaptiveAuthenticationElasticHostnameVerfier: {
+                                        hint: "Vérification du nom d'hôte.(Strict, perte_all)",
+                                        label: "Vérification du nom d'hôte"
+                                    }
+                                }
+                            },
+                            userClaimUpdate: {
+                                friendlyName: "Mise à jour de la réclamation des utilisateurs",
+                                properties: {
+                                    userClaimUpdateEmailEnableVerification: {
+                                        hint: "Déclencher une notification de vérification lorsque l'adresse e-mail de l'utilisateur est mise à jour.",
+                                        label: "Activer la vérification des e-mails utilisateur lors de la mise à jour"
+                                    },
+                                    userClaimUpdateEmailVerificationCodeExpiryTime: {
+                                        hint: "Temps de validité du lien de confirmation par e-mail en quelques minutes.",
+                                        label: "Vérification par e-mail sur le lien de mise à jour Temps d'expiration"
+                                    },
+                                    userClaimUpdateEmailEnableNotification: {
+                                        hint: "Déclenchez une notification à l'adresse e-mail existante lorsque l'utilisateur tente de mettre à jour l'adresse e-mail existante.",
+                                        label: "Activer la notification par e-mail utilisateur lors de la mise à jour"
+                                    },
+                                    userClaimUpdateMobileNumberEnableVerification: {
+                                        hint: "Déclencher une vérification SMS OTP lorsque le numéro de mobile de l'utilisateur est mis à jour.",
+                                        label: "Activer la vérification du numéro de mobile de l'utilisateur lors de la mise à jour"
+                                    },
+                                    userClaimUpdateMobileNumberVerificationCodeExpiryTime: {
+                                        hint: "Temps de validité de la confirmation du numéro de mobile OTP en quelques minutes.",
+                                        label: "Vérification du numéro de mobile sur la mise à jour du temps d'expiration SMS OTP"
+                                    },
+                                    userClaimUpdateMobileNumberEnableVerificationByPrivilegedUser: {
+                                        hint: "Permettez aux utilisateurs privilégiés d'initier la vérification du numéro de mobile lors de la mise à jour.",
+                                        label: "Enable mobile number verification by privileged users"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    multiFactorAuthenticators : {
+                        name: "Authentificateurs multi-facteurs",
+                        connectors: {
+                            backupCodeAuthenticator: {
+                                friendlyName: "Authentificateur de code de sauvegarde",
+                                properties: {
+                                    backupCodeBackupCodeLength: {
+                                        hint: "Longueur d'un code de sauvegarde",
+                                        label: "Longueur de code de sauvegarde"
+                                    },
+                                    backupCodeBackupCodeSize: {
+                                        hint: "Nombre maximum de codes de sauvegarde",
+                                        label: "Taille du code de sauvegarde"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 disabled: "Désactivé",
                 enabled: "Activé",
                 form: {
@@ -4585,7 +6197,8 @@ export const console: ConsoleNS = {
                             message: "Erreur de récupération"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la récupération des catégories de connecteurs.",
+                            description: "Une erreur s'est produite lors de la récupération des catégories " +
+                                "de connecteurs.",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
@@ -4638,12 +6251,13 @@ export const console: ConsoleNS = {
                             }
                         }
                     },
-                     roles: {
-                         addRolesModal: {
-                             heading: "Mettre à jour les rôles de groupe",
-                             subHeading: "Ajoutez de nouveaux rôles ou supprimez les rôles existants attribués au groupe."
-                         },
-                         subHeading: "Ajoutez ou supprimez les rôles auxquels ce groupe est affecté et " +
+                    roles: {
+                        addRolesModal: {
+                            heading: "Mettre à jour les rôles de groupe",
+                            subHeading: "Ajoutez de nouveaux rôles ou supprimez les rôles existants attribués " +
+                                "au groupe."
+                        },
+                        subHeading: "Ajoutez ou supprimez les rôles auxquels ce groupe est affecté et " +
                              "notez que cela affectera l'exécution de certaines tâches."
                     }
                 },
@@ -4651,7 +6265,8 @@ export const console: ConsoleNS = {
                     columns: {
                         actions: "Actions",
                         lastModified: "Dernière modification",
-                        name: "Nom"
+                        name: "Nom",
+                        source: "Magasin d'utilisateurs"
                     },
                     storeOptions: "Sélectionner un annuaire"
                 },
@@ -4740,7 +6355,8 @@ export const console: ConsoleNS = {
                 notifications: {
                     pin: {
                         success: {
-                            description: "Le panneau d'aide apparaîtra toujours {{state}} sauf si vous le modifiez explicitement.",
+                            description: "Le panneau d'aide apparaîtra toujours {{state}} sauf si vous le " +
+                                "modifiez explicitement.",
                             message: "Panneau d'aide {{state}}"
                         }
                     }
@@ -4763,7 +6379,7 @@ export const console: ConsoleNS = {
                         message: "Cette action est irréversible et supprimera définitivement la claim OIDC."
                     },
                     deleteScope: {
-                        assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
+                        assertionHint: "Veuillez confirmer votre action.",
                         content: "Si vous supprimez ce scope, vous ne pourrez pas le récupérer.." +
                             "Veuillez procéder avec prudence.",
                         header: "Etes-vous sûr ?",
@@ -4776,10 +6392,18 @@ export const console: ConsoleNS = {
                         emptyPlaceholder: {
                             action: "Ajouter un attribut",
                             subtitles: {
-                                0: "Il n'y a pas d'attributs ajoutés pour ce scope OIDC",
+                                0: "Il n'y a pas d'attributs ajoutés pour ce scope OIDC.",
                                 1: "Veuillez ajouter les attributs requis pour les visualiser ici."
                             },
                             title: "Pas d'attributs OIDC"
+                        },
+                        emptySearch: {
+                            action: "Voir tout",
+                            subtitles: {
+                                0: "Nous n'avons pas trouvé l'attribut recherché.",
+                                1: "Veuillez essayer un autre nom."
+                            },
+                            title: "Aucun résultat trouvé"
                         },
                         popupDelete: "Supprimer l'attribut",
                         searchClaims: "Recherche d'attributs",
@@ -4798,15 +6422,16 @@ export const console: ConsoleNS = {
                                 label: "Nom d'affichage",
                                 placeholder: "Entrez le nom d'affichage",
                                 validations: {
-                                    empty: "Le nom d'affichage est un champ obligatoire"
+                                    empty: "Ce champ ne peut pas être vide"
                                 }
                             },
                             scopeName: {
                                 label: "Nom du scope",
                                 placeholder: "Entrez le nom du scope",
                                 validations: {
-                                    empty: "Le nom du scope est un champ obligatoire",
-                                    invalid: "La portée contient des caractères non valides."
+                                    empty: "Ce champ ne peut pas être vide",
+                                    invalid: "La portée ne peut contenir que des caractères alphanumériques et _. " +
+                                    "Et doit avoir une longueur comprise entre 3 et 40 caractères."
                                 }
                             }
                         }
@@ -4939,7 +6564,7 @@ export const console: ConsoleNS = {
                             message: "Erreur de mise à jour"
                         },
                         genericError: {
-                            description: "Une erreur s'est produite lors de la mise à jour du scope OIDC.",
+                            description: "Une erreur s'est produite lors de la mise à jour du scope OIDC {{ scope }}.",
                             message: "Quelque chose s'est mal passé"
                         },
                         success: {
@@ -4962,7 +6587,7 @@ export const console: ConsoleNS = {
                         action: "Voir tout",
                         subtitles: {
                             0: "Nous n'avons pas trouvé la portée que vous avez recherchée.",
-                            1: "Veuillez essayer un autre nom.",
+                            1: "Veuillez essayer un autre nom."
                         },
                         title: "Aucun résultat trouvé"
                     }
@@ -4991,6 +6616,283 @@ export const console: ConsoleNS = {
                         title: "Créer le scope OIDC"
                     }
                 }
+            },
+            organizations: {
+                advancedSearch: {
+                    form: {
+                        inputs: {
+                            filterAttribute: {
+                                placeholder: "Par exemple. Nom etc"
+                            },
+                            filterCondition: {
+                                placeholder: "Par exemple. Commence par etc.."
+                            },
+                            filterValue: {
+                                placeholder: "Entrez la valeur à rechercher"
+                            }
+                        }
+                    },
+                    placeholder: "Rechercher par nom"
+                },
+                confirmations: {
+                    deleteOrganization: {
+                        assertionHint: "Veuillez confirmer votre action.",
+                        content: "Si vous supprimez cette organisation, toutes les données associées à cette " +
+                            "organisation seront supprimées. Veuillez procéder avec prudence.",
+                        header: "Êtes-vous sûr?",
+                        message: "Cette action est irréversible et supprimera entièrement l'organisation."
+                    }
+                },
+                edit: {
+                    attributes: {
+                        hint: "Configurer les attributs de l'organisation",
+                        key: "Nom",
+                        keyRequiredErrorMessage: "Le nom est requis",
+                        value: "Évaluer",
+                        valueRequiredErrorMessage: "Valeur est requise"
+                    },
+                    back: "Retour",
+                    dangerZone: {
+                        disableOrganization: {
+                            disableActionTitle: "Désactiver l'organisation",
+                            enableActionTitle: "Activer l'organisation",
+                            subheader: "La désactivation d'une organisation peut vous faire perdre l'accès à" +
+                                " l'organisation associée. Procéder avec prudence."
+                        },
+                        subHeader: "Voulez-vous vraiment supprimer cette organisation?",
+                        title: "Supprimer l'organisation"
+                    },
+                    description: "Modifier l'organisation",
+                    fields: {
+                        created: {
+                            ariaLabel: "Établi",
+                            label: "Établi"
+                        },
+                        description: {
+                            ariaLabel: "Description de l'organisation",
+                            label: "Description de l'organisation",
+                            placeholder: "Entrez la description de l'organisation"
+                        },
+                        domain: {
+                            ariaLabel: "Domaine de l'organisation",
+                            label: "Domaine de l'organisation"
+                        },
+                        id: {
+                            ariaLabel: "ID de l'organisation",
+                            label: "ID de l'organisation"
+                        },
+                        lastModified: {
+                            ariaLabel: "Dernière modification",
+                            label: "Dernière modification"
+                        },
+                        name: {
+                            ariaLabel: "Nom de l'organisation",
+                            label: "Nom de l'organisation",
+                            placeholder: "Entrez le nom de l'organisation"
+                        },
+                        type: {
+                            ariaLabel: "Type d'Organisation",
+                            label: "Type d'Organisation"
+                        }
+                    },
+                    tabTitles: {
+                        attributes: "Les attributs",
+                        overview: "Aperçu"
+                    }
+                },
+                forms: {
+                    addOrganization: {
+                        description: {
+                            label: "La description",
+                            placeholder: "Entrez la description"
+                        },
+                        domainName: {
+                            label: "Nom de domaine",
+                            placeholder: "Entrez le nom de domaine",
+                            validation: {
+                                duplicate: "Le nom de domaine existe déjà",
+                                empty: "Le nom de domaine est requis"
+                            }
+                        },
+                        name: {
+                            label: "nom de l'organisation",
+                            placeholder: "Entrez le nom de l'organisation",
+                            validation: {
+                                duplicate: "Le nom de l'organisation existe déjà",
+                                empty: "Le nom de l'organisation est requis"
+                            }
+                        },
+                        structural: "De construction",
+                        tenant: "Locataire",
+                        type: "Taper"
+                    }
+                },
+                homeList: {
+                    description: "Consultez la liste de toutes les organisations disponibles.",
+                    name: "Toutes les organisations"
+                },
+                list: {
+                    actions: {
+                        add: "Ajouter une organisation"
+                    },
+                    columns: {
+                        actions: "Actions",
+                        name: "Nom"
+                    }
+                },
+                modals: {
+                    addOrganization: {
+                        header: "Ajouter une organisation",
+                        subtitle1: "Créez une nouvelle organisation dans {{parent}}.",
+                        subtitle2: "Créer une nouvelle organisation."
+                    }
+                },
+                notifications: {
+                    addOrganization: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur lors de l'ajout de l'organisation"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de l'ajout de l'organisation",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        success: {
+                            description: "L'organisation a bien été ajoutée",
+                            message: "Organisation ajoutée avec succès"
+                        }
+                    },
+                    deleteOrganization: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur lors de la suppression de l'organisation"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la suppression de l'organisation",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        success: {
+                            description: "L'organisation a bien été supprimée",
+                            message: "Organisation supprimée avec succès"
+                        }
+                    },
+                    deleteOrganizationWithSubOrganizationError: "L'organisation {{ organizationName }} ne peut pas" +
+                        " être supprimée car elle possède une ou plusieurs sous-organisations.",
+                    disableOrganization: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur lors de la désactivation de l'organisation"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la désactivation de l'organisation",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        success: {
+                            description: "L'organisation a bien été désactivée",
+                            message: "Organisation désactivée avec succès"
+                        }
+                    },
+                    disableOrganizationWithSubOrganizationError: "L'organisation {{ organizationName }} ne peut pas" +
+                        " être désactivée car elle possède une ou plusieurs sous-organisations.",
+                    enableOrganization: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur lors de l'activation de l'organisation"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de l'activation de l'organisation",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        success: {
+                            description: "L'organisation a bien été activée",
+                            message: "Organisation activée avec succès"
+                        }
+                    },
+                    fetchOrganization: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur lors de la récupération de l'organisation"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la récupération de l'organisation",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        success: {
+                            description: "L'organisation a bien été récupérée",
+                            message: "Organisation récupérée avec succès"
+                        }
+                    },
+                    getOrganizationList: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur lors de l'obtention de la liste des organisations"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de l'obtention de la liste des organisations",
+                            message: "Quelque chose s'est mal passé"
+                        }
+                    },
+                    updateOrganization: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur lors de la mise à jour de l'organisation"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la mise à jour de l'organisation",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        success: {
+                            description: "Mise à jour réussie de l'organisation",
+                            message: "Organisation mise à jour avec succès"
+                        }
+                    },
+                    updateOrganizationAttributes: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur lors de la mise à jour des attributs de l'organisation"
+                        },
+                        genericError: {
+                            description: "Une erreur s'est produite lors de la mise à jour des attributs " +
+                                "de l'organisation",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        success: {
+                            description: "Mise à jour réussie des attributs de l'organisation",
+                            message: "Les attributs de l'organisation ont bien été mis à jour"
+                        }
+                    }
+                },
+                placeholders: {
+                    emptyList: {
+                        action: "Ajouter une organisation",
+                        subtitles: {
+                            0: "Il n'y a pas d'organisations pour le moment.",
+                            1: "Vous pouvez facilement ajouter une nouvelle organisation en",
+                            2: "en cliquant sur le bouton ci-dessous.",
+                            3: "Il n'y a aucune organisation sous {{parent}} pour le moment."
+                        },
+                        title: "Ajouter une nouvelle organisation"
+                    }
+                },
+                shareApplicationRadio: "Partager avec toutes les sous-organisations",
+                shareApplicationInfo: "Sélectionnez cette option pour partager l'application avec toutes " +
+                    "les sous-organisations existantes et toutes les nouvelles sous-organisations que vous " +
+                    "créez sous votre organisation actuelle.",
+                unshareApplicationRadio: "Annuler le partage avec toutes les sous-organisations",
+                shareWithSelectedOrgsRadio: "Partager uniquement avec les sous-organisations sélectionnées",
+                unshareApplicationInfo: "Sélectionnez cette option pour annuler le partage de l'application " +
+                    "avec toutes les sous-organisations existantes et toutes les nouvelles sous-organisations " +
+                    "que vous créez sous vos organisations actuelles.",
+                subTitle: "Créer et gérer des organisations.",
+                switching: {
+                    emptyList: "Il n'y a aucune organisation à afficher.",
+                    search: {
+                        placeholder: "Rechercher par nom"
+                    },
+                    goBack: "Retourner",
+                    subOrganizations: "Sous-organisations"
+                },
+                title: "Organisations"
             },
             overview: {
                 widgets: {
@@ -5275,8 +7177,9 @@ export const console: ConsoleNS = {
                                 validations: {
                                     duplicate: "Un {{type}} avec ce nom existe déjà.",
                                     empty: "Le nom de {{type}} est obligatoire",
-                                    invalid: "Un nom {{type}} ne peut contenir que des caractères alphanumériques, - et _. "+
-                                        "Et doit avoir une longueur comprise entre 3 et 30 caractères."
+                                    invalid: "Un nom {{type}} ne peut contenir que des caractères " +
+                                        "alphanumériques, - et _. Et doit avoir une longueur comprise entre 3 " +
+                                        "et 30 caractères."
                                 }
                             }
                         }
@@ -5310,7 +7213,8 @@ export const console: ConsoleNS = {
                                 listHeader: "Nom",
                                 searchPlaceholder: "Rechercher des utilisateurs"
                             },
-                            subHeading: "Ajouter de nouveaux utilisateurs ou supprimer les utilisateurs existants affectés a {{type}}."
+                            subHeading: "Ajouter de nouveaux utilisateurs ou supprimer les utilisateurs " +
+                                "existants affectés a {{type}}."
                         }
                     },
                     wizardSteps: {
@@ -5344,17 +7248,22 @@ export const console: ConsoleNS = {
                             update: "Mettre à jour"
                         },
                         confirmation: {
-                            assertionHint: "Veuillez taper <1>{{ roleName }}</1> pour confirmer.",
-                            content: "Si vous supprimez ce {{type}}, les permissions qui lui sont attachées seront supprimées et " +
-                                "les utilisateurs qui y sont rattachés ne pourront plus effectuer les actions prévues qui étaient " +
-                                "précédemment autorisées. Veuillez procéder avec prudence.",
+                            assertionHint: "Veuillez confirmer votre action.",
+                            content: "Si vous supprimez ce {{type}}, les permissions qui lui sont attachées " +
+                                "seront supprimées et les utilisateurs qui y sont rattachés ne pourront plus " +
+                                "effectuer les actions prévues qui étaient précédemment autorisées. " +
+                                "Veuillez procéder avec prudence.",
                             header: "Êtes-vous sûr ?",
-                            message: "Cette action est irréversible et supprimera définitivement le {{type}} sélectionné"
+                            message: "Cette action est irréversible et supprimera définitivement le {{type}} " +
+                                "sélectionné"
                         },
                         dangerZone: {
                             actionTitle: "Supprimer {{type}}",
+                            buttonDisableHint: "L'option de suppression est désactivée car ce {{type}} est géré " +
+                                "dans un magasin d'utilisateurs distant.",
                             header: "Supprimer {{type}}",
-                            subheader: "Une fois que vous avez supprimé le {{type}}, il n'y a plus de retour en arrière. Veuillez en être certain."
+                            subheader: "Une fois que vous avez supprimé le {{type}}, il n'y a plus de retour " +
+                                "en arrière. Veuillez en être certain."
                         },
                         fields: {
                             roleName: {
@@ -5368,7 +7277,8 @@ export const console: ConsoleNS = {
                     groups: {
                         addGroupsModal: {
                             heading: "Mettre à jour les groupes de rôles",
-                            subHeading: "Ajoutez de nouveaux groupes ou supprimez les groupes existants affectés au rôle."
+                            subHeading: "Ajoutez de nouveaux groupes ou supprimez les groupes existants " +
+                                "affectés au rôle."
                         },
                         emptyPlaceholder: {
                             action: "Attribuer un groupe",
@@ -5409,12 +7319,14 @@ export const console: ConsoleNS = {
                     },
                     confirmations: {
                         deleteItem: {
-                            assertionHint: "Veuillez taper <1>{{ roleName }}</1> pour confirmer.",
-                            content: "Si vous supprimez ce {{type}}, les permissions qui y sont attachées seront supprimées et " +
-                                "les utilisateurs qui y sont rattachés ne pourront plus effectuer les actions prévues qui étaient " +
-                                "précédemment autorisées. Veuillez procéder avec prudence.",
+                            assertionHint: "Veuillez confirmer votre action.",
+                            content: "Si vous supprimez ce {{type}}, les permissions qui y sont attachées seront " +
+                                "supprimées et les utilisateurs qui y sont rattachés ne pourront plus effectuer " +
+                                "les actions prévues qui étaient précédemment autorisées. Veuillez procéder " +
+                                "avec prudence.",
                             header: "Êtes-vous sûr ?",
-                            message: "Cette action est irréversible et supprimera définitivement le {{type}} sélectionné"
+                            message: "Cette action est irréversible et supprimera définitivement le {{type}} " +
+                                "sélectionné"
                         }
                     },
                     emptyPlaceholders: {
@@ -5553,7 +7465,8 @@ export const console: ConsoleNS = {
                                 message: "Erreur de récupération"
                             },
                             genericError: {
-                                description: "Une erreur s'est produite lors de la récupération des configuration du domaine d'identité.",
+                                description: "Une erreur s'est produite lors de la récupération des configuration du " +
+                                    "domaine d'identité.",
                                 message: "Quelque chose s'est mal passé"
                             },
                             success: {
@@ -5567,7 +7480,8 @@ export const console: ConsoleNS = {
                                 message: "Erreur de mise à jour"
                             },
                             genericError: {
-                                description: "Une erreur s'est produite lors de la mise à jour des configuration du domaine d'identité.",
+                                description: "Une erreur s'est produite lors de la mise à jour des configuration du " +
+                                    "domaine d'identité.",
                                 message: "Erreur de mise à jour"
                             },
                             success: {
@@ -5579,6 +7493,7 @@ export const console: ConsoleNS = {
                 }
             },
             sidePanel: {
+                accountManagement: "Gestion de compte",
                 addEmailTemplate: "Ajouter un modèle d'e-mail",
                 addEmailTemplateLocale: "Ajouter une langue de modèle d'e-mail",
                 approvals: "Approbations",
@@ -5588,6 +7503,7 @@ export const console: ConsoleNS = {
                     certificates: "Certificats",
                     configurations: "Configurations",
                     general: "Général",
+                    organizations: "Gestion de l'organisation",
                     users: "Utilisateurs",
                     userstores: "Annuaires"
                 },
@@ -5605,8 +7521,15 @@ export const console: ConsoleNS = {
                 generalConfigurations: "Général",
                 groups: "Groupes",
                 localDialect: "Dialecte local",
+                loginAttemptsSecurity: "Sécurité des tentatives de connexion",
+                multiFactorAuthenticators: "Authentificateurs multi-facteurs",
+                organizations: "Organisations",
+                otherSettings: "Autres réglages",
                 overview: "Vue d'ensemble",
+                passwordPolicies: "Politiques de mot de passe",
+                remoteFetchConfig: "Configurations à distance",
                 roles: "Rôles",
+                userOnboarding: "Intégration des utilisateurs",
                 users: "Utilisateurs",
                 userstoreTemplates: "Modèles d'annuaires",
                 userstores: "Annuaires"
@@ -5638,9 +7561,16 @@ export const console: ConsoleNS = {
                 searchPlaceholder: "Rechercher un {{type}}"
             },
             user: {
+                deleteJITUser: {
+                    confirmationModal: {
+                        content: "Si vous supprimez cet utilisateur, l'utilisateur ne pourra pas se connecter à " +
+                            "Mon compte ou à toute autre application à laquelle l'utilisateur était abonné avant " +
+                            "la prochaine connexion de l'utilisateur à l'aide d'une option de connexion sociale."
+                    }
+                },
                 deleteUser: {
                     confirmationModal: {
-                        assertionHint: "Veuillez saisir <1>{{ userName }}</1> pour confirmer.",
+                        assertionHint: "Veuillez confirmer votre action.",
                         content: "Si vous supprimez cet utilisateur, l'utilisateur ne pourra pas se " +
                             "connecter à Mon compte ou à toute autre application à laquelle l'utilisateur " +
                             "était abonné auparavant. Veuillez procéder avec prudence.",
@@ -5650,9 +7580,10 @@ export const console: ConsoleNS = {
                 },
                 disableUser: {
                     confirmationModal: {
-                        assertionHint: "Veuillez saisir <1>{{ userName }}</1> pour confirmer.",
-                        content: "Si vous désactivez cet utilisateur, l'utilisateur ne pourra pas se connecter à" +
-                            " Mon compte ou à toute autre application à laquelle l'utilisateur était abonné auparavant.",
+                        assertionHint: "Veuillez confirmer votre action.",
+                        content: "Si vous désactivez cet utilisateur, l'utilisateur ne pourra pas se connecter à " +
+                            "Mon compte ou à toute autre application à laquelle l'utilisateur était abonné " +
+                            "auparavant.",
                         header: "Êtes-vous sûr?",
                         message: "Assurez-vous que l'utilisateur n'a plus besoin d'accéder au système."
                     }
@@ -5661,22 +7592,44 @@ export const console: ConsoleNS = {
                     dangerZoneGroup: {
                         deleteUserZone: {
                             actionTitle: "Supprimer l'utilisateur",
+                            buttonDisableHint: "L'option de suppression est désactivée car cet utilisateur est " +
+                                "géré dans un magasin d'utilisateurs distant.",
                             header: "Supprimer l'utilisateur",
-                            subheader: "Cette action est irréversible et supprimera définitivement l'utilisateur. " +
-                                "Êtes-vous ABSOLUMENT certain de vouloir supprimer cet utilisateur ?"
+                            subheader: "Cette action supprimera définitivement l'utilisateur de l'organisation. " +
+                                "Veuillez être certain avant de continuer."
                         },
                         disableUserZone: {
-                            actionTitle: "Supprimer l'utilisateur",
-                            header: "Supprimer l'utilisateur",
-                            subheader: "Cette action est irréversible et supprimera définitivement l'utilisateur. " +
-                                "Êtes-vous ABSOLUMENT certain de vouloir supprimer cet utilisateur ?"
+                            actionTitle: "Désactiver l'utilisateur",
+                            header: "Désactiver l'utilisateur",
+                            subheader: "Une fois que vous avez désactivé un compte, l'utilisateur ne peut pas " +
+                                "accéder au système."
                         },
                         header: "Zone sensible",
                         lockUserZone: {
-                            actionTitle: "Supprimer l'utilisateur",
-                            header: "Supprimer l'utilisateur",
-                            subheader: "Cette action est irréversible et supprimera définitivement l'utilisateur. " +
-                                "Êtes-vous ABSOLUMENT certain de vouloir supprimer cet utilisateur ?"
+                            actionTitle: "Verrouiller l'utilisateur",
+                            header: "Verrouiller l'utilisateur",
+                            subheader: "Une fois le compte verrouillé, l'utilisateur ne peut plus se connecter au " +
+                                "système."
+                        },
+                        passwordResetZone: {
+                            actionTitle: "Réinitialiser le mot de passe",
+                            buttonHint: "Ce compte utilisateur doit être déverrouillé pour réinitialiser le mot de " +
+                                "passe.",
+                            header: "Réinitialiser le mot de passe",
+                            subheader: "Une fois le mot de passe modifié, l'utilisateur ne pourra plus se connecter " +
+                                "à aucune application en utilisant le mot de passe actuel."
+                        },
+                        deleteAdminPriviledgeZone: {
+                            actionTitle: "Révoquer les privilèges",
+                            header: "Révoquer les privilèges d'administrateur",
+                            subheader: "Cette action supprimera les privilèges d'administrateur de l'utilisateur, " +
+                                "mais l'utilisateur continuera d'être dans l'organisation."
+                        }
+                    },
+                    dateOfBirth: {
+                        placeholder: {
+                            part1:"Entrer le",
+                            part2: "au format AAAA-MM-JJ"
                         }
                     }
                 },
@@ -5684,10 +7637,10 @@ export const console: ConsoleNS = {
                     addUserForm: {
                         buttons: {
                             radioButton: {
-                                label: "Sélectionner la méthode d'initialisation du mot de passe",
+                                label: "Sélectionnez la méthode pour réinitialiser le mot de passe utilisateur",
                                 options: {
                                     askPassword: "Invitez l'utilisateur à définir son propre mot de passe",
-                                    createPassword: "Définissez un mot de passe temporaire pour l'utilisateur"
+                                    createPassword: "Définissez un mot de passe pour l'utilisateur"
 
                                 }
                             }
@@ -5744,9 +7697,9 @@ export const console: ConsoleNS = {
                                 validations: {
                                     empty: "Le nom d'utilisateur est obligatoire",
                                     invalid: "Ce nom d'utilisateur n'est pas disponible.",
-                                    invalidCharacters: "Le nom d'utilisateur semble contenir des caractères non valides.",
-                                    regExViolation: "Nom d'utilisateur invalide. Il doit s'agir d'un e-mail valide " +
-                                        "contenant entre 3 et 30 caractères alphanumériques sans espaces."
+                                    invalidCharacters: "Le nom d'utilisateur semble contenir des caractères " +
+                                        "non valides.",
+                                    regExViolation: "S'il vous plaît, mettez une adresse email valide."
                                 }
                             }
                         },
@@ -5772,19 +7725,19 @@ export const console: ConsoleNS = {
                 },
                 lockUser: {
                     confirmationModal: {
-                        assertionHint: "Veuillez saisir <1>{{ userName }}</1> pour confirmer.",
-                        content: "Si vous verrouillez cet utilisateur, l'utilisateur ne pourra pas se connecter à Mon " +
-                            "compte ou à toute autre application à laquelle l'utilisateur était abonné auparavant. " +
-                            "Veuillez procéder avec prudence.",
+                        assertionHint: "Veuillez confirmer votre action.",
+                        content: "Si vous verrouillez ce compte, l'utilisateur ne pourra se" +
+                          " connecter à aucune des applications métier. Veuillez" +
+                          " procéder avec prudence.",
                         header: "Êtes-vous sûr?",
-                        message: "Assurez-vous que cet utilisateur ne doit pas être autorisé à se connecter au système."
+                        message: "Cette action verrouille le compte utilisateur."
                     }
                 },
                 modals: {
                     addUserWarnModal: {
                         heading: "Attention",
-                        message: "Veuillez noter qu'aucun rôle ne sera attribué au nouvel utilisateur. Si vous souhaitez " +
-                            "lui en attribuer, veuillez cliquer sur le bouton ci-dessous."
+                        message: "Veuillez noter qu'aucun rôle ne sera attribué au nouvel utilisateur. Si " +
+                            "vous souhaitez lui en attribuer, veuillez cliquer sur le bouton ci-dessous."
                     },
                     addUserWizard: {
                         buttons: {
@@ -5806,7 +7759,8 @@ export const console: ConsoleNS = {
                             passwordOption: {
                                 label: "Initialisation du mot de passe",
                                 message: {
-                                    0: "Une invitation sera envoyé à l'adresse {{email}} avec un lien d'initialisation.",
+                                    0: "Une invitation sera envoyé à l'adresse {{email}} avec un lien " +
+                                        "d'initialisation.",
                                     1: "Vous avez initialisé le mot de passe."
                                 }
                             },
@@ -5817,15 +7771,18 @@ export const console: ConsoleNS = {
                     changePasswordModal: {
                         button: "réinitialiser le mot de passe",
                         header: "Réinitialiser le mot de passe de l'utilisateur",
-                        message: "REMARQUE: veuillez noter qu'après avoir modifié le mot de passe, l'utilisateur ne " +
-                            "pourra plus se connecter à aucune application en utilisant le mot de passe actuel.",
                         hint: {
-                            forceReset: "REMARQUE: Veuillez noter qu'après avoir invité l'utilisateur à réinitialiser " +
-                                "le mot de passe, l'utilisateur ne pourra plus se connecter à aucune application en " +
-                                "utilisant le mot de passe actuel.",
-                            setPassword: "REMARQUE: veuillez noter qu'après avoir modifié le mot de passe, l'utilisateur ne " +
+                            forceReset: "ATTENTION: Veuillez noter qu'après avoir invité l'utilisateur à " +
+                                "réinitialiser le mot de passe, l'utilisateur ne pourra plus se connecter à " +
+                                "aucune application en utilisant le mot de passe actuel. Le lien de " +
+                                "éinitialisation du mot de passe sera " +
+                                "valide pendant {{codeValidityPeriod}} minutes.",
+                            setPassword: "ATTENTION: veuillez noter qu'après avoir modifié le mot de passe, " +
+                                "l'utilisateur ne " +
                                 "pourra plus se connecter à aucune application en utilisant le mot de passe actuel."
                         },
+                        message: "ATTENTION: veuillez noter qu'après avoir modifié le mot de passe, l'utilisateur ne " +
+                            "pourra plus se connecter à aucune application en utilisant le mot de passe actuel.",
                         passwordOptions: {
                             forceReset: "Inviter l'utilisateur à réinitialiser le mot de passe",
                             setPassword: "Définir un nouveau mot de passe pour l'utilisateur"
@@ -5834,27 +7791,20 @@ export const console: ConsoleNS = {
                 },
                 profile: {
                     fields: {
-                        /* eslint-disable @typescript-eslint/camelcase */
-                        addresses_home: "Adresse personnelle",
-                        addresses_work: "Adresse professionnelle",
+                        createdDate: "Date de création",
                         emails: "Email",
-                        emails_home: "E-mail personnel",
-                        emails_other: "Autre adresse e-mail",
-                        emails_work: "E-mail professionnel",
                         generic: {
                             default: "Ajouter l'attribut {{fieldName}}"
                         },
+                        modifiedDate: "Date modifiée",
                         name_familyName: "Nom de famille",
                         name_givenName: "Prénom",
                         oneTimePassword: "Mot de passe à usage unique",
                         phoneNumbers: "Numéros de téléphone",
-                        phoneNumbers_home: "Numéro de téléphone personnel",
-                        phoneNumbers_mobile: "Numéro de téléphone portable",
-                        phoneNumbers_other: "Autre numéro de téléphone",
-                        phoneNumbers_work: "Numéro de téléphone au professionnel",
+                        photos: "Photos",
                         profileUrl: "URL",
+                        userId: "Identifiant d'utilisateur",
                         userName: "Nom d'utilisateur"
-                        /* eslint-enable @typescript-eslint/camelcase */
                     },
                     forms: {
                         emailChangeForm: {
@@ -5950,6 +7900,7 @@ export const console: ConsoleNS = {
                             },
                             success: {
                                 description: "Le compte utilisateur a bien été désactivé",
+                                genericMessage: "Le compte utilisateur a bien été désactivé",
                                 message: "Le compte de {{name}} est désactivé"
                             }
                         },
@@ -5964,6 +7915,7 @@ export const console: ConsoleNS = {
                             },
                             success: {
                                 description: "Le compte d'utilisateur a bien été activé",
+                                genericMessage: "Le compte de l'utilisateur a bien été activé",
                                 message: "Le compte de {{name}} est activé"
                             }
                         },
@@ -5979,9 +7931,9 @@ export const console: ConsoleNS = {
                                 message: "Un problème est survenu"
                             },
                             success: {
-                                description: "La réinitialisation du mot de passe du compte utilisateur a été " +
-                                    "déclenchée avec succès",
-                                message: "Réinitialisation du mot de passe déclenchée avec succès"
+                                description: "La réinitialisation du mot de passe est lancée avec succès " +
+                                    "pour le compte d'utilisateur.",
+                                message: "Réinitialisation du mot de passe lancée"
                             }
                         },
                         getProfileInfo: {
@@ -6011,6 +7963,7 @@ export const console: ConsoleNS = {
                             },
                             success: {
                                 description: "Le compte d'utilisateur a été verrouillé avec succès.",
+                                genericMessage: "Le compte d'utilisateur a été verrouillé avec succès.",
                                 message: "Le compte de {{name}} est verrouillé"
                             }
                         },
@@ -6031,6 +7984,7 @@ export const console: ConsoleNS = {
                             },
                             success: {
                                 description: "Le compte utilisateur a été déverrouillé avec succès.",
+                                genericMessage: "Le compte utilisateur a été déverrouillé avec succès.",
                                 message: "Le compte de {{name}} est déverrouillé"
                             }
                         },
@@ -6040,7 +7994,8 @@ export const console: ConsoleNS = {
                                 message: "Une erreur s'est produite lors de la mise à jour des informations du profil"
                             },
                             genericError: {
-                                description: "Une erreur s'est produite lors de la mise à jour des informations du profil",
+                                description: "Une erreur s'est produite lors de la mise à jour des informations " +
+                                    "du profil",
                                 message: "Quelque chose s'est mal passé"
                             },
                             success: {
@@ -6053,7 +8008,23 @@ export const console: ConsoleNS = {
                     placeholders: {
                         SCIMDisabled: {
                             heading: "Cette fonctionnalité n'est pas disponible pour votre compte"
+                        },
+                        userProfile: {
+                            emptyListPlaceholder: {
+                                subtitles: "Les informations de profil ne sont pas disponibles pour cet utilisateur.",
+                                title: "Aucune information de profil"
+                            }
                         }
+                    }
+                },
+                revokeAdmin: {
+                    confirmationModal: {
+                        assertionHint: "Veuillez confirmer votre action.",
+                        content: "Si vous révoquez les privilèges d'administrateur de cet utilisateur, l'utilisateur " +
+                            "ne pourra pas se connecter à la console Asgardeo et ne pourra pas " +
+                            "effectuer d'opérations d'administration. Veuillez procéder avec prudence.",
+                        header: "Êtes-vous sûr?",
+                        message: "Cette action révoquera les privilèges d'administrateur de l'utilisateur."
                     }
                 },
                 updateUser: {
@@ -6090,7 +8061,8 @@ export const console: ConsoleNS = {
                             addUserGroups: {
                                 error: {
                                     description: "{{description}}",
-                                    message: "Une erreur s'est produite lors de la mise à jour des groupes de l'utilisateur"
+                                    message: "Une erreur s'est produite lors de la mise à jour des groupes " +
+                                        "de l'utilisateur"
                                 },
                                 genericError: {
                                     description: "Une erreur s'est produite lors de la mise à jour des groupes de " +
@@ -6120,7 +8092,8 @@ export const console: ConsoleNS = {
                             removeUserGroups: {
                                 error: {
                                     description: "{{description}}",
-                                    message: "Une erreur s'est produite lors de la mise à jour des groupes de l'utilisateur"
+                                    message: "Une erreur s'est produite lors de la mise à jour des groupes " +
+                                        "de l'utilisateur"
                                 },
                                 genericError: {
                                     description: "Une erreur s'est produite lors de la mise à jour des groupes de " +
@@ -6135,7 +8108,8 @@ export const console: ConsoleNS = {
                             updateUserGroups: {
                                 error: {
                                     description: "{{description}}",
-                                    message: "Une erreur s'est produite lors de la mise à jour des groupes de l'utilisateur"
+                                    message: "Une erreur s'est produite lors de la mise à jour des groupes " +
+                                        "de l'utilisateur"
                                 },
                                 genericError: {
                                     description: "Une erreur s'est produite lors de la mise à jour des groupes de " +
@@ -6156,6 +8130,14 @@ export const console: ConsoleNS = {
                                 "attribués à l'utilisateur."
                         },
                         editRoles: {
+                            confirmationModal: {
+                                assertionHint: "Veuillez confirmer votre action.",
+                                content: "La modification du rôle entraînera pour l'utilisateur soit la perte de " +
+                                    "l'accès, soit l'accès à certaines fonctionnalités. " +
+                                    "Veuillez procéder avec prudence.",
+                                header: "Êtes-vous sûr?",
+                                message: "Cette action modifiera le rôle de cet utilisateur."
+                            },
                             heading: "Rôles assignés",
                             popups: {
                                 viewPermissions: "Voir les permissions"
@@ -6182,7 +8164,8 @@ export const console: ConsoleNS = {
                             addUserRoles: {
                                 error: {
                                     description: "{{description}}",
-                                    message: "Une erreur s'est produite lors de la mise à jour des rôles de l'utilisateur"
+                                    message: "Une erreur s'est produite lors de la mise à jour des rôles " +
+                                        "de l'utilisateur"
                                 },
                                 genericError: {
                                     description: "Une erreur s'est produite lors de la mise à jour des rôles de " +
@@ -6200,7 +8183,8 @@ export const console: ConsoleNS = {
                                     message: "Une erreur s'est produite lors de la récupération de la liste des rôles"
                                 },
                                 genericError: {
-                                    description: "Une erreur s'est produite lors de la récupération de la liste des rôles",
+                                    description: "Une erreur s'est produite lors de la récupération de la liste " +
+                                        "des rôles",
                                     message: "Quelque chose s'est mal passé"
                                 },
                                 success: {
@@ -6211,7 +8195,8 @@ export const console: ConsoleNS = {
                             removeUserRoles: {
                                 error: {
                                     description: "{{description}}",
-                                    message: "Une erreur s'est produite lors de la mise à jour des rôles de l'utilisateur"
+                                    message: "Une erreur s'est produite lors de la mise à jour des rôles de " +
+                                        "l'utilisateur"
                                 },
                                 genericError: {
                                     description: "Une erreur s'est produite lors de la mise à jour des rôles " +
@@ -6226,7 +8211,8 @@ export const console: ConsoleNS = {
                             updateUserRoles: {
                                 error: {
                                     description: "{{description}}",
-                                    message: "Une erreur s'est produite lors de la mise à jour des rôles de l'utilisateur"
+                                    message: "Une erreur s'est produite lors de la mise à jour des rôles de " +
+                                        "l'utilisateur"
                                 },
                                 genericError: {
                                     description: "Une erreur s'est produite lors de la mise à jour des rôles " +
@@ -6268,7 +8254,7 @@ export const console: ConsoleNS = {
                             }
                         }
                     },
-                    placeholder: "Rechercher par nom d'utilisateur"
+                    placeholder: "Rechercher par e-mail"
                 },
                 all: {
                     heading: "Utilisateurs",
@@ -6282,7 +8268,7 @@ export const console: ConsoleNS = {
                 },
                 confirmations: {
                     terminateAllSessions: {
-                        assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
+                        assertionHint: "Veuillez confirmer votre action.",
                         content: "Si vous procédez à cette action, l'utilisateur sera déconnecté de toutes les " +
                             "sessions actives. Ils perdront la progression de toutes les tâches en cours. " +
                             "Veuillez procéder avec prudence.",
@@ -6291,12 +8277,26 @@ export const console: ConsoleNS = {
                             "actives."
                     },
                     terminateSession: {
-                        assertionHint: "Veuillez taper <1>{{ name }}</1> pour confirmer.",
+                        assertionHint: "Veuillez confirmer votre action.",
                         content: "Si vous procédez à cette action, l'utilisateur sera déconnecté de la session " +
                             "sélectionnée. Ils perdront la progression de toutes les tâches en cours. Veuillez " +
                             "procéder avec prudence.",
                         header: "Êtes-vous sûr?",
                         message: "Cette action est irréversible et mettra fin définitivement à la session."
+                    }
+                },
+                consumerUsers: {
+                    fields: {
+                        username: {
+                            label: "Nom d'utilisateur",
+                            placeholder: "Veuillez saisir un nom d'utilisateur",
+                            validations: {
+                                empty: "Le nom d'utilisateur est obligatoire",
+                                invalid: "Ce nom d'utilisateur n'est pas disponible.",
+                                invalidCharacters: "Le nom d'utilisateur semble contenir des caractères non valides.",
+                                regExViolation: "S'il vous plaît, mettez une adresse email valide."
+                            }
+                        }
                     }
                 },
                 editUser: {
@@ -6309,11 +8309,27 @@ export const console: ConsoleNS = {
                         }
                     }
                 },
-
                 forms: {
                     validation: {
+                        dateFormatError: "Le format du {{field}} saisi est incorrect. Le format valide est YYYY-MM-DD.",
                         formatError: "Le format du {{field}} saisi est incorrect.",
-                        dateFormatError: "Le format du {{field}} saisi est incorrect. Le format valide est YYYY-MM-DD."
+                        futureDateError: "La date que vous avez saisie pour le champ {{field}} n'est pas valide.",
+                        mobileFormatError: "Le format du {{field}} saisi est incorrect. Le format valide est [+]"+
+                            "[indicatif du pays][indicatif régional][numéro de téléphone local]."
+                    }
+                },
+                guestUsers: {
+                    fields: {
+                        username: {
+                            label: "Nom d'utilisateur",
+                            placeholder: "Veuillez saisir un nom d'utilisateur",
+                            validations: {
+                                empty: "Le nom d'utilisateur est obligatoire",
+                                invalid: "Ce nom d'utilisateur n'est pas disponible.",
+                                invalidCharacters: "Le nom d'utilisateur semble contenir des caractères non valides.",
+                                regExViolation: "S'il vous plaît, mettez une adresse email valide."
+                            }
+                        }
                     }
                 },
                 list: {
@@ -6364,6 +8380,34 @@ export const console: ConsoleNS = {
                             description: "Les utilisateurs ont été récupérés avec succès.",
                             message: "Récupération des utilisateurs réussie"
                         }
+                    },
+                    getAdminRole: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur lors de la récupération du rôle d'administrateur"
+                        },
+                        genericError: {
+                            description: "Impossible de récupérer les rôles d'administrateur.",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        success: {
+                            description: "Récupération réussie des rôles d'administrateur.",
+                            message: "Récupération du rôle d'administrateur réussie"
+                        }
+                    },
+                    revokeAdmin: {
+                        error: {
+                            description: "{{description}}",
+                            message: "Erreur lors de la révocation des privilèges d'administrateur"
+                        },
+                        genericError: {
+                            description: "Impossible de révoquer les privilèges d'administrateur.",
+                            message: "Quelque chose s'est mal passé"
+                        },
+                        success: {
+                            description: "Révocation réussie des privilèges d'administrateur.",
+                            message: "Les privilèges d'administrateur ont bien été révoqués"
+                        }
                     }
                 },
                 placeholders: {
@@ -6391,10 +8435,11 @@ export const console: ConsoleNS = {
                                 terminateSession: "Terminer la session"
                             },
                             labels: {
+                                activeApplication: "Applications actives",
                                 browser: "Navigateur",
                                 deviceModel: "Modèle d'appareil",
                                 ip: "Adresse IP",
-                                lastAccessed: "Dernier accès",
+                                lastAccessed: "Dernier accès {{ date }}",
                                 loggedInAs: "Connecté sous <1>{{ app }}</1> en tant que <3>{{ user }}</3>",
                                 loginTime: "Heure de connexion",
                                 os: "Système opérateur",
@@ -6402,7 +8447,25 @@ export const console: ConsoleNS = {
                             }
                         }
                     },
+                    dangerZones: {
+                        terminate: {
+                            actionTitle: "Déconnecter",
+                            header: "Se déconnecter",
+                            subheader: "L'accès à votre compte depuis cet appareil sera supprimé."
+                        }
+                    },
                     notifications: {
+                        getAdminUser: {
+                            error: {
+                                description: "{{ description }}",
+                                message: "Erreur de récupération"
+                            },
+                            genericError: {
+                                description: "Une erreur s'est produite lors de la récupération du type" +
+                                    "d'utilisateur actuel.",
+                                message: "Erreur de récupération"
+                            }
+                        },
                         getUserSessions: {
                             error: {
                                 description: "{{ description }}",
@@ -6521,7 +8584,7 @@ export const console: ConsoleNS = {
                     content: "En supprimant cet annuaire, vous supprimerez également toute sa " +
                         + " configuration. Veuillez procéder avec prudence.",
                     header: "Êtes-vous sûr ?",
-                    hint: "Veuillez saisir <1>{{name}}</1> pour confirmer.",
+                    hint: "Veuillez confirmer votre action.",
                     message: "Cette action est irréversible et supprimera définitivement "
                         + " l'annuaire sélectionné ainsi que ses configurations."
                 },
@@ -6535,7 +8598,8 @@ export const console: ConsoleNS = {
                     disable: {
                         actionTitle: "Activer Userstore",
                         header: "Activer Userstore",
-                        subheader: "La désactivation d'un magasin d'utilisateurs peut vous faire perdre l'accès aux utilisateurs du magasin d'utilisateurs." +
+                        subheader: "La désactivation d'un magasin d'utilisateurs peut vous faire perdre l'accès " +
+                            "aux utilisateurs du magasin d'utilisateurs." +
                             "Procéder avec prudence."
                     }
                 },
@@ -6576,9 +8640,16 @@ export const console: ConsoleNS = {
                             message: "Annuaire ajouté avec succès !"
                         }
                     },
+                    apiLimitReachedError: {
+                        error: {
+                            description: "Vous avez atteint le nombre maximum de magasins d'utilisateurs autorisés.",
+                            message: "Échec de la création du magasin d'utilisateurs"
+                        }
+                    },
                     delay: {
-                    description: "La mise à jour de la liste des annuaires peut prendre un peu de temps. "
-                            + "Veuillez rafraîchir dans quelques instants pour afficher la liste des annuaires mis à jour.",
+                        description: "La mise à jour de la liste des annuaires peut prendre un peu de temps. "
+                            + "Veuillez rafraîchir dans quelques instants pour afficher la liste des annuaires mis à " +
+                        "jour.",
                         message: "Mise à jour différée de la liste des annuaires"
                     },
                     deleteUserstore: {
@@ -6685,7 +8756,7 @@ export const console: ConsoleNS = {
                     darkMode: "Mode sombre",
                     delete: "Suppression",
                     read: "Lecture",
-                    reset: "Réinitialiser",
+                    reset: "Réinitialiser les modifications",
                     title: "Types de requêtes SQL",
                     update: "Mise à jour"
                 },
@@ -6698,6 +8769,47 @@ export const console: ConsoleNS = {
                         user: "Utilisateurs"
                     }
                 }
+            },
+            validation: {
+                fetchValidationConfigData: {
+                    error: {
+                        description: "{{description}}",
+                        message: "Erreur de récupération"
+                    },
+                    genericError: {
+                        description: "Impossible de récupérer les données de configuration de validation.",
+                        message: "Quelque chose s'est mal passé"
+                    }
+                },
+                validationError: {
+                    minMaxMismatch: "La longueur minimale doit être inférieure à la longueur maximale.",
+                    uniqueChrMismatch: "Le nombre de caractères uniques doit être inférieur à la longueur " +
+                        "minimale du mot de passe.",
+                    consecutiveChrMismatch: "Le nombre de caractères consécutifs doit être inférieur à la " +
+                        "longueur minimale du mot de passe.",
+                    invalidConfig: "Impossible de créer un mot de passe avec les configurations ci-dessus.",
+                    minLimitError: "La longueur minimale ne peut pas être inférieure à 8.",
+                    maxLimitError: "La longueur maximale ne peut pas être supérieure à 30.",
+                    wrongCombination: "La combinaison n'est pas autorisée"
+                },
+                notifications: {
+                    error: {
+                        description: "{{description}}",
+                        message: "Erreur de mise à jour"
+                    },
+                    genericError: {
+                        description: "Échec de la mise à jour de la configuration de validation du mot de passe.",
+                        message: "Quelque chose s'est mal passé"
+                    },
+                    success: {
+                        description: "Configuration de la validation du mot de passe mise à jour avec succès.",
+                        message: "Mise à jour réussie"
+                    }
+                },
+                pageTitle: "Validation du mot de passe",
+                description: "Personnalisez les règles de validation des mots de passe pour vos utilisateurs.",
+                goBackToApplication: "Revenir à l'application",
+                goBackToValidationConfig: "Revenir à la sécurité du compte"
             }
         },
         notifications: {
@@ -6779,7 +8891,7 @@ export const console: ConsoleNS = {
                 title: "Modèles d'e-mails"
             },
             emailTemplatesWithDisplayName: {
-                backButton: "Revenir aux applications",
+                backButton: "Revenir aux Applications",
                 subTitle: null,
                 title: "Modèle d'e-mail - {{displayName}}"
             },
@@ -6795,6 +8907,10 @@ export const console: ConsoleNS = {
                 backButton: "Revenir aux scopes",
                 subTitle: "Ajouter ou supprimer des attributs OIDC du scope",
                 title: "Modifier le scope : {{ name }}"
+            },
+            organizations: {
+                subTitle: "Créer et gérer des organisations.",
+                title: "Organisations"
             },
             overview: {
                 subTitle: "Configurer et gérer les utilisateurs, les rôles, les claims " +
@@ -6819,7 +8935,7 @@ export const console: ConsoleNS = {
                 title: "Utilisateurs"
             },
             usersEdit: {
-                backButton: "Revenir aux utilisateurs",
+                backButton: "Revenir aux Utilisateurs",
                 subTitle: "{{name}}",
                 title: "{{email}}"
             }

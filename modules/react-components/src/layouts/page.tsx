@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,16 +16,19 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, PropsWithChildren, ReactElement } from "react";
+import { Helmet } from "react-helmet";
 import { Divider } from "semantic-ui-react";
 import { PageHeader, PageHeaderPropsInterface } from "../components";
 
 /**
  * Page layout component Prop types.
  */
-export interface PageLayoutPropsInterface extends PageHeaderPropsInterface, TestableComponentInterface {
+export interface PageLayoutPropsInterface extends PageHeaderPropsInterface, TestableComponentInterface,
+    IdentifiableComponentInterface {
+
     /**
      * Flag to enable/disable content top margin.
      */
@@ -39,6 +42,10 @@ export interface PageLayoutPropsInterface extends PageHeaderPropsInterface, Test
      */
     padded?: boolean;
     /**
+     * Page name to display in the browser tab.
+     */
+    pageTitle?: string;
+    /**
      * Flag to enable/disable help panel visibility.
      */
     showHelpPanel?: boolean;
@@ -46,14 +53,18 @@ export interface PageLayoutPropsInterface extends PageHeaderPropsInterface, Test
      * Flag to determine whether max width should be added to page header.
      */
     pageHeaderMaxWidth?: boolean;
+    /**
+     * This injects teh passed component above teh page header.
+     */
+    componentAbovePageHeader?: ReactElement;
 }
 
 /**
  * Page layout.
  *
- * @param {React.PropsWithChildren<PageLayoutPropsInterface>} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns Page Layout
  */
 export const PageLayout: FunctionComponent<PropsWithChildren<PageLayoutPropsInterface>> = (
     props: PropsWithChildren<PageLayoutPropsInterface>
@@ -64,8 +75,12 @@ export const PageLayout: FunctionComponent<PropsWithChildren<PageLayoutPropsInte
         children,
         contentTopMargin,
         className,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         padded,
+        pageTitle,
+        componentAbovePageHeader,
+        isLoading,
         ...rest
     } = props;
 
@@ -83,17 +98,25 @@ export const PageLayout: FunctionComponent<PropsWithChildren<PageLayoutPropsInte
     );
 
     return (
-        <div className={ layoutClasses } data-tesid={ testId }>
-            <div className={ layoutContentClasses }>
-                <PageHeader
-                    action={ action }
-                    data-testid={ `${ testId }-page-header` }
-                    { ...rest }
-                />
-                { contentTopMargin && <Divider hidden/> }
-                { children }
+        <>
+            <Helmet>
+                <title>{ pageTitle }</title>
+            </Helmet>
+            <div className={ layoutClasses } data-testid={ testId } data-componentid={ componentId }>
+                <div className={ layoutContentClasses }>
+                    { componentAbovePageHeader && componentAbovePageHeader }
+                    <PageHeader
+                        isLoading={ isLoading }
+                        action={ action }
+                        data-testid={ `${testId}-page-header` }
+                        data-componentid={ `${componentId}-page-header` }
+                        { ...rest }
+                    />
+                    { contentTopMargin && <Divider hidden /> }
+                    { children }
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
@@ -102,6 +125,7 @@ export const PageLayout: FunctionComponent<PropsWithChildren<PageLayoutPropsInte
  */
 PageLayout.defaultProps = {
     contentTopMargin: true,
+    "data-componentid": "page-layout",
     "data-testid": "page-layout",
     padded: true,
     titleTextAlign: "left"

@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import { CertificateManagementConstants } from "@wso2is/core/constants";
 import { AlertInterface, AlertLevels, DisplayCertificate, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import { CertificateManagementUtils } from "@wso2is/core/utils";
@@ -27,6 +28,7 @@ import React, { FunctionComponent, MouseEvent, ReactElement, useEffect, useState
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { Button, Divider, Grid } from "semantic-ui-react";
+import { ApplicationManagementConstants } from "../../constants";
 import {
     CertificateInterface,
     CertificateTypeInterface,
@@ -34,7 +36,6 @@ import {
     WSTrustConfigurationInterface,
     WSTrustMetaDataInterface
 } from "../../models";
-import { ApplicationManagementConstants } from "../../constants";
 import { CertificateFormFieldModal } from "../modals";
 
 /**
@@ -52,6 +53,10 @@ interface InboundWSTrustFormPropsInterface extends TestableComponentInterface {
      * Make the form read only.
      */
     readOnly?: boolean;
+    /**
+     * Specifies if API calls are pending.
+     */
+    isLoading?: boolean;
 }
 
 /**
@@ -71,6 +76,7 @@ export const InboundWSTrustForm: FunctionComponent<InboundWSTrustFormPropsInterf
         initialValues,
         onSubmit,
         readOnly,
+        isLoading,
         [ "data-testid" ]: testId
     } = props;
 
@@ -101,6 +107,7 @@ export const InboundWSTrustForm: FunctionComponent<InboundWSTrustFormPropsInterf
      */
     const getCertificateOptions = (metadataProp: MetadataPropertyInterface) => {
         const allowedOptions = [];
+
         if (metadataProp) {
             metadataProp.options.map((ele) => {
                 allowedOptions.push({ key: metadataProp.options.indexOf(ele), text: ele, value: ele });
@@ -139,8 +146,14 @@ export const InboundWSTrustForm: FunctionComponent<InboundWSTrustFormPropsInterf
      */
     const viewCertificate = () => {
         if (isPEMSelected && PEMValue) {
-            const displayCertificate: DisplayCertificate = CertificateManagementUtils.displayCertificate(
-                null, PEMValue);
+
+            let displayCertificate: DisplayCertificate;
+
+            if (CertificateManagementUtils.canSafelyParseCertificate(PEMValue)) {
+                displayCertificate = CertificateManagementUtils.displayCertificate(null, PEMValue);
+            } else {
+                displayCertificate = CertificateManagementConstants.DUMMY_DISPLAY_CERTIFICATE;
+            }
 
             if (displayCertificate) {
                 setCertificateDisplay(displayCertificate);
@@ -163,7 +176,7 @@ export const InboundWSTrustForm: FunctionComponent<InboundWSTrustFormPropsInterf
                         onSubmit(updateConfiguration(values));
                     } }
                 >
-                    <Grid className="form-container with-max-width">
+                    <Grid>
                         <Grid.Row columns={ 1 }>
                             <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
                                 <Field
@@ -385,6 +398,8 @@ export const InboundWSTrustForm: FunctionComponent<InboundWSTrustFormPropsInterf
                                             size="small"
                                             className="form-button"
                                             data-testid={ `${ testId }-submit-button` }
+                                            loading={ isLoading }
+                                            disabled={ isLoading }
                                         >
                                             { t("common:update") }
                                         </Button>

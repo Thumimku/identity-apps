@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
-import { HttpMethods } from "../models";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
+import { HttpMethods, PreferenceRequest } from "../models";
 import { store } from "../store";
 
 /**
@@ -25,19 +25,19 @@ import { store } from "../store";
  *
  * @type {AxiosHttpClientInstance}
  */
-const httpClient = IdentityClient.getInstance().httpRequest.bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance().httpRequest.bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Get account recovery preferences.
  *
  * @param data connector & property details
  */
-export const getPreference = (data: object): Promise<any> => {
+export const getPreference = (data: PreferenceRequest[]): Promise<any> => {
     const requestConfig = {
         data,
         headers: {
             "Accept": "application/json",
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost
         },
         method: HttpMethods.POST,
         url: store.getState().config.endpoints.preference

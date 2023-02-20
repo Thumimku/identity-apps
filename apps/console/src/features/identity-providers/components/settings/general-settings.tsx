@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,20 +16,31 @@
  * under the License.
  */
 
+import { AccessControlConstants, Show } from "@wso2is/access-control";
 import { AlertLevels, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import { ConfirmationModal, ContentLoader, DangerZone, DangerZoneGroup } from "@wso2is/react-components";
-import React, { FunctionComponent, ReactElement, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { CheckboxProps, Divider, List } from "semantic-ui-react";
-import { deleteIdentityProvider, getIDPConnectedApps, updateIdentityProviderDetails } from "../../api";
-import { IdentityProviderManagementConstants } from "../../constants";
-import { IdentityProviderInterface, ConnectedAppsInterface, ConnectedAppInterface } from "../../models";
-import { GeneralDetailsForm } from "../forms";
-import { handleIDPDeleteError, handleIDPUpdateError } from "../utils";
 import { getApplicationDetails } from "../../../applications/api";
 import { ApplicationBasicInterface } from "../../../applications/models";
+import {
+    deleteIdentityProvider,
+    getIDPConnectedApps,
+    getIdentityProviderList,
+    updateIdentityProviderDetails
+} from "../../api";
+import { IdentityProviderManagementConstants } from "../../constants";
+import {
+    ConnectedAppInterface,
+    ConnectedAppsInterface,
+    IdentityProviderInterface,
+    IdentityProviderListResponseInterface
+} from "../../models";
+import { GeneralDetailsForm } from "../forms";
+import { handleGetIDPListCallError, handleIDPDeleteError, handleIDPUpdateError } from "../utils";
 
 /**
  * Proptypes for the identity provider general details component.
@@ -67,13 +78,35 @@ interface GeneralSettingsInterface extends TestableComponentInterface {
      * Callback to update the idp details.
      */
     onUpdate: (id: string) => void;
+    /**
+     * Specifies if the component should only be read-only.
+     */
+    isReadOnly: boolean;
+    /**
+     * @see {@link GeneralDetailsFormPopsInterface}
+     */
+    hideIdPLogoEditField?: boolean;
+    /**
+     * Explicitly specifies whether the currently displaying
+     * IdP is a SAML provider or not.
+     */
+    isSaml?: boolean;
+    /**
+     * Explicitly specifies whether the currently displaying
+     * IdP is a OIDC provider or not.
+     */
+    isOidc?: boolean;
+    /**
+     * Loading Component.
+     */
+    loader: () => ReactElement;
 }
 
 /**
  * Component to edit general details of the identity provider.
  *
- * @param {GeneralSettingsInterface} props - Props injected to the component.
- * @return {ReactElement}
+ * @param props - Props injected to the component.
+ * @returns General Settings component.
  */
 export const GeneralSettings: FunctionComponent<GeneralSettingsInterface> = (
     props: GeneralSettingsInterface
@@ -88,6 +121,11 @@ export const GeneralSettings: FunctionComponent<GeneralSettingsInterface> = (
         isLoading,
         onDelete,
         onUpdate,
+        isReadOnly,
+        hideIdPLogoEditField,
+        isSaml,
+        isOidc,
+        loader: Loader,
         [ "data-testid" ]: testId
     } = props;
 
@@ -96,10 +134,37 @@ export const GeneralSettings: FunctionComponent<GeneralSettingsInterface> = (
     const { t } = useTranslation();
 
     const [ showDeleteConfirmationModal, setShowDeleteConfirmationModal ] = useState<boolean>(false);
+    const [ loading, setLoading ] = useState(false);
     const [ connectedApps, setConnectedApps ] = useState<string[]>(undefined);
     const [ showDeleteErrorDueToConnectedAppsModal, setShowDeleteErrorDueToConnectedAppsModal ] =
         useState<boolean>(false);
     const [ isAppsLoading, setIsAppsLoading ] = useState(true);
+
+    const [ idpList, setIdPList ] = useState<IdentityProviderListResponseInterface>({});
+    const [ isIdPListRequestLoading, setIdPListRequestLoading ] = useState<boolean>(false);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
+
+    /**
+     * Loads the identity provider authenticators on initial component load.
+     */
+    useEffect(() => {
+        getIDPlist();
+    }, []);
+
+    /**
+     * Get Idp List.
+     */
+    const getIDPlist=()=>{
+        setIdPListRequestLoading(true);
+        getIdentityProviderList(null, null,null)
+            .then((response)=> {
+                setIdPList(response);
+            }).catch((error) => {
+                handleGetIDPListCallError(error);
+            }).finally(() => {
+                setIdPListRequestLoading(false);
+            });
+    };
 
     const handleIdentityProviderDeleteAction = (): void => {
         setIsAppsLoading(true);
@@ -125,15 +190,17 @@ export const GeneralSettings: FunctionComponent<GeneralSettingsInterface> = (
                     );
 
                     const appNames: string[] = [];
+
                     results.forEach((app) => {
                         appNames.push(app.name);
-                    })
+                    });
                     setConnectedApps(appNames);
                 }
             })
             .catch((error) => {
                 dispatch(addAlert({
-                    description: error?.description || "Error occurred while trying to retrieve connected applications.",
+                    description: error?.description || "Error occurred while trying to retrieve connected " +
+                    "applications.",
                     level: AlertLevels.ERROR,
                     message: error?.message || "Error Occurred."
                 }));
@@ -147,12 +214,16 @@ export const GeneralSettings: FunctionComponent<GeneralSettingsInterface> = (
      * Deletes an identity provider.
      */
     const handleIdentityProviderDelete = (): void => {
+
+        setLoading(true);
         deleteIdentityProvider(editingIDP.id)
             .then(() => {
                 dispatch(addAlert({
-                    description: t("console:develop.features.idp.notifications.deleteIDP.success.description"),
+                    description: t("console:develop.features.authenticationProvider.notifications.deleteIDP." +
+                        "success.description"),
                     level: AlertLevels.SUCCESS,
-                    message: t("console:develop.features.idp.notifications.deleteIDP.success.message")
+                    message: t("console:develop.features.authenticationProvider.notifications.deleteIDP." +
+                        "success.message")
                 }));
 
                 setShowDeleteConfirmationModal(false);
@@ -160,113 +231,162 @@ export const GeneralSettings: FunctionComponent<GeneralSettingsInterface> = (
             })
             .catch((error) => {
                 handleIDPDeleteError(error);
+            })
+            .finally(() => {
+                setLoading(false);
             });
     };
 
     /**
      * Handles form submit action.
      *
-     * @param {IdentityProviderInterface} updatedDetails - Form values.
+     * @param updatedDetails - Form values.
      */
     const handleFormSubmit = (updatedDetails: IdentityProviderInterface): void => {
+        setIsSubmitting(true);
+
         updateIdentityProviderDetails({ id: editingIDP.id, ...updatedDetails })
             .then(() => {
                 dispatch(addAlert({
-                    description: t("console:develop.features.idp.notifications.updateIDP.success.description"),
+                    description: t("console:develop.features.authenticationProvider.notifications.updateIDP." +
+                        "success.description"),
                     level: AlertLevels.SUCCESS,
-                    message: t("console:develop.features.idp.notifications.updateIDP.success.message")
+                    message: t("console:develop.features.authenticationProvider.notifications.updateIDP." +
+                        "success.message")
                 }));
                 onUpdate(editingIDP.id);
             })
             .catch((error) => {
                 handleIDPUpdateError(error);
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
     const handleIdentityProviderDisable = (event: any, data: CheckboxProps) => {
-        handleFormSubmit(
-            {
-                isEnabled: data.checked
-            }
-        );
+        setIsAppsLoading(true);
+        getIDPConnectedApps(editingIDP.id)
+            .then(async (response: ConnectedAppsInterface) => {
+                if (response.count === 0) {
+                    handleFormSubmit(
+                        {
+                            isEnabled: data.checked
+                        }
+                    );
+                } else {
+                    dispatch(addAlert({
+                        description: "There are applications using this identity provider.",
+                        level: AlertLevels.WARNING,
+                        message: "Cannot Disable."
+                    }));
+                }
+            })
+            .catch((error) => {
+                dispatch(addAlert({
+                    description: error?.description || "Error occurred while trying to retrieve connected " +
+                        "applications.",
+                    level: AlertLevels.ERROR,
+                    message: error?.message || "Error Occurred."
+                }));
+            })
+            .finally(() => {
+                setIsAppsLoading(false);
+            });
+
     };
 
     return (
-        !isLoading
+        !isLoading && !isIdPListRequestLoading
             ? (
                 <>
                     <GeneralDetailsForm
+                        isSaml={ isSaml }
+                        isOidc={ isOidc }
+                        hideIdPLogoEditField={ hideIdPLogoEditField }
                         name={ name }
                         editingIDP={ editingIDP }
                         description={ description }
                         onSubmit={ handleFormSubmit }
                         onUpdate={ onUpdate }
                         imageUrl={ imageUrl }
+                        idpList={ idpList }
                         data-testid={ `${ testId }-form` }
-
+                        isReadOnly={ isReadOnly }
+                        isSubmitting={ isSubmitting }
                     />
                     <Divider hidden />
                     { !(IdentityProviderManagementConstants.DELETING_FORBIDDEN_IDPS.includes(name)) && (
-                        <DangerZoneGroup sectionHeader={ t("console:develop.features.idp.dangerZoneGroup.header") }>
-                            <DangerZone
-                                actionTitle={ t("console:develop.features.idp.dangerZoneGroup.disableIDP.actionTitle") }
-                                header={ t("console:develop.features.idp.dangerZoneGroup.disableIDP.header") }
-                                subheader={ t("console:develop.features.idp.dangerZoneGroup.disableIDP.subheader") }
-                                onActionClick={ undefined }
-                                toggle={ {
-                                    checked: isEnabled,
-                                    onChange: handleIdentityProviderDisable
-                                } }
-                                data-testid={ `${ testId }-disable-idp-danger-zone` }
-                            />
-                            <DangerZone
-                                actionTitle={ t("console:develop.features.idp.dangerZoneGroup.deleteIDP.actionTitle") }
-                                header={ t("console:develop.features.idp.dangerZoneGroup.deleteIDP.header") }
-                                subheader={ t("console:develop.features.idp.dangerZoneGroup.deleteIDP.subheader") }
-                                onActionClick={ handleIdentityProviderDeleteAction }
-                                data-testid={ `${ testId }-delete-idp-danger-zone` }
-                            />
-                        </DangerZoneGroup>
+                        <Show when={ AccessControlConstants.IDP_EDIT || AccessControlConstants.IDP_DELETE }>
+                            <DangerZoneGroup
+                                sectionHeader={ t("console:develop.features.authenticationProvider." +
+                                "dangerZoneGroup.header") }>
+                                <Show when={ AccessControlConstants.IDP_EDIT }>
+                                    <DangerZone
+                                        actionTitle={ t("console:develop.features.authenticationProvider." +
+                                            "dangerZoneGroup.disableIDP.actionTitle",
+                                        { state: isEnabled ? t("common:disable") : t("common:enable") }) }
+                                        header={ t("console:develop.features.authenticationProvider.dangerZoneGroup." +
+                                            "disableIDP.header",
+                                        { state: isEnabled ? t("common:disable") : t("common:enable") } ) }
+                                        subheader={ isEnabled ? t("console:develop.features.authenticationProvider." +
+                                            "dangerZoneGroup.disableIDP.subheader") : t("console:develop.features." +
+                                                "authenticationProvider.dangerZoneGroup.disableIDP.subheader2") }
+                                        onActionClick={ undefined }
+                                        toggle={ {
+                                            checked: isEnabled,
+                                            onChange: handleIdentityProviderDisable
+                                        } }
+                                        data-testid={ `${ testId }-disable-idp-danger-zone` }
+                                    />
+                                </Show>
+                                <Show when={ AccessControlConstants.IDP_DELETE }>
+                                    <DangerZone
+                                        actionTitle={ t("console:develop.features.authenticationProvider." +
+                                            "dangerZoneGroup.deleteIDP.actionTitle") }
+                                        header={ t("console:develop.features.authenticationProvider." +
+                                            "dangerZoneGroup.deleteIDP.header") }
+                                        subheader={ t("console:develop.features.authenticationProvider." +
+                                            "dangerZoneGroup.deleteIDP.subheader") }
+                                        onActionClick={ handleIdentityProviderDeleteAction }
+                                        data-testid={ `${ testId }-delete-idp-danger-zone` }
+                                    />
+                                </Show>
+                            </DangerZoneGroup>
+                        </Show>
                     ) }
                     {
                         showDeleteConfirmationModal && (
                             <ConfirmationModal
+                                primaryActionLoading={ loading }
                                 onClose={ (): void => setShowDeleteConfirmationModal(false) }
-                                type="warning"
+                                type="negative"
                                 open={ showDeleteConfirmationModal }
                                 assertion={ name }
-                                assertionHint={ (
-                                    <p>
-                                        <Trans
-                                            i18nKey="console:develop.features.idp.confirmations.deleteIDP.assertionHint"
-                                            tOptions={ { name: name } }
-                                        >
-                                            Please type
-                                            <strong data-testid="idp-name-assertion">
-                                                { name }
-                                            </strong> to confirm.
-                                        </Trans>
-                                    </p>
-                                ) }
-                                assertionType="input"
+                                assertionHint={ t("console:develop.features.authenticationProvider."+
+                                "confirmations.deleteIDP.assertionHint") }
+                                assertionType="checkbox"
                                 primaryAction={ t("common:confirm") }
                                 secondaryAction={ t("common:cancel") }
                                 onSecondaryActionClick={ (): void => setShowDeleteConfirmationModal(false) }
-                                onPrimaryActionClick={
-                                    (): void => handleIdentityProviderDelete()
-                                }
+                                onPrimaryActionClick={ (): void => handleIdentityProviderDelete() }
                                 data-testid={ `${ testId }-delete-idp-confirmation` }
                                 closeOnDimmerClick={ false }
                             >
                                 <ConfirmationModal.Header data-testid={ `${ testId }-delete-idp-confirmation` }>
-                                    { t("console:develop.features.idp.confirmations.deleteIDP.header") }
+                                    { t("console:develop.features.authenticationProvider." +
+                                        "confirmations.deleteIDP.header") }
                                 </ConfirmationModal.Header>
-                                <ConfirmationModal.Message attached warning
-                                                           data-testid={ `${ testId }-delete-idp-confirmation` }>
-                                    { t("console:develop.features.idp.confirmations.deleteIDP.message") }
+                                <ConfirmationModal.Message
+                                    attached
+                                    negative
+                                    data-testid={ `${ testId }-delete-idp-confirmation` }>
+                                    { t("console:develop.features.authenticationProvider." +
+                                        "confirmations.deleteIDP.message") }
                                 </ConfirmationModal.Message>
                                 <ConfirmationModal.Content data-testid={ `${ testId }-delete-idp-confirmation` }>
-                                    { t("console:develop.features.idp.confirmations.deleteIDP.content") }
+                                    { t("console:develop.features.authenticationProvider." +
+                                        "confirmations.deleteIDP.content") }
                                 </ConfirmationModal.Content>
                             </ConfirmationModal>
                         )
@@ -275,7 +395,7 @@ export const GeneralSettings: FunctionComponent<GeneralSettingsInterface> = (
                         showDeleteErrorDueToConnectedAppsModal && (
                             <ConfirmationModal
                                 onClose={ (): void => setShowDeleteErrorDueToConnectedAppsModal(false) }
-                                type="warning"
+                                type="negative"
                                 open={ showDeleteErrorDueToConnectedAppsModal }
                                 secondaryAction={ t("common:close") }
                                 onSecondaryActionClick={ (): void => setShowDeleteErrorDueToConnectedAppsModal(false) }
@@ -283,23 +403,25 @@ export const GeneralSettings: FunctionComponent<GeneralSettingsInterface> = (
                                 closeOnDimmerClick={ false }
                             >
                                 <ConfirmationModal.Header data-testid={ `${ testId }-delete-idp-confirmation` }>
-                                    { t("console:develop.features.idp.confirmations." +
+                                    { t("console:develop.features.authenticationProvider.confirmations." +
                                         "deleteIDPWithConnectedApps.header") }
                                 </ConfirmationModal.Header>
-                                <ConfirmationModal.Message attached warning
-                                                           data-testid={ `${ testId }-delete-idp-confirmation` }>
-                                    { t("console:develop.features.idp.confirmations." +
+                                <ConfirmationModal.Message
+                                    attached
+                                    negative
+                                    data-testid={ `${ testId }-delete-idp-confirmation` }>
+                                    { t("console:develop.features.authenticationProvider.confirmations." +
                                         "deleteIDPWithConnectedApps.message") }
                                 </ConfirmationModal.Message>
                                 <ConfirmationModal.Content data-testid={ `${ testId }-delete-idp-confirmation` }>
-                                    { t("console:develop.features.idp.confirmations." +
+                                    { t("console:develop.features.authenticationProvider.confirmations." +
                                         "deleteIDPWithConnectedApps.content") }
                                     <Divider hidden />
                                     <List ordered className="ml-6">
                                         {
                                             isAppsLoading ? (
-                                                    <ContentLoader/>
-                                                ) :
+                                                <ContentLoader/>
+                                            ) :
                                                 connectedApps?.map((app, index) => {
                                                     return (
                                                         <List.Item key={ index }>{ app }</List.Item>
@@ -313,7 +435,7 @@ export const GeneralSettings: FunctionComponent<GeneralSettingsInterface> = (
                     }
                 </>
             )
-            : <ContentLoader/>
+            : <Loader />
     );
 };
 
@@ -321,5 +443,6 @@ export const GeneralSettings: FunctionComponent<GeneralSettingsInterface> = (
  * Default proptypes for the IDP general settings component.
  */
 GeneralSettings.defaultProps = {
-    "data-testid": "idp-edit-general-settings"
+    "data-testid": "idp-edit-general-settings",
+    hideIdPLogoEditField: false
 };

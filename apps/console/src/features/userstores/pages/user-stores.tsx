@@ -25,6 +25,7 @@ import React, { FunctionComponent, ReactElement, useEffect, useState } from "rea
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { DropdownProps, Icon, PaginationProps } from "semantic-ui-react";
+import { userstoresConfig } from "../../../extensions/configs/userstores";
 import {
     AdvancedSearchWithBasicFilters,
     AppConstants,
@@ -78,7 +79,7 @@ const UserStores: FunctionComponent<UserStoresPageInterface> = (
     ];
 
     const featureConfig: FeatureConfigInterface = useSelector((state: AppState) => state.config.ui.features);
-    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.scope);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
 
     const [ userStores, setUserStores ] = useState<UserStoreListItem[]>([]);
     const [ offset, setOffset ] = useState(0);
@@ -109,6 +110,7 @@ const UserStores: FunctionComponent<UserStoresPageInterface> = (
             offset: offset || null,
             sort: sort || null
         };
+
         setIsLoading(true);
         getUserStores(params).then(response => {
             setUserStores(response);
@@ -216,6 +218,7 @@ const UserStores: FunctionComponent<UserStoresPageInterface> = (
         <PageLayout
             action={
                 (isLoading || !(!searchQuery && filteredUserStores?.length <= 0))
+                && userstoresConfig.userstoreList.allowAddingUserstores
                 && hasRequiredScopes(featureConfig?.userStores, featureConfig?.userStores?.scopes?.create,
                     allowedScopes)
                 && (
@@ -232,12 +235,13 @@ const UserStores: FunctionComponent<UserStoresPageInterface> = (
             }
             isLoading={ isLoading }
             title={ t("console:manage.features.userstores.pageLayout.list.title") }
+            pageTitle={ t("console:manage.features.userstores.pageLayout.list.title") }
             description={ t("console:manage.features.userstores.pageLayout.list.description") }
             data-testid={ `${ testId }-page-layout` }
         >
             <ListLayout
                 advancedSearch={
-                    <AdvancedSearchWithBasicFilters
+                    (<AdvancedSearchWithBasicFilters
                         onFilter={ handleUserstoreFilter }
                         filterAttributeOptions={ [
                             {
@@ -270,7 +274,7 @@ const UserStores: FunctionComponent<UserStoresPageInterface> = (
                         defaultSearchOperator="co"
                         triggerClearQuery={ triggerClearQuery }
                         data-testid={ `${ testId }-advanced-search` }
-                    />
+                    />)
                 }
                 currentListSize={ listItemLimit }
                 listItemLimit={ listItemLimit }
@@ -290,7 +294,7 @@ const UserStores: FunctionComponent<UserStoresPageInterface> = (
             >
                 <UserStoresList
                     advancedSearch={
-                        <AdvancedSearchWithBasicFilters
+                        (<AdvancedSearchWithBasicFilters
                             onFilter={ handleUserstoreFilter }
                             filterAttributeOptions={ [
                                 {
@@ -323,7 +327,7 @@ const UserStores: FunctionComponent<UserStoresPageInterface> = (
                             defaultSearchOperator="co"
                             triggerClearQuery={ triggerClearQuery }
                             data-testid={ `${ testId }-advanced-search` }
-                        />
+                        />)
                     }
                     isLoading={ isLoading }
                     list={ paginate(filteredUserStores, listItemLimit, offset) }

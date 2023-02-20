@@ -16,9 +16,9 @@
  * under the License.
  */
 
+const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const { exec } = require("child_process");
 
 const log = {
     info: console.log,
@@ -54,7 +54,7 @@ const constructTestCommand = () => {
             if (suite.smokeTestPath) {
                 specs.push(suite.smokeTestPath);
             }
-            
+
             continue;
         }
 
@@ -85,22 +85,22 @@ const constructTestCommand = () => {
  */
 const resolveCypressCommand = () => {
     if (cliArgs.includes(INTERACTIVE_MODE_ARG) && cliArgs.includes(HEADLESS_MODE_ARG)) {
-        throw Error("Interactive mode and Headless mode can not be selected at once.")
+        throw Error("Interactive mode and Headless mode can not be selected at once.");
     }
 
     if (cliArgs.includes(INTERACTIVE_MODE_ARG)) {
         log.info("Cypress is running in interactive mode.");
-        
+
         if (cliArgs.includes(SMOKE_ONLY_MODE_ARG)) {
             log.info("Smoke only mode is only supported when the tests are running in headless mode. " +
                 "Hence, Ignoring......");
         }
 
-        return "npm run cypress open";
+        return "pnpm cypress open";
     }
 
     log.info("Cypress is running in headless mode.");
-    return "npm run cypress run --headless";
+    return "pnpm cypress run --headless";
 };
 
 // Simple `execSync(constructTestCommand())` seems to hang the test runner for some reason.
@@ -109,5 +109,5 @@ const execution = exec(constructTestCommand());
 
 execution.stdout.pipe(process.stdout);
 execution.on("exit", () => {
-    process.exit()
+    process.exit();
 });

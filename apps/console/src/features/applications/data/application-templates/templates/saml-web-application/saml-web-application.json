@@ -1,11 +1,13 @@
 {
     "id": "776a73da-fd8e-490b-84ff-93009f8ede85",
+    "templateId": "saml-web-application",
     "name": "SAML",
     "description": "Regular web application that uses redirection within the browser.",
     "image": "saml",
     "authenticationProtocol": "saml",
     "types": [
-        "java"
+        "java",
+        "dotNet"
     ],
     "category": "DEFAULT",
     "displayOrder": 2,
@@ -46,17 +48,6 @@
                     }
                 }
             }
-        },
-        "claimConfiguration": {
-            "dialect": "LOCAL",
-            "requestedClaims": [
-                {
-                    "claim": {
-                        "uri": "http://wso2.org/claims/username"
-                    },
-                    "mandatory": true
-                }
-            ]
         }
     }
 }

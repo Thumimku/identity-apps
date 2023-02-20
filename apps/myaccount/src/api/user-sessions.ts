@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
 import { HttpMethods, UserSessions } from "../models";
 import { store } from "../store";
 
@@ -25,14 +25,13 @@ import { store } from "../store";
  *
  * @type {AxiosHttpClientInstance}
  */
-const httpClient = IdentityClient.getInstance().httpRequest.bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance().httpRequest.bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Fetches the list of user sessions from the API.
  *
  * @return {Promise<any>} A promise containing the response.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const fetchUserSessions = (): Promise<any> => {
     const requestConfig = {
         headers: {
@@ -57,7 +56,6 @@ export const fetchUserSessions = (): Promise<any> => {
  * @param {string} id - Session ID.
  * @return {Promise<any>} A promise containing the response.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const terminateUserSession = (id: string): Promise<any> => {
     const requestConfig = {
         headers: {
@@ -81,7 +79,6 @@ export const terminateUserSession = (id: string): Promise<any> => {
  *
  * @return {Promise<any>} A promise containing the response.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const terminateAllUserSessions = (): Promise<any> => {
     const requestConfig = {
         headers: {

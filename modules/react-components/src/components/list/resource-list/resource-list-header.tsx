@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, PropsWithChildren, ReactElement } from "react";
 import { Grid, List, SemanticWIDTHS } from "semantic-ui-react";
@@ -25,7 +25,7 @@ import { ResourceListHeaderCellPropsInterface } from "./resource-list-header-cel
 /**
  * Proptypes for the resource list header component.
  */
-export interface ResourceListHeaderPropsInterface extends TestableComponentInterface {
+export interface ResourceListHeaderPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Additional CSS classes.
      */
@@ -35,9 +35,9 @@ export interface ResourceListHeaderPropsInterface extends TestableComponentInter
 /**
  * Resource list header component.
  *
- * @param {ResourceListHeaderPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns the resource list header component.
  */
 export const ResourceListHeader: FunctionComponent<PropsWithChildren<ResourceListHeaderPropsInterface>> = (
     props: PropsWithChildren<ResourceListHeaderPropsInterface>
@@ -46,13 +46,18 @@ export const ResourceListHeader: FunctionComponent<PropsWithChildren<ResourceLis
     const {
         children,
         className,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
     const classes = classNames("resource-list-header", className);
 
     return (
-        <List.Item className={ classes } data-testid={ testId }>
+        <List.Item
+            className={ classes }
+            data-componentid={ componentId }
+            data-testid={ testId }
+        >
             { React.Children.count(children) > 0 && (
                 <Grid>
                     <Grid.Row columns={ React.Children.count(children) as SemanticWIDTHS }>
@@ -62,9 +67,12 @@ export const ResourceListHeader: FunctionComponent<PropsWithChildren<ResourceLis
                                     <>
                                         { heading.props.offset && (
                                             <Grid.Column width={ heading.props.offset } />
-                                        )}
+                                        ) }
                                         <Grid.Column key={ index } width={ heading.props.width }>
-                                            <List.Header data-testid={ `${ testId }-heading` }>
+                                            <List.Header
+                                                data-componentid={ `${ componentId }-heading` }
+                                                data-testid={ `${ testId }-heading` }
+                                            >
                                                 { heading }
                                             </List.Header>
                                         </Grid.Column>
@@ -73,7 +81,7 @@ export const ResourceListHeader: FunctionComponent<PropsWithChildren<ResourceLis
                         }
                     </Grid.Row>
                 </Grid>
-            )}
+            ) }
         </List.Item>
     );
 };
@@ -82,5 +90,6 @@ export const ResourceListHeader: FunctionComponent<PropsWithChildren<ResourceLis
  * Default props for resource list header component.
  */
 ResourceListHeader.defaultProps = {
+    "data-componentid": "resource-list-header",
     "data-testid": "resource-list-header"
 };

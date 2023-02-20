@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,84 +18,71 @@
 
 export class ServerConfigurationsConstants {
 
-	/**
+    /**
 	 * Private constructor to avoid object instantiation from outside the class.
 	 *
-	 * @hideconstructor
 	 */
-	/* eslint-disable @typescript-eslint/no-empty-function */
-	private constructor() { }
+    /* eslint-disable @typescript-eslint/no-empty-function */
+    private constructor() { }
 
-	/**
+    /**
 	 * UUID of the identity governance account management policies category.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly IDENTITY_GOVERNANCE_ACCOUNT_MANAGEMENT_POLICIES_ID: string =
-		"QWNjb3VudCBNYW5hZ2VtZW50IFBvbGljaWVz";
+    "QWNjb3VudCBNYW5hZ2VtZW50IFBvbGljaWVz";
+
+	/**
+	 * Regex matcher to identify if the connector is deprecated.
+	 *
+	 */
+	public static readonly DEPRECATION_MATCHER: string = "[Deprecated]";
 
 	/**
 	 * UUID of the identity governance self sign up connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly SELF_SIGN_UP_CONNECTOR_ID: string = "c2VsZi1zaWduLXVw";
 
 	/**
 	 * UUID of the identity governance light user registration connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly LITE_USER_REGISTRATION_CONNECTOR_ID: string = "bGl0ZS11c2VyLXNpZ24tdXA";
 
 	/**
 	 * UUID of the identity governance account recovery connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly ACCOUNT_RECOVERY_CONNECTOR_ID: string = "YWNjb3VudC1yZWNvdmVyeQ";
 
 	/**
 	 * UUID of the identity governance password reset connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly PASSWORD_RESET_CONNECTOR_ID: string = "YWRtaW4tZm9yY2VkLXBhc3N3b3JkLXJlc2V0";
 
 	/**
 	 * UUID of the identity governance consent information connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly CONSENT_INFO_CONNECTOR_ID: string = "cGlpLWNvbnRyb2xsZXI";
 
 	/**
 	 * UUID of the identity governance analytics engine connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly ANALYTICS_ENGINE_CONNECTOR_ID: string = "YW5hbHl0aWNzLWVuZ2luZQ";
 
 	/**
 	 * UUID of the identity governance user claim update connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly USER_CLAIM_UPDATE_CONNECTOR_ID: string = "dXNlci1jbGFpbS11cGRhdGU";
 
 	/**
 	 * UUID of the identity governance login policies category.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 
 	public static readonly IDENTITY_GOVERNANCE_LOGIN_POLICIES_ID: string = "TG9naW4gUG9saWNpZXM";
@@ -103,66 +90,57 @@ export class ServerConfigurationsConstants {
 	/**
 	 * UUID of the identity governance account locking connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly ACCOUNT_LOCKING_CONNECTOR_ID: string = "YWNjb3VudC5sb2NrLmhhbmRsZXI";
 
 	/**
 	 * UUID of the identity governance account disabling connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly ACCOUNT_DISABLING_CONNECTOR_ID: string = "YWNjb3VudC5kaXNhYmxlLmhhbmRsZXI";
 
 	/**
 	 * UUID of the identity governance captcha for sso login connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly CAPTCHA_FOR_SSO_LOGIN_CONNECTOR_ID: string = "c3NvLmxvZ2luLnJlY2FwdGNoYQ";
 
 	/**
 	 * UUID of the identity governance idle account suspend connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly IDLE_ACCOUNT_SUSPEND_CONNECTOR_ID: string = "c3VzcGVuc2lvbi5ub3RpZmljYXRpb24";
 
 	/**
 	 * UUID of the identity governance account disable connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly ACCOUNT_DISABLE_CONNECTOR_ID: string = "YWNjb3VudC5kaXNhYmxlLmhhbmRsZXI";
 
 	/**
 	 * UUID of the identity governance login policies category.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly IDENTITY_GOVERNANCE_PASSWORD_POLICIES_ID: string = "UGFzc3dvcmQgUG9saWNpZXM";
 
 	/**
 	 * UUID of the identity governance captcha for sso login connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly PASSWORD_HISTORY_CONNECTOR_ID: string = "cGFzc3dvcmRIaXN0b3J5";
 
 	/**
 	 * UUID of the identity governance captcha for sso login connector.
 	 *
-	 * @constant
-	 * @type {string}
 	 */
 	public static readonly PASSWORD_POLICY_CONNECTOR_ID: string = "cGFzc3dvcmRQb2xpY3k";
+
+    /**
+     * Multi Attribute Login Claim List pattern regex.
+     *
+     */
+    public static readonly MULTI_ATTRIBUTE_CLAIM_LIST_REGEX_PATTERN: RegExp =
+        new RegExp("^(?:[a-zA-Z0-9:./]+,)+[a-zA-Z0-9:./]+$");
 
 	/**
 	 * UUID of the user on boarding connector.
@@ -189,6 +167,16 @@ export class ServerConfigurationsConstants {
 	 */
 	public static readonly ACCOUNT_MANAGEMENT_CONNECTOR_CATEGORY_ID: string = "QWNjb3VudCBNYW5hZ2VtZW50";
 
+	/**
+	 * UUID of the Multi-Factor Authenticators governance connector category.
+	 */
+	public static readonly MFA_CONNECTOR_CATEGORY_ID: string = "TXVsdGkgRmFjdG9yIEF1dGhlbnRpY2F0b3Jz";
+
+    /**
+     * UUID of the WSO2 Analytics Engine governance connector category.
+     */
+    public static readonly WSO2_ANALYTICS_ENGINE_CONNECTOR_CATEGORY_ID: string = "YW5hbHl0aWNzLWVuZ2luZQ";
+
     /**
      * User email verification API Keyword constants.
      */
@@ -201,6 +189,7 @@ export class ServerConfigurationsConstants {
 	public static readonly ACCOUNT_LOCK_ON_CREATION: string = "SelfRegistration.LockOnCreation";
 	public static readonly SELF_SIGN_UP_NOTIFICATIONS_INTERNALLY_MANAGED: string =
 		"SelfRegistration.Notification.InternallyManage";
+
 	public static readonly RE_CAPTCHA: string = "SelfRegistration.ReCaptcha";
 	public static readonly VERIFICATION_CODE_EXPIRY_TIME: string = "SelfRegistration.VerificationCode.ExpiryTime";
 	public static readonly SMS_OTP_EXPIRY_TIME: string = "SelfRegistration.VerificationCode.SMSOTP.ExpiryTime";
@@ -213,17 +202,23 @@ export class ServerConfigurationsConstants {
 	public static readonly USERNAME_RECOVERY_RE_CAPTCHA: string = "Recovery.ReCaptcha.Username.Enable";
 	public static readonly PASSWORD_RECOVERY_NOTIFICATION_BASED_ENABLE: string =
 		"Recovery.Notification.Password.Enable";
+
 	public static readonly PASSWORD_RECOVERY_NOTIFICATION_BASED_RE_CAPTCHA: string =
 		"Recovery.ReCaptcha.Password.Enable";
+
 	public static readonly PASSWORD_RECOVERY_QUESTION_BASED_ENABLE: string = "Recovery.Question.Password.Enable";
 	public static readonly PASSWORD_RECOVERY_QUESTION_BASED_MIN_ANSWERS: string =
 		"Recovery.Question.Password.MinAnswers";
+
 	public static readonly PASSWORD_RECOVERY_QUESTION_BASED_RE_CAPTCHA_ENABLE: string =
 		"Recovery.Question.Password.ReCaptcha.Enable";
+
 	public static readonly RE_CAPTCHA_MAX_FAILED_ATTEMPTS: string =
 		"Recovery.Question.Password.ReCaptcha.MaxFailedAttempts";
+
 	public static readonly ACCOUNT_RECOVERY_NOTIFICATIONS_INTERNALLY_MANAGED: string =
 		"Recovery.Notification.InternallyManage";
+
 	public static readonly NOTIFY_RECOVERY_START: string = "Recovery.Question.Password.NotifyStart";
 	public static readonly NOTIFY_SUCCESS: string = "Recovery.NotifySuccess";
 	public static readonly RECOVERY_LINK_EXPIRY_TIME: string = "Recovery.ExpiryTime";
@@ -235,13 +230,17 @@ export class ServerConfigurationsConstants {
 	/**
 	 * Login policies - account locking API Keyword constants.
 	 */
-	public static readonly ACCOUNT_LOCK_ENABLE: string = "account.lock.handler.enable";
+	public static readonly ACCOUNT_LOCK_ENABLE: string = "account.lock.handler.lock.on.max.failed.attempts.enable";
 	public static readonly MAX_FAILED_LOGIN_ATTEMPTS_TO_ACCOUNT_LOCK: string =
 		"account.lock.handler.On.Failure.Max.Attempts";
+
 	public static readonly ACCOUNT_LOCK_TIME: string = "account.lock.handler.Time";
 	public static readonly ACCOUNT_LOCK_TIME_INCREMENT_FACTOR: string = "account.lock.handler.login.fail.timeout.ratio";
 	public static readonly ACCOUNT_LOCK_INTERNAL_NOTIFICATION_MANAGEMENT: string =
 		"account.lock.handler.notification.manageInternally";
+
+	public static readonly NOTIFY_USER_ON_ACCOUNT_LOCK_INCREMENT: string =
+		"account.lock.handler.notification.notifyOnLockIncrement";
 
 	/**
 	 * Login policies - account disabling API Keyword constants.
@@ -256,6 +255,7 @@ export class ServerConfigurationsConstants {
 	public static readonly RE_CAPTCHA_ALWAYS_ENABLE: string = "sso.login.recaptcha.enable.always";
 	public static readonly RE_CAPTCHA_AFTER_MAX_FAILED_ATTEMPTS_ENABLE: string =
 		"sso.login.recaptcha.enable";
+
 	public static readonly MAX_FAILED_LOGIN_ATTEMPTS_TO_RE_CAPTCHA: string =
 		"sso.login.recaptcha.on.max.failed.attempts";
 
@@ -277,17 +277,20 @@ export class ServerConfigurationsConstants {
 	public static readonly IDLE_SESSION_TIMEOUT_PERIOD: string = "idleSessionTimeoutPeriod";
 	public static readonly REMEMBER_ME_PERIOD: string = "rememberMePeriod";
 
-	// API Errors
+	// API Errors.
 	public static readonly CONFIGS_FETCH_REQUEST_INVALID_STATUS_CODE_ERROR: string = "Received an invalid status " +
 		"code while retrieving the configurations.";
+
 	public static readonly CONFIGS_FETCH_REQUEST_ERROR: string = "An error occurred while retrieving the " +
 		"configurations.";
+
 	public static readonly CONFIGS_UPDATE_REQUEST_INVALID_STATUS_CODE_ERROR: string = "Received an invalid status " +
 		"code while updating the configurations.";
+
 	public static readonly CONFIGS_UPDATE_REQUEST_ERROR: string = "An error occurred while updating the " +
 		"configurations.";
 
-	// Idle account suspend names
+	// Idle account suspend names.
 	public static readonly ALLOWED_IDLE_TIME_SPAN_IN_DAYS: string = "suspension.notification.account.disable.delay";
 	public static readonly ALERT_SENDING_TIME_PERIODS_IN_DAYS: string = "suspension.notification.delays";
 
@@ -299,4 +302,12 @@ export class ServerConfigurationsConstants {
 	public static readonly RECOVERY_LINK_PASSWORD_RESET: string = "Recovery.AdminPasswordReset.RecoveryLink";
 	public static readonly OTP_PASSWORD_RESET: string = "Recovery.AdminPasswordReset.OTP";
 	public static readonly OFFLINE_PASSWORD_RESET: string = "Recovery.AdminPasswordReset.Offline";
+	public static readonly ADMIN_FORCED_PASSWORD_RESET_EXPIRY_TIME: string = "Recovery.AdminPasswordReset.ExpiryTime";
+
+    public static readonly MULTI_ATTRIBUTE_CLAIM_LIST: string = "account-multiattributelogin-handler-allowedattributes";
+
+	/**
+	 * Extensions Constants.
+	 */
+	public  static  readonly ALL: string = "all";
 }

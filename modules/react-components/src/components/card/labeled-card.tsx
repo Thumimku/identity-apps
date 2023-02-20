@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,16 +16,17 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, ReactElement } from "react";
-import { Card, CardProps, Label, LabelProps, Popup, SemanticSIZES } from "semantic-ui-react";
+import { Card, CardProps, Label, LabelProps, SemanticSIZES } from "semantic-ui-react";
 import { GenericIcon, GenericIconProps, GenericIconSizes } from "../icon";
+import { Popup } from "../popup";
 
 /**
  * Proptypes for the labeled card component.
  */
-export interface LabeledCardPropsInterface extends TestableComponentInterface {
+export interface LabeledCardPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Card Background color.
      */
@@ -79,6 +80,10 @@ export interface LabeledCardPropsInterface extends TestableComponentInterface {
      */
     labelEllipsis?: boolean;
     /**
+     * Should the label go in to 2 lines.
+     */
+    multilineLabel?: boolean;
+    /**
      * On click callback for the element.
      */
     onClick?: (event: React.MouseEvent<HTMLAnchorElement>, data: CardProps) => void;
@@ -107,9 +112,9 @@ export interface LabeledCardPropsInterface extends TestableComponentInterface {
 /**
  * Labeled card component.
  *
- * @param {LabeledCardPropsInterface} props - Props injected to the components.
+ * @param props - Props injected to the components.
  *
- * @return {React.ReactElement}
+ * @returns the labeled card component.
  */
 export const LabeledCard: FunctionComponent<LabeledCardPropsInterface> = (
     props: LabeledCardPropsInterface
@@ -129,12 +134,14 @@ export const LabeledCard: FunctionComponent<LabeledCardPropsInterface> = (
         imageSize,
         label,
         labelEllipsis,
+        multilineLabel,
         onClick,
         onCloseClick,
         padding,
         raiseOnHover,
         selected,
         size,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -165,18 +172,24 @@ export const LabeledCard: FunctionComponent<LabeledCardPropsInterface> = (
     const cardLabelClasses = classNames(
         "card-label",
         {
-            "ellipsis": labelEllipsis
+            "ellipsis": !multilineLabel && labelEllipsis,
+            "multiline": multilineLabel
         }
     );
 
     return (
-        <div className={ wrapperClasses } data-testid={ `${ testId }-wrapper` }>
+        <div
+            className={ wrapperClasses }
+            data-componentid={ `${ componentId }-wrapper` }
+            data-testid={ `${ testId }-wrapper` }
+        >
             <Card
                 id={ id }
                 as="div"
                 className={ cardClasses }
                 onClick={ onClick }
                 link={ false }
+                data-componentid={ componentId }
                 data-testid={ testId }
             >
                 { onCloseClick && (
@@ -185,6 +198,7 @@ export const LabeledCard: FunctionComponent<LabeledCardPropsInterface> = (
                         color="red"
                         size="mini"
                         onClick={ onCloseClick }
+                        data-componentid={ `${ componentId }-close-button` }
                         data-testid={ `${ testId }-close-button` }
                         floating
                         circular
@@ -197,6 +211,7 @@ export const LabeledCard: FunctionComponent<LabeledCardPropsInterface> = (
                         className="card-image"
                         size={ imageSize }
                         icon={ image }
+                        data-componentid={ `${ componentId }-image` }
                         data-testid={ `${ testId }-image` }
                         square
                         transparent
@@ -209,6 +224,7 @@ export const LabeledCard: FunctionComponent<LabeledCardPropsInterface> = (
                 trigger={ <div className={ cardLabelClasses }>{ label }</div> }
                 position="bottom center"
                 content={ label }
+                data-componentid={ `${ componentId }-label` }
                 data-testid={ `${ testId }-label` }
                 inverted
             />
@@ -223,6 +239,7 @@ LabeledCard.defaultProps = {
     background: "default",
     basic: false,
     bottomMargin: true,
+    "data-componentid": "labeled-card",
     "data-testid": "labeled-card",
     imageSize: "mini",
     inline: true,

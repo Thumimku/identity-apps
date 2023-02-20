@@ -22,8 +22,10 @@ import { addAlert } from "@wso2is/core/store";
 import { I18n } from "@wso2is/i18n";
 import { TemplateCardTagInterface } from "@wso2is/react-components";
 import groupBy from "lodash-es/groupBy";
+import isObject from "lodash-es/isObject";
 import startCase  from "lodash-es/startCase";
-import { getTechnologyLogos, store } from "../../core";
+import { getTechnologyLogos } from "../../core/configs";
+import { store } from "../../core/store";
 import {
     getApplicationTemplateList
 } from "../api";
@@ -60,8 +62,8 @@ export class ApplicationTemplateManagementUtils {
      * @return {Promise<void>}
      */
     public static getApplicationTemplates = (skipGrouping: boolean = false,
-                                             useAPI: boolean = false,
-                                             sort: boolean = true): Promise<void> => {
+        useAPI: boolean = false,
+        sort: boolean = true): Promise<void> => {
 
         if (!useAPI) {
             return ApplicationTemplateManagementUtils.loadLocalFileBasedTemplates()
@@ -188,12 +190,28 @@ export class ApplicationTemplateManagementUtils {
      * @return {TemplateCardTagInterface[]} Set of Technologies compatible for `TemplateCard`.
      */
     public static buildSupportedTechnologies(technologies: string[]): TemplateCardTagInterface[] {
-        return technologies?.map((technology: string) => {
+
+        const _technologies = technologies?.map((technology: string) => {
+
+            // If the technology is already resolved, return that istead of trying to resolve again.
+            if (typeof technology !== "string") {
+                if (isObject(technology)
+                    && Object.prototype.hasOwnProperty.call(technology, "displayName")
+                    && Object.prototype.hasOwnProperty.call(technology, "logo")
+                    && Object.prototype.hasOwnProperty.call(technology, "name")) {
+                    
+                    return technology;
+                }
+
+                return null;
+            }
+
             let logo = null;
 
             for (const [ key, value ] of Object.entries(getTechnologyLogos())) {
                 if (key === technology) {
                     logo = value;
+
                     break;
                 }
             }
@@ -204,6 +222,8 @@ export class ApplicationTemplateManagementUtils {
                 name: technology
             };
         });
+
+        return _technologies.filter(Boolean);
     }
 
     /**
@@ -232,7 +252,7 @@ export class ApplicationTemplateManagementUtils {
      * @return {ApplicationTemplateInterface[]}
      */
     private static addCustomTemplates(existingTemplates: ApplicationTemplateInterface[],
-                                      customTemplates: ApplicationTemplateInterface[]) {
+        customTemplates: ApplicationTemplateInterface[]) {
 
         return existingTemplates.concat(customTemplates);
     }
@@ -253,6 +273,7 @@ export class ApplicationTemplateManagementUtils {
                 templates.forEach((template: ApplicationTemplateInterface) => {
                     if (!template.templateGroup) {
                         groupedTemplates.push(template);
+
                         return;
                     }
 
@@ -263,6 +284,7 @@ export class ApplicationTemplateManagementUtils {
 
                     if (!group) {
                         groupedTemplates.push(template);
+
                         return;
                     }
 

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -35,9 +35,196 @@ export const commonConfigReducerInitialState: CommonConfigReducerStateInterface<
     I18nModuleOptionsInterface,
     UIConfigInterface> = {
 
-    deployment: null,
-    endpoints: null,
-    features: null,
-    i18n: null,
-    ui: null
-};
+        deployment: {
+            accountApp: {
+                basePath: "",
+                displayName: "",
+                path: "",
+                tenantQualifiedPath: ""
+            },
+            adminApp: {
+                basePath: "",
+                displayName: "",
+                path: "",
+                tenantQualifiedPath: ""
+            },
+            allowMultipleAppProtocols: undefined,
+            appBaseName: "",
+            appBaseNameWithoutTenant: "",
+            appHomePath: "",
+            appLoginPath: "",
+            appLogoutPath: "",
+            clientHost: "",
+            clientID: "",
+            clientOrigin: "",
+            customServerHost: "",
+            developerApp: {
+                basePath: "",
+                displayName: "",
+                path: "",
+                tenantQualifiedPath: ""
+            },
+            docSiteURL: "",
+            documentation: null,
+            extensions: null,
+            helpCenterURL: "",
+            idpConfigs: null,
+            loginCallbackUrl: "",
+            serverHost: "",
+            serverOrigin: "",
+            superTenant: "",
+            tenant: "",
+            tenantPath: "",
+            tenantPrefix: ""
+        },
+        endpoints: {
+            CORSOrigins: "",
+            accountDisabling: "",
+            accountLocking: "",
+            accountRecovery: "",
+            applications: "",
+            authenticatorTags: "",
+            authenticators: "",
+            breadcrumb: "",
+            bulk: "",
+            captchaForSSOLogin: "",
+            certificates: "",
+            claims: "",
+            clientCertificates: "",
+            createSecret: "",
+            createSecretType: "",
+            deleteSecret: "",
+            deleteSecretType: "",
+            externalClaims: "",
+            getSecret: "",
+            getSecretList: "",
+            getSecretType: "",
+            governanceConnectorCategories: "",
+            groups: "",
+            identityProviders: "",
+            localAuthenticators: "",
+            localClaims: "",
+            loginPolicies: "",
+            me: "",
+            multiFactorAuthenticators: "",
+            myAccountConfigMgt: "",
+            oidcScopes: "",
+            organizations: "",
+            passwordHistory: "",
+            passwordPolicies: "",
+            passwordPolicy: "",
+            permission: "",
+            publicCertificates: "",
+            requestPathAuthenticators: "",
+            roles: "",
+            rolesWithoutOrgPath: "",
+            rootOrganization: "",
+            saml2Meta: "",
+            schemas: "",
+            selfSignUp: "",
+            serverConfigurations: "",
+            serverSupportedSchemas: "",
+            updateSecret: "",
+            updateSecretType: "",
+            userSessions: "",
+            userStores: "",
+            users: "",
+            usersSuperOrganization: "",
+            validationServiceMgt: "",
+            wellKnown: ""
+        },
+        features: {
+            applications: null,
+            approvals: null,
+            attributeDialects: null,
+            certificates: null,
+            emailTemplates: null,
+            governanceConnectors: null,
+            groups: null,
+            guestUser: null,
+            identityProviders: null,
+            oidcScopes: null,
+            remoteFetchConfig: null,
+            roles: null,
+            secretsManagement: null,
+            userStores: null,
+            users: null
+        },
+        i18n: null,
+        ui: {
+            announcements: [],
+            appCopyright: "",
+            appName: "",
+            appTitle: "",
+            applicationTemplateLoadingStrategy: undefined,
+            features: {
+                applications: null,
+                approvals: null,
+                attributeDialects: null,
+                certificates: null,
+                emailTemplates: null,
+                governanceConnectors: null,
+                groups: null,
+                guestUser: null,
+                identityProviders: null,
+                oidcScopes: null,
+                remoteFetchConfig: null,
+                roles: null,
+                secretsManagement: null,
+                userStores: null,
+                users: null
+            },
+            googleOneTapEnabledTenants: [],
+            gravatarConfig: {
+                defaultImage: "",
+                fallback: null,
+                size: null
+            },
+            hiddenAuthenticators: [],
+            hiddenUserStores: [],
+            i18nConfigs: null,
+            identityProviderTemplateLoadingStrategy: null,
+            identityProviderTemplates: {
+                enterpriseOIDC: {
+                    enabled: false
+                },
+                enterpriseSAML: {
+                    enabled: false
+                },
+                facebook: {
+                    enabled: false
+                },
+                github: {
+                    enabled: false
+                },
+                google: {
+                    enabled: false
+                },
+                microsoft: {
+                    enabled: false
+                }
+            },
+            isClientSecretHashEnabled: undefined,
+            isCookieConsentBannerEnabled: undefined,
+            isDefaultDialectEditingEnabled: undefined,
+            isDialectAddingEnabled: undefined,
+            isGroupAndRoleSeparationEnabled: undefined,
+            isHeaderAvatarLabelAllowed: undefined,
+            isLeftNavigationCategorized: undefined,
+            isMarketingConsentBannerEnabled: undefined,
+            isRequestPathAuthenticationEnabled: undefined,
+            isSignatureValidationCertificateAliasEnabled: undefined,
+            listAllAttributeDialects: undefined,
+            privacyPolicyConfigs: null,
+            productName: "",
+            productVersionConfig: null,
+            selfAppIdentifier: "",
+            showAppSwitchButton: undefined,
+            systemAppsIdentifiers: [],
+            theme: {
+                name: "",
+                path: "",
+                styleSheets: null
+            }
+        }
+    };

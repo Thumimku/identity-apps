@@ -16,7 +16,6 @@
  * under the License.
  */
 
-import { getUserStoreList } from "@wso2is/core/api";
 import { hasRequiredScopes } from "@wso2is/core/helpers";
 import { AlertLevels, SBACInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
@@ -25,7 +24,9 @@ import React, { FunctionComponent, MouseEvent, ReactElement, useEffect, useState
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { AccordionTitleProps, Divider, Grid } from "semantic-ui-react";
-import { AppState, AuthenticatorAccordion, FeatureConfigInterface } from "../../../../core";
+import { AppState, AuthenticatorAccordion, FeatureConfigInterface, store } from "../../../../core";
+import { OrganizationUtils } from "../../../../organizations/utils";
+import { getUserStoreList } from "../../../../userstores/api";
 import { updateApplicationConfigurations } from "../../../api";
 import { ProvisioningConfigurationInterface, SimpleUserStoreListItemInterface } from "../../../models";
 import { ProvisioningConfigurationsForm } from "../../forms";
@@ -84,9 +85,10 @@ export const InboundProvisioningConfigurations: FunctionComponent<InboundProvisi
 
     const [ userStore, setUserStore ] = useState<SimpleUserStoreListItemInterface[]>([]);
 
-    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.scope);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
 
     const [ accordionActiveIndexes, setAccordionActiveIndexes ] = useState<number[]>(defaultActiveIndexes);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     /**
      * Handles the provisioning config form submit action.
@@ -94,6 +96,8 @@ export const InboundProvisioningConfigurations: FunctionComponent<InboundProvisi
      * @param values - Form values.
      */
     const handleProvisioningConfigFormSubmit = (values: any): void => {
+        setIsSubmitting(true);
+
         updateApplicationConfigurations(appId, values)
             .then(() => {
                 dispatch(addAlert({
@@ -114,6 +118,9 @@ export const InboundProvisioningConfigurations: FunctionComponent<InboundProvisi
                     message: t("console:develop.features.applications.notifications.updateInboundProvisioningConfig" +
                         ".genericError.message")
                 }));
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
@@ -124,7 +131,7 @@ export const InboundProvisioningConfigurations: FunctionComponent<InboundProvisi
      * @param {AccordionTitleProps} SegmentedAuthenticatedAccordion - Clicked title.
      */
     const handleAccordionOnClick = (e: MouseEvent<HTMLDivElement>,
-                                    SegmentedAuthenticatedAccordion: AccordionTitleProps): void => {
+        SegmentedAuthenticatedAccordion: AccordionTitleProps): void => {
         if (!SegmentedAuthenticatedAccordion) {
             return;
         }
@@ -132,6 +139,7 @@ export const InboundProvisioningConfigurations: FunctionComponent<InboundProvisi
 
         if (newIndexes.includes(SegmentedAuthenticatedAccordion.accordionIndex)) {
             const removingIndex = newIndexes.indexOf(SegmentedAuthenticatedAccordion.accordionIndex);
+
             newIndexes.splice(removingIndex, 1);
         } else {
             newIndexes.push(SegmentedAuthenticatedAccordion.accordionIndex);
@@ -142,16 +150,21 @@ export const InboundProvisioningConfigurations: FunctionComponent<InboundProvisi
 
     useEffect(() => {
         const userstore: SimpleUserStoreListItemInterface[] = [];
+
         userstore.push({
             id: "PRIMARY",
             name: "PRIMARY"
         });
-        getUserStoreList().then((response) => {
-            userstore.push(...response.data);
+        if (OrganizationUtils.isCurrentOrganizationRoot()) {
+            getUserStoreList().then((response) => {
+                userstore.push(...response.data);
+                setUserStore(userstore);
+            }).catch(() => {
+                setUserStore(userstore);
+            });
+        } else {
             setUserStore(userstore);
-        }).catch(() => {
-            setUserStore(userstore);
-        });
+        }
     }, []);
 
     return (
@@ -183,6 +196,7 @@ export const InboundProvisioningConfigurations: FunctionComponent<InboundProvisi
                                                         allowedScopes)
                                                 }
                                                 data-testid={ `${ testId }-form` }
+                                                isSubmitting={ isSubmitting }
                                             />
                                         ),
                                         id: "scim",

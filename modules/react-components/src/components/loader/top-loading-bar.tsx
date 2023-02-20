@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,14 +16,14 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
 import LoadingBar from "react-top-loading-bar";
 
 /**
  * Top loading bar component Prop types.
  */
-export interface TopLoadingBarPropsInterface extends TestableComponentInterface {
+export interface TopLoadingBarPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Height of the loading bar.
      */
@@ -37,9 +37,9 @@ export interface TopLoadingBarPropsInterface extends TestableComponentInterface 
 /**
  * Top loading bar component component.
  *
- * @param {TopLoadingBarPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns the top loading bar component.
  */
 export const TopLoadingBar: FunctionComponent<TopLoadingBarPropsInterface> = (
     props: TopLoadingBarPropsInterface
@@ -48,6 +48,7 @@ export const TopLoadingBar: FunctionComponent<TopLoadingBarPropsInterface> = (
     const {
         height,
         visibility,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -59,6 +60,7 @@ export const TopLoadingBar: FunctionComponent<TopLoadingBarPropsInterface> = (
         }
         if (visibility) {
             loaderRef.continuousStart();
+
             return;
         }
         loaderRef.complete();
@@ -69,6 +71,7 @@ export const TopLoadingBar: FunctionComponent<TopLoadingBarPropsInterface> = (
             className="app-top-loading-bar"
             onRef={ (ref) => setLoaderRef(ref) }
             height={ height }
+            data-componentid={ componentId }
             data-testid={ testId }
         />
     );
@@ -78,6 +81,7 @@ export const TopLoadingBar: FunctionComponent<TopLoadingBarPropsInterface> = (
  * Top loading bar component default props.
  */
 TopLoadingBar.defaultProps = {
+    "data-componentid": "top-loading-bar",
     "data-testid": "top-loading-bar",
     height: 3,
     visibility: true

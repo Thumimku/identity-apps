@@ -31,9 +31,11 @@
 <%@ page import="java.util.stream.Stream" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Set" %>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <%@include file="includes/localize.jsp" %>
 <%@include file="includes/init-url.jsp" %>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
 
 <%
     String app = request.getParameter("application");
@@ -41,10 +43,15 @@
     boolean displayScopes = Boolean.parseBoolean(getServletContext().getInitParameter("displayScopes"));
 %>
 
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "medium");
+%>
+
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -55,10 +62,16 @@
     <% } %>
 </head>
 <body class="login-portal layout authentication-portal-layout">
-    <main class="center-segment">
-        <div class="ui container medium center aligned middle aligned">
 
-            <!-- product-title -->
+    <% if (new File(getServletContext().getRealPath("extensions/timeout.jsp")).exists()) { %>
+        <jsp:include page="extensions/timeout.jsp"/>
+    <% } else { %>
+        <jsp:include page="util/timeout.jsp"/>
+    <% } %>
+
+    <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+        <layout:component componentName="ProductHeader" >
+            <%-- product-title --%>
             <%
                 File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
                 if (productTitleFile.exists()) {
@@ -67,7 +80,8 @@
             <% } else { %>
                 <jsp:include page="includes/product-title.jsp"/>
             <% } %>
-
+        </layout:component>
+        <layout:component componentName="MainSection" >
             <div class="ui segment">
                 <form class="ui large form" action="<%=oauth2AuthorizeURL%>" method="post" id="profile"
                       name="oauth2_authz">
@@ -145,7 +159,7 @@
                         %>
 
                         <div class="ui divider hidden"></div>
-                    
+
                         <div class="field">
                             <div class="ui checkbox">
                                 <input
@@ -158,7 +172,7 @@
                                 <label><%=AuthenticationEndpointUtil.i18n(resourceBundle, "remember.my.consent")%></label>
                             </div>
                         </div>
-                    
+
                         <div class="ui divider hidden"></div>
 
                     </div>
@@ -167,7 +181,7 @@
                             value="<%=Encode.forHtmlAttribute(request.getParameter(Constants.SESSION_DATA_KEY_CONSENT))%>"/>
                         <input type="hidden" name="consent" id="consent" value="deny"/>
 
-                        <input class="ui large button link-button" type="reset"
+                        <input class="ui large button secondary" type="reset"
                                onclick="deny(); return false;"
                                value="<%=AuthenticationEndpointUtil.i18n(resourceBundle,"deny")%>"/>
                         <input type="button" class="ui primary large button" id="approve" name="approve"
@@ -176,8 +190,19 @@
                     </div>
                 </form>
             </div>
-        </div>
-    </main>
+        </layout:component>
+        <layout:component componentName="ProductFooter" >
+            <%-- product-footer --%>
+            <%
+                File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                if (productFooterFile.exists()) {
+            %>
+                <jsp:include page="extensions/product-footer.jsp"/>
+            <% } else { %>
+                <jsp:include page="includes/product-footer.jsp"/>
+            <% } %>
+        </layout:component>
+    </layout:main>
 
     <div class="ui modal mini" id="modal_claim_validation" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
         <div class="header">
@@ -193,17 +218,7 @@
         </div>
     </div>
 
-    <!-- product-footer -->
-    <%
-        File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-        if (productFooterFile.exists()) {
-    %>
-        <jsp:include page="extensions/product-footer.jsp"/>
-    <% } else { %>
-        <jsp:include page="includes/product-footer.jsp"/>
-    <% } %>
-
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {
@@ -217,7 +232,7 @@
 
         function approved() {
             var isApproveAlwaysChecked = $("#rememberApproval").is(':checked');
-        
+
             // Check if the remember approval checkbox is selected, if so set the consent
             // input value to `approveAlways` else set it to `approve`.
             if (isApproveAlwaysChecked) {

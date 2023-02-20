@@ -16,22 +16,21 @@
  * under the License.
  */
 
-import { AppConstants } from "../../core/constants";
+import { ReactComponent as DocumentIcon } from "../../../themes/default/assets/images/icons/document-icon.svg";
 
-export const getAddEmailTemplateTypeWizardStepIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
-
+export const getAddEmailTemplateTypeWizardStepIcons = (): { 
+    general: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;  
+ } => {
     return {
-        general: import(`../../../themes/${ theme }/assets/images/icons/document-icon.svg`)
+        general: DocumentIcon as any
     };
+    
 };
 
-export const getViewLocaleTemplateWizardStepIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
-
+export const getViewLocaleTemplateWizardStepIcons = (): { 
+    general: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;  
+ } => {
     return {
-        general: import(`../../../themes/${ theme }/assets/images/icons/document-icon.svg`)
+        general: DocumentIcon as any
     };
 };

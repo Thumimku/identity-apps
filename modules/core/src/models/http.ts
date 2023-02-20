@@ -52,7 +52,13 @@ export enum HttpMethods {
      *
      * @type {string}
      */
-    DELETE = "DELETE"
+    DELETE = "DELETE",
+    /**
+     * Value for `HEAD` requests.
+     *
+     * @type {string}
+     */
+    HEAD = "HEAD"
 }
 
 /**
@@ -131,4 +137,14 @@ export enum ContentTypeHeaderValues {
      * @type {string}
      */
     APP_SCIM = "application/scim+json"
+}
+
+/**
+ * HTTP Response Codes.
+ * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#successful_responses
+ */
+export enum HttpCodes {
+    CREATED = 201,
+    OK = 200,
+    NO_CONTENT = 204,
 }

@@ -22,10 +22,14 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointConstants" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointUtil" %>
+<%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.PreferenceRetrievalClient" %>
+<%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.PreferenceRetrievalClientException" %>
 <%@ page import="org.wso2.carbon.identity.core.util.IdentityTenantUtil" %>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <jsp:directive.include file="includes/localize.jsp"/>
 <jsp:directive.include file="tenant-resolve.jsp"/>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
 
 <%
     boolean error = IdentityManagementEndpointUtil.getBooleanValue(request.getAttribute("error"));
@@ -35,11 +39,36 @@
     if (StringUtils.isBlank(tenantDomain)) {
         tenantDomain = IdentityManagementEndpointConstants.SUPER_TENANT;
     }
+
+    Boolean isMultiAttributeLoginEnabledInTenant;
+    try {
+        PreferenceRetrievalClient preferenceRetrievalClient = new PreferenceRetrievalClient();
+        isMultiAttributeLoginEnabledInTenant = preferenceRetrievalClient.checkMultiAttributeLogin(tenantDomain);
+    } catch (PreferenceRetrievalClientException e) {
+        request.setAttribute("error", true);
+        request.setAttribute("errorMsg", IdentityManagementEndpointUtil
+                .i18n(recoveryResourceBundle, "something.went.wrong.contact.admin"));
+        IdentityManagementEndpointUtil.addErrorInformation(request, e);
+        request.getRequestDispatcher("error.jsp").forward(request, response);
+        return;
+    }
+
+    String usernameLabel = "Username";
+    String enterUsernameHereText = "Enter.your.username.here";
+    if (isMultiAttributeLoginEnabledInTenant) {
+        usernameLabel = "User.identifier";
+        enterUsernameHereText = "Enter.your.user.identifier.here";
+    }
 %>
 
-<html>
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "medium");
+%>
+
+<html lang="en-US">
     <head>
-        <!-- header -->
+        <%-- header --%>
         <%
             File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
             if (headerFile.exists()) {
@@ -55,9 +84,9 @@
     </head>
 
     <body class="login-portal layout recovery-layout">
-        <main class="center-segment">
-            <div class="ui container medium center aligned middle aligned">
-                <!-- product-title -->
+        <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+            <layout:component componentName="ProductHeader" >
+                <%-- product-title --%>
                 <%
                     File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
                     if (productTitleFile.exists()) {
@@ -66,9 +95,10 @@
                 <% } else { %>
                 <jsp:include page="includes/product-title.jsp"/>
                 <% } %>
-
+            </layout:component>
+            <layout:component componentName="MainSection" >
                 <div class="ui segment">
-                    <!-- page content -->
+                    <%-- page content --%>
                     <div class="segment-form">
                         <form class="ui large form" action="recoverpassword.do" method="post" id="tenantBasedRecovery">
                             <h2>
@@ -84,18 +114,18 @@
                             </div>
                             <% } %>
                             <p>
-                                <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Enter.your.username.here")%>
+                                <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, enterUsernameHereText)%>
                             </p>
                             <div class="field">
                                 <label>
-                                    <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Username")%>
+                                    <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, usernameLabel)%>
                                 </label>
-                                <input id="usernameUserInput" name="usernameUserInput" type="text" tabindex="0" required>
-                                <input id="username" name="username" type="hidden">
+                                <input id="username" name="username" type="text" tabindex="0" required>
                                 <%
                                     if (!IdentityTenantUtil.isTenantQualifiedUrlsEnabled()) {
                                 %>
-                                <input id="tenantDomain" name="tenantDomain" value="<%= tenantDomain %>" type="hidden">
+                                <input id="tenantDomain" name="tenantDomain" value="<%= Encode.forHtmlAttribute(tenantDomain) %>"
+                                       type="hidden">
                                 <%
                                     }
                                 %>
@@ -118,7 +148,7 @@
                             %>
                             <div class="ui divider hidden"></div>
                             <div class="align-right buttons">
-                                <a href="javascript:goBack()" class="ui button link-button">
+                                <a href="javascript:goBack()" class="ui button secondary">
                                     <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Cancel")%>
                                 </a>
                                 <button id="registrationSubmit" class="ui primary button" type="submit">
@@ -129,20 +159,21 @@
                         </form>
                     </div>
                 </div>
-            </div>
-        </main>
+            </layout:component>
+            <layout:component componentName="ProductFooter" >
+                <%-- product-footer --%>
+                <%
+                    File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                    if (productFooterFile.exists()) {
+                %>
+                <jsp:include page="extensions/product-footer.jsp"/>
+                <% } else { %>
+                <jsp:include page="includes/product-footer.jsp"/>
+                <% } %>
+            </layout:component>
+        </layout:main>
 
-        <!-- product-footer -->
-        <%
-            File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-            if (productFooterFile.exists()) {
-        %>
-        <jsp:include page="extensions/product-footer.jsp"/>
-        <% } else { %>
-        <jsp:include page="includes/product-footer.jsp"/>
-        <% } %>
-
-        <!-- footer -->
+        <%-- footer --%>
         <%
             File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
             if (footerFile.exists()) {
@@ -171,10 +202,8 @@
                             e.preventDefault();
 
                             var userName = document.getElementById("username");
-                            var usernameUserInput = document.getElementById("usernameUserInput");
-                            if (usernameUserInput) {
-                                userName.value = usernameUserInput.value.trim();
-                            }
+                            userName.value = userName.value.trim();
+
                             // Mark it so that the next submit can be ignored.
                             $form.data("submitted", true);
                             document.getElementById("tenantBasedRecovery").submit();

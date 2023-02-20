@@ -19,28 +19,39 @@
 
 <%@ page import="org.apache.commons.collections.map.HashedMap" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.wso2.carbon.core.SameSiteCookie" %>
+<%@ page import="org.wso2.carbon.core.util.SignatureUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointConstants" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementServiceUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.ApiException" %>
+<%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.PreferenceRetrievalClient" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.api.SelfRegisterApi" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.api.UsernameRecoveryApi" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointUtil" %>
 <%@ page import="org.wso2.carbon.identity.core.util.IdentityTenantUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.model.*" %>
+<%@ page import="org.wso2.carbon.identity.recovery.util.Utils" %>
+<%@ page import="org.wso2.carbon.identity.recovery.IdentityRecoveryConstants" %>
+<%@ page import="org.wso2.carbon.identity.base.IdentityRuntimeException" %>
+<%@ page import="org.json.simple.JSONObject" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.net.URLEncoder" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Base64" %>
+<%@ page import="org.wso2.carbon.identity.core.util.IdentityUtil" %>
+<%@ page import="javax.servlet.http.Cookie" %>
+
 <jsp:directive.include file="includes/localize.jsp"/>
 <jsp:directive.include file="tenant-resolve.jsp"/>
 
-<html>
+<html lang="en-US">
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- title -->
+    <%-- title --%>
     <%
         File titleFile = new File(getServletContext().getRealPath("extensions/title.jsp"));
         if (titleFile.exists()) {
@@ -61,7 +72,7 @@
     <![endif]-->
 </head>
 <body>
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -71,7 +82,7 @@
     <jsp:include page="includes/header.jsp"/>
     <% } %>
 
-    <!-- page content -->
+    <%-- page content --%>
     <div class="container-fluid body-wrapper">
 
         <%
@@ -80,10 +91,17 @@
             String SELF_REGISTRATION_WITH_VERIFICATION_PAGE = "self-registration-with-verification.jsp";
             String SELF_REGISTRATION_WITHOUT_VERIFICATION_PAGE = "* self-registration-without-verification.jsp";
             String passwordPatternErrorCode = "20035";
+            String AUTO_LOGIN_COOKIE_NAME = "ALOR";
+            String AUTO_LOGIN_COOKIE_DOMAIN = "AutoLoginCookieDomain";
+            String AUTO_LOGIN_FLOW_TYPE = "SIGNUP";
+            PreferenceRetrievalClient preferenceRetrievalClient = new PreferenceRetrievalClient();
+            Boolean isAutoLoginEnable = preferenceRetrievalClient.checkAutoLoginAfterSelfRegistrationEnabled(tenantDomain);
+            Boolean isSelfRegistrationWithVerificationEnabled = preferenceRetrievalClient.checkSelfRegistrationLockOnCreation(tenantDomain);
+
             boolean isSelfRegistrationWithVerification =
                     Boolean.parseBoolean(request.getParameter("isSelfRegistrationWithVerification"));
 
-            String userLocale = request.getHeader("Accept-Language");
+            String userLocaleForClaim = request.getHeader("Accept-Language");
             String username = request.getParameter("username");
             String password = request.getParameter("password");
             String callback = request.getParameter("callback");
@@ -91,6 +109,23 @@
             boolean isSaaSApp = Boolean.parseBoolean(request.getParameter("isSaaSApp"));
             String policyURL = IdentityManagementServiceUtil.getInstance().getServiceContextURL().replace("/services",
                     "/authenticationendpoint/privacy_policy.do");
+
+            try {
+                if (StringUtils.isNotBlank(callback) && !Utils.validateCallbackURL(callback, tenantDomain,
+                    IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX)) {
+                    request.setAttribute("error", true);
+                    request.setAttribute("errorMsg", IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
+                        "Callback.url.format.invalid"));
+                    request.getRequestDispatcher("error.jsp").forward(request, response);
+                    return;
+                }
+            } catch (IdentityRuntimeException e) {
+                request.setAttribute("error", true);
+                request.setAttribute("errorMsg", e.getMessage());
+                request.getRequestDispatcher("error.jsp").forward(request, response);
+                return;
+            }
+
             if (StringUtils.isNotEmpty(consent)) {
                 consent = IdentityManagementEndpointUtil.buildConsentForResidentIDP
                         (username, consent, "USA",
@@ -157,12 +192,12 @@
                         userClaim.setValue(request.getParameter(claim.getUri()));
                         userClaimList.add(userClaim);
 
-                    } else if (claim.getUri().trim().equals("http://wso2.org/claims/locality")
-                            && StringUtils.isNotBlank(userLocale)) {
+                    } else if (claim.getUri().trim().equals(IdentityUtil.getClaimUriLocale())
+                            && StringUtils.isNotBlank(userLocaleForClaim)) {
 
                         Claim localeClaim = new Claim();
                         localeClaim.setUri(claim.getUri());
-                        localeClaim.setValue(userLocale.split(",")[0].replace('-', '_'));
+                        localeClaim.setValue(userLocaleForClaim.split(",")[0].replace('-', '_'));
                         userClaimList.add(localeClaim);
 
                     }
@@ -198,6 +233,33 @@
 
                 SelfRegisterApi selfRegisterApi = new SelfRegisterApi();
                 selfRegisterApi.mePostCall(selfUserRegistrationRequest, requestHeaders);
+                // Add auto login cookie.
+                if (isAutoLoginEnable && !isSelfRegistrationWithVerificationEnabled) {
+                    if (StringUtils.isNotEmpty(user.getRealm())) {
+                        username = user.getRealm() + "/" + user.getUsername() + "@" + user.getTenantDomain();
+                    } else {
+                        username = user.getUsername() + "@" + user.getTenantDomain();
+                    }
+                    String cookieDomain = application.getInitParameter(AUTO_LOGIN_COOKIE_DOMAIN);
+                    JSONObject contentValueInJson = new JSONObject();
+                    contentValueInJson.put("username", username);
+                    contentValueInJson.put("createdTime", System.currentTimeMillis());
+                    contentValueInJson.put("flowType", AUTO_LOGIN_FLOW_TYPE);
+                    if (StringUtils.isNotBlank(cookieDomain)) {
+                        contentValueInJson.put("domain", cookieDomain);
+                    }
+                    String content = contentValueInJson.toString();
+
+                    JSONObject cookieValueInJson = new JSONObject();
+                    cookieValueInJson.put("content", content);
+                    String signature = Base64.getEncoder().encodeToString(SignatureUtil.doSignature(content));
+                    cookieValueInJson.put("signature", signature);
+                    String cookieValue = Base64.getEncoder().encodeToString(cookieValueInJson.toString().getBytes());
+
+                    IdentityManagementEndpointUtil.setCookie(request, response, AUTO_LOGIN_COOKIE_NAME, cookieValue,
+                        300, SameSiteCookie.NONE, "/", cookieDomain);
+                    request.setAttribute("isAutoLoginEnabled", true);
+                }
                 request.setAttribute("callback", callback);
                 request.getRequestDispatcher("self-registration-complete.jsp").forward(request, response);
 
@@ -226,7 +288,7 @@
     </div>
 
 
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {

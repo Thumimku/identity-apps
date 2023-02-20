@@ -1,28 +1,29 @@
 /**
-* Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-*
-* WSO2 Inc. licenses this file to you under the Apache License,
-* Version 2.0 (the 'License'); you may not use this file except
-* in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing,
-* software distributed under the License is distributed on an
-* 'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-* KIND, either express or implied. See the License for the
-* specific language governing permissions and limitations
-* under the License.
-*/
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
+import { IdentifiableComponentInterface } from "@wso2is/core/models";
 import React, { FunctionComponent, ReactElement } from "react";
 import { Image, ImageProps } from "semantic-ui-react";
 
 /**
  * Prop types of the component
  */
-export interface AnimatedAvatarPropsInterface extends ImageProps {
+export interface AnimatedAvatarPropsInterface extends ImageProps, IdentifiableComponentInterface {
     /**
      * Sets if the avatar is of primary color or not
      */
@@ -37,8 +38,8 @@ export interface AnimatedAvatarPropsInterface extends ImageProps {
  * Animated avatar component.
  * This is a mosaic of 6x6 squares with random opacity values between `0.8` and `1`.
  *
- * @param {AnimatedAvatarPropsInterface} props - Props injected in to the component.
- * @return {React.ReactElement}
+ * @param props - Props injected in to the component.
+ * @returns the Animated Avatar component
  */
 export const AnimatedAvatar: FunctionComponent<AnimatedAvatarPropsInterface> = (
     props: AnimatedAvatarPropsInterface
@@ -47,6 +48,7 @@ export const AnimatedAvatar: FunctionComponent<AnimatedAvatarPropsInterface> = (
     const {
         name,
         primary,
+        [ "data-componentid" ]: componentId,
         ...rest
     } = props;
     
@@ -56,9 +58,11 @@ export const AnimatedAvatar: FunctionComponent<AnimatedAvatarPropsInterface> = (
             xmlns="http://www.w3.org/2000/svg"
             version="1.1"
             viewBox="0 0 1024 1024"
+            data-componentid={ componentId }
         >
             <g>
-                <path className={ `fill ${primary ? "primary" : "secondary"}` }
+                <path
+                    className={ `fill ${primary ? "primary" : "secondary"}` }
                     d={
                         "M0.08504+0L170.638+0C170.732+0+170.808+0.0760688+170.808+0.169904L170.808+170.723C170" +
                         ".808+170.817+170.732+170.893+170.638+170.893L0.08504+170.893C-0.00879569+170.893-0." +
@@ -464,7 +468,7 @@ export const AnimatedAvatar: FunctionComponent<AnimatedAvatarPropsInterface> = (
     /**
      * Generates the initials for the avatar.
      *
-     * @return {string}
+     * @returns the initials for the avatar
      */
     const generateInitials = (name): string => {
         return name.charAt(0).toUpperCase();
@@ -477,19 +481,21 @@ export const AnimatedAvatar: FunctionComponent<AnimatedAvatarPropsInterface> = (
                     rounded
                     centered
                     className="animated-avatar"
+                    data-componentid={ `${ componentId }-with-initials` }
                     { ...rest }
                 >
                     <AnimatedSVGBackground/>
-                    <span className="initial">
+                    <span data-componentid={ `${ componentId }-initials` } className="initial">
                         { generateInitials(name) }
                     </span>
                 </Image>
             )
-            : <AnimatedSVGBackground/>
-    )
+            : <AnimatedSVGBackground />
+    );
 };
 
 AnimatedAvatar.defaultProps = {
+    "data-componentid": "animated-avatar",
     size: "mini",
     verticalAlign: "middle"
 };

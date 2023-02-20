@@ -16,7 +16,6 @@
  * under the License.
  */
 
-import { getUserStoreList } from "@wso2is/core/api";
 import { AlertLevels, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import { Field, FormValue, Forms, Validation } from "@wso2is/forms";
@@ -26,13 +25,17 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { Grid, GridColumn, GridRow } from "semantic-ui-react";
 import { AddGroupUsers } from "./group-assign-users";
+import { store } from "../../../core";
 import { SharedUserStoreConstants } from "../../../core/constants";
 import { SharedUserStoreUtils } from "../../../core/utils";
 // TODO: Remove this once the api is updated.
+import { RootOnlyComponent } from "../../../organizations/components";
+import { OrganizationUtils } from "../../../organizations/utils";
 import {
     APPLICATION_DOMAIN,
     INTERNAL_DOMAIN
 } from "../../../roles/constants";
+import { getUserStoreList } from "../../../userstores/api";
 import { searchGroupList } from "../../api";
 import { CreateGroupFormData, SearchGroupInterface } from "../../models";
 
@@ -64,7 +67,7 @@ export const GroupBasics: FunctionComponent<GroupBasicProps> = (props: GroupBasi
     const dispatch = useDispatch();
 
     const [ userStoreOptions, setUserStoresList ] = useState([]);
-    const [ userStore, setUserStore ] = useState<string>(SharedUserStoreConstants.PRIMARY_USER_STORE);
+    const [ userStore, setUserStore ] = useState<string>();
     const [ isRegExLoading, setRegExLoading ] = useState<boolean>(false);
     const [ basicDetails, setBasicDetails ] = useState<any>(null);
     const [ userList, setUserList ] = useState<any>(null);
@@ -113,13 +116,17 @@ export const GroupBasics: FunctionComponent<GroupBasicProps> = (props: GroupBasi
      */
     const handleDomainChange = (values: Map<string, FormValue>) => {
         const domain: string = values.get("domain").toString();
+
         setUserStore(domain);
     };
 
     useEffect(() => {
-        const input = groupName.current.children[ 0 ].children[ 1 ].children[ 0 ] as HTMLInputElement;
-        input.focus();
-        input.blur();
+        if (userStore && initialValues?.basicDetails?.groupName) {
+            const input: HTMLInputElement = groupName.current.children[0].children[1].children[0] as HTMLInputElement;
+
+            input.focus();
+            input.blur();
+        }
     }, [ userStore ]);
 
     /**
@@ -128,8 +135,13 @@ export const GroupBasics: FunctionComponent<GroupBasicProps> = (props: GroupBasi
      * @param roleName - User input role name
      */
     const validateGroupNamePattern = async (): Promise<string> => {
+        if (!OrganizationUtils.isCurrentOrganizationRoot()) {
+            return Promise.resolve(".*");
+        }
+
         let userStoreRegEx = "";
-        if (userStore !== SharedUserStoreConstants.PRIMARY_USER_STORE) {
+
+        if (userStore && userStore !== SharedUserStoreConstants.PRIMARY_USER_STORE.toLocaleLowerCase()) {
             await SharedUserStoreUtils.getUserStoreRegEx(userStore,
                 SharedUserStoreConstants.USERSTORE_REGEX_PROPERTIES.RolenameRegEx)
                 .then((response) => {
@@ -148,6 +160,7 @@ export const GroupBasics: FunctionComponent<GroupBasicProps> = (props: GroupBasi
         }
 
         setRegExLoading(false);
+
         return new Promise((resolve, reject) => {
             if (userStoreRegEx !== "") {
                 resolve(userStoreRegEx);
@@ -155,7 +168,6 @@ export const GroupBasics: FunctionComponent<GroupBasicProps> = (props: GroupBasi
                 reject("");
             }
         });
-
     };
 
     /**
@@ -174,22 +186,27 @@ export const GroupBasics: FunctionComponent<GroupBasicProps> = (props: GroupBasi
             text: "",
             value: ""
         };
-        getUserStoreList()
-            .then((response) => {
-                if (storeOptions === []) {
-                    storeOptions.push(storeOption);
-                }
-                response.data.map((store, index) => {
-                    storeOption = {
-                        key: index,
-                        text: store.name,
-                        value: store.name
-                    };
-                    storeOptions.push(storeOption);
-                }
-                );
-                setUserStoresList(storeOptions);
-            });
+
+        setUserStore(storeOptions[ 0 ].value);
+
+        if (OrganizationUtils.isCurrentOrganizationRoot()) {
+            getUserStoreList()
+                .then((response) => {
+                    if (storeOptions.length === 0) {
+                        storeOptions.push(storeOption);
+                    }
+                    response.data.map((store, index) => {
+                        storeOption = {
+                            key: index,
+                            text: store.name,
+                            value: store.name
+                        };
+                        storeOptions.push(storeOption);
+                    }
+                    );
+                    setUserStoresList(storeOptions);
+                });
+        }
 
         setUserStoresList(storeOptions);
     };
@@ -217,27 +234,26 @@ export const GroupBasics: FunctionComponent<GroupBasicProps> = (props: GroupBasi
             >
                 <Grid>
                     <GridRow columns={ 2 }>
-                        <GridColumn mobile={ 16 } tablet={ 16 } computer={ 8 }>
-                            <Field
-                                data-testid={ `${ testId }-domain-dropdown` }
-                                type="dropdown"
-                                label={ t("console:manage.features.roles.addRoleWizard.forms.roleBasicDetails." +
+                        <RootOnlyComponent>
+                            <GridColumn mobile={ 16 } tablet={ 16 } computer={ 8 }>
+                                <Field
+                                    data-testid={ `${ testId }-domain-dropdown` }
+                                    type="dropdown"
+                                    label={ t("console:manage.features.roles.addRoleWizard.forms.roleBasicDetails." +
                                     "domain.label.group") }
-                                name="domain"
-                                children={ userStoreOptions }
-                                placeholder={ t("console:manage.features.roles.addRoleWizard.forms.roleBasicDetails." +
-                                    "domain.placeholder") }
-                                requiredErrorMessage={ t("console:manage.features.roles.addRoleWizard.forms." +
+                                    name="domain"
+                                    children={ userStoreOptions }
+                                    placeholder={ t("console:manage.features.roles.addRoleWizard." +
+                                        "forms.roleBasicDetails.domain.placeholder") }
+                                    requiredErrorMessage={ t("console:manage.features.roles.addRoleWizard.forms." +
                                     "roleBasicDetails.domain.validation.empty.group") }
-                                required={ true }
-                                element={ <div></div> }
-                                listen={ handleDomainChange }
-                                value={ initialValues?.basicDetails?.domain
-                                    ? initialValues?.basicDetails?.domain
-                                    : userStoreOptions[ 0 ]?.value
-                                }
-                            />
-                        </GridColumn>
+                                    required={ true }
+                                    element={ <div></div> }
+                                    listen={ handleDomainChange }
+                                    value={ initialValues?.basicDetails?.domain ?? userStoreOptions[ 0 ]?.value }
+                                />
+                            </GridColumn>
+                        </RootOnlyComponent>
                         <GridColumn mobile={ 16 } tablet={ 16 } computer={ 8 }>
                             <Field
                                 ref={ groupName }
@@ -254,20 +270,25 @@ export const GroupBasics: FunctionComponent<GroupBasicProps> = (props: GroupBasi
                                 validation={ async (value: string, validation: Validation) => {
                                     if (value) {
                                         let isGroupNameValid = true;
+
                                         await validateGroupNamePattern().then(regex => {
                                             isGroupNameValid = SharedUserStoreUtils
                                                 .validateInputAgainstRegEx(value, regex);
                                         });
 
+
                                         if (!isGroupNameValid) {
                                             validation.isValid = false;
-                                            validation.errorMessages.push(t("console:manage.features.roles." +
-                                                "addRoleWizard.forms.roleBasicDetails.roleName.validations.invalid",
-                                                { type: "group" }));
+                                            validation.errorMessages.push(
+                                                t("console:manage.features.roles." +
+                                                    "addRoleWizard.forms.roleBasicDetails.roleName.validations.invalid",
+                                                { type: "group" })
+                                            );
                                         }
 
                                         const searchData: SearchGroupInterface = {
-                                            filter: `displayName eq  ${ userStore }/${ value }`,
+                                            filter: `displayName eq  ${
+                                                userStore ?? SharedUserStoreConstants.PRIMARY_USER_STORE }/${ value }`,
                                             schemas: [
                                                 "urn:ietf:params:scim:api:messages:2.0:SearchRequest"
                                             ],
@@ -280,7 +301,8 @@ export const GroupBasics: FunctionComponent<GroupBasicProps> = (props: GroupBasi
                                                 validation.errorMessages.push(
                                                     t("console:manage.features.roles.addRoleWizard." +
                                                         "forms.roleBasicDetails.roleName.validations.duplicate",
-                                                        { type: "Group" }));
+                                                    { type: "Group" })
+                                                );
                                             }
                                         }).catch(() => {
                                             dispatch(addAlert({
@@ -293,7 +315,7 @@ export const GroupBasics: FunctionComponent<GroupBasicProps> = (props: GroupBasi
                                         });
                                     }
                                 } }
-                                value={ initialValues && initialValues.basicDetails?.groupName }
+                                value={ (initialValues?.basicDetails?.groupName) }
                                 loading={ isRegExLoading }
                             />
                         </GridColumn>
@@ -305,7 +327,7 @@ export const GroupBasics: FunctionComponent<GroupBasicProps> = (props: GroupBasi
                 data-testid="new-group"
                 isEdit={ false }
                 triggerSubmit={ triggerSubmit }
-                userStore={ userStore }
+                userStore={ userStore ?? SharedUserStoreConstants.PRIMARY_USER_STORE }
                 initialValues={ initialValues?.userList }
                 onSubmit={ (values) => setUserList(values) }
             />

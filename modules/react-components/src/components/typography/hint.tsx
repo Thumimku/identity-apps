@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,15 +16,18 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
+import isObject from "lodash-es/isObject";
 import React, { PropsWithChildren, ReactElement } from "react";
-import { Icon, Popup, PopupProps, SemanticICONS } from "semantic-ui-react";
+import { Icon, PopupProps, SemanticCOLORS, SemanticICONS } from "semantic-ui-react";
+import { Popup } from "../popup";
 
 /**
  * Heading component prop types.
  */
-export interface HintPropsInterface extends TestableComponentInterface {
+export interface HintPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
+
     /**
      * Additional classes.
      */
@@ -57,14 +60,26 @@ export interface HintPropsInterface extends TestableComponentInterface {
      * Popup options
      */
     popupOptions?: PopupProps;
+    /**
+     * Is the hint a warning?.
+     */
+    warning?: boolean;
 }
+
+/**
+ * Default Popup Options
+ */
+const DEFAULT_POPUP_OPTIONS: PopupProps = {
+    hoverable: true,
+    position: "top center"
+};
 
 /**
  * Hint component.
  *
- * @param {React.PropsWithChildren<HintPropsInterface>} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns Hint component.
  */
 export const Hint: React.FunctionComponent<PropsWithChildren<HintPropsInterface>> = (
     props: PropsWithChildren<HintPropsInterface>
@@ -80,6 +95,8 @@ export const Hint: React.FunctionComponent<PropsWithChildren<HintPropsInterface>
         inline,
         popup,
         popupOptions,
+        warning,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -95,25 +112,66 @@ export const Hint: React.FunctionComponent<PropsWithChildren<HintPropsInterface>
         className
     );
 
+    /**
+     * Aggregated popup options.
+     *
+     * @returns Popup props.
+     */
+    const resolvePopupOptions = (): PopupProps => {
+
+        // If `popupOptions` are externally propvided, merge it with the default.
+        if (popupOptions && isObject(popupOptions)) {
+            return {
+                ...DEFAULT_POPUP_OPTIONS,
+                ...popupOptions
+            };
+        }
+
+        return DEFAULT_POPUP_OPTIONS;
+    };
+
+    /**
+     * Resolves hit icon.
+     *
+     * @returns Hit icon.
+     */
+    const resolveIcon = (): ReactElement => {
+
+        let iconType: SemanticICONS = icon || "info circle";
+        let iconColor: SemanticCOLORS = "grey";
+
+        if (warning) {
+            iconType = "warning sign";
+            iconColor = "yellow";
+        }
+
+        return <Icon color={ iconColor } floated="left" name={ iconType } />;
+    };
+
     return (
-        <div className={ classes } data-testid={ testId }>
+        <div
+            className={ classes }
+            data-componentid={ componentId }
+            data-testid={ testId }
+        >
             {
                 popup
                     ? (
                         <Popup
-                            trigger={ <Icon color="grey" floated="left" name={ icon } /> }
+                            inverted
+                            trigger={ resolveIcon() }
                             content={ children }
+                            data-componentid={ `${ componentId }-popup` }
                             data-testid={ `${ testId }-popup` }
-                            { ...popupOptions }
+                            popper={ <div style={ { filter: "none" } }/> }
+                            { ...resolvePopupOptions() }
                         />
                     )
                     : (
-                        <>
-                            { icon && (
-                                <Icon color="grey" floated="left" name={ icon } data-testid={ `${ testId }-icon` }/>
-                            ) }
-                            { children }
-                        </>
+                        <div style={ { columnGap: ".2rem", display: "inline-flex" } }>
+                            { resolveIcon() }
+                            <div>{ children }</div>
+                        </div>
                     )
             }
         </div>
@@ -125,14 +183,8 @@ export const Hint: React.FunctionComponent<PropsWithChildren<HintPropsInterface>
  */
 Hint.defaultProps = {
     compact: false,
+    "data-componentid": "hint",
     "data-testid": "hint",
-    icon: "info circle",
     inline: false,
-    popup: false,
-    popupOptions: {
-        basic: true,
-        hoverable: true,
-        inverted: true,
-        position: "bottom left"
-    }
+    popup: false
 };

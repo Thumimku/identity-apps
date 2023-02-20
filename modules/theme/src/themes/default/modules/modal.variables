@@ -37,7 +37,7 @@
 @wizardContentHorizontalPadding: 3em;
 @wizardSummaryFieldValueColor: @nobel;
 
-@minimalApplicationCreateWizardSubTemplateSelectionCardFontSize: 0.8em;
+@minimalApplicationCreateWizardSubTemplateSelectionCardFontSize: 0.9em;
 
 /*-------------------------------
         Side Panel Modal
@@ -58,7 +58,7 @@
 
 @sidePanelModalHelpSectionBoxShadow: -4px 0px 15px -8px #d6d6d6;
 @sidePanelModalHelpSectionBorderLeft: whitesmoke solid 1px;
-@sidePanelModalHelpSectionTransition: width ease-out 100ms;
+@sidePanelModalHelpSectionTransition: all 100ms ease-in-out !important;
 @sidePanelModalHelpContentHeight: @sidePanelModalContentHeight + @sidePanelModalActionPanelHeight;
 @sidePanelModalHelpContentTransition: opacity ease-out 100ms;
 
@@ -70,7 +70,7 @@
 --------------------------------*/
 @attributeModalContentHeight: 500px;
 @transferComponentSegmentHeight: 450px;
-@transferComponentListSegmentHeight: 300px;
+@transferComponentListSegmentHeight: 350px;
 
 /*-------------------------------
       Edit Avatar Modal

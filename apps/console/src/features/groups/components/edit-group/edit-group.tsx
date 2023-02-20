@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,7 @@
 import { hasRequiredScopes, isFeatureEnabled } from "@wso2is/core/helpers";
 import { SBACInterface } from "@wso2is/core/models";
 import { ResourceTab } from "@wso2is/react-components";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import React, { FunctionComponent, ReactElement, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 // TODO: Move to shared components.
 import { useSelector } from "react-redux";
@@ -28,6 +28,7 @@ import { GroupRolesList } from "./edit-group-roles";
 import { GroupUsersList } from "./edit-group-users";
 import { FeatureConfigInterface } from "../../../core/models";
 import { AppState } from "../../../core/store";
+import { OrganizationUtils } from "../../../organizations/utils";
 import { getUsersList } from "../../../users/api";
 import { UserBasicInterface } from "../../../users/models";
 import { GroupConstants } from "../../constants";
@@ -46,6 +47,10 @@ interface EditGroupProps extends SBACInterface<FeatureConfigInterface> {
      */
     group: GroupsInterface;
     /**
+     * Is the data still loading.
+     */
+    isLoading?: boolean;
+    /**
      * Handle group update callback.
      */
     onGroupUpdate: () => void;
@@ -58,13 +63,14 @@ interface EditGroupProps extends SBACInterface<FeatureConfigInterface> {
 /**
  * Component which will allow editing of a selected group.
  *
- * @param props contains group details to be edited.
+ * @param props - contains group details to be edited.
  */
 export const EditGroup: FunctionComponent<EditGroupProps> = (props: EditGroupProps): ReactElement => {
 
     const {
         groupId,
         group,
+        isLoading,
         onGroupUpdate,
         featureConfig,
         readOnlyUserStores
@@ -72,12 +78,16 @@ export const EditGroup: FunctionComponent<EditGroupProps> = (props: EditGroupPro
 
     const { t } = useTranslation();
 
-    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.scope);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
 
     const [ isUsersFetchRequestLoading, setIsUsersFetchRequestLoading ] = useState<boolean>(true);
     const [ usersList, setUsersList ] = useState<UserBasicInterface[]>([]);
     const [ selectedUsersList, setSelectedUsersList ] = useState<UserBasicInterface[]>([]);
     const [ isReadOnly, setReadOnly ] = useState<boolean>(false);
+
+    const currentOrganization = useSelector((state: AppState) => state.organization.organization);
+    const isRootOrganization = useMemo(() =>
+        OrganizationUtils.isRootOrganization(currentOrganization), [ currentOrganization ]);
 
     useEffect(() => {
 
@@ -123,8 +133,8 @@ export const EditGroup: FunctionComponent<EditGroupProps> = (props: EditGroupPro
     /**
      * Filter out the members of the group.
      *
-     * @param {[]} usersToFilter - Original users list.
-     * @return {UserBasicInterface[]}
+     * @param usersToFilter - Original users list.
+     * @returns Filtered user list.
      */
     const filterUsersList = (usersToFilter: UserBasicInterface[]): UserBasicInterface[] => {
 
@@ -185,7 +195,9 @@ export const EditGroup: FunctionComponent<EditGroupProps> = (props: EditGroupPro
                         />
                     </ResourceTab.Pane>
                 )
-            },{
+            },
+            // ToDo - Enabled only for root organizations as BE doesn't have full SCIM support for organizations yet
+            isRootOrganization ? {
                 menuItem: t("console:manage.features.roles.edit.menuItems.roles"),
                 render: () => (
                     <ResourceTab.Pane controlledSegmentation attached={ false }>
@@ -197,13 +209,15 @@ export const EditGroup: FunctionComponent<EditGroupProps> = (props: EditGroupPro
                         />
                     </ResourceTab.Pane>
                 )
-            }
+            } : null
         ];
 
         return panes;
     };
 
     return (
-        <ResourceTab panes={ resolveResourcePanes() } />
+        <ResourceTab
+            isLoading={ isLoading } 
+            panes={ resolveResourcePanes() } />
     );
 };

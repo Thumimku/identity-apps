@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import { AccessControlConstants, Show } from "@wso2is/access-control";
 import { AlertLevels, LoadableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import {
@@ -24,6 +25,7 @@ import {
     EmptyPlaceholder,
     Heading,
     LinkButton,
+    Popup,
     PrimaryButton,
     TransferComponent,
     TransferList,
@@ -44,7 +46,7 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { Grid, Header, Icon, Input, Modal, Popup, Table } from "semantic-ui-react";
+import { Grid, Header, Icon, Input, Modal, Table } from "semantic-ui-react";
 import { getEmptyPlaceholderIllustrations } from "../../../core";
 import { UserBasicInterface } from "../../../users";
 import { updateGroupDetails } from "../../api";
@@ -84,6 +86,7 @@ export const GroupUsersList: FunctionComponent<GroupUsersListProps> = (props: Gr
     const [ isSelectAllUsers, setIsSelectAllUsers ] = useState<boolean>(false);
     const [ newlySelectedUsers, setNewlySelectedUsers ] = useState<UserBasicInterface[]>([]);
     const [ showAddNewUserModal, setAddNewUserModalView ] = useState<boolean>(false);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     useEffect(() => {
         setOriginalUserList(users);
@@ -108,7 +111,7 @@ export const GroupUsersList: FunctionComponent<GroupUsersListProps> = (props: Gr
     };
 
     const handleSearchFieldChange = (e: FormEvent<HTMLInputElement>, query: string, list: UserBasicInterface[],
-                                     stateAction: Dispatch<SetStateAction<any>>) => {
+        stateAction: Dispatch<SetStateAction<any>>) => {
 
         let isMatch: boolean = false;
         const filteredRoleList: UserBasicInterface[] = [];
@@ -160,7 +163,7 @@ export const GroupUsersList: FunctionComponent<GroupUsersListProps> = (props: Gr
             setSelectedUserList(selectedUsers);
             updateGroupUsersList(selectedUsers);
         }
-    }
+    };
 
     const handleOpenAddNewGroupModal = () => {
         setAddModalUserList(originalUserList);
@@ -215,6 +218,8 @@ export const GroupUsersList: FunctionComponent<GroupUsersListProps> = (props: Gr
                     level: AlertLevels.ERROR,
                     message: t("console:manage.features.groups.notifications.updateGroup.error.message")
                 });
+            }).finally(() => {
+                setIsSubmitting(false);
             });
     };
 
@@ -268,6 +273,8 @@ export const GroupUsersList: FunctionComponent<GroupUsersListProps> = (props: Gr
                         data-testid={ `${ testId }-unselected-transfer-list` }
                         emptyPlaceholderContent={ t("console:manage.features.transferList.list.emptyPlaceholders." +
                             "groups.selected", { type: "users" }) }
+                        emptyPlaceholderDefaultContent={ t("console:manage.features.transferList.list."
+                            + "emptyPlaceholders.default") }
                     >
                         {
                             addModalUserList?.map((user: UserBasicInterface, index: number) => {
@@ -318,9 +325,12 @@ export const GroupUsersList: FunctionComponent<GroupUsersListProps> = (props: Gr
                             <PrimaryButton
                                 data-testid={ `${ testId }-assign-user-wizard-modal-save-button` }
                                 onClick={ () => {
+                                    setIsSubmitting(true);
                                     handleAddUserSubmit();
                                 } }
                                 floated="right"
+                                loading={ isSubmitting }
+                                disabled={ isSubmitting }
                             >
                                 { t("common:save") }
                             </PrimaryButton>
@@ -370,24 +380,26 @@ export const GroupUsersList: FunctionComponent<GroupUsersListProps> = (props: Gr
                     </Header>
                 </Table.Cell>
                 <Table.Cell textAlign="right">
-                    <Popup
-                        trigger={ (
-                            <Icon
-                            link={ true }
-                            data-testid={ `${ testId }-user-delete-button` }
-                            className="list-icon pr-4"
-                            size="large"
-                            color="grey"
-                            name="trash alternate"
-                            onClick={ () => {
-                                deleteGroupUser(user);
-                            } }                    
-                            />
-                        ) }
-                        position="top right"
-                        content={ t("common:remove") }
-                        inverted
-                    />
+                    <Show when={ AccessControlConstants.GROUP_EDIT }>
+                        <Popup
+                            trigger={ (
+                                <Icon
+                                    link={ true }
+                                    data-testid={ `${ testId }-user-delete-button` }
+                                    className="list-icon pr-4"
+                                    size="large"
+                                    color="grey"
+                                    name="trash alternate"
+                                    onClick={ () => {
+                                        deleteGroupUser(user);
+                                    } }
+                                />
+                            ) }
+                            position="top right"
+                            content={ t("common:remove") }
+                            inverted
+                        />
+                    </Show>
                 </Table.Cell>
             </Table.Row>
         );
@@ -405,7 +417,7 @@ export const GroupUsersList: FunctionComponent<GroupUsersListProps> = (props: Gr
                                         data-testid={ `${ testId }-users-list-search-input` }
                                         icon={ <Icon name="search"/> }
                                         onChange={ (e: FormEvent<HTMLInputElement>,
-                                                    { value }: { value: string }) => {
+                                            { value }: { value: string }) => {
                                             handleSearchFieldChange(e, value, selectedUsers,
                                                 setSelectedUserList);
                                         } }

@@ -1,7 +1,7 @@
 <%--
-  ~ Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~ Copyright (c) 2018, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
   ~
-  ~  WSO2 Inc. licenses this file to you under the Apache License,
+  ~  WSO2 LLC. licenses this file to you under the Apache License,
   ~  Version 2.0 (the "License"); you may not use this file except
   ~  in compliance with the License.
   ~  You may obtain a copy of the License at
@@ -14,10 +14,12 @@
   ~ KIND, either express or implied.  See the License for the
   ~ specific language governing permissions and limitations
   ~ under the License.
-  --%>
+--%>
+
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%@ page import="org.owasp.encoder.Encode" %>
+<%@ page import="org.wso2.carbon.identity.captcha.util.CaptchaUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.model.InitiateAllQuestionResponse" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.model.Question" %>
@@ -38,12 +40,12 @@
     }
 %>
 
-<html>
+<html lang="en-US">
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- title -->
+    <%-- title --%>
     <%
         File titleFile = new File(getServletContext().getRealPath("extensions/title.jsp"));
         if (titleFile.exists()) {
@@ -64,14 +66,15 @@
     <![endif]-->
     <%
         if (reCaptchaEnabled) {
+            String reCaptchaAPI = CaptchaUtil.reCaptchaAPIURL();
     %>
-    <script src='<%=(request.getAttribute("reCaptchaAPI"))%>'></script>
+    <script src='<%=(reCaptchaAPI)%>'></script>
     <%
         }
     %>
 </head>
 <body>
-<!-- header -->
+<%-- header --%>
 <%
     File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
     if (headerFile.exists()) {
@@ -81,11 +84,11 @@
         <jsp:include page="includes/header.jsp"/>
 <% } %>
 
-<!-- page content -->
+<%-- page content --%>
 <div class="container-fluid body-wrapper">
 
     <div class="row">
-        <!-- content -->
+        <%-- content --%>
         <div class="col-xs-12 col-sm-10 col-md-8 col-lg-5 col-centered wr-login">
             <%
                 if (errorResponse != null) {
@@ -122,10 +125,15 @@
                         %>
                         <%
                             if (reCaptchaEnabled) {
+                                String reCaptchaKey = CaptchaUtil.reCaptchaSiteKey();
                         %>
-                        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 form-group">
+                        <div class="field">
                             <div class="g-recaptcha"
-                                 data-sitekey="<%=Encode.forHtmlContent((String)request.getAttribute("reCaptchaKey"))%>">
+                                    data-size="invisible"
+                                    data-callback="onCompleted"
+                                    data-action="securityQuestion"
+                                    data-sitekey=
+                                            "<%=Encode.forHtmlContent(reCaptchaKey)%>">
                             </div>
                         </div>
                         <%
@@ -142,16 +150,16 @@
                 </div>
             </div>
         </div>
-        <!-- /content/body -->
+        <%-- /content/body --%>
 
     </div>
 </div>
-<!-- /content/body -->
+<%-- /content/body --%>
 
 </div>
 </div>
 
-<!-- footer -->
+<%-- footer --%>
 <%
     File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
     if (footerFile.exists()) {
@@ -161,5 +169,28 @@
         <jsp:include page="includes/footer.jsp"/>
 <% } %>
 
+<script type="text/javascript">
+    function onCompleted() {
+        $('#securityQuestionForm').submit();
+    }
+    $(document).ready(function () {
+        $("#securityQuestionForm").submit(function (e) {
+           <%
+               if (reCaptchaEnabled) {
+           %>
+           if (!grecaptcha.getResponse()) {
+               e.preventDefault();
+               grecaptcha.execute();
+
+               return true;
+           }
+           <%
+               }
+           %>
+           return true;
+        });
+    });
+
+</script>
 </body>
 </html>

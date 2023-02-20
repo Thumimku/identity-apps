@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +17,7 @@
  */
 
 import {
+    AppSwitchItemInterface,
     Confirmation,
     DangerZone,
     EditPage,
@@ -82,15 +83,31 @@ export interface ConsoleNS {
             };
             resultsIndicator: string;
         };
-        header: {
-            tenantSwitchHeader: string;
+        cookieConsent: {
+            content: string;
+            confirmButton: string;
         };
+        dateTime: {
+            humanizedDateString: string;
+        };
+        header: {
+            appSwitch: {
+                console: AppSwitchItemInterface;
+                myAccount: AppSwitchItemInterface;
+                tooltip: string;
+            };
+            organizationSwitch: {
+                emptyOrgListMessage: string;
+                orgSearchPlaceholder: string;
+                breadcrumbError: NotificationItem;
+            }
+        },
         modals: {
             editAvatarModal: ModalInterface;
             sessionTimeoutModal: {
                 description: string;
                 heading: string;
-                content?: object;
+                content?: Record<string, unknown>;
                 primaryButton: string;
                 secondaryButton: string;
                 loginAgainButton: string;
@@ -269,7 +286,6 @@ export interface ConsoleNS {
         sidePanel: {
             privacy: string;
         };
-
     };
     develop: {
         features: {
@@ -376,6 +392,7 @@ export interface ConsoleNS {
                 };
                 confirmations: {
                     addSocialLogin: Popup;
+                    changeProtocol: Confirmation;
                     deleteApplication: Confirmation;
                     deleteOutboundProvisioningIDP: Confirmation;
                     deleteProtocol: Confirmation;
@@ -385,6 +402,7 @@ export interface ConsoleNS {
                     reactivateSPA: Confirmation;
                     reactivateOIDC: Confirmation;
                     removeApplicationUserAttribute: Popup;
+                    removeApplicationUserAttributeMapping: Popup;
                     revokeApplication: Confirmation;
                     clientSecretHashDisclaimer: {
                         modal: Confirmation;
@@ -395,6 +413,7 @@ export interface ConsoleNS {
                            };
                         };
                     };
+                    certificateDelete: Confirmation & Record<string, string>;
                 };
                 dangerZoneGroup: {
                     header: string;
@@ -422,6 +441,10 @@ export interface ConsoleNS {
                                 };
                             };
                             tabName: string;
+                            protocolLanding: {
+                                heading: string;
+                                subHeading: string;
+                            }
                         };
                         advanced: {
                             tabName: string;
@@ -446,7 +469,17 @@ export interface ConsoleNS {
                                     };
                                 };
                                 heading: string;
+                                scopelessAttributes: {
+                                    description: string;
+                                    displayName: string;
+                                    name: string;
+                                    hint: string;
+                                },
+                                selectedScopesComponentHint: string;
+                                howToUseScopesHint: string;
                                 attributeComponentHint: string;
+                                attributeComponentHintAlt: string;
+                                description: string;
                                 mandatoryAttributeHint: string;
                                 mappingTable: {
                                     actions: {
@@ -470,10 +503,14 @@ export interface ConsoleNS {
                                         actions: {
                                             makeMandatory: string;
                                             makeRequested: string;
+                                            makeScopeRequested: string;
                                             removeMandatory: string;
                                             removeRequested: string;
+                                            removeScopeRequested: string;
                                             subjectDisabledSelection: string;
                                         };
+                                        faultyAttributeMapping: string;
+                                        faultyAttributeMappingHint: string;
                                         fields: {
                                             claim: FormAttributes;
                                         };
@@ -483,9 +520,23 @@ export interface ConsoleNS {
                                 selectAll: string;
                             };
                             attributeMappingChange: Notification;
+                            emptySearchResults: {
+                                subtitles: {
+                                    0: string,
+                                    1: string
+                                },
+                                title: string;
+                            },
                             roleMapping: {
                                 heading: string;
                             };
+                            tabName: string;
+                        };
+                        info: {
+                            oidcHeading: string;
+                            oidcSubHeading: string;
+                            samlHeading: string;
+                            samlSubHeading: string;
                             tabName: string;
                         };
                         general: {
@@ -522,9 +573,45 @@ export interface ConsoleNS {
                                     heading: string;
                                     sections: {
                                         scriptBased: {
+                                            accordion: {
+                                                title: {
+                                                    description: string;
+                                                    heading: string;
+                                                };
+                                            };
+                                            conditionalAuthTour: {
+                                                steps: {
+                                                    0: {
+                                                        heading: string;
+                                                        content: {
+                                                            0: string;
+                                                            1: string;
+                                                        };
+                                                    };
+                                                    1: {
+                                                        heading: string;
+                                                        content: {
+                                                            0: string;
+                                                        };
+                                                    };
+                                                    2: {
+                                                        heading: string;
+                                                        content: {
+                                                            0: string;
+                                                        };
+                                                    };
+                                                };
+                                            },
                                             heading: string;
                                             hint: string;
                                             editor: {
+                                                apiDocumentation: string;
+                                                changeConfirmation: {
+                                                    content: string;
+                                                    heading: string;
+                                                    message: string;
+                                                };
+                                                goToApiDocumentation: string;
                                                 resetConfirmation: {
                                                     content: string;
                                                     heading: string;
@@ -535,12 +622,24 @@ export interface ConsoleNS {
                                                     darkMode: string;
                                                 };
                                             };
+                                            secretsList: {
+                                                create: string;
+                                                emptyPlaceholder: string;
+                                                search: string;
+                                                tooltips: {
+                                                    keyIcon: string;
+                                                    plusIcon: string;
+                                                }
+                                            }
                                         };
                                         stepBased: {
                                             actions: {
+                                                addAuthentication: string;
+                                                addNewStep: string;
                                                 addStep: string;
                                                 selectAuthenticator: string;
                                             };
+                                            addAuthenticatorModal: ModalInterface;
                                             heading: string;
                                             hint: string;
                                             forms: {
@@ -550,10 +649,83 @@ export interface ConsoleNS {
                                                 };
                                             };
                                             secondFactorDisabled: string;
+                                            secondFactorDisabledDueToProxyMode: string;
+                                            secondFactorDisabledInFirstStep: string;
                                             authenticatorDisabled: string;
+                                            firstFactorDisabled: string;
                                         };
                                     };
                                 };
+                                customization: {
+                                    heading: string;
+                                    revertToDefaultButton: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                                landing: {
+                                    defaultConfig: {
+                                        description: {
+                                            0: string;
+                                            1: string;
+                                        },
+                                        heading: string;
+                                    },
+                                    flowBuilder: {
+                                        addMissingSocialAuthenticatorModal: ModalInterface;
+                                        duplicateSocialAuthenticatorSelectionModal: ModalInterface;
+                                        heading: string;
+                                        headings: {
+                                            default: string;
+                                            socialLogin: string;
+                                            multiFactorLogin: string;
+                                            passwordlessLogin: string;
+                                        }
+                                        types: {
+                                            defaultConfig: {
+                                                description: string;
+                                                heading: string;
+                                            },
+                                            facebook: {
+                                                description: string;
+                                                heading: string;
+                                            },
+                                            github: {
+                                                description: string;
+                                                heading: string;
+                                            },
+                                            google: {
+                                                description: string;
+                                                heading: string;
+                                            },
+                                            totp: {
+                                                description: string;
+                                                heading: string;
+                                            },
+                                            usernameless: {
+                                                description: string;
+                                                heading: string;
+                                                info: string;
+                                            },
+                                            magicLink: {
+                                                description: string;
+                                                heading: string;
+                                            },
+                                            microsoft: {
+                                                description: string;
+                                                heading: string;
+                                            },
+                                            emailOTP: {
+                                                description: string,
+                                                heading: string,
+                                            },
+                                            smsOTP: {
+                                                description: string;
+                                                heading: string;
+                                            }
+                                        }
+                                    }
+                                },
                                 requestPathAuthenticators: {
                                     title: string;
                                     subTitle: string;
@@ -574,6 +746,13 @@ export interface ConsoleNS {
                                 };
                             };
                         };
+                        shareApplication: {
+                            heading: string;
+                            shareApplication: string;
+                            addSharingNotification: Notification;
+                            stopSharingNotification: Notification
+                            getSharedOrganizations: Notification;
+                        }
                     };
                 };
                 forms: {
@@ -608,11 +787,18 @@ export interface ConsoleNS {
                         sections: {
                             certificate: {
                                 heading: string;
-                                hint: string;
+                                hint?: {
+                                    customOidc: string;
+                                    customSaml: string;
+                                };
                                 fields: {
                                     jwksValue: FormAttributes;
                                     pemValue: FormAttributes;
                                     type: FormAttributes;
+                                };
+                                invalidOperationModal?: {
+                                    header: string;
+                                    message: string;
                                 };
                             };
                         };
@@ -624,7 +810,10 @@ export interface ConsoleNS {
                             imageUrl: FormAttributes;
                             discoverable: FormAttributes;
                             accessUrl: FormAttributes;
+                            isManagementApp: FormAttributes;
                         };
+                        managementAppBanner: string;
+
                     };
                     inboundCustom: {
                         fields: {
@@ -635,6 +824,8 @@ export interface ConsoleNS {
                         };
                     };
                     inboundOIDC: {
+                        description: string;
+                        documentation: string;
                         fields: {
                             allowedOrigins: FormAttributes;
                             callBackUrls: FormAttributes;
@@ -643,6 +834,10 @@ export interface ConsoleNS {
                             grant: FormAttributes;
                             public: FormAttributes;
                         };
+                        mobileApp: {
+                            discoverableHint: string;
+                            mobileAppPlaceholder: string;
+                        },
                         sections: {
                             accessToken: {
                                 heading: string;
@@ -650,6 +845,7 @@ export interface ConsoleNS {
                                 fields: {
                                     bindingType: FormAttributes;
                                     expiry: FormAttributes;
+                                    applicationTokenExpiry: FormAttributes;
                                     type: FormAttributes;
                                     revokeToken: FormAttributes;
                                     validateBinding: FormAttributes;
@@ -700,12 +896,18 @@ export interface ConsoleNS {
                                     validator: FormAttributes;
                                 };
                             };
+                            certificates: {
+                                disabledPopup: string;
+                            }
                         };
                         messages: {
                             revokeDisclaimer: Message;
+                            customInvalidMessage: string;
                         };
                     };
                     inboundSAML: {
+                        description: string;
+                        documentation: string;
                         fields: {
                             assertionURLs: FormAttributes;
                             defaultAssertionURL: FormAttributes;
@@ -785,6 +987,13 @@ export interface ConsoleNS {
                                     idpInitiatedSSO: FormAttributes;
                                 };
                             };
+                            certificates: {
+                                disabledPopup: string;
+                                certificateRemoveConfirmation: {
+                                    header: string;
+                                    content: string;
+                                }
+                            }
                         };
                     };
                     inboundSTS: {
@@ -818,6 +1027,7 @@ export interface ConsoleNS {
                         fields: {
                             callBackUrls: FormAttributes;
                             name: FormAttributes;
+                            urlDeepLinkError: string;
                         };
                     };
                 };
@@ -826,16 +1036,69 @@ export interface ConsoleNS {
                     columns: {
                         actions: string;
                         name: string;
+                        inboundKey: string;
                     };
                     actions: {
                         add: string;
+                        predefined: string;
+                        custom: string;
                     };
+                    labels: {
+                        fragment: string;
+                    }
+                };
+                myaccount: {
+                    title: string;
+                    description: string;
+                    popup: string;
+                    enable: {
+                        0: string;
+                        1: string;
+                    };
+                    Confirmation: {
+                        enableConfirmation: {
+                            content: string;
+                            heading: string;
+                            message: string;
+                        };
+                        disableConfirmation: {
+                            content: string;
+                            heading: string;
+                            message: string;
+                        };
+                    };
+                    notifications: {
+                        error: {
+                            description: string;
+                            message: string;
+                        };
+                        genericError: {
+                            description: string;
+                            message: string;
+                        };
+                        success: {
+                            description: string;
+                            message: string;
+                        };
+                    };
+                    fetchMyAccountStatus: {
+                        error: {
+                            description: string;
+                            message: string;
+                        },
+                        genericError: {
+                            description: string;
+                            message: string;
+                        },
+                    }
                 };
                 notifications: {
                     addApplication: Notification;
+                    apiLimitReachedError: Notification;
                     authenticationStepMin: Notification;
                     authenticationStepDeleteErrorDueToSecondFactors: Notification;
                     deleteApplication: Notification;
+                    deleteOptionErrorDueToSecondFactorsOnRight: Notification;
                     deleteProtocolConfig: Notification;
                     duplicateAuthenticationStep: Notification;
                     emptyAuthenticationStep: Notification;
@@ -852,6 +1115,10 @@ export interface ConsoleNS {
                     getInboundProtocolConfig: Notification;
                     regenerateSecret: Notification;
                     revokeApplication: Notification;
+                    tierLimitReachedError: {
+                        emptyPlaceholder: Placeholder;
+                        heading: string;
+                    };
                     updateAdvancedConfig: Notification;
                     updateApplication: Notification;
                     updateAuthenticationFlow: Notification;
@@ -862,6 +1129,11 @@ export interface ConsoleNS {
                     updateProtocol: Notification;
                     fetchOIDCServiceEndpoints: Notification;
                     secondFactorAuthenticatorToFirstStep: Notification;
+                    firstFactorAuthenticatorToSecondStep: Notification;
+                    conditionalScriptLoopingError: NotificationItem;
+                    deleteCertificateSuccess: NotificationItem;
+                    deleteCertificateGenericError: NotificationItem;
+                    updateOnlyIdentifierFirstError: NotificationItem;
                 };
                 popups: {
                     appStatus: {
@@ -893,12 +1165,22 @@ export interface ConsoleNS {
                         help: {
                             heading: string;
                             subHeading: string;
+                            template : FormAttributes;
                         };
                     };
+                    applicationCertificateWizard: {
+                        heading: string;
+                        subHeading: string;
+                        emptyPlaceHolder: {
+                            title: string;
+                            description1: string;
+                            description2: string;
+                        }
+                    }
                 };
-            };
+            }
             authenticationProvider?: {
-                advancedSearch: {
+                advancedSearch?: {
                     form: {
                         inputs: {
                             filterAttribute: {
@@ -914,25 +1196,42 @@ export interface ConsoleNS {
                     };
                     placeholder: string;
                 };
-                buttons: {
+                buttons?: {
                     addIDP: string;
                     addAuthenticator: string;
                     addConnector: string;
                     addAttribute: string;
                     addCertificate: string;
                 };
-                confirmations: {
+                confirmations?: {
                     deleteIDP: Confirmation;
                     deleteIDPWithConnectedApps: Confirmation;
                     deleteAuthenticator: Confirmation;
                     deleteConnector: Confirmation;
                 };
-                dangerZoneGroup: {
+                dangerZoneGroup?: {
                     header: string;
                     disableIDP: DangerZone;
                     deleteIDP: DangerZone;
                 };
-                forms: {
+                edit?: {
+                    common: {
+                        settings: {
+                            tabName: string;
+                        };
+                    };
+                    emailOTP: {
+                        emailTemplate: {
+                            tabName: string;
+                        };
+                    };
+                    smsOTP: {
+                        smsProvider: {
+                            tabName: string;
+                        };
+                    };
+                };
+                forms?: {
                     advancedConfigs: {
                         federationHub: FormAttributes;
                         homeRealmIdentifier: FormAttributes;
@@ -983,6 +1282,229 @@ export interface ConsoleNS {
                             1: string;
                         };
                     };
+                    authenticatorSettings: {
+                        emailOTP: {
+                            enableBackupCodes: {
+                                hint: string;
+                                label: string;
+                                validations: {
+                                    required: string;
+                                };
+                            };
+                            expiryTime: {
+                                hint: string;
+                                label: string;
+                                placeholder: string;
+                                validations: {
+                                    invalid: string;
+                                    range: string;
+                                    required: string;
+                                };
+                                unit: string;
+                            };
+                            tokenLength: {
+                                hint: string;
+                                label: string;
+                                unit: {
+                                    digits: string;
+                                    characters: string;
+                                },
+                                placeholder: string;
+                                validations: {
+                                    invalid: string;
+                                    range: {
+                                        digits: string;
+                                        characters: string;
+                                    };
+                                    required: string;
+                                };
+                            };
+                            useNumericChars: {
+                                hint: string;
+                                label: string;
+                                validations: {
+                                    required: string;
+                                };
+                            };
+                        };
+                        smsOTP: {
+                            expiryTime: {
+                                hint: string;
+                                label: string;
+                                placeholder: string;
+                                validations: {
+                                    invalid: string;
+                                    range: string;
+                                    required: string;
+                                };
+                                unit: string;
+                            };
+                            tokenLength: {
+                                hint: string;
+                                label: string;
+                                placeholder: string;
+                                validations: {
+                                    invalid: string;
+                                    range: {
+                                        digits: string;
+                                        characters: string;
+                                    };
+                                    required: string;
+                                };
+                                unit: {
+                                    digits: string;
+                                    characters: string;
+                                }
+                            };
+                            useNumericChars: {
+                                hint: string;
+                                label: string;
+                                validations: {
+                                    required: string;
+                                };
+                            };
+                            allowedResendAttemptCount: {
+                                hint: string;
+                                label: string;
+                                placeholder: string;
+                                validations: {
+                                    required: string;
+                                    invalid: string;
+                                    range: string;
+                                };
+                            };
+                        }
+                        facebook: {
+                            callbackUrl: FormAttributes;
+                            clientId: FormAttributes;
+                            clientSecret: FormAttributes;
+                            scopes: {
+                                heading: string;
+                                hint: string;
+                                list: {
+                                    email: {
+                                        description: string;
+                                    },
+                                    profile: {
+                                        description: string;
+                                    }
+                                }
+                            };
+                            userInfo: {
+                                heading: string;
+                                hint: string;
+                                placeholder: string;
+                                list: {
+                                    ageRange: {
+                                        description: string;
+                                    },
+                                    email: {
+                                        description: string;
+                                    },
+                                    firstName: {
+                                        description: string;
+                                    },
+                                    gender: {
+                                        description: string;
+                                    }
+                                    id: {
+                                        description: string;
+                                    },
+                                    lastName: {
+                                        description: string;
+                                    },
+                                    link: {
+                                        description: string;
+                                    },
+                                    name: {
+                                        description: string;
+                                    }
+                                }
+                            };
+                        };
+                        github: {
+                            callbackUrl: FormAttributes;
+                            clientId: FormAttributes;
+                            clientSecret: FormAttributes;
+                            scopes: {
+                                heading: string;
+                                hint: string;
+                                list: {
+                                    email: {
+                                        description: string;
+                                    },
+                                    profile: {
+                                        description: string;
+                                    }
+                                }
+                            };
+                        };
+                        google: {
+                            callbackUrl: FormAttributes;
+                            clientId: FormAttributes;
+                            clientSecret: FormAttributes;
+                            enableGoogleOneTap: FormAttributes;
+                            AdditionalQueryParameters: FormAttributes;
+                            scopes: {
+                                heading: string;
+                                hint: string;
+                                list: {
+                                    email: {
+                                        description: string;
+                                    },
+                                    openid: {
+                                        description: string;
+                                    },
+                                    profile: {
+                                        description: string;
+                                    }
+                                }
+                            };
+                        };
+                        microsoft: {
+                            callbackUrl: FormAttributes;
+                            clientId: FormAttributes;
+                            clientSecret: FormAttributes;
+                            commonAuthQueryParams: FormAttributes;
+                            scopes: {
+                                ariaLabel: string,
+                                heading: string;
+                                hint: string;
+                                label: string;
+                                list: {
+                                    email: {
+                                        description: string;
+                                    },
+                                    openid: {
+                                        description: string;
+                                    },
+                                    profile: {
+                                        description: string;
+                                    }
+                                }
+                                placeholder: string;
+                            };
+                        };
+                        saml: {
+                            AuthRedirectUrl: FormAttributes;
+                            SPEntityId: FormAttributes;
+                            SSOUrl: FormAttributes;
+                            IdPEntityId: FormAttributes;
+                            NameIDType: FormAttributes;
+                            RequestMethod: FormAttributes;
+                            IsSLORequestAccepted: FormAttributes;
+                            IsLogoutEnabled: FormAttributes;
+                            LogoutReqUrl: FormAttributes;
+                            IsAuthnRespSigned: FormAttributes;
+                            IsLogoutReqSigned: FormAttributes;
+                            ISAuthnReqSigned: FormAttributes;
+                            SignatureAlgorithm: FormAttributes;
+                            DigestAlgorithm: FormAttributes;
+                            IncludeProtocolBinding: FormAttributes;
+                            IsUserIdInClaims: FormAttributes;
+                            commonAuthQueryParams: FormAttributes;
+                        }
+                    },
                     outboundConnectorAccordion: {
                         default: {
                             0: string;
@@ -997,6 +1519,7 @@ export interface ConsoleNS {
                         requiredErrorMessage: string;
                         invalidURLErrorMessage: string;
                         invalidQueryParamErrorMessage: string;
+                        invalidScopesErrorMessage: string;
                         customProperties: string;
                     };
                     generalDetails: {
@@ -1017,6 +1540,7 @@ export interface ConsoleNS {
                                 3: string;
                             };
                         };
+                        associateLocalUser: FormAttributes;
                     };
                     roleMapping: {
                         heading: string;
@@ -1059,22 +1583,171 @@ export interface ConsoleNS {
                         };
                     };
                 };
-                helpPanel: HelpPanelInterface;
-                templates: {
-                    manualSetup: {
+                helpPanel?: HelpPanelInterface;
+                templates?: {
+                    manualSetup?: {
                         heading: string;
                         subHeading: string;
                     };
-                    quickSetup: {
+                    quickSetup?: {
                         heading: string;
                         subHeading: string;
+                    };
+                    expert: {
+                        wizardHelp: {
+                            heading: string;
+                            description: {
+                                connectionDescription: string;
+                                heading: string;
+                                idpDescription: string;
+                            };
+                            name: {
+                                connectionDescription: string;
+                                heading: string;
+                                idpDescription: string;
+                            };
+                            subHeading: string;
+                        };
+                    };
+                    facebook?: {
+                        wizardHelp: {
+                            clientId: {
+                                description: string;
+                                heading: string;
+                            },
+                            clientSecret: {
+                                description: string;
+                                heading: string;
+                            },
+                            heading: string;
+                            name: {
+                                idpDescription: string;
+                                connectionDescription: string;
+                                heading: string;
+                            },
+                            preRequisites: {
+                                configureOAuthApps: string;
+                                configureRedirectURL: string;
+                                configureSiteURL: string;
+                                getCredentials: string;
+                                heading: string;
+                            },
+                            subHeading: string;
+                        }
+                    },
+                    github?: {
+                        wizardHelp: {
+                            heading: string;
+                            subHeading: string;
+                            clientId: {
+                                description: string;
+                                heading: string;
+                            },
+                            clientSecret: {
+                                description: string;
+                                heading: string;
+                            },
+                            name: {
+                                idpDescription: string;
+                                connectionDescription: string;
+                                heading: string;
+                            },
+                            preRequisites: {
+                                configureOAuthApps: string;
+                                configureHomePageURL: string;
+                                configureRedirectURL: string;
+                                heading: string;
+                                getCredentials: string;
+                            }
+                        }
+                    };
+                    google?: {
+                        wizardHelp: {
+                            clientId: {
+                                description: string;
+                                heading: string;
+                            };
+                            clientSecret: {
+                                description: string;
+                                heading: string;
+                            };
+                            heading: string;
+                            name: {
+                                idpDescription: string;
+                                connectionDescription: string;
+                                heading: string;
+                            };
+                            preRequisites: {
+                                configureOAuthApps: string;
+                                configureRedirectURL: string;
+                                getCredentials: string;
+                                heading: string;
+                            },
+                            subHeading: string;
+                        }
+                    };
+                    organizationIDP?: {
+                        wizardHelp: {
+                            name: {
+                                description: string;
+                                heading: string;
+                            };
+                            description: {
+                                description: string;
+                                heading: string;
+                                example: string;
+                            };
+                        }
+                    },
+                    microsoft?: {
+                        wizardHelp: {
+                            clientId: {
+                                description: string;
+                                heading: string;
+                            };
+                            clientSecret: {
+                                description: string;
+                                heading: string;
+                            };
+                            heading: string;
+                            name: {
+                                idpDescription: string;
+                                connectionDescription: string;
+                                heading: string;
+                            };
+                            preRequisites: {
+                                configureOAuthApps: string;
+                                configureRedirectURL: string;
+                                getCredentials: string;
+                                heading: string;
+                            },
+                            subHeading: string;
+                        }
+                    };
+                    enterprise?: {
+                        addWizard?: {
+                            title: string;
+                            subtitle: string;
+                        };
+                        saml?: {
+                            preRequisites: {
+                                configureIdp: string;
+                                configureRedirectURL: string;
+                                heading: string;
+                                hint: string;
+                            };
+                        };
+                        validation: {
+                            name: string;
+                            invalidName: string;
+                        };
                     };
                 };
-                list: {
+                list?: {
                     actions: string;
                     name: string;
                 };
-                modals: {
+                modals?: {
                     addAuthenticator: {
                         title: string;
                         subTitle: string;
@@ -1095,7 +1768,7 @@ export interface ConsoleNS {
                         };
                     };
                 };
-                notifications: {
+                notifications?: {
                     addFederatedAuthenticator: Notification;
                     addIDP: Notification;
                     changeCertType: {
@@ -1110,6 +1783,7 @@ export interface ConsoleNS {
                     };
                     deleteCertificate: Notification;
                     deleteIDP: Notification;
+                    deleteConnection: Notification;
                     disableAuthenticator: Notification;
                     disableOutboundProvisioningConnector: Notification;
                     duplicateCertificateUpload: Notification;
@@ -1120,6 +1794,7 @@ export interface ConsoleNS {
                     getFederatedAuthenticator: Notification;
                     getFederatedAuthenticatorsList: Notification;
                     getFederatedAuthenticatorMetadata: Notification;
+                    getConnectionDetails: Notification;
                     getOutboundProvisioningConnector: Notification;
                     getOutboundProvisioningConnectorsList: Notification;
                     getOutboundProvisioningConnectorMetadata: Notification;
@@ -1128,31 +1803,48 @@ export interface ConsoleNS {
                     submitAttributeSettings: Notification;
                     deleteDefaultAuthenticator: Notification;
                     deleteDefaultConnector: Notification;
+                    updateAttributes: Notification;
                     updateClaimsConfigs: Notification;
                     updateFederatedAuthenticator: Notification;
                     updateFederatedAuthenticators: Notification;
+                    updateEmailOTPAuthenticator: Notification;
+                    updateSMSOTPAuthenticator: Notification;
+                    updateGenericAuthenticator: Notification;
                     updateIDP: Notification;
                     updateIDPCertificate: Notification;
                     updateIDPRoleMappings: Notification;
                     updateJITProvisioning: Notification;
                     updateOutboundProvisioningConnectors: Notification;
                     updateOutboundProvisioningConnector: Notification;
+                    apiLimitReachedError: {
+                        error: {
+                            description: string;
+                            message: string;
+                        }
+                    }
                 };
-                popups: {
+                popups?: {
                     appStatus: {
                         enabled: Popup;
                         disabled: Popup;
                     };
                 };
-                placeHolders: {
+                placeHolders?: {
                     emptyCertificateList: Placeholder;
                     emptyIDPList: Placeholder;
                     emptyIDPSearchResults: Placeholder;
                     emptyAuthenticatorList: Placeholder;
+                    emptyConnectionTypeList: {
+                        subtitles: {
+                            0: string;
+                            1: string;
+                        },
+                        title: string;
+                    };
                     emptyConnectorList: Placeholder;
                     noAttributes: Placeholder;
                 };
-                wizards: {
+                wizards?: {
                     addAuthenticator: {
                         header: string;
                         steps: {
@@ -1169,6 +1861,15 @@ export interface ConsoleNS {
                             };
                             authenticatorConfiguration: {
                                 title: string;
+                            };
+                            authenticatorSettings: {
+                                emptyPlaceholder: {
+                                    subtitles: [
+                                        string,
+                                        string
+                                    ];
+                                    title: string;
+                                };
                             };
                             summary: {
                                 title: string;
@@ -1263,6 +1964,22 @@ export interface ConsoleNS {
                     deleteAuthenticator: Confirmation;
                     deleteConnector: Confirmation;
                 };
+                connectedApps: {
+                    action: string;
+                    header: string;
+                    subHeader: string;
+                    placeholders: {
+                        search: string;
+                        emptyList: string;
+                    };
+                    applicationEdit: {
+                        back: string;
+                    };
+                    genericError: {
+                        description: string;
+                        message: string;
+                    }
+                };
                 dangerZoneGroup: {
                     header: string;
                     disableIDP: DangerZone;
@@ -1334,6 +2051,7 @@ export interface ConsoleNS {
                         invalidURLErrorMessage: string;
                         invalidQueryParamErrorMessage: string;
                         customProperties: string;
+                        internetResolvableErrorMessage: string;
                     };
                     generalDetails: {
                         name: FormAttributes;
@@ -1434,6 +2152,7 @@ export interface ConsoleNS {
                 notifications: {
                     addFederatedAuthenticator: Notification;
                     addIDP: Notification;
+                    apiLimitReachedError: Notification;
                     changeCertType: {
                         pem: {
                            description: string;
@@ -1462,6 +2181,10 @@ export interface ConsoleNS {
                     getAllLocalClaims: Notification;
                     getRolesList: Notification;
                     submitAttributeSettings: Notification;
+                    tierLimitReachedError: {
+                        emptyPlaceholder: Placeholder;
+                        heading: string;
+                    };
                     deleteDefaultAuthenticator: Notification;
                     deleteDefaultConnector: Notification;
                     updateClaimsConfigs: Notification;
@@ -1602,6 +2325,130 @@ export interface ConsoleNS {
             templates: {
                 emptyPlaceholder: Placeholder;
             };
+            secrets?: {
+                advancedSearch: {
+                    form: {
+                        inputs: {
+                            filterAttribute: {
+                                placeholder: string;
+                            };
+                            filterCondition: {
+                                placeholder: string;
+                            };
+                            filterValue: {
+                                placeholder: string;
+                            };
+                        };
+                    };
+                    placeholder: string;
+                };
+                page?: {
+                    title: string;
+                    description: string;
+                    primaryActionButtonText: string;
+                    subFeatureBackButton: string;
+                };
+                errors?: {
+                    generic: {
+                        message: string;
+                        description: string;
+                    }
+                },
+                routes?: {
+                    name: string;
+                    category: string;
+                    sidePanelChildrenNames: string[];
+                },
+                alerts?: {
+                    createdSecret?: {
+                        description: string;
+                        message: string;
+                    },
+                    updatedSecret?: {
+                        description: string;
+                        message: string;
+                    },
+                    deleteSecret?: {
+                        description: string;
+                        message: string;
+                    }
+                },
+                modals: {
+                    deleteSecret: {
+                        assertionHint: string;
+                        primaryActionButtonText: string;
+                        secondaryActionButtonText: string;
+                        title: string;
+                        content: string;
+                        warningMessage: string;
+                    }
+                },
+                wizards?: {
+                    addSecret?: {
+                        heading?: string;
+                        subheading?: string;
+                        form?: {
+                            secretTypeField: Record<string, string>;
+                            secretNameField: Record<string, string>;
+                            secretValueField: Record<string, string>;
+                            secretDescriptionField: Record<string, string>;
+                        }
+                    },
+                    actions: {
+                        createButton: {
+                            label: string;
+                            ariaLabel: string;
+                        };
+                        cancelButton: {
+                            label: string;
+                            ariaLabel: string;
+                        };
+                    }
+                },
+                banners?: {
+                    secretIsHidden: {
+                        title: string;
+                        content: string;
+                    },
+                    adaptiveAuthSecretType: {
+                        title: string;
+                        content: string;
+                    }
+                },
+                forms?: {
+                    editSecret?: {
+                        page: {
+                            description: string;
+                        },
+                        secretValueField: Record<string, string>;
+                        secretDescriptionField: Record<string, string>;
+                    },
+                    actions?: {
+                        submitButton: {
+                            label: string;
+                            ariaLabel: string;
+                        }
+                    }
+                },
+                emptyPlaceholders?: {
+                    resourceNotFound: {
+                        messages: string[];
+                    },
+                    emptyListOfSecrets: {
+                        messages: string[];
+                    },
+                    buttons?: {
+                        backToSecrets: {
+                            label: string;
+                            ariaLabel: string;
+                        },
+                        addSecret: {
+                            label: string;
+                            ariaLabel: string;
+                        }
+                    }
+                }
+            }
         };
         notifications: {
             endSession: Notification;
@@ -1617,6 +2464,9 @@ export interface ConsoleNS {
                 title: string;
                 subTitle: string;
                 backButton: string;
+                search: {
+                    placeholder: string;
+                };
                 supportServices: {
                     authenticationDisplayName: string;
                     provisioningDisplayName: string;
@@ -1664,7 +2514,154 @@ export interface ConsoleNS {
                     groupName: FormAttributes;
                 };
             };
+            organizations: {
+                advancedSearch: {
+                    form: {
+                        inputs: {
+                            filterAttribute: {
+                                placeholder: string;
+                            };
+                            filterCondition: {
+                                placeholder: string;
+                            };
+                            filterValue: {
+                                placeholder: string;
+                            };
+                        };
+                    };
+                    placeholder: string;
+                };
+                list: {
+                    actions: {
+                        add: string;
+                    };
+                    columns: {
+                        name: string;
+                        actions: string;
+                    };
+                };
+                title: string;
+                subTitle: string;
+                notifications: {
+                    fetchOrganization: Notification;
+                    deleteOrganization: Notification;
+                    deleteOrganizationWithSubOrganizationError: string;
+                    disableOrganization: Notification;
+                    disableOrganizationWithSubOrganizationError: string;
+                    enableOrganization: Notification;
+                    updateOrganization: Notification;
+                    updateOrganizationAttributes: Notification;
+                    addOrganization: Notification;
+                    getOrganizationList: Notification;
+                };
+                confirmations: {
+                    deleteOrganization: {
+                        assertionHint: string;
+                        header: string;
+                        message: string;
+                        content: string;
+                    };
+                };
+                placeholders: {
+                    emptyList: Placeholder;
+                };
+                edit: {
+                    description: string;
+                    back: string;
+                    tabTitles: {
+                        overview: string;
+                        attributes: string;
+                    },
+                    fields: {
+                        id: FormAttributes;
+                        name: FormAttributes;
+                        description: FormAttributes;
+                        domain: FormAttributes;
+                        type: FormAttributes;
+                        created: FormAttributes;
+                        lastModified: FormAttributes;
+                    },
+                    dangerZone: {
+                        title: string;
+                        subHeader: string;
+                        disableOrganization: {
+                            enableActionTitle: string;
+                            disableActionTitle: string;
+                            subheader: string;
+                        }
+                    },
+                    attributes: {
+                        hint: string;
+                        key: string;
+                        value: string;
+                        keyRequiredErrorMessage: string;
+                        valueRequiredErrorMessage: string;
+                    }
+                };
+                modals: {
+                    addOrganization: {
+                        header: string;
+                        subtitle1: string;
+                        subtitle2: string;
+                    };
+                };
+                forms: {
+                    addOrganization: {
+                        name: FormAttributes;
+                        description: FormAttributes;
+                        domainName: FormAttributes;
+                        type: string;
+                        structural: string;
+                        tenant: string;
+                    };
+                };
+                homeList: {
+                    name: string;
+                    description: string;
+                };
+                shareApplicationRadio: string;
+                shareApplicationInfo: string;
+                unshareApplicationRadio: string;
+                shareWithSelectedOrgsRadio: string;
+                unshareApplicationInfo: string;
+                switching: {
+                    search: {
+                        placeholder: string;
+                    };
+                    emptyList: string;
+                    subOrganizations: string;
+                    goBack: string;
+                }
+            };
             users: {
+                consumerUsers: {
+                    fields: {
+                       username: {
+                           label: string;
+                           placeholder: string;
+                           validations: {
+                               empty: string;
+                               invalid: string;
+                               invalidCharacters: string;
+                               regExViolation: string;
+                           };
+                       }
+                    }
+                };
+                guestUsers: {
+                    fields: {
+                        username: {
+                            label: string;
+                            placeholder: string;
+                            validations: {
+                                empty: string;
+                                invalid: string;
+                                invalidCharacters: string;
+                                regExViolation: string;
+                            };
+                        }
+                    }
+                };
                 confirmations: {
                     terminateAllSessions: Confirmation;
                     terminateSession: Confirmation;
@@ -1695,13 +2692,18 @@ export interface ConsoleNS {
                                 loginTime: string;
                                 os: string;
                                 recentActivity: string;
+                                activeApplication: string;
                             };
                         };
+                    };
+                    dangerZones: {
+                        terminate: DangerZone;
                     };
                     notifications: {
                         getUserSessions: Notification;
                         terminateAllUserSessions: Notification;
                         terminateUserSession: Notification;
+                        getAdminUser: Notification;
                     };
                     placeholders: {
                         emptyListPlaceholder: Placeholder;
@@ -1742,6 +2744,8 @@ export interface ConsoleNS {
                     validation: {
                         formatError: string;
                         dateFormatError: string;
+                        mobileFormatError: string;
+                        futureDateError: string;
                     };
                 };
                 list: {
@@ -1754,6 +2758,8 @@ export interface ConsoleNS {
                     addUser: Notification;
                     deleteUser: Notification;
                     fetchUsers: Notification;
+                    getAdminRole: Notification;
+                    revokeAdmin: Notification;
                 };
                 placeholders: {
                     emptyList: Placeholder;
@@ -1811,6 +2817,13 @@ export interface ConsoleNS {
                     };
                 };
                 modals: {
+                    approvalProperties: {
+                        "Claims": string,
+                        "REQUEST ID": string,
+                        "Roles": string,
+                        "User Store Domain": string,
+                        "Username": string,
+                    },
                     taskDetails: {
                         header: string;
                         description: string;
@@ -2045,6 +3058,14 @@ export interface ConsoleNS {
                         };
                     };
                     forms: {
+                        fields: {
+                            attributeName: {
+                                validation: {
+                                    invalid: string;
+                                    alreadyExists: string;
+                                };
+                            };
+                        };
                         dialectURI: FormField;
                         submit: string;
                     };
@@ -2082,6 +3103,8 @@ export interface ConsoleNS {
                         attributeURI: FormField;
                         localAttribute: FormField;
                         submit: string;
+                        warningMessage: string;
+                        emptyMessage: string;
                     };
                     pageLayout: {
                         edit: {
@@ -2181,14 +3204,21 @@ export interface ConsoleNS {
                         name: FormField;
                         nameHint: string;
                         description: FormField;
+                        descriptionHint: string;
                         regEx: FormField;
                         regExHint: string;
                         supportedByDefault: FormField;
                         displayOrder: FormField;
                         displayOrderHint: string;
                         required: FormField;
+                        requiredHint: string;
                         readOnly: FormField;
+                        readOnlyHint: string;
                         attribute: FormField;
+                        infoMessages?: {
+                            disabledConfigInfo: string;
+                            configApplicabilityInfo: string;
+                        }
                     };
                     dangerZone: DangerZone;
                     mappedAttributes: {
@@ -2242,6 +3272,15 @@ export interface ConsoleNS {
                         };
                     };
                     warning: string;
+                };
+                scopeMappings: {
+                    deletionConfirmationModal: {
+                        assertionHint: string;
+                        content: string;
+                        header: string;
+                        message: string;
+                    },
+                    saveChangesButton: string;
                 };
             };
             emailLocale: {
@@ -2312,7 +3351,11 @@ export interface ConsoleNS {
                     addTemplateType: {
                         heading: string;
                         subHeading: string;
-                        steps: {};
+                        steps: {
+                            templateType: {
+                                heading: string;
+                            }
+                        };
                     };
                 };
             };
@@ -2398,6 +3441,7 @@ export interface ConsoleNS {
                         actions: string;
                         lastModified: string;
                         name: string;
+                        source: string;
                     };
                     storeOptions: string;
                 };
@@ -2435,6 +3479,571 @@ export interface ConsoleNS {
                 categories: string;
                 pageSubHeading: string;
                 connectorSubHeading: string;
+                connectorCategories: {
+                    passwordPolicies : {
+                        name: string;
+                        connectors: {
+                            passwordHistory: {
+                                friendlyName: string;
+                                properties: {
+                                    passwordHistoryEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    passwordHistoryCount: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                            passwordPolicy: {
+                                friendlyName: string;
+                                properties: {
+                                    passwordPolicyEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    passwordPolicyMinLength: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    passwordPolicyMaxLength: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    passwordPolicyPattern: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    passwordPolicyErrorMsg: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                        };
+                    };
+                    userOnboarding : {
+                        name: string;
+                        connectors: {
+                            selfSignUp: {
+                                friendlyName: string;
+                                properties: {
+                                    selfRegistrationEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationLockOnCreation: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationSendConfirmationOnCreation: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationNotificationInternallyManage: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationReCaptcha: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationVerificationCodeExpiryTime: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationVerificationCodeSmsotpExpiryTime: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationSmsotpRegex: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationCallbackRegex: {
+                                        hint: string;
+                                        label: string;
+                                    },
+                                    urlListPurposeSelfSignUp: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationNotifyAccountConfirmation: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationResendConfirmationReCaptcha: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationAutoLoginEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    selfRegistrationAutoLoginAliasName: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                            liteUserSignUp: {
+                                friendlyName: string;
+                                properties: {
+                                    liteRegistrationEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    liteRegistrationLockOnCreation: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    liteRegistrationNotificationInternallyManage: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    liteRegistrationReCaptcha: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    liteRegistrationVerificationCodeExpiryTime: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    liteRegistrationVerificationCodeSmsotpExpiryTime: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    liteRegistrationSmsotpRegex: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    liteRegistrationCallbackRegex: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    urlListPurposeLiteUserSignUp: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                            userEmailVerification: {
+                                friendlyName: string;
+                                properties: {
+                                    emailVerificationEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    emailVerificationLockOnCreation: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    emailVerificationNotificationInternallyManage: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    emailVerificationExpiryTime: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    emailVerificationAskPasswordExpiryTime: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    emailVerificationAskPasswordPasswordGenerator: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    urlListPurposeJitProvisioning: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                        };
+                    };
+                    loginAttemptsSecurity : {
+                        name: string;
+                        connectors: {
+                            accountLockHandler: {
+                                friendlyName: string;
+                                properties: {
+                                    accountLockHandlerLockOnMaxFailedAttemptsEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    accountLockHandlerOnFailureMaxAttempts: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    accountLockHandlerTime: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    accountLockHandlerLoginFailTimeoutRatio: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    accountLockHandlerNotificationManageInternally: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    accountLockHandlerNotificationNotifyOnLockIncrement: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                            ssoLoginRecaptcha: {
+                                friendlyName: string;
+                                properties: {
+                                    ssoLoginRecaptchaEnableAlways: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    ssoLoginRecaptchaEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    ssoLoginRecaptchaOnMaxFailedAttempts: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                        };
+                    };
+                    accountManagement : {
+                        name: string;
+                        connectors: {
+                            suspensionNotification: {
+                                friendlyName: string;
+                                properties: {
+                                    suspensionNotificationEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    suspensionNotificationAccountDisableDelay: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    suspensionNotificationDelays: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                            accountDisableHandler: {
+                                friendlyName: string;
+                                properties: {
+                                    accountDisableHandlerEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    accountDisableHandlerNotificationManageInternally: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                            multiattributeLoginHandler: {
+                                friendlyName: string;
+                                properties: {
+                                    accountMultiattributeloginHandlerEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    accountMultiattributeloginHandlerAllowedattributes: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                            accountRecovery: {
+                                friendlyName: string;
+                                properties: {
+                                    recoveryNotificationPasswordEnable: {
+                                        label: string;
+                                    };
+                                    recoveryReCaptchaPasswordEnable: {
+                                        label: string;
+                                    };
+                                    recoveryQuestionPasswordEnable: {
+                                        label: string;
+                                    };
+                                    recoveryQuestionPasswordMinAnswers: {
+                                        label: string;
+                                    };
+                                    recoveryQuestionAnswerRegex: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryQuestionAnswerUniqueness: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryQuestionPasswordReCaptchaEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryQuestionPasswordReCaptchaMaxFailedAttempts: {
+                                        label: string;
+                                    };
+                                    recoveryNotificationUsernameEnable: {
+                                        label: string;
+                                    };
+                                    recoveryReCaptchaUsernameEnable: {
+                                        label: string;
+                                    };
+                                    recoveryNotificationInternallyManage: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryNotifySuccess: {
+                                        label: string;
+                                    };
+                                    recoveryQuestionPasswordNotifyStart: {
+                                        label: string;
+                                    };
+                                    recoveryExpiryTime: {
+                                        label: string;
+                                    };
+                                    recoveryNotificationPasswordExpiryTimeSmsOtp: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryNotificationPasswordSmsOtpRegex: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryQuestionPasswordForcedEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryQuestionMinQuestionsToAnswer: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryCallbackRegex: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryAutoLoginEnable: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                            adminForcedPasswordReset: {
+                                friendlyName: string;
+                                properties: {
+                                    recoveryAdminPasswordResetRecoveryLink: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryAdminPasswordResetOtp: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryAdminPasswordResetOffline: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    recoveryAdminPasswordResetExpiryTime: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                        };
+                    };
+                    otherSettings : {
+                        name: string;
+                        connectors: {
+                            piiController: {
+                                friendlyName: string;
+                                properties: {
+                                    piiController: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    contact: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    email: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    phone: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    onBehalf: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    piiControllerUrl: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    addressCountry: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    addressLocality: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    addressRegion: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    postOfficeBoxNumber: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    postalCode: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    streetAddress: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                            analyticsEngine: {
+                                friendlyName: string;
+                                messages: {
+                                    deprecation: {
+                                        description: string;
+                                        heading: string;
+                                    };
+                                };
+                                properties: {
+                                    adaptiveAuthenticationAnalyticsReceiver: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationAnalyticsBasicAuthEnabled: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationAnalyticsBasicAuthUsername: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    secretAdaptiveAuthenticationAnalyticsBasicAuthPassword: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationAnalyticsHttpConnectionTimeout: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationAnalyticsHttpReadTimeout: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationAnalyticsHttpConnectionRequestTimeout: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationAnalyticsHostnameVerfier: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                            elasticAnalyticsEngine: {
+                                friendlyName: string;
+                                properties: {
+                                    adaptiveAuthenticationElasticReceiver: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationElasticBasicAuthEnabled: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationElasticBasicAuthUsername: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    secretAdaptiveAuthenticationElasticBasicAuthPassword: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationElasticHttpConnectionTimeout: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationElasticHttpReadTimeout: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationElasticHttpConnectionRequestTimeout: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    adaptiveAuthenticationElasticHostnameVerfier: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                            userClaimUpdate: {
+                                friendlyName: string;
+                                properties: {
+                                    userClaimUpdateEmailEnableVerification: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    userClaimUpdateEmailVerificationCodeExpiryTime: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    userClaimUpdateEmailEnableNotification: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    userClaimUpdateMobileNumberEnableVerification: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    userClaimUpdateMobileNumberVerificationCodeExpiryTime: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    userClaimUpdateMobileNumberEnableVerificationByPrivilegedUser: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                        };
+                    };
+                    multiFactorAuthenticators : {
+                        name: string;
+                        connectors: {
+                            backupCodeAuthenticator: {
+                                friendlyName: string;
+                                properties: {
+                                    backupCodeBackupCodeLength: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                    backupCodeBackupCodeSize: {
+                                        hint: string;
+                                        label: string;
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
             };
             helpPanel: {
                 notifications: {
@@ -2455,6 +4064,7 @@ export interface ConsoleNS {
                 editScope: {
                     claimList: {
                         emptyPlaceholder: Placeholder;
+                        emptySearch: Placeholder;
                         title: string;
                         subTitle: string;
                         addClaim: string;
@@ -2827,6 +4437,7 @@ export interface ConsoleNS {
                 };
             };
             sidePanel: {
+                accountManagement: string;
                 addEmailTemplate: string;
                 addEmailTemplateLocale: string;
                 approvals: string;
@@ -2838,6 +4449,7 @@ export interface ConsoleNS {
                     general: string;
                     users: string;
                     userstores: string;
+                    organizations: string;
                 };
                 certificates: string;
                 configurations: string;
@@ -2853,8 +4465,15 @@ export interface ConsoleNS {
                 generalConfigurations: string;
                 groups: string;
                 localDialect: string;
+                loginAttemptsSecurity: string;
+                multiFactorAuthenticators: string;
+                organizations: string;
+                otherSettings: string;
                 overview: string;
+                passwordPolicies: string;
+                remoteFetchConfig: string
                 roles: string;
+                userOnboarding: string;
                 users: string;
                 userstoreTemplates: string;
                 userstores: string;
@@ -2886,7 +4505,15 @@ export interface ConsoleNS {
                 };
             };
             user: {
+                deleteJITUser: {
+                    confirmationModal: {
+                        content: string;
+                    }
+                };
                 deleteUser: {
+                    confirmationModal: Confirmation;
+                };
+                revokeAdmin: {
                     confirmationModal: Confirmation;
                 };
                 disableUser: {
@@ -2898,6 +4525,14 @@ export interface ConsoleNS {
                         deleteUserZone: DangerZone;
                         disableUserZone: DangerZone;
                         lockUserZone: DangerZone;
+                        passwordResetZone: DangerZone;
+                        deleteAdminPriviledgeZone: DangerZone;
+                    };
+                    dateOfBirth: {
+                        placeholder: {
+                            part1: string;
+                            part2: string;
+                        }
                     };
                 };
                 forms: {
@@ -3040,23 +4675,18 @@ export interface ConsoleNS {
                 };
                 profile: {
                     fields: {
+                        createdDate: string;
                         generic: {
                             default: string;
                         };
+                        userId: string;
                         emails: string;
+                        modifiedDate: string;
                         profileUrl: string;
-                        addresses_work: string;
-                        addresses_home: string;
-                        emails_home: string;
-                        emails_other: string;
-                        emails_work: string;
                         name_familyName: string;
                         name_givenName: string;
                         phoneNumbers: string;
-                        phoneNumbers_home: string;
-                        phoneNumbers_mobile: string;
-                        phoneNumbers_work: string;
-                        phoneNumbers_other: string;
+                        photos: string;
                         oneTimePassword: string;
                         userName: string;
                     };
@@ -3141,6 +4771,9 @@ export interface ConsoleNS {
                         SCIMDisabled: {
                             heading: string;
                         };
+                        userProfile: {
+                            emptyListPlaceholder: Placeholder;
+                        }
                     };
                 };
                 updateUser: {
@@ -3184,6 +4817,7 @@ export interface ConsoleNS {
                             subHeading: string;
                         };
                         editRoles: {
+                            confirmationModal: Confirmation;
                             roleList: {
                                 emptyListPlaceholder: {
                                     subTitle: {
@@ -3247,6 +4881,7 @@ export interface ConsoleNS {
                     updateUserstore: Notification;
                     testConnection: Notification;
                     addUserstore: Notification;
+                    apiLimitReachedError: Notification;
                     updateDelay: NotificationItem;
                 };
                 confirmation: {
@@ -3396,6 +5031,45 @@ export interface ConsoleNS {
                     removeUser?: Confirmation;
                 };
             };
+            validation: {
+                fetchValidationConfigData: {
+                    error: {
+                        description: string;
+                        message: string;
+                    },
+                    genericError: {
+                        description: string;
+                        message: string;
+                    },
+                },
+                validationError: {
+                    minMaxMismatch: string;
+                    uniqueChrMismatch: string;
+                    consecutiveChrMismatch: string;
+                    invalidConfig: string;
+                    minLimitError: string;
+                    maxLimitError: string;
+                    wrongCombination: string;
+                }
+                notifications: {
+                    error: {
+                        description: string;
+                        message: string;
+                    },
+                    genericError: {
+                        description: string;
+                        message: string;
+                    },
+                    success: {
+                        description: string;
+                        message: string;
+                    }
+                },
+                pageTitle: string;
+                description: string;
+                goBackToApplication: string;
+                goBackToValidationConfig: string;
+            };
         };
         notifications: {
             endSession: Notification;
@@ -3412,6 +5086,7 @@ export interface ConsoleNS {
             emailTemplates: EditPage;
             emailTemplatesWithDisplayName: EditPage;
             groups: Page;
+            organizations: Page;
             overview: Page;
             oidcScopes: Page;
             oidcScopesEdit: EditPage;

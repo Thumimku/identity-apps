@@ -18,11 +18,17 @@
 
 import { AlertLevels, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
-import { ConfirmationModal, EmptyPlaceholder, Heading, PrimaryButton, useConfirmationModalAlert } from "@wso2is/react-components";
+import {
+    ConfirmationModal,
+    EmptyPlaceholder,
+    Heading,
+    PrimaryButton,
+    useConfirmationModalAlert
+} from "@wso2is/react-components";
 import React, { FunctionComponent, MouseEvent, ReactElement, useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { AccordionTitleProps, Divider, Grid, Icon, Segment} from "semantic-ui-react";
+import { AccordionTitleProps, Divider, Grid, Icon, Segment } from "semantic-ui-react";
 import { AuthenticatorAccordion, getEmptyPlaceholderIllustrations } from "../../../../core";
 import { IdentityProviderInterface, getIdentityProviderList } from "../../../../identity-providers";
 import { updateApplicationConfigurations } from "../../../api";
@@ -84,6 +90,7 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
 
     const [ showWizard, setShowWizard ] = useState<boolean>(false);
     const [ showDeleteConfirmationModal, setShowDeleteConfirmationModal ] = useState<boolean>(false);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
     const [ idpList, setIdpList ] = useState<IdentityProviderInterface[]>(undefined);
     const [ accordionActiveIndexes, setAccordionActiveIndexes ] = useState<number[]>(defaultActiveIndexes);
     const [ alert, setAlert, alertComponent ] = useConfirmationModalAlert();
@@ -108,6 +115,7 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
     }, []);
 
     const addIdentityProvider = (id: string, values: any) => {
+        setIsSubmitting(true);
         updateApplicationConfigurations(id, values)
             .then(() => {
                 dispatch(addAlert({
@@ -124,7 +132,8 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
                     dispatch(addAlert({
                         description: error.response.data.description,
                         level: AlertLevels.ERROR,
-                        message: t("console:develop.features.applications.notifications.updateApplication.error.message")
+                        message: t("console:develop.features.applications.notifications" +
+                            ".updateApplication.error.message")
                     }));
 
                     return;
@@ -137,6 +146,9 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
                     message: t("console:develop.features.applications.notifications.updateApplication.genericError" +
                         ".message")
                 }));
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
@@ -147,7 +159,7 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
      * @param {AccordionTitleProps} SegmentedAuthenticatedAccordion - Clicked title.
      */
     const handleAccordionOnClick = (e: MouseEvent<HTMLDivElement>,
-                                    SegmentedAuthenticatedAccordion: AccordionTitleProps): void => {
+        SegmentedAuthenticatedAccordion: AccordionTitleProps): void => {
         if (!SegmentedAuthenticatedAccordion) {
             return;
         }
@@ -155,6 +167,7 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
 
         if (newIndexes.includes(SegmentedAuthenticatedAccordion.accordionIndex)) {
             const removingIndex = newIndexes.indexOf(SegmentedAuthenticatedAccordion.accordionIndex);
+
             newIndexes.splice(removingIndex, 1);
         } else {
             newIndexes.push(SegmentedAuthenticatedAccordion.accordionIndex);
@@ -169,8 +182,10 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
 
         const editedIDP = outboundConfigs.find(idp =>
             (idp.idp === values.idp) && (idp.connector === values.connector));
+
         outboundConfigs.splice(outboundConfigs.indexOf(editedIDP), 1);
         outboundConfigs.push(values);
+
         return {
             provisioningConfigurations: {
                 outboundProvisioningIdps: outboundConfigs
@@ -188,13 +203,15 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
     const handleProvisioningIDPDelete = (deletingIDP: OutboundProvisioningConfigurationInterface): void => {
         const outboundConfigs: OutboundProvisioningConfigurationInterface[] =
             application?.provisioningConfigurations?.outboundProvisioningIdps;
-        const tempOutboundConfig = [... outboundConfigs];
+        const tempOutboundConfig = [ ... outboundConfigs ];
+
         tempOutboundConfig.splice(outboundConfigs.indexOf(deletingIDP), 1);
         const newConfig = {
             provisioningConfigurations: {
                 outboundProvisioningIdps: tempOutboundConfig
             }
         };
+
         updateApplicationConfigurations(application.id, newConfig)
             .then(() => {
                 dispatch(addAlert({
@@ -215,6 +232,7 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
                         message: t("console:develop.features.applications." +
                             "notifications.updateApplication.error.message")
                     }));
+
                     return;
                 }
                 dispatch(setAlert({
@@ -229,13 +247,13 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
 
     return (
         <>
-        <Heading as="h4">
-            { t("console:develop.features.applications.edit.sections.provisioning.outbound.heading") }
-        </Heading>
-        <Heading subHeading as="h6">
-            { t("console:develop.features.applications.edit.sections.provisioning.outbound.subHeading") }
-        </Heading>
-        <Divider hidden/>
+            <Heading as="h4">
+                { t("console:develop.features.applications.edit.sections.provisioning.outbound.heading") }
+            </Heading>
+            <Heading subHeading as="h6">
+                { t("console:develop.features.applications.edit.sections.provisioning.outbound.subHeading") }
+            </Heading>
+            <Divider hidden/>
             {
                 application?.provisioningConfigurations?.outboundProvisioningIdps?.length > 0 ? (
                     <Grid>
@@ -263,48 +281,49 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
                                 {
                                     application?.provisioningConfigurations?.outboundProvisioningIdps?.map(
                                         (provisioningIdp, index) => {
-                                        return (
-                                            <AuthenticatorAccordion
-                                                key={ provisioningIdp.idp }
-                                                globalActions={
-                                                    !readOnly && [
-                                                        {
-                                                            icon: "trash alternate",
-                                                            onClick: (): void => {
-                                                                setShowDeleteConfirmationModal(true);
-                                                                setDeletingIdp(provisioningIdp);
-                                                            },
-                                                            type: "icon"
-                                                        }
-                                                    ]
-                                                }
-                                                authenticators={
-                                                    [
-                                                        {
-                                                            content: (
-                                                                <OutboundProvisioningWizardIdpForm
-                                                                    initialValues={ provisioningIdp }
-                                                                    triggerSubmit={ null }
-                                                                    onSubmit={ (values): void => {
-                                                                        updateIdentityProvider(values);
-                                                                    } }
-                                                                    idpList={ idpList }
-                                                                    isEdit={ true }
-                                                                    data-testid={ `${ testId }-form` }
-                                                                />
-                                                            ),
-                                                            id: provisioningIdp?.idp,
-                                                            title: provisioningIdp?.idp
-                                                        }
-                                                    ]
-                                                }
-                                                accordionActiveIndexes = { accordionActiveIndexes }
-                                                accordionIndex = { index }
-                                                handleAccordionOnClick = { handleAccordionOnClick }
-                                                data-testid={ `${ testId }-outbound-connector-accordion` }
-                                            />
-                                        );
-                                    })
+                                            return (
+                                                <AuthenticatorAccordion
+                                                    key={ provisioningIdp.idp }
+                                                    globalActions={
+                                                        !readOnly && [
+                                                            {
+                                                                icon: "trash alternate",
+                                                                onClick: (): void => {
+                                                                    setShowDeleteConfirmationModal(true);
+                                                                    setDeletingIdp(provisioningIdp);
+                                                                },
+                                                                type: "icon"
+                                                            }
+                                                        ]
+                                                    }
+                                                    authenticators={
+                                                        [
+                                                            {
+                                                                content: (
+                                                                    <OutboundProvisioningWizardIdpForm
+                                                                        initialValues={ provisioningIdp }
+                                                                        triggerSubmit={ null }
+                                                                        onSubmit={ (values): void => {
+                                                                            updateIdentityProvider(values);
+                                                                        } }
+                                                                        idpList={ idpList }
+                                                                        isEdit={ true }
+                                                                        data-testid={ `${ testId }-form` }
+                                                                        isSubmitting={ isSubmitting }
+                                                                    />
+                                                                ),
+                                                                id: provisioningIdp?.idp,
+                                                                title: provisioningIdp?.idp
+                                                            }
+                                                        ]
+                                                    }
+                                                    accordionActiveIndexes = { accordionActiveIndexes }
+                                                    accordionIndex = { index }
+                                                    handleAccordionOnClick = { handleAccordionOnClick }
+                                                    data-testid={ `${ testId }-outbound-connector-accordion` }
+                                                />
+                                            );
+                                        })
                                 }
                             </Grid.Column>
                         </Grid.Row>
@@ -345,7 +364,7 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
                 deletingIdp && (
                     <ConfirmationModal
                         onClose={ (): void => setShowDeleteConfirmationModal(false) }
-                        type="warning"
+                        type="negative"
                         open={ showDeleteConfirmationModal }
                         assertion={ deletingIdp?.idp }
                         assertionHint={ (
@@ -382,7 +401,7 @@ export const OutboundProvisioningConfiguration: FunctionComponent<OutboundProvis
                         </ConfirmationModal.Header>
                         <ConfirmationModal.Message
                             attached
-                            warning
+                            negative
                             data-testid={ `${ testId }-connector-delete-confirmation-modal-message` }
                         >
                             { t("console:develop.features.applications.confirmations.deleteOutboundProvisioningIDP" +

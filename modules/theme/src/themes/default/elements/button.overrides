@@ -17,13 +17,22 @@
  *
  */
 
-.ui.button {
+.ui.button.basic {
     &.link-button {
-        background: transparent !important;
-        color: @primaryColor;
+        // Remove outline.
+        box-shadow: none !important;
+
+        // Override outline in primary variation.
+        &.primary {
+            box-shadow: none !important;
+        }
 
         &:hover {
-            background: transparent;
+            &.hover {
+                &-underline {
+                    text-decoration: underline;
+                }
+            }
         }
         &.compact {
             padding: 0;
@@ -170,6 +179,10 @@
         padding-right: 0.4em;
         border: @inputAddOnBorder;
         border-left: 0;
+
+        &.organizations{
+            padding-right: 1.4em !important;
+        }
     }
 
     &.test-button {
@@ -209,6 +222,9 @@
                 color: @green !important;
             }
         }
+    }
+    &:focus-visible{
+        outline: @focusVisibleOutline;
     }
 }
 
@@ -312,5 +328,52 @@
 .ui.button {
     &.totp-verify-done-button {
         margin: 0.5rem;
+    }
+}
+
+.ui.button {
+    &.protocol-button {
+           width: 220px;
+          .protocol-button-icon {
+              float:right;
+          }
+          .protocol-change-title {
+                float: left;
+                fontSize: medium;
+          }
+    }
+}
+
+
+
+.align-right.buttons{
+    text-align: right;
+}
+
+/*******************************
+     Keyboard Focus Styling
+*******************************/
+
+.ui.primary.button{
+    &:focus-visible{
+        outline: @focusVisibleOutline;
+    }
+}
+
+.ui.button.secondary{
+    &:focus-visible{
+        outline: @focusVisibleOutline;
+    }
+}
+
+.ui.grey.button{
+    &:focus-visible{
+        outline: @focusVisibleOutline;
+    }
+}
+
+.ui.brown.button{
+    &:focus-visible{
+        outline: @focusVisibleOutline;
     }
 }

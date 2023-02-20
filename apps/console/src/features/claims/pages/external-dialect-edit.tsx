@@ -1,8 +1,8 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
- * Version 2.0 (the 'License'); you may not use this file except
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -10,21 +10,23 @@
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
- * 'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
 
-import { getAllExternalClaims } from "@wso2is/core/api";
+import { AccessControlConstants, Show } from "@wso2is/access-control";
 import { AlertLevels, ClaimDialect, ExternalClaim, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import { ConfirmationModal, DangerZone, DangerZoneGroup, EmphasizedSegment } from "@wso2is/react-components";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import React, { Dispatch, FunctionComponent, ReactElement, SetStateAction, useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { Divider, Grid, Header, Placeholder } from "semantic-ui-react";
-import { AppConstants, history } from "../../core";
+import { attributeConfig } from "../../../extensions";
+import { getAllExternalClaims } from "../../claims/api";
+import { AppConstants, history, sortList } from "../../core";
 import { deleteADialect, getADialect } from "../api";
 import { EditDialectDetails, EditExternalClaims } from "../components";
 import { ClaimManagementConstants } from "../constants";
@@ -42,22 +44,40 @@ interface ExternalDialectEditPageInterface extends TestableComponentInterface {
      * Attribute type
      */
     attributeType?: string;
+    /**
+     * Attribute URI
+     */
+    attributeUri: string;
+    /**
+     * Mapped Local claim list
+     */
+    mappedLocalClaims: string[];
+    /**
+     * Update mapped claims on delete or edit
+     */
+    updateMappedClaims?: Dispatch<SetStateAction<boolean>>;
 }
 
 /**
  * This renders the edit external dialect page
  *
- * @param {ExternalDialectEditPageInterface & RouteComponentProps<RouteParams>} props - Props injected to the component
- *
- * @return {React.ReactElement}
+ * @param props - Props injected to the component
+ * @returns External dialect edit page.
  */
 const ExternalDialectEditPage: FunctionComponent<ExternalDialectEditPageInterface> = (
     props: ExternalDialectEditPageInterface
 ): ReactElement => {
-    const { attributeType, [ "data-testid" ]: testId, id: dialectId } = props;
+    const {
+        attributeType,
+        attributeUri,
+        mappedLocalClaims,
+        updateMappedClaims,
+        [ "data-testid" ]: testId,
+        id: dialectId
+    } = props;
 
     const [ dialect, setDialect ] = useState<ClaimDialect>(null);
-    const [ claims, setClaims ] = useState<ExternalClaim[]>([]);
+    const [ claims, setClaims ] = useState<ExternalClaim[]>(undefined);
     const [ isLoading, setIsLoading ] = useState(true);
     const [ confirmDelete, setConfirmDelete ] = useState(false);
 
@@ -68,16 +88,19 @@ const ExternalDialectEditPage: FunctionComponent<ExternalDialectEditPageInterfac
     const deleteConfirmation = (): ReactElement => (
         <ConfirmationModal
             onClose={ (): void => setConfirmDelete(false) }
-            type="warning"
+            type="negative"
             open={ confirmDelete }
             assertion={ dialect.dialectURI }
-            assertionHint={
+            assertionHint={ (
                 <p>
-                    <Trans i18nKey="console:manage.features.claims.dialects.confirmations.hint">
-                        Please type <strong>{ { confirm: dialect.dialectURI } }</strong> to confirm.
+                    <Trans
+                        i18nKey="console:manage.features.claims.dialects.confirmations.hint"
+                        i18nOptions={ { confirm: dialect.dialectURI } }
+                    >
+                        Please type <strong>{ dialect.dialectURI }</strong> to confirm.
                     </Trans>
                 </p>
-            }
+            ) }
             assertionType="input"
             primaryAction={ t("console:manage.features.claims.dialects.confirmations.action") }
             secondaryAction={ t("common:cancel") }
@@ -89,7 +112,11 @@ const ExternalDialectEditPage: FunctionComponent<ExternalDialectEditPageInterfac
             <ConfirmationModal.Header data-testid={ `${ testId }-delete-confirmation-modal-header` }>
                 { t("console:manage.features.claims.dialects.confirmations.header") }
             </ConfirmationModal.Header>
-            <ConfirmationModal.Message attached warning data-testid={ `${ testId }-delete-confirmation-modal-message` }>
+            <ConfirmationModal.Message
+                attached
+                negative
+                data-testid={ `${ testId }-delete-confirmation-modal-message` }
+            >
                 { t("console:manage.features.claims.dialects.confirmations.message") }
             </ConfirmationModal.Message>
             <ConfirmationModal.Content data-testid={ `${ testId }-delete-confirmation-modal-content` }>
@@ -100,9 +127,11 @@ const ExternalDialectEditPage: FunctionComponent<ExternalDialectEditPageInterfac
 
     /**
      * Fetch the dialect.
+     *
+     * @param id - Dialect ID
      */
-    const getDialect = () => {
-        getADialect(dialectId)
+    const getDialect = (id?: string) => {
+        getADialect(id ?? dialectId)
             .then((response) => {
                 setDialect(response);
             })
@@ -134,14 +163,14 @@ const ExternalDialectEditPage: FunctionComponent<ExternalDialectEditPageInterfac
     /**
      * Fetch external claims.
      *
-     * @param {number} limit.
-     * @param {number} offset.
-     * @param {string} sort.
-     * @param {string} filter.
+     * @param limit - List limit.
+     * @param offset - List offset.
+     * @param sort - List sort order.
+     * @param filter - List filter query.
      */
     const getExternalClaims = (limit?: number, offset?: number, sort?: string, filter?: string) => {
         dialectId && setIsLoading(true);
-        dialectId && setClaims([]);
+        dialectId && setClaims(undefined);
         dialectId &&
             getAllExternalClaims(dialectId, {
                 filter,
@@ -150,7 +179,13 @@ const ExternalDialectEditPage: FunctionComponent<ExternalDialectEditPageInterfac
                 sort
             })
                 .then((response) => {
-                    setClaims(response);
+                    // Hide identity claims in SCIM
+                    const claims: ExternalClaim[] = attributeConfig.attributeMappings.getExternalAttributes(
+                        attributeType,
+                        response
+                    );
+
+                    setClaims(sortList(claims, "claimURI", true));
                 })
                 .catch((error) => {
                     dispatch(
@@ -183,7 +218,7 @@ const ExternalDialectEditPage: FunctionComponent<ExternalDialectEditPageInterfac
 
     /**
      * This deletes a dialect
-     * @param {string} dialectID
+     * @param dialectID - Dialect ID.
      */
     const deleteDialect = (dialectID: string) => {
         deleteADialect(dialectID)
@@ -227,45 +262,54 @@ const ExternalDialectEditPage: FunctionComponent<ExternalDialectEditPageInterfac
 
     return (
         <>
-            <Grid>
-                <Grid.Row columns={ 1 }>
-                    <Grid.Column width={ 16 }>
-                        <Header as="h4">
-                            { t("console:manage.features.claims.dialects.pageLayout.edit.updateDialectURI",
-                                { type: resolveType(attributeType, true) }) }
-                        </Header>
-                        <EmphasizedSegment>
-                            { isLoading ? (
-                                <Placeholder>
-                                    <Placeholder.Line length="short" />
-                                    <Placeholder.Line length="medium" />
-                                </Placeholder>
-                            ) : (
-                                    <EditDialectDetails
-                                        dialect={ dialect }
-                                        data-testid={ `${ testId }-edit-dialect-details` }
-                                        attributeType={ attributeType }
-                                    />
+            { attributeConfig.attributeMappings.editAttributeMappingDetails && (
+                <>
+                    <Grid>
+                        <Grid.Row columns={ 1 }>
+                            <Grid.Column width={ 16 }>
+                                <Header as="h4">
+                                    { t("console:manage.features.claims.dialects.pageLayout.edit.updateDialectURI", {
+                                        type: resolveType(attributeType, true)
+                                    }) }
+                                </Header>
+                                <EmphasizedSegment>
+                                    { isLoading ? (
+                                        <Placeholder>
+                                            <Placeholder.Line length="short" />
+                                            <Placeholder.Line length="medium" />
+                                        </Placeholder>
+                                    ) : (
+                                        <EditDialectDetails
+                                            dialect={ dialect }
+                                            data-testid={ `${ testId }-edit-dialect-details` }
+                                            attributeType={ attributeType }
+                                            onUpdate={ (id?: string) => { getDialect(id); } }
+                                        />
+                                    ) }
+                                </EmphasizedSegment>
+                            </Grid.Column>
+                        </Grid.Row>
+                    </Grid>
+
+                    <Divider hidden />
+
+                    <Grid columns={ 1 }>
+                        <Grid.Column width={ 16 }>
+                            <Header as="h4">
+                                { t("console:manage.features.claims.dialects.pageLayout.edit.updateExternalAttributes",
+                                    {
+                                        type: resolveType(attributeType, true)
+                                    }
                                 ) }
-                        </EmphasizedSegment>
-                    </Grid.Column>
-                </Grid.Row>
-            </Grid>
+                            </Header>
+                        </Grid.Column>
+                    </Grid>
 
-            <Divider hidden />
+                    <Divider hidden />
 
-            <Grid columns={ 1 }>
-                <Grid.Column width={ 16 }>
-                    <Header as="h4">
-                        { t("console:manage.features.claims.dialects.pageLayout.edit.updateExternalAttributes",
-                            { type: resolveType(attributeType, true) }) }
-                    </Header>
-                </Grid.Column>
-            </Grid>
-
-            <Divider hidden />
-
-            <Divider hidden />
+                    <Divider hidden />
+                </>
+            ) }
             <EditExternalClaims
                 dialectID={ dialectId }
                 isLoading={ isLoading }
@@ -273,32 +317,43 @@ const ExternalDialectEditPage: FunctionComponent<ExternalDialectEditPageInterfac
                 update={ getExternalClaims }
                 data-testid={ `${ testId }-edit-external-claims` }
                 attributeType={ attributeType }
+                attributeUri={ attributeUri }
+                mappedLocalClaims={ mappedLocalClaims }
+                updateMappedClaims={ updateMappedClaims }
             />
 
             <Divider hidden />
 
-            <Grid>
-                <Grid.Row columns={ 1 }>
-                    <Grid.Column width={ 16 }>
-                        <DangerZoneGroup
-                            sectionHeader={ t("common:dangerZone") }
-                            data-testid={ `${ testId }-danger-zone-group` }
-                        >
-                            <DangerZone
-                                actionTitle={ t("console:manage.features.claims.dialects.dangerZone.actionTitle",
-                                    { type: resolveType(attributeType, true, true) }) }
-                                header={ t("console:manage.features.claims.dialects.dangerZone.header",
-                                    { type: resolveType(attributeType, true) }) }
-                                subheader={ t("console:manage.features.claims.dialects.dangerZone.subheader",
-                                    { type: resolveType(attributeType) }) }
-                                onActionClick={ () => setConfirmDelete(true) }
-                                data-testid={ `${ testId }-dialect-delete-danger-zone` }
-                            />
-                        </DangerZoneGroup>
-                    </Grid.Column>
-                </Grid.Row>
-            </Grid>
-            { confirmDelete && deleteConfirmation() }
+            { attributeConfig.attributeMappings.showDangerZone && (
+                <Grid>
+                    <Grid.Row columns={ 1 }>
+                        <Grid.Column width={ 16 }>
+                            <Show when={ AccessControlConstants.SCOPE_DELETE }>
+                                <DangerZoneGroup
+                                    sectionHeader={ t("common:dangerZone") }
+                                    data-testid={ `${ testId }-danger-zone-group` }
+                                >
+                                    <DangerZone
+                                        actionTitle={ t("console:manage.features.claims.dialects." +
+                                            "dangerZone.actionTitle", {
+                                            type: resolveType(attributeType, true, true)
+                                        }) }
+                                        header={ t("console:manage.features.claims.dialects.dangerZone.header", {
+                                            type: resolveType(attributeType, true)
+                                        }) }
+                                        subheader={ t("console:manage.features.claims.dialects.dangerZone.subheader", {
+                                            type: resolveType(attributeType)
+                                        }) }
+                                        onActionClick={ () => setConfirmDelete(true) }
+                                        data-testid={ `${ testId }-dialect-delete-danger-zone` }
+                                    />
+                                </DangerZoneGroup>
+                            </Show>
+                        </Grid.Column>
+                    </Grid.Row>
+                </Grid>
+            ) }
+            { attributeConfig.attributeMappings.showDangerZone && confirmDelete && deleteConfirmation() }
         </>
     );
 };

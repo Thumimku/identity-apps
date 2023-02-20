@@ -16,6 +16,7 @@
   ~ under the License.
   --%>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.wso2.carbon.core.SameSiteCookie" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointConstants" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.ApiException" %>
@@ -40,9 +41,12 @@
 <%@ page import="org.apache.http.client.utils.URIBuilder" %>
 <%@ page import="java.net.URI" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.model.User" %>
+<%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.PreferenceRetrievalClient" %>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <jsp:directive.include file="includes/localize.jsp"/>
 <jsp:directive.include file="tenant-resolve.jsp"/>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
 
 <%
     String ERROR_MESSAGE = "errorMsg";
@@ -50,6 +54,8 @@
     String PASSWORD_RESET_PAGE = "password-reset.jsp";
     String AUTO_LOGIN_COOKIE_NAME = "ALOR";
     String AUTO_LOGIN_FLOW_TYPE = "RECOVERY";
+    String AUTO_LOGIN_COOKIE_DOMAIN = "AutoLoginCookieDomain";
+    String RECOVERY_TYPE_INVITE = "invite";
     String passwordHistoryErrorCode = "22001";
     String passwordPatternErrorCode = "20035";
     String confirmationKey =
@@ -57,9 +63,11 @@
     String newPassword = request.getParameter("reset-password");
     String callback = request.getParameter("callback");
     String userStoreDomain = request.getParameter("userstoredomain");
+    String type = request.getParameter("type");
     String username = null;
-    boolean isAutoLoginEnable = Boolean.parseBoolean(Utils.getConnectorConfig("Recovery.AutoLogin.Enable",
-            tenantDomain));
+    PreferenceRetrievalClient preferenceRetrievalClient = new PreferenceRetrievalClient();
+    Boolean isAutoLoginEnable = preferenceRetrievalClient.checkAutoLoginAfterPasswordRecoveryEnabled(tenantDomain);
+    String sessionDataKey = StringUtils.EMPTY;
 
     if (StringUtils.isBlank(callback)) {
         callback = IdentityManagementEndpointUtil.getUserPortalUrl(
@@ -96,25 +104,37 @@
                 if (userStoreDomain != null) {
                     username = userStoreDomain + "/" + username + "@" + tenantDomain;
                 }
-                
+
+                String cookieDomain = application.getInitParameter(AUTO_LOGIN_COOKIE_DOMAIN);
                 JSONObject contentValueInJson = new JSONObject();
                 contentValueInJson.put("username", username);
                 contentValueInJson.put("createdTime", System.currentTimeMillis());
                 contentValueInJson.put("flowType", AUTO_LOGIN_FLOW_TYPE);
+                if (StringUtils.isNotBlank(cookieDomain)) {
+                    contentValueInJson.put("domain", cookieDomain);
+                }
                 String content = contentValueInJson.toString();
-        
+
                 JSONObject cookieValueInJson = new JSONObject();
                 cookieValueInJson.put("content", content);
-        
                 String signature = Base64.getEncoder().encodeToString(SignatureUtil.doSignature(content));
-        
                 cookieValueInJson.put("signature", signature);
-                Cookie cookie = new Cookie(AUTO_LOGIN_COOKIE_NAME,
-                        Base64.getEncoder().encodeToString(cookieValueInJson.toString().getBytes()));
-                cookie.setPath("/");
-                cookie.setSecure(true);
-                cookie.setMaxAge(300);
-                response.addCookie(cookie);
+                String cookieValue = Base64.getEncoder().encodeToString(cookieValueInJson.toString().getBytes());
+
+                IdentityManagementEndpointUtil.setCookie(request, response, AUTO_LOGIN_COOKIE_NAME, cookieValue,
+                    300, SameSiteCookie.NONE, "/", cookieDomain);
+
+                if (callback.contains("?")) {
+                    String queryParams = callback.substring(callback.indexOf("?") + 1);
+                    String[] parameterList = queryParams.split("&");
+                    Map<String, String> queryMap = new HashMap<>();
+                    for (String param : parameterList) {
+                        String key = param.substring(0, param.indexOf("="));
+                        String value = param.substring(param.indexOf("=") + 1);
+                        queryMap.put(key, value);
+                    }
+                    sessionDataKey = queryMap.get("sessionDataKey");
+                }
             }
         } catch (ApiException e) {
 
@@ -155,8 +175,13 @@
 %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "medium");
+%>
+
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
@@ -167,9 +192,60 @@
     <jsp:include page="includes/header.jsp"/>
     <% } %>
 </head>
-<body>
+<body class="login-portal layout">
+    <% if (!RECOVERY_TYPE_INVITE.equalsIgnoreCase(type)) { %>
+        <div>
+            <form id="callbackForm" name="callbackForm" method="post" action="/commonauth">
+                <div>
+                    <input type="hidden" name="username" value="<%=Encode.forHtmlAttribute(username)%>"/>
+                </div>
+                <div>
+                    <input type="hidden" name="sessionDataKey" value="<%=Encode.forHtmlAttribute(sessionDataKey)%>"/>
+                </div>
+            </form>
+        </div>
+    <% } %>
 
-    <!-- footer -->
+    <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+        <layout:component componentName="ProductHeader" >
+            <!-- product-title -->
+            <% if (RECOVERY_TYPE_INVITE.equalsIgnoreCase(type)) {
+                File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
+                if (productTitleFile.exists()) {
+                %>
+                <jsp:include page="extensions/product-title.jsp"/>
+                <%  } else { %>
+                <jsp:include page="includes/product-title.jsp"/>
+                <% }
+            } %>
+        </layout:component>
+        <layout:component componentName="MainSection" >
+        <% if (RECOVERY_TYPE_INVITE.equalsIgnoreCase(type)) { %>
+            <div class="ui green segment mt-3 attached">
+                <h3 class="ui header text-center slogan-message mt-4 mb-6" data-testid="password-reset-complete-page-header">
+                    Password Set Sucessfully
+                </h3>
+                <p style="padding-right: 90px; padding-left: 90px">
+                    You have successfully set a password for your account <b><%=username%></b>.
+                </p>
+            </div>
+        <% } %>
+        </layout:component>
+        <layout:component componentName="ProductFooter" >
+            <!-- product-footer -->
+            <% if (RECOVERY_TYPE_INVITE.equalsIgnoreCase(type)) {
+                File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                if (productFooterFile.exists()) {
+                %>
+                <jsp:include page="extensions/product-footer.jsp"/>
+                <% } else { %>
+                <jsp:include page="includes/product-footer.jsp"/>
+                <% }
+            } %>
+        </layout:component>
+    </layout:main>
+
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {
@@ -181,22 +257,29 @@
 
     <script type="application/javascript">
         $(document).ready(function () {
-
             <%
                 try {
-                        URIBuilder callbackUrlBuilder = new
-                                URIBuilder(IdentityManagementEndpointUtil.encodeURL(callback));
-                        URI callbackUri = callbackUrlBuilder.addParameter("passwordReset", "true").build();
-                    %>
-                    location.href = "<%=callbackUri.toString()%>";
-                    <%
-                    } catch (URISyntaxException e) {
-                        request.setAttribute("error", true);
-                        request.setAttribute("errorMsg", "Invalid callback URL found in the request.");
-                        request.getRequestDispatcher("error.jsp").forward(request, response);
-                        return;
+                    if (!RECOVERY_TYPE_INVITE.equalsIgnoreCase(type)) {
+                        if (isAutoLoginEnable && StringUtils.isNotBlank(sessionDataKey) && (StringUtils.isNotBlank(username))) {
+                            %>
+                            document.callbackForm.submit();
+                            <%
+                        } else {
+                            URIBuilder callbackUrlBuilder = new
+                                    URIBuilder(IdentityManagementEndpointUtil.encodeURL(callback));
+                            URI callbackUri = callbackUrlBuilder.addParameter("passwordReset", "true").build();
+                            %>
+                            location.href = "<%=callbackUri.toString()%>";
+                            <%
+                        }
                     }
-            %>
+                } catch (URISyntaxException e) {
+                    request.setAttribute("error", true);
+                    request.setAttribute("errorMsg", "Invalid callback URL found in the request.");
+                    request.getRequestDispatcher("error.jsp").forward(request, response);
+                    return;
+            }
+    %>
 
         });
     </script>

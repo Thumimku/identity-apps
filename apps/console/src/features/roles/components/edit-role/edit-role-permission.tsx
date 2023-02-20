@@ -18,7 +18,7 @@
 
 import { AlertLevels, RolesInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
-import React, { FunctionComponent, ReactElement } from "react";
+import React, { FunctionComponent, ReactElement, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { updateRole } from "../../api";
@@ -56,6 +56,7 @@ export const RolePermissionDetails: FunctionComponent<RolePermissionDetailProps>
 
     const { t } = useTranslation();
     const dispatch = useDispatch();
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     const {
         isReadOnly,
@@ -73,6 +74,9 @@ export const RolePermissionDetails: FunctionComponent<RolePermissionDetailProps>
             } ],
             "schemas": [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ]
         };
+
+        setIsSubmitting(true);
+
         updateRole(roleObject.id, roleData)
             .then(() => {
                 dispatch(
@@ -106,9 +110,9 @@ export const RolePermissionDetails: FunctionComponent<RolePermissionDetailProps>
                         addAlert({
                             description: isGroup
                                 ? t("console:manage.features.groups.notifications.createPermission.error.description",
-                                { description: error.response.data.detail })
+                                    { description: error.response.data.detail })
                                 : t("console:manage.features.roles.notifications.createPermission.error.description",
-                                { description: error.response.data.detail }),
+                                    { description: error.response.data.detail }),
                             level: AlertLevels.ERROR,
                             message: isGroup
                                 ? t("console:manage.features.groups.notifications.createPermission.error.message")
@@ -132,6 +136,9 @@ export const RolePermissionDetails: FunctionComponent<RolePermissionDetailProps>
                         })
                     );
                 }
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
@@ -143,6 +150,7 @@ export const RolePermissionDetails: FunctionComponent<RolePermissionDetailProps>
                 isRole
                 onSubmit={ onPermissionUpdate }
                 roleObject={ roleObject }
+                isSubmitting={ isSubmitting }
             />
         </div>
     );

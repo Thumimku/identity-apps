@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,14 +16,14 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import React, { FunctionComponent, ReactElement } from "react";
 import { Grid, Icon, Input } from "semantic-ui-react";
 
 /**
  * Proptypes transfer list search component.
  */
-export interface TransferListSearchPropsInterface extends TestableComponentInterface {
+export interface TransferListSearchPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     placeholder: string;
     handleListSearch?: (e: React.FormEvent<HTMLInputElement>, { value }: { value: string }) => void;
     /**
@@ -34,14 +34,15 @@ export interface TransferListSearchPropsInterface extends TestableComponentInter
      * position of the search icon
      */
     iconPosition?: "left";
+    disabled?: boolean;
 }
 
 /**
  * Transfer list component.
  *
- * @param {TransferListSearchPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns
  */
 export const TransferListSearch: FunctionComponent<TransferListSearchPropsInterface> = (
     props: TransferListSearchPropsInterface
@@ -52,6 +53,8 @@ export const TransferListSearch: FunctionComponent<TransferListSearchPropsInterf
         placeholder,
         isLoading,
         iconPosition,
+        disabled,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -59,12 +62,14 @@ export const TransferListSearch: FunctionComponent<TransferListSearchPropsInterf
         <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 8 }>
             <Input
                 loading={ isLoading }
+                data-componentid={ componentId }
                 data-testid={ testId }
                 icon={ <Icon name="search"/> }
                 iconPosition={ iconPosition }
                 fluid
                 onChange={ handleListSearch }
                 placeholder={ placeholder }
+                disabled={ disabled }
             />
         </Grid.Column>
     );
@@ -74,6 +79,8 @@ export const TransferListSearch: FunctionComponent<TransferListSearchPropsInterf
  * Default props for the transfer list search component.
  */
 TransferListSearch.defaultProps = {
+    "data-componentid": "transfer-list-search",
     "data-testid": "transfer-list-search",
+    disabled: false,
     isLoading: false
 };

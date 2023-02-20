@@ -1,7 +1,7 @@
 <%--
-  ~ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~ Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
   ~
-  ~  WSO2 Inc. licenses this file to you under the Apache License,
+  ~  WSO2 LLC. licenses this file to you under the Apache License,
   ~  Version 2.0 (the "License"); you may not use this file except
   ~  in compliance with the License.
   ~  You may obtain a copy of the License at
@@ -14,10 +14,12 @@
   ~ KIND, either express or implied.  See the License for the
   ~ specific language governing permissions and limitations
   ~ under the License.
-  --%>
+--%>
+
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%@ page import="org.owasp.encoder.Encode" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.serviceclient.UserIdentityManagementAdminServiceClient" %>
 <%@ page import="org.wso2.carbon.identity.mgt.stub.dto.ChallengeQuestionDTO" %>
@@ -33,8 +35,9 @@
     String errorMsg = IdentityManagementEndpointUtil.getStringValue(request.getAttribute("errorMsg"));
 
     Map<String, List<ChallengeQuestionDTO>> challengeQuestionSets = new HashMap<String, List<ChallengeQuestionDTO>>();
+    String username = session.getAttribute("username");
 
-    if (session.getAttribute("username") != null) {
+    if (!StringUtils.isBlank(username)) {
         UserIdentityManagementAdminServiceClient userIdentityManagementAdminServiceClient = new
                 UserIdentityManagementAdminServiceClient();
         ChallengeQuestionDTO[] challengeQuestionDTOs =
@@ -54,16 +57,17 @@
         request.setAttribute("error", true);
         request.setAttribute("errorMsg", IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
                 "Registered.user.not.found.in.session"));
+        request.setAttribute("username", username);
         request.getRequestDispatcher("error.jsp").forward(request, response);
     }
 %>
 
-    <html>
+    <html lang="en-US">
     <head>
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <!-- title -->
+        <%-- title --%>
         <%
             File titleFile = new File(getServletContext().getRealPath("extensions/title.jsp"));
             if (titleFile.exists()) {
@@ -86,7 +90,7 @@
 
     <body>
 
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -96,11 +100,11 @@
             <jsp:include page="includes/header.jsp"/>
     <% } %>
 
-    <!-- page content -->
+    <%-- page content --%>
     <div class="container-fluid body-wrapper">
 
         <div class="row">
-            <!-- content -->
+            <%-- content --%>
             <div class="col-xs-12 col-sm-10 col-md-8 col-lg-5 col-centered wr-login">
                 <h2 class="wr-title uppercase blue-bg padding-double white boarder-bottom-blue margin-none">
                     <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Update.security.question")%>
@@ -173,12 +177,12 @@
                 </div>
                 <div class="clearfix"></div>
             </div>
-            <!-- /content/body -->
+            <%-- /content/body --%>
 
         </div>
     </div>
 
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {
@@ -188,7 +192,7 @@
             <jsp:include page="includes/footer.jsp"/>
     <% } %>
 
-    <script src="libs/jquery_3.4.1/jquery-3.4.1.js"></script>
+    <script src="libs/jquery_3.6.0/jquery-3.6.0.min.js"></script>
     <script src="libs/bootstrap_3.4.1/js/bootstrap.min.js"></script>
     </body>
     </html>

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,31 +16,56 @@
  * under the License.
  */
 
-import { AlertInterface, AlertLevels, DisplayCertificate, TestableComponentInterface } from "@wso2is/core/models";
-import { addAlert } from "@wso2is/core/store";
-import { CertificateManagementUtils, URLUtils } from "@wso2is/core/utils";
-import { Field, Forms, FormValue, Validation } from "@wso2is/forms";
+import { TestableComponentInterface } from "@wso2is/core/models";
+import { URLUtils } from "@wso2is/core/utils";
+import { CheckboxChild, Field, FormValue, Forms, RadioChild, Validation, useTrigger } from "@wso2is/forms";
 import {
     Code,
     ConfirmationModal,
+    ContentLoader,
     CopyInputField,
+    GenericIcon,
     Heading,
     Hint,
-    LinkButton,
+    Message,
+    StickyBar,
     Text,
     URLInput
 } from "@wso2is/react-components";
 import { FormValidation } from "@wso2is/validation";
 import get from "lodash-es/get";
-import isEmpty from "lodash-es/isEmpty";
 import intersection from "lodash-es/intersection";
-import React, { FunctionComponent, MouseEvent, ReactElement, useEffect, useRef, useState } from "react";
+import isEmpty from "lodash-es/isEmpty";
+import union from "lodash-es/union";
+import React, {
+    Fragment,
+    FunctionComponent,
+    MouseEvent,
+    MutableRefObject,
+    ReactElement,
+    useEffect,
+    useRef,
+    useState
+} from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
-import { Button, Divider, Form, Grid, Label, List, Message } from "semantic-ui-react";
+import { useSelector } from "react-redux";
+import { Button, Container, Divider, DropdownProps, Form, Grid, Label, List } from "semantic-ui-react";
+import { applicationConfig } from "../../../../extensions";
 import { AppState, ConfigReducerStateInterface } from "../../../core";
+import { OrganizationType } from "../../../organizations/constants";
+import { getGeneralIcons } from "../../configs";
 import { ApplicationManagementConstants } from "../../constants";
+import CustomApplicationTemplate
+    from "../../data/application-templates/templates/custom-application/custom-application.json";
+import MobileTemplate
+    from "../../data/application-templates/templates/mobile-application/mobile-application.json";
+import OIDCWebApplicationTemplate
+    from "../../data/application-templates/templates/oidc-web-application/oidc-web-application.json";
+import SinglePageApplicationTemplate
+    from "../../data/application-templates/templates/single-page-application/single-page-application.json";
 import {
+    ApplicationInterface,
+    ApplicationTemplateIdTypes,
     ApplicationTemplateListItemInterface,
     CertificateInterface,
     CertificateTypeInterface,
@@ -51,17 +76,18 @@ import {
     OIDCDataInterface,
     OIDCMetadataInterface,
     State,
-    SupportedAccessTokenBindingTypes
+    SupportedAccessTokenBindingTypes,
+    SupportedAuthProtocolTypes
 } from "../../models";
 import { ApplicationManagementUtils } from "../../utils";
-import { CertificateFormFieldModal } from "../modals";
-import SinglePageApplicationTemplate
-    from "../../data/application-templates/templates/single-page-application/single-page-application.json";
+import { ApplicationCertificateWrapper } from "../settings/certificate";
 
 /**
  * Proptypes for the inbound OIDC form component.
  */
 interface InboundOIDCFormPropsInterface extends TestableComponentInterface {
+    onUpdate: (id: string) => void;
+    application: ApplicationInterface;
     /**
      * Current certificate configurations.
      */
@@ -87,20 +113,38 @@ interface InboundOIDCFormPropsInterface extends TestableComponentInterface {
      * Application template.
      */
     template?: ApplicationTemplateListItemInterface;
+    /**
+     * Handles loading UI.
+     */
+    isLoading?: boolean;
+    setIsLoading?: (isLoading: boolean) => void;
+    containerRef?: MutableRefObject<HTMLElement>;
+}
+
+/**
+ * Interface for grant icons.
+ */
+interface GrantIconInterface {
+    label: string | ReactElement;
+    value: string;
+    hint?: any;
+    disabled?: boolean;
 }
 
 /**
  * Inbound OIDC protocol configurations form.
  *
- * @param {InboundOIDCFormPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns InboundOIDCForm component.
  */
 export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> = (
     props: InboundOIDCFormPropsInterface
 ): ReactElement => {
 
     const {
+        onUpdate,
+        application,
         certificate,
         metadata,
         initialValues,
@@ -111,29 +155,33 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
         allowedOriginList,
         tenantDomain,
         template,
+        isLoading,
+        setIsLoading,
+        containerRef,
         [ "data-testid" ]: testId
     } = props;
 
     const { t } = useTranslation();
 
-    const dispatch = useDispatch();
-
     const isClientSecretHashEnabled: boolean = useSelector((state: AppState) =>
         state.config.ui.isClientSecretHashEnabled);
+    const orgType: OrganizationType = useSelector((state: AppState) =>
+        state?.organization?.organizationType);
 
     const [ isEncryptionEnabled, setEncryptionEnable ] = useState(false);
-    const [ 
-        isRefreshTokenWithoutAllowedGrantType, 
-        setRefreshTokenWithoutAlllowdGrantType ] = useState<boolean>(false);
     const [ callBackUrls, setCallBackUrls ] = useState("");
+    const [ audienceUrls, setAudienceUrls ] = useState("");
     const [ showURLError, setShowURLError ] = useState(false);
+    const [ showAudienceError, setShowAudienceError ] = useState(false);
     const [ showOriginError, setShowOriginError ] = useState(false);
+    const [ showPKCEField, setPKCEField ] = useState<boolean>(undefined);
     const [ showCallbackURLField, setShowCallbackURLField ] = useState<boolean>(undefined);
+    const [ hideRefreshTokenGrantType, setHideRefreshTokenGrantType ] = useState<boolean>(false);
     const [ selectedGrantTypes, setSelectedGrantTypes ] = useState<string[]>(undefined);
     const [ isGrantChanged, setGrantChanged ] = useState<boolean>(false);
     const [ showRegenerateConfirmationModal, setShowRegenerateConfirmationModal ] = useState<boolean>(false);
-    const [ showReactiveConfirmationModal, setShowReactiveConfirmationModal ] = useState<boolean>(false);
     const [ showRevokeConfirmationModal, setShowRevokeConfirmationModal ] = useState<boolean>(false);
+    const [ showReactiveConfirmationModal, setShowReactiveConfirmationModal ] = useState<boolean>(false);
     const [ showLowExpiryTimesConfirmationModal, setShowLowExpiryTimesConfirmationModal ] = useState<boolean>(false);
     const [ lowExpiryTimesConfirmationModal, setLowExpiryTimesConfirmationModal ] = useState<ReactElement>(null);
     const [ allowedOrigins, setAllowedOrigins ] = useState("");
@@ -143,35 +191,50 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     ] = useState<boolean>(false);
     const [ callbackURLsErrorLabel, setCallbackURLsErrorLabel ] = useState<ReactElement>(null);
     const [ allowedOriginsErrorLabel, setAllowedOriginsErrorLabel ] = useState<ReactElement>(null);
-    const [ isPEMSelected, setPEMSelected ] = useState<boolean>(false);
-    const [ showCertificateModal, setShowCertificateModal ] = useState<boolean>(false);
-    const [ PEMValue, setPEMValue ] = useState<string>(undefined);
-    const [ certificateDisplay, setCertificateDisplay ] = useState<DisplayCertificate>(null);
+    const [ , setPEMSelected ] = useState<boolean>(false);
+    const [ , setPEMValue ] = useState<string>(undefined);
+    const [
+        isRefreshTokenWithoutAllowedGrantType,
+        setRefreshTokenWithoutAlllowdGrantType
+    ] = useState<boolean>(false);
     const config: ConfigReducerStateInterface = useSelector((state: AppState) => state.config);
 
-    const clientSecret = useRef<HTMLElement>();
-    const grant = useRef<HTMLElement>();
-    const url = useRef<HTMLDivElement>();
-    const allowedOrigin = useRef<HTMLDivElement>();
-    const supportPublicClients = useRef<HTMLElement>();
-    const pkce = useRef<HTMLElement>();
-    const bindingType = useRef<HTMLElement>();
-    const type = useRef<HTMLElement>();
-    const validateTokenBinding = useRef<HTMLElement>();
-    const revokeAccessToken = useRef<HTMLElement>();
-    const userAccessTokenExpiryInSeconds = useRef<HTMLElement>();
-    const refreshToken = useRef<HTMLElement>();
-    const expiryInSeconds = useRef<HTMLElement>();
-    const audience = useRef<HTMLElement>();
-    const encryption = useRef<HTMLElement>();
-    const algorithm = useRef<HTMLElement>();
-    const method = useRef<HTMLElement>();
-    const idExpiryInSeconds = useRef<HTMLElement>();
-    const backChannelLogoutUrl = useRef<HTMLElement>();
-    const frontChannelLogoutUrl = useRef<HTMLElement>();
-    const enableRequestObjectSignatureValidation = useRef<HTMLElement>();
-    const scopeValidator = useRef<HTMLElement>();
+    const clientSecret: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const grant: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const url: MutableRefObject<HTMLDivElement> = useRef<HTMLDivElement>();
+    const allowedOrigin: MutableRefObject<HTMLDivElement> = useRef<HTMLDivElement>();
+    const supportPublicClients: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const pkce: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const bindingType: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const type: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const validateTokenBinding: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const revokeAccessToken: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const userAccessTokenExpiryInSeconds: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const applicationAccessTokenExpiryInSeconds: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const refreshToken: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const expiryInSeconds: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const audience: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const encryption: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const algorithm: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const method: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const idExpiryInSeconds: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const backChannelLogoutUrl: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const frontChannelLogoutUrl: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const enableRequestObjectSignatureValidation: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const scopeValidator: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+    const formRef: MutableRefObject<HTMLFormElement> = useRef<HTMLFormElement>();
+    const updateRef: MutableRefObject<HTMLElement> = useRef<HTMLElement>();
+
     const [ isSPAApplication, setSPAApplication ] = useState<boolean>(false);
+    const [ isOIDCWebApplication, setOIDCWebApplication ] = useState<boolean>(false);
+    const [ isMobileApplication, setMobileApplication ] = useState<boolean>(false);
+    const [ isFormStale, setIsFormStale ] = useState<boolean>(false);
+
+    const [ finalCertValue, setFinalCertValue ] = useState<string>(undefined);
+    const [ selectedCertType, setSelectedCertType ] = useState<CertificateTypeInterface>(CertificateTypeInterface.NONE);
+    const [ isCertAvailableForEncrypt, setCertAvailableForEncrypt ] = useState(false);
+
+    const [ triggerCertSubmit, setTriggerCertSubmit ] = useTrigger();
 
     /**
      * Reset the encryption field initial values if its
@@ -193,39 +256,41 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
      * We use this hook to maintain the toggle state of the PKCE checkbox in the
      * OIDC form.
      *
-     * @description Purpose is to enable "Support 'Plain' PKCE Algorithm" checkbox
-     *              field if and only if "Enabled" is checked. Otherwise the 'Plain'
-     *              will be disabled and stay in the unchecked state.
+     * @remarks
+     * Purpose is to enable "Support 'Plain' PKCE Algorithm" checkbox
+     * field if and only if "Enabled" is checked. Otherwise the 'Plain'
+     * will be disabled and stay in the unchecked state.
      */
     const [ enablePKCE, setEnablePKCE ] = useState<boolean>(false);
 
     /**
-     * The {@code PKCE_KEY}, {@code ENABLE_PKCE_CHECKBOX_VALUE and
-     * {@code SUPPORT_PKCE_PLAIN_ALGORITHM_VALUE} values are sensitive.
+     * The {@link PKCE_KEY}, {@link ENABLE_PKCE_CHECKBOX_VALUE} and
+     * {@link SUPPORT_PKCE_PLAIN_ALGORITHM_VALUE} values are sensitive.
      * If you inspect the relevant field you will see that those value should
      * be the same when we are passing it down to the component.
      */
-    const PKCE_KEY = "PKCE";
-    const ENABLE_PKCE_CHECKBOX_VALUE = "mandatory";
-    const SUPPORT_PKCE_PLAIN_ALGORITHM_VALUE = "supportPlainTransformAlgorithm";
+    const PKCE_KEY: string = "PKCE";
+    const ENABLE_PKCE_CHECKBOX_VALUE: string = "mandatory";
+    const SUPPORT_PKCE_PLAIN_ALGORITHM_VALUE: string = "supportPlainTransformAlgorithm";
 
     /**
      * The listener handler for the enable PKCE toggle form field. This function
      * check if the "mandatory" value is present in the values array under "PKCE"
-     * field and toggles the {@code enablePKCE} boolean on/off.
+     * field and toggles the {@link enablePKCE} boolean on/off.
      *
-     * @param tempForm {Map<string, FormValue>} a mutable map of form values
+     * @param tempForm - a mutable map of form values
      */
     const pkceValuesChangeListener = (tempForm: Map<string, FormValue>): void => {
         /**
          * A predicate that checks whether the given value is
          * matching ENABLE_PKCE_CHECKBOX_VALUE
-         * @param val {string} checkbox value
+         * @param val - checkbox value
          */
         const withPredicate = (val: string): boolean => val === ENABLE_PKCE_CHECKBOX_VALUE;
 
         if (tempForm.has(PKCE_KEY)) {
             const value: string[] = tempForm.get(PKCE_KEY) as string[];
+
             if (value.find(withPredicate)) {
                 setEnablePKCE(true);
             } else {
@@ -242,6 +307,51 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     };
 
     /**
+     * Check whether the application is a Single Page Application
+     */
+    useEffect(() => {
+        if (!template?.id || !SinglePageApplicationTemplate?.id) {
+            setIsLoading(false);
+
+            return;
+        }
+
+        if (template.id == SinglePageApplicationTemplate.id) {
+            setSPAApplication(true);
+        }
+        setIsLoading(false);
+    }, [ template ]);
+
+    /**
+     * Check whether the application is an OIDC Web Application
+     */
+    useEffect(() => {
+        if (!template?.id || !OIDCWebApplicationTemplate?.id) {
+            return;
+        }
+
+        if (template.id == OIDCWebApplicationTemplate.id) {
+            setOIDCWebApplication(true);
+        }
+    }, [ template ]);
+
+    /**
+     * Check whether the application is a Mobile Application
+     */
+    useEffect(() => {
+        if (!template?.id || !MobileTemplate?.id) {
+            setIsLoading(false);
+
+            return;
+        }
+
+        if (template?.id == MobileTemplate?.id) {
+            setMobileApplication(true);
+        }
+        setIsLoading(false);
+    }, [ template ]);
+
+    /**
      * Check whether to show the callback url or not
      */
     useEffect(() => {
@@ -250,9 +360,10 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
         } else {
             setShowCallbackURLField(false);
         }
-        
+
         const selectedRefreshTokenAllowedGrantTypes: string[] = intersection(ApplicationManagementConstants.
-            IS_REFRESH_TOKEN_GRANT_TYPE_ALLOWED,selectedGrantTypes);
+            IS_REFRESH_TOKEN_GRANT_TYPE_ALLOWED, selectedGrantTypes);
+
         if (!selectedRefreshTokenAllowedGrantTypes.length && selectedGrantTypes?.includes("refresh_token")) {
             setRefreshTokenWithoutAlllowdGrantType(true);
         } else {
@@ -261,16 +372,40 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
 
     }, [ selectedGrantTypes, isGrantChanged ]);
 
+    /**
+     * Check whether to show PKCE or not
+     */
     useEffect(() => {
-        if (!template?.id || !SinglePageApplicationTemplate?.id) {
-            return;
+        setPKCEField(false);
+        if (selectedGrantTypes?.includes(ApplicationManagementConstants.AUTHORIZATION_CODE_GRANT)) {
+            setPKCEField(true);
         }
 
-        if (template.id == SinglePageApplicationTemplate.id) {
-            setSPAApplication(true);
-        }
-    }, [ template ]);
+    }, [ selectedGrantTypes, isGrantChanged ]);
 
+    /**
+     * Check whether to enable refresh token grant type or not.
+     */
+    useEffect(() => {
+        setHideRefreshTokenGrantType(false);
+        if (isHideRefreshTokenGrantType(selectedGrantTypes)) {
+            setHideRefreshTokenGrantType(true);
+        }
+    }, [ selectedGrantTypes, isGrantChanged ]);
+
+    const isHideRefreshTokenGrantType = (selectedGrantTypes: string[]): boolean => {
+        if (selectedGrantTypes?.length === 0 || (selectedGrantTypes?.includes("implicit")
+            && selectedGrantTypes?.length === 1)) {
+            return true;
+        }
+        if (selectedGrantTypes?.includes("implicit") && selectedGrantTypes?.includes("refresh_token")
+            && selectedGrantTypes?.length === 2) {
+            return true;
+        }
+
+        return selectedGrantTypes?.includes(("refresh_token")) && selectedGrantTypes?.length === 1;
+
+    };
 
     useEffect(() => {
         if (selectedGrantTypes !== undefined) {
@@ -278,10 +413,24 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
         }
 
         if (initialValues?.grantTypes) {
-            setSelectedGrantTypes(initialValues?.grantTypes);
+            setSelectedGrantTypes([ ...initialValues?.grantTypes ]);
+        }
+
+        if (initialValues?.allowedOrigins) {
+            setAllowedOrigins(initialValues?.allowedOrigins.toString());
         }
 
     }, [ initialValues ]);
+
+    /**
+     * Set the certificate type.
+     */
+    useEffect(() => {
+        if (certificate?.type){
+            setSelectedCertType(certificate?.type);
+        }
+
+    },[ certificate ]);
 
     /**
      * Sets if a valid token binding type is selected.
@@ -318,12 +467,27 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     }, [ certificate ]);
 
     /**
+     * Set certificate available for encryption or not.
+     */
+    useEffect(()=> {
+        if (isEmpty(finalCertValue) || selectedCertType === CertificateTypeInterface.NONE) {
+            setCertAvailableForEncrypt(false);
+        } else {
+            setCertAvailableForEncrypt(true);
+        }
+    },[ finalCertValue, selectedCertType ]);
+
+    /**
      * Handle grant type change.
      *
-     * @param {Map<string, FormValue>} values - Form values
+     * @param values - Form values.
      */
     const handleGrantTypeChange = (values: Map<string, FormValue>) => {
-        const grants: string[] = values.get("grant") as string[];
+        let grants: string[] = values.get("grant") as string[];
+
+        if (isHideRefreshTokenGrantType(selectedGrantTypes)) {
+            grants = grants.filter((grant: string) => grant != "refresh_token");
+        }
         setSelectedGrantTypes(grants);
         setGrantChanged(!isGrantChanged);
     };
@@ -357,8 +521,8 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     /**
      * Moderates the metadata labels.
      *
-     * @param {string} label - Raw label.
-     * @return {string}
+     * @param label - Raw label.
+     * @returns moderated metadata labels.
      */
     const moderateMetadataLabels = (label: string): string => {
 
@@ -374,15 +538,16 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     /**
      * Creates options for Radio & dropdown using MetadataPropertyInterface options.
      *
-     * @param {MetadataPropertyInterface} metadataProp - Metadata.
-     * @param {boolean} isLabel - Flag to determine if label.
-     * @return {any[]}
+     * @param metadataProp - Metadata.
+     * @param isLabel - Flag to determine if label.
+     * @returns the list of options for radio & dropdown.
      */
-    const getAllowedList = (metadataProp: MetadataPropertyInterface, isLabel?: boolean): any[] => {
-        const allowedList = [];
+    const getAllowedList = (metadataProp: MetadataPropertyInterface, isLabel?: boolean): DropdownProps[] => {
+        const allowedList: DropdownProps[] = [];
+
         if (metadataProp) {
             if (isLabel) {
-                metadataProp.options.map((ele) => {
+                metadataProp.options.map((ele: string) => {
                     allowedList.push({
                         hint: {
                             content: getMetadataHints(ele)
@@ -392,7 +557,7 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                     });
                 });
             } else {
-                metadataProp.options.map((ele) => {
+                metadataProp.options.map((ele: string) => {
                     allowedList.push({ text: ele, value: ele });
                 });
             }
@@ -400,9 +565,10 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
         if (isLabel) {
             // if the list related to a label then sort the values in
             // alphabetical order using a ascending comparator.
-            return allowedList.sort((a, b) => {
+            return allowedList.sort((a: RadioChild, b: RadioChild) => {
                 if (a.label < b.label) return -1;
                 if (a.label > b.label) return 1;
+
                 return 0;
             });
         } else {
@@ -411,34 +577,102 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     };
 
     /**
-     * Modifies the grant type label string value. For now we only concatenate
-     * some extra value to the `implicit` field. If you need to do the same for
-     * other checkboxes label then add a condition and bind the values.
+     * Creates options for Radio using MetadataPropertyInterface options.
      *
-     * @param value {string} checkbox key {@link TEMPLATE_WISE_ALLOWED_GRANT_TYPES}
-     * @param label {string} mapping label for value
+     * @param metadataProp - Metadata.
+     * @param isBinding - Indicate whether binding is true or false.
+     * @returns a list of options for radio.
      */
-    const modifyGrantTypeLabels = (value: string, label: string): string => {
-        if (value === ApplicationManagementConstants.IMPLICIT_GRANT) {
-            return t("console:develop.features.applications.forms.inboundOIDC.fields.grant.children.implicit.label",
-                { grantType: label });
+    const getAllowedListForAccessToken = (
+        metadataProp: MetadataPropertyInterface, isBinding?: boolean): RadioChild[] => {
+        const allowedList: RadioChild[] = [];
+
+        if (metadataProp) {
+            metadataProp.options.map((ele: string) => {
+                if ((ele === "Default") && !isBinding) {
+                    allowedList.push({
+                        hint: {
+                            content: getMetadataHints(ele)
+                        },
+                        label: "Opaque",
+                        value: ele
+                    });
+                // Cookie binding was hidden from the UI for SPAs & Traditional OIDC with
+                // https://github.com/wso2/identity-apps/pull/2254
+                } else if ((isSPAApplication || isOIDCWebApplication) && isBinding && ele === "cookie") {
+                    return false;
+                } else {
+                    allowedList.push({
+                        hint: {
+                            content: getMetadataHints(ele)
+                        },
+                        label: moderateMetadataLabels(ele),
+                        value: ele
+                    });
+                }
+            });
         }
+
+        return allowedList.sort((a: RadioChild, b: RadioChild) => {
+            if (a.label < b.label) return -1;
+            if (a.label > b.label) return 1;
+
+            return 0;
+        });
+    };
+
+    /**
+     * Modifies the grant type label. For `implicit`, `password` and `client credentials` fields,
+     * a warning icon is concatenated with the label.
+     *
+     * @param value - checkbox key {@link TEMPLATE_WISE_ALLOWED_GRANT_TYPES}
+     * @param label - mapping label for value
+     */
+    const modifyGrantTypeLabels = (value: string, label: string) => {
+        if (value === ApplicationManagementConstants.IMPLICIT_GRANT ||
+            value === ApplicationManagementConstants.PASSWORD ||
+            value === ApplicationManagementConstants.CLIENT_CREDENTIALS_GRANT
+        ) {
+            return (
+                <>
+                    <label>
+                        { label }
+                        <GenericIcon
+                            icon={ getGeneralIcons().warning }
+                            defaultIcon
+                            colored
+                            transparent
+                            spaced="left"
+                            floated="right"
+                        />
+                    </label>
+                </>
+            );
+        }
+
         return label;
     };
 
     /**
-     * Generates a string description/hint for the target {@code value} checkbox.
-     * {@see TEMPLATE_WISE_ALLOWED_GRANT_TYPES} for different types.
+     * Generates a string description/hint for the target checkbox.
+     * @see TEMPLATE_WISE_ALLOWED_GRANT_TYPES for different types.
      *
-     * @param value {string}
+     * @param value - target checkbox value.
      */
     const getGrantTypeHintDescription = (value: string): string => {
         switch (value) {
             case ApplicationManagementConstants.IMPLICIT_GRANT:
                 return t("console:develop.features.applications.forms.inboundOIDC.fields.grant.children." +
                     "implicit.hint");
+            case ApplicationManagementConstants.PASSWORD:
+                return t("console:develop.features.applications.forms.inboundOIDC.fields.grant.children." +
+                    "password.hint");
+            case ApplicationManagementConstants.CLIENT_CREDENTIALS_GRANT:
+                return t("console:develop.features.applications.forms.inboundOIDC.fields.grant.children." +
+                        "client_credential.hint");
             case ApplicationManagementConstants.REFRESH_TOKEN_GRANT:
-                return "Refresh token grant type should be selected along with the Code grant type.";
+                return t("console:develop.features.applications.forms.inboundOIDC.fields.grant.validation." +
+                    "refreshToken");
             default:
                 return null;
         }
@@ -447,13 +681,13 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     /**
      * Creates options for Radio GrantTypeMetaDataInterface options.
      *
-     * @param {GrantTypeMetaDataInterface} metadataProp - Metadata.
+     * @param metadataProp - Metadata.
      *
-     * @return {any[]}
+     * @returns a list of options for radio.
      */
-    const getAllowedGranTypeList = (metadataProp: GrantTypeMetaDataInterface): any[] => {
-
-        const allowedList = [];
+    const getAllowedGranTypeList = (metadataProp: GrantTypeMetaDataInterface): CheckboxChild[] => {
+        type CheckboxChildWithIndex = CheckboxChild & { index?: number; };
+        const allowedList: CheckboxChildWithIndex[] = [];
 
         if (metadataProp) {
             metadataProp.options.map(({ name, displayName }: GrantTypeInterface) => {
@@ -464,6 +698,12 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                     return;
                 }
 
+                // Hides the organization switch grant type if the organization management feature disabled.
+                if (name === ApplicationManagementConstants.ORGANIZATION_SWITCH_GRANT
+                    && (!isOrganizationManagementEnabled || orgType === OrganizationType.TENANT)) {
+                    return;
+                }
+
                 // Remove un-allowed grant types.
                 if (template
                     && template.id
@@ -471,15 +711,16 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                     && !ApplicationManagementConstants.TEMPLATE_WISE_ALLOWED_GRANT_TYPES[ template.id ]
                         .includes(name)) {
 
-                        return;
+                    return;
                 }
 
                 /**
-                 * Create the checkbox children object. {@code hint} is marked
+                 * Create the checkbox children object. hint is marked
                  * as optional because not all children have hint/description
-                 * popups. {@see modules > forms > CheckboxChild}
+                 * popups.
+                 * @see modules \> forms \> CheckboxChild
                  */
-                const grant: { label: string; value: string; hint?: any } = {
+                const grant: CheckboxChildWithIndex = {
                     label: modifyGrantTypeLabels(name, displayName),
                     value: name
                 };
@@ -489,12 +730,16 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                  * If there's no description provided in {@link getGrantTypeHintDescription}
                  * then we will not attach any hint popups.
                  */
-                const description = getGrantTypeHintDescription(name);
+                const description: string = getGrantTypeHintDescription(name);
+
                 if (description) {
                     grant.hint = {
-                        header: displayName,
                         content: description,
+                        header: ""
                     };
+                }
+                if (hideRefreshTokenGrantType && grant.value === "refresh_token") {
+                    grant.disabled = true;
                 }
 
                 allowedList.push(grant);
@@ -520,13 +765,23 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
         if (template && template.id) {
             const arrangement: Map<string, number> = ApplicationManagementConstants
                 .TEMPLATE_WISE_ALLOWED_GRANT_TYPE_ARRANGE_ORDER[ template.id ];
+
             if (arrangement && arrangement.size === allowedList.length) {
                 for (const grant of allowedList) {
-                    const index = arrangement.get(grant.value);
+                    const index: number = arrangement.get(grant.value);
+
                     grant[ "index" ] = index ?? Infinity;
                 }
-                allowedList.sort(({ index: a }, { index: b }) => a - b);
+                allowedList.sort(({ index: a }: CheckboxChildWithIndex, { index: b }: CheckboxChildWithIndex) => a - b);
             }
+        }
+
+        // Remove disabled grant types from the sorted list.
+        if (applicationConfig.inboundOIDCForm.disabledGrantTypes
+            && applicationConfig.inboundOIDCForm.disabledGrantTypes[template.id]) {
+            const disabledGrantTypes: string[] = applicationConfig.inboundOIDCForm.disabledGrantTypes[template.id];
+
+            return allowedList.filter((grant: GrantIconInterface) => !disabledGrantTypes.includes(grant.value));
         }
 
         return allowedList;
@@ -535,24 +790,26 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     /**
      * Checks the PKCE options.
      *
-     * @param {OAuth2PKCEConfigurationInterface} pckeConfig - PKCE config.
-     * @return {string[]}
+     * @param pckeConfig - PKCE config.
+     * @returns a list of PKCE options.
      */
     const findPKCE = (pckeConfig: OAuth2PKCEConfigurationInterface): string[] => {
-        const selectedValues = [];
+        const selectedValues: string[] = [];
+
         if (pckeConfig.mandatory) {
             selectedValues.push(ENABLE_PKCE_CHECKBOX_VALUE);
         }
         if (pckeConfig.supportPlainTransformAlgorithm) {
             selectedValues.push(SUPPORT_PKCE_PLAIN_ALGORITHM_VALUE);
         }
+
         return selectedValues;
     };
 
     /**
      * Show Regenerate confirmation.
      *
-     * @param event Button click event.
+     * @param event - button click event.
      */
     const handleRegenerateButton = (event: MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
@@ -562,7 +819,7 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     /**
      * Show Reactivate confirmation.
      *
-     * @param event Button click event.
+     * @param event - button click event.
      */
     const handleReactivateButton = (event: MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
@@ -570,30 +827,30 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     };
 
     /**
-     * Show Revoke confirmation.
-     * TODO - Currently revoke functionality is disabled until proper backend support is provided for disabling
-     * @link https://github.com/wso2/product-is/issues/11453
+     * Find the status of revokeTokensWhenIDPSessionTerminated using form values for SPA.
      *
-     * @param event Button click event.
+     * @param values - Form values.
      */
-    const handleRevokeButton = (event: MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault();
-        setShowRevokeConfirmationModal(true);
+    const getRevokeStateForSPA = (values: any): boolean => {
+        return values.get("RevokeAccessToken") ? values.get("RevokeAccessToken")?.length > 0 :
+            values.get("bindingType") !== SupportedAccessTokenBindingTypes.NONE;
     };
 
     /**
      * Prepares form values for submit.
      *
      * @param values - Form values.
-     * @param {string} url - Callback URLs.
-     * @param {string} origin - Allowed origins.
+     * @param url - Callback URLs.
+     * @param origin - Allowed origins.
      *
-     * @return {any} Sanitized form values.
+     * @returns Sanitized form values.
      */
     const updateConfiguration = (values: any, url?: string, origin?: string): any => {
         let inboundConfigFormValues: any = {
             accessToken: {
-                applicationAccessTokenExpiryInSeconds: Number(metadata.defaultApplicationAccessTokenExpiryTime),
+                applicationAccessTokenExpiryInSeconds: values.get("applicationAccessTokenExpiryInSeconds")
+                    ? Number(values.get("applicationAccessTokenExpiryInSeconds"))
+                    : Number(metadata.defaultApplicationAccessTokenExpiryTime),
                 bindingType: values.get("bindingType"),
                 revokeTokensWhenIDPSessionTerminated: values.get("RevokeAccessToken")?.length > 0,
                 type: values.get("type"),
@@ -602,12 +859,12 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
             },
             grantTypes: values.get("grant"),
             idToken: {
-                audience: values.get("audience") !== "" ? [ values.get("audience") ] : [],
+                audience: audienceUrls !== "" ? audienceUrls.split(",") : [],
                 encryption: {
-                    algorithm: isEncryptionEnabled ?
+                    algorithm: isEncryptionEnabled && isCertAvailableForEncrypt ?
                         values.get("algorithm") : metadata.idTokenEncryptionAlgorithm.defaultValue,
-                    enabled: values.get("encryption").includes("enableEncryption"),
-                    method: isEncryptionEnabled ?
+                    enabled: isCertAvailableForEncrypt && values.get("encryption")?.includes("enableEncryption"),
+                    method: isEncryptionEnabled && isCertAvailableForEncrypt ?
                         values.get("method") : metadata.idTokenEncryptionMethod.defaultValue
                 },
                 expiryInSeconds: Number(values.get("idExpiryInSeconds"))
@@ -616,17 +873,125 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                 backChannelLogoutUrl: values.get("backChannelLogoutUrl"),
                 frontChannelLogoutUrl: values.get("frontChannelLogoutUrl")
             },
-            pkce: {
-                mandatory: values.get("PKCE").includes("mandatory"),
-                supportPlainTransformAlgorithm: !!values.get("PKCE").includes("supportPlainTransformAlgorithm")
-            },
-            publicClient: values.get("supportPublicClients").length > 0,
+            publicClient: values.get("supportPublicClients")?.length > 0,
             refreshToken: {
-                expiryInSeconds: parseInt(values.get("expiryInSeconds"), 10),
-                renewRefreshToken: values.get("RefreshToken").length > 0
+                expiryInSeconds: values.get("expiryInSeconds")
+                    ? parseInt(values.get("expiryInSeconds"), 10)
+                    : Number(metadata.defaultRefreshTokenExpiryTime),
+                renewRefreshToken: values.get("RefreshToken")?.length > 0
             },
             scopeValidators: values.get("scopeValidator"),
-            validateRequestObjectSignature: values.get("enableRequestObjectSignatureValidation").length > 0
+            validateRequestObjectSignature: values.get("enableRequestObjectSignatureValidation")?.length > 0
+        };
+
+        !applicationConfig.inboundOIDCForm.showFrontChannelLogout
+            && delete inboundConfigFormValues.logout.frontChannelLogoutUrl;
+        !applicationConfig.inboundOIDCForm.showScopeValidators
+            && delete inboundConfigFormValues.scopeValidators;
+        !applicationConfig.inboundOIDCForm.showIdTokenEncryption
+        && delete inboundConfigFormValues.idToken.encryption;
+        !applicationConfig.inboundOIDCForm.showBackChannelLogout
+        && delete inboundConfigFormValues.logout.backChannelLogoutUrl;
+        !applicationConfig.inboundOIDCForm.showRequestObjectSignatureValidation
+        && delete inboundConfigFormValues.validateRequestObjectSignature;
+
+        // Add the `allowedOrigins` & `callbackURLs` only if the grant types
+        // `authorization_code` and `implicit` are selected.
+        if (showCallbackURLField) {
+            inboundConfigFormValues = {
+                ...inboundConfigFormValues,
+                allowedOrigins: ApplicationManagementUtils.resolveAllowedOrigins(origin ? origin : allowedOrigins),
+                callbackURLs: [ ApplicationManagementUtils.buildCallBackUrlWithRegExp(url ? url : callBackUrls) ]
+            };
+        } else {
+            inboundConfigFormValues = {
+                ...inboundConfigFormValues,
+                allowedOrigins: [],
+                callbackURLs: []
+            };
+        }
+
+        // Add the `PKCE` only if the grant type
+        // `authorization_code` is selected.
+        if (showPKCEField) {
+            inboundConfigFormValues = {
+                ...inboundConfigFormValues,
+                pkce: {
+                    mandatory: values.get("PKCE").includes("mandatory"),
+                    supportPlainTransformAlgorithm: !!values.get("PKCE").includes("supportPlainTransformAlgorithm")
+                }
+            };
+        } else {
+            inboundConfigFormValues = {
+                ...inboundConfigFormValues,
+                pkce: {
+                    mandatory: false,
+                    supportPlainTransformAlgorithm: false
+                }
+            };
+        }
+
+        // If the app is not a newly created, add `clientId` & `clientSecret`.
+        if (initialValues?.clientId && initialValues?.clientSecret) {
+            inboundConfigFormValues = {
+                ...inboundConfigFormValues,
+                clientId: initialValues?.clientId,
+                clientSecret: initialValues?.clientSecret
+            };
+        }
+
+        const finalConfiguration: any = {
+            general: {
+                advancedConfigurations: {
+                    certificate: {
+                        type: (selectedCertType !== CertificateTypeInterface.NONE)
+                            ? selectedCertType
+                            : certificate?.type,
+                        value: (selectedCertType !== CertificateTypeInterface.NONE) ? finalCertValue: ""
+                    }
+                }
+            },
+            inbound: {
+                ...inboundConfigFormValues
+            }
+        };
+
+        !applicationConfig.inboundOIDCForm.showCertificates
+        && delete finalConfiguration.general.advancedConfigurations.certificate;
+
+        return finalConfiguration;
+    };
+
+    /**
+     * Prepares form values for submit.
+     *
+     * @param values - Form values.
+     * @param url - Callback URLs.
+     * @param origin - Allowed origins.
+     *
+     * @returns Sanitized form values.
+     */
+    const updateConfigurationForSPA = (values: any, url?: string, origin?: string): any => {
+        let inboundConfigFormValues: any = {
+            accessToken: {
+                applicationAccessTokenExpiryInSeconds: Number(metadata.defaultApplicationAccessTokenExpiryTime),
+                bindingType: values.get("bindingType"),
+                revokeTokensWhenIDPSessionTerminated: getRevokeStateForSPA(values),
+                type: values.get("type"),
+                userAccessTokenExpiryInSeconds: Number(values.get("userAccessTokenExpiryInSeconds"))
+            },
+            grantTypes: values.get("grant"),
+            idToken: {
+                audience: audienceUrls !== "" ? audienceUrls.split(",") : [],
+                expiryInSeconds: Number(values.get("idExpiryInSeconds"))
+            },
+            publicClient: true,
+            refreshToken: {
+                expiryInSeconds: values.get("expiryInSeconds")
+                    ? parseInt(values.get("expiryInSeconds"), 10)
+                    : Number(metadata.defaultRefreshTokenExpiryTime),
+                renewRefreshToken: values.get("RefreshToken")?.length > 0
+            }
         };
 
         // Add the `allowedOrigins` & `callbackURLs` only if the grant types
@@ -645,20 +1010,40 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
             };
         }
 
+        // Add the `PKCE` only if the grant type
+        // `authorization_code` is selected.
+        if (showPKCEField) {
+            inboundConfigFormValues = {
+                ...inboundConfigFormValues,
+                pkce: {
+                    mandatory: values.get("PKCE").includes("mandatory"),
+                    supportPlainTransformAlgorithm: !!values.get("PKCE").includes("supportPlainTransformAlgorithm")
+                }
+            };
+        } else {
+            inboundConfigFormValues = {
+                ...inboundConfigFormValues,
+                pkce: {
+                    mandatory: false,
+                    supportPlainTransformAlgorithm: false
+                }
+            };
+        }
+
+        // Add `scope validators` only if `scope validators` are visible.
+        if (applicationConfig.inboundOIDCForm.showScopeValidators) {
+            inboundConfigFormValues = {
+                ...inboundConfigFormValues,
+                scopeValidators: values.get("scopeValidator")
+            };
+        }
+
         // If the app is newly created do not add `clientId` & `clientSecret`.
         if (!initialValues?.clientId || !initialValues?.clientSecret) {
             return inboundConfigFormValues;
         }
 
         return {
-            general: {
-                advancedConfigurations: {
-                    certificate: {
-                        type: values.get("certificateType"),
-                        value: isPEMSelected ? values.get("certificateValue") : values.get("jwksValue")
-                    }
-                }
-            },
             inbound: {
                 ...inboundConfigFormValues,
                 clientId: initialValues?.clientId,
@@ -678,18 +1063,24 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     /**
      * The following function handles allowing CORS for a new origin.
      *
-     * @param {string} url - Allowed origin
+     * @param url - Allowed origin.
      */
     const handleAllowOrigin = (url: string): void => {
-        const allowedURLs = initialValues?.allowedOrigins;
-        allowedURLs.push(url);
-        setAllowedOrigins(allowedURLs?.toString());
+        let allowedURLs: string = allowedOrigins;
+
+        if (allowedURLs !== "") {
+            allowedURLs = allowedURLs + "," + url;
+        }
+        else {
+            allowedURLs = url;
+        }
+        setAllowedOrigins(allowedURLs);
     };
 
     /**
      * Scrolls to the first field that throws an error.
      *
-     * @param {string} field The name of the field.
+     * @param field - The name of the field.
      */
     const scrollToInValidField = (field: string): void => {
         const options: ScrollIntoViewOptions = {
@@ -700,69 +1091,91 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
         switch (field) {
             case "clientSecret":
                 clientSecret.current.scrollIntoView(options);
+
                 break;
             case "grant":
                 grant.current.scrollIntoView(options);
+
                 break;
             case "url":
                 url.current.scrollIntoView(options);
+
                 break;
             case "allowedOrigin":
                 allowedOrigin.current.scrollIntoView(options);
+
                 break;
             case "supportPublicClients":
                 supportPublicClients.current.scrollIntoView(options);
+
                 break;
             case "pkce":
                 pkce.current.scrollIntoView(options);
+
                 break;
             case "bindingType":
                 bindingType.current.scrollIntoView(options);
+
                 break;
             case "type":
                 type.current.scrollIntoView(options);
+
                 break;
             case "validateTokenBinding":
                 validateTokenBinding.current.scrollIntoView(options);
+
                 break;
             case "revokeAccessToken":
                 revokeAccessToken.current.scrollIntoView(options);
+
                 break;
             case "userAccessTokenExpiryInSeconds":
                 userAccessTokenExpiryInSeconds.current.scrollIntoView(options);
+
                 break;
             case "refreshToken":
                 refreshToken.current.scrollIntoView(options);
+
                 break;
             case "expiryInSeconds":
                 expiryInSeconds.current.scrollIntoView(options);
+
                 break;
             case "audience":
                 audience.current.scrollIntoView(options);
+
                 break;
             case "encryption":
                 encryption.current.scrollIntoView(options);
+
                 break;
             case "algorithm":
                 algorithm.current.scrollIntoView(options);
+
                 break;
             case "method":
                 method.current.scrollIntoView(options);
+
                 break;
             case "idExpiryInSeconds":
                 idExpiryInSeconds.current.scrollIntoView(options);
+
                 break;
             case "backChannelLogoutUrl":
                 backChannelLogoutUrl.current.scrollIntoView(options);
+
                 break;
             case "frontChannelLogoutUrl":
                 frontChannelLogoutUrl.current.scrollIntoView(options);
+
                 break;
             case "enableRequestObjectSignatureValidation":
                 enableRequestObjectSignatureValidation.current.scrollIntoView(options);
+
                 break;
             case "scopeValidator":
                 scopeValidator.current.scrollIntoView(options);
+
                 break;
         }
     };
@@ -778,49 +1191,44 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
     let submitOrigin: (callback: (origin?: string) => void) => void;
 
     /**
-     * Construct the details from the pem value.
-     */
-    const viewCertificate = () => {
-        if (isPEMSelected && PEMValue) {
-            const displayCertificate: DisplayCertificate = CertificateManagementUtils.displayCertificate(
-                null, PEMValue);
-
-            if (displayCertificate) {
-                setCertificateDisplay(displayCertificate);
-                setShowCertificateModal(true);
-            } else {
-                dispatch(addAlert<AlertInterface>({
-                    description: t("console:common.notifications.invalidPEMFile.genericError.description"),
-                    level: AlertLevels.ERROR,
-                    message: t("console:common.notifications.invalidPEMFile.genericError.message")
-                }));
-            }
-        }
-    };
-
-    /**
-     * Check if audiences contain duplicates.
+     * Check if a given expiry time is valid.
      *
-     * @param {string []} audiences - array of audiences.
-     * @return {boolean} if audience list contains duplicates.
+     * @param value - expiry time as a string.
      */
-    const containsDuplicateAudiences = (audiences: string []): boolean => {
-        const uniqueAudiences = [];
-        for (let i = 0; i < audiences.length; ++i) {
-            if (uniqueAudiences.includes(audiences[i])) {
-                return true;
-            }
-            uniqueAudiences.push(audiences[i]);
-        }
-        return false;
+    const isValidExpiryTime = (value: string) => {
+        const numberValue: number = Math.floor(Number(value.toString()));
+
+        return (numberValue !== Infinity && String(numberValue) === value && numberValue > 0);
     };
 
     /**
      * Renders the list of main OIDC config fields.
-     * @return {ReactElement}
+     *
+     * @returns OIDC config fields.
      */
     const renderOIDCConfigFields = (): ReactElement => (
         <>
+            {
+                !readOnly &&  (
+                    <StickyBar
+                        updateButtonRef={ updateRef }
+                        isFormStale={ isFormStale }
+                        containerRef={ containerRef }
+                    >
+                        <Button
+                            primary
+                            type="submit"
+                            size="small"
+                            className="form-button"
+                            loading={ isLoading }
+                            disabled={ isLoading }
+                            data-testid={ `${ testId }-submit-button-sticky` }
+                        >
+                            { t("common:update") }
+                        </Button>
+                    </StickyBar>
+                )
+            }
             <Grid.Row columns={ 2 }>
                 <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
                     <Field
@@ -836,16 +1244,17 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                 ".validations.empty")
                         }
                         children={ getAllowedGranTypeList(metadata.allowedGrantTypes) }
-                        value={ initialValues?.grantTypes }
+                        value={ selectedGrantTypes ?? initialValues?.grantTypes }
                         readOnly={ readOnly }
-                        listen={ (values) => handleGrantTypeChange(values) }
+                        enableReinitialize={ true }
+                        listen={ (values: Map<string, FormValue>) => handleGrantTypeChange(values) }
                         data-testid={ `${ testId }-grant-type-checkbox-group` }
                     />
                     {
                         isRefreshTokenWithoutAllowedGrantType && (
                             <Label basic color="orange" className="mt-2" >
-                            { t("console:develop.features.applications.forms.inboundOIDC.fields.grant" +
-                                ".validation.refreshToken") }
+                                { t("console:develop.features.applications.forms.inboundOIDC.fields.grant" +
+                                    ".validation.refreshToken") }
                             </Label>
                         )
                     }
@@ -856,56 +1265,82 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                     </Hint>
                 </Grid.Column>
             </Grid.Row>
-            <Grid.Row columns={ 1 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Field
-                        ref={ supportPublicClients }
-                        name="supportPublicClients"
-                        label=""
-                        required={ false }
-                        requiredErrorMessage={
-                            t("console:develop.features.applications.forms.inboundOIDC.fields.public" +
-                                ".validations.empty")
-                        }
-                        type="checkbox"
-                        value={
-                            initialValues?.publicClient
-                                ? [ "supportPublicClients" ]
-                                : []
-                        }
-                        children={ [
-                            {
-                                label: t("console:develop.features.applications.forms.inboundOIDC" +
-                                    ".fields.public.label"),
-                                value: "supportPublicClients"
-                            }
-                        ] }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-public-client-checkbox` }
-                    />
-                    <Hint>
-                        { t("console:develop.features.applications.forms.inboundOIDC.fields.public.hint", {
-                            productName: config.ui?.productName
-                        }) }
-                    </Hint>
-                </Grid.Column>
-            </Grid.Row>
+            {
+                !isSPAApplication
+                && !isMobileApplication
+                && (
+                    selectedGrantTypes?.includes(ApplicationManagementConstants.AUTHORIZATION_CODE_GRANT)
+                    || selectedGrantTypes?.includes(ApplicationManagementConstants.DEVICE_GRANT)
+                ) && (
+                    <>
+                        <Grid.Row columns={ 1 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Field
+                                    ref={ supportPublicClients }
+                                    name="supportPublicClients"
+                                    label=""
+                                    required={ false }
+                                    requiredErrorMessage={
+                                        t("console:develop.features.applications.forms.inboundOIDC.fields.public" +
+                                            ".validations.empty")
+                                    }
+                                    type="checkbox"
+                                    value={
+                                        initialValues?.publicClient
+                                            ? [ "supportPublicClients" ]
+                                            : []
+                                    }
+                                    children={ [
+                                        {
+                                            label: t("console:develop.features.applications.forms.inboundOIDC" +
+                                                ".fields.public.label"),
+                                            value: "supportPublicClients"
+                                        }
+                                    ] }
+                                    readOnly={ readOnly }
+                                    data-testid={ `${ testId }-public-client-checkbox` }
+                                />
+                                <Hint>
+                                    { t("console:develop.features.applications.forms.inboundOIDC.fields.public.hint", {
+                                        productName: config.ui?.productName
+                                    }) }
+                                </Hint>
+                            </Grid.Column>
+                        </Grid.Row>
+                    </>
+                )
+            }
             {
                 showCallbackURLField && (
                     <>
                         <Grid.Row columns={ 1 }>
-                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                                <div ref={ url }/>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 } className="field">
+                                <div ref={ url } />
                                 <URLInput
-                                    isAllowEnabled={ false }
+                                    isAllowEnabled={ isSPAApplication }
+                                    handleAddAllowedOrigin={ (url: string) => handleAllowOrigin(url) }
+                                    handleRemoveAllowedOrigin={ () => { return; } }
                                     tenantDomain={ tenantDomain }
-                                    allowedOrigins={ allowedOriginList }
+                                    allowedOrigins={ union(allowedOriginList, allowedOrigins.split(",")) }
                                     labelEnabled={ true }
                                     urlState={ callBackUrls }
-                                    setURLState={ setCallBackUrls }
+                                    setURLState={ (url: string) => {
+                                        setCallBackUrls(url);
+
+                                        const initialUrl: string = initialValues?.callbackURLs?.toString()
+                                            ? ApplicationManagementUtils.buildCallBackURLWithSeparator(
+                                                initialValues.callbackURLs.toString())
+                                            : "";
+
+                                        if (initialUrl !== url) {
+                                            setIsFormStale(true);
+                                        }
+                                    } }
                                     labelName={
-                                        t("console:develop.features.applications.forms.inboundOIDC.fields" +
-                                            ".callBackUrls.label")
+                                        isMobileApplication
+                                            ? "Authorized redirect URIs"
+                                            : t("console:develop.features.applications.forms.inboundOIDC.fields." +
+                                                "callBackUrls.label")
                                     }
                                     required={ true }
                                     value={
@@ -915,41 +1350,60 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                             : ""
                                     }
                                     placeholder={
-                                        t("console:develop.features.applications.forms.inboundOIDC.fields" +
-                                            ".callBackUrls.placeholder")
+                                        isMobileApplication
+                                            ? t("console:develop.features.applications.forms.inboundOIDC.mobileApp" +
+                                                ".mobileAppPlaceholder")
+                                            : t("console:develop.features.applications.forms.inboundOIDC.fields." +
+                                                "callBackUrls.placeholder")
                                     }
                                     validationErrorMsg={
-                                        t("console:develop.features.applications.forms.inboundOIDC.fields" +
-                                            ".callBackUrls.validations.empty")
+                                        CustomApplicationTemplate?.id !== template?.id && !isMobileApplication
+                                            ? t("console:develop.features.applications.forms.inboundOIDC.fields." +
+                                            "callBackUrls.validations.invalid")
+                                            : t("console:develop.features.applications.forms.inboundOIDC.messages." +
+                                                "customInvalidMessage")
+                                    }
+                                    emptyErrorMessage={
+                                        t("console:develop.features.applications.forms.inboundOIDC.fields." +
+                                            "callBackUrls.validations.empty")
+                                    }
+                                    skipInternalValidation= {
+                                        template.templateId === ApplicationManagementConstants.MOBILE
                                     }
                                     validation={ (value: string) => {
-                                        let label: ReactElement = null;
+                                        if (
+                                            !(isMobileApplication)
+                                            && CustomApplicationTemplate?.id !== template?.id
+                                            && !(URLUtils.isURLValid(value, true) &&
+                                                (URLUtils.isHttpUrl(value)
+                                                || URLUtils.isHttpsUrl(value)))
+                                        ) {
 
-                                        const isHttpUrl: boolean = URLUtils.isHttpUrl(value);
-
-                                        if (!URLUtils.isHttpsOrHttpUrl(value)) {
-                                            label = (
-                                                <Label basic color="orange" className="mt-2">
-                                                    { t("console:common.validations.unrecognizedURL.description") }
-                                                </Label>
-                                            );
+                                            return false;
                                         }
 
                                         if (!URLUtils.isMobileDeepLink(value)) {
                                             return false;
                                         }
 
-                                        setCallbackURLsErrorLabel(label);
+                                        setCallbackURLsErrorLabel(null);
 
                                         return true;
                                     } }
                                     showError={ showURLError }
                                     setShowError={ setShowURLError }
                                     hint={
-                                        t("console:develop.features.applications." +
-                                            "forms.inboundOIDC.fields.callBackUrls.hint", {
-                                            productName: config.ui.productName
-                                        })
+                                        isMobileApplication
+                                            ? "The authorized redirect URI determines where the authorization code " +
+                                                "is sent to upon user authentication, and where the user is " +
+                                                "redirected to upon user logout. The client app should specify the " +
+                                                "authorized redirect URI in the authorization or logout request and " +
+                                                config.ui.productName + " will validate it " +
+                                                "against the authorized redirect URLs entered here."
+                                            : t("console:develop.features.applications." +
+                                                "forms.inboundOIDC.fields.callBackUrls.hint", {
+                                                productName: config.ui.productName
+                                            })
                                     }
                                     readOnly={ readOnly }
                                     addURLTooltip={ t("common:addURL") }
@@ -961,16 +1415,38 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                     showPredictions={ false }
                                     customLabel={ callbackURLsErrorLabel }
                                     productName={ config.ui.productName }
+                                    isCustom={ CustomApplicationTemplate?.id === template?.id }
+                                    popupHeaderPositive={ t("console:develop.features.URLInput.withLabel."
+                                        + "positive.header") }
+                                    popupHeaderNegative={ t("console:develop.features.URLInput.withLabel."
+                                        + "negative.header") }
+                                    popupContentPositive={ t("console:develop.features.URLInput.withLabel."
+                                        + "positive.content", { productName: config.ui.productName }) }
+                                    popupContentNegative={ t("console:develop.features.URLInput.withLabel."
+                                        + "negative.content", { productName: config.ui.productName }) }
+                                    popupDetailedContentPositive={ t("console:develop.features.URLInput."
+                                        + "withLabel.positive.detailedContent.0") }
+                                    popupDetailedContentNegative={ t("console:develop.features.URLInput."
+                                        + "withLabel.negative.detailedContent.0") }
+                                    insecureURLDescription={ t("console:common.validations.inSecureURL.description") }
+                                    showLessContent={ t("common:showLess") }
+                                    showMoreContent={ t("common:showMore") }
                                 />
                             </Grid.Column>
                         </Grid.Row>
                         <Grid.Row columns={ 1 }>
-                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                                <div ref={ allowedOrigin }/>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 } className="field">
+                                <div ref={ allowedOrigin } />
                                 <URLInput
-                                    handleAddAllowedOrigin={ (url) => handleAllowOrigin(url) }
+                                    handleAddAllowedOrigin={ (url: string) => handleAllowOrigin(url) }
                                     urlState={ allowedOrigins }
-                                    setURLState={ setAllowedOrigins }
+                                    setURLState={ (url: string) => {
+                                        setAllowedOrigins(url);
+
+                                        if (allowedOrigins !== url) {
+                                            setIsFormStale(true);
+                                        }
+                                    } }
                                     onlyOrigin={ true }
                                     labelName={
                                         t("console:develop.features.applications.forms.inboundOIDC" +
@@ -980,30 +1456,16 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                         t("console:develop.features.applications.forms.inboundOIDC" +
                                             ".fields.allowedOrigins.placeholder")
                                     }
-                                    value={ initialValues?.allowedOrigins?.toString() }
+                                    value={ allowedOrigins }
                                     validationErrorMsg={
                                         t("console:develop.features.applications.forms.inboundOIDC" +
                                             ".fields.allowedOrigins.validations.empty")
                                     }
                                     validation={ (value: string) => {
 
-                                        let label: ReactElement = null;
+                                        if (!(((URLUtils.isHttpsUrl(value) || URLUtils.isHttpUrl(value))) &&
+                                            URLUtils.isAValidOriginUrl(value))) {
 
-                                        if (!URLUtils.isHttpsOrHttpUrl(value)) {
-                                            label = (
-                                                <Label basic color="orange" className="mt-2">
-                                                    { t("console:common.validations.unrecognizedURL.description") }
-                                                </Label>
-                                            );
-                                        }
-
-                                        if (!URLUtils.isAValidOriginUrl(value)) {
-                                            label = (
-                                                <Label basic color="orange" className="mt-2">
-                                                    { "Invalid origin URL" }
-                                                </Label>
-                                            );
-                                            setAllowedOriginsErrorLabel(label);
                                             return false;
                                         }
 
@@ -1011,7 +1473,7 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                             return false;
                                         }
 
-                                        setAllowedOriginsErrorLabel(label);
+                                        setAllowedOriginsErrorLabel(null);
 
                                         return true;
                                     } }
@@ -1028,12 +1490,28 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                     } }
                                     showPredictions={ false }
                                     customLabel={ allowedOriginsErrorLabel }
+                                    popupHeaderPositive={ t("console:develop.features.URLInput.withLabel."
+                                        + "positive.header") }
+                                    popupHeaderNegative={ t("console:develop.features.URLInput.withLabel."
+                                        + "negative.header") }
+                                    popupContentPositive={ t("console:develop.features.URLInput.withLabel."
+                                        + "positive.content", { productName: config.ui.productName }) }
+                                    popupContentNegative={ t("console:develop.features.URLInput.withLabel."
+                                        + "negative.content", { productName: config.ui.productName }) }
+                                    popupDetailedContentPositive={ t("console:develop.features.URLInput."
+                                        + "withLabel.positive.detailedContent.0") }
+                                    popupDetailedContentNegative={ t("console:develop.features.URLInput."
+                                        + "withLabel.negative.detailedContent.0") }
+                                    insecureURLDescription={ t("console:common.validations.inSecureURL.description") }
+                                    showLessContent={ t("common:showLess") }
+                                    showMoreContent={ t("common:showMore") }
                                 />
                                 <Hint>
-                                    The HTTP origins that host your web application. You can define multiple web
-                                    origins and wild cards are supported.
-                                    <p className="mt-0">E.g.,&nbsp;&nbsp;
-                                        <code>https://myapp.io, https://localhost:3000, https://&#42;.otherapp.io</code>
+                                    The HTTP origins that host your { !isMobileApplication && "web" } application.
+                                    You can define multiple web
+                                    origins by adding them separately.
+                                    <p className={ "mt-0" }>(E.g.,&nbsp;&nbsp;
+                                        <Code>https://myapp.io, https://localhost:3000</Code>)
                                     </p>
                                 </Hint>
                             </Grid.Column>
@@ -1043,56 +1521,69 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
             }
 
             { /* Form Section: PKCE */ }
-            <Grid.Row columns={ 2 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Divider />
-                    <Divider hidden />
-                </Grid.Column>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Heading as="h4">
-                        { t("console:develop.features.applications.forms.inboundOIDC.sections.pkce" +
-                            ".heading") }
-                    </Heading>
-                    <Field
-                        ref={ pkce }
-                        name={ PKCE_KEY }
-                        label=""
-                        required={ false }
-                        requiredErrorMessage={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections.pkce" +
-                                ".fields.pkce.validations.empty")
-                        }
-                        type="checkbox"
-                        value={ initialValues?.pkce && findPKCE(initialValues.pkce) }
-                        listen={ pkceValuesChangeListener }
-                        children={ [
-                            {
-                                label: t("console:develop.features.applications.forms.inboundOIDC" +
-                                    ".sections.pkce.fields.pkce.children.mandatory.label"),
-                                value: ENABLE_PKCE_CHECKBOX_VALUE
-                            },
-                            {
-                                label: t("console:develop.features.applications.forms.inboundOIDC" +
-                                    ".sections.pkce.fields.pkce.children.plainAlg.label"),
-                                value: SUPPORT_PKCE_PLAIN_ALGORITHM_VALUE,
-                                hint: {
-                                    header: "PKCE 'Plain'",
-                                    content: t("console:develop.features.applications.forms." +
-                                        "inboundOIDC.sections.pkce.description", {
-                                        productName: config.ui.productName
-                                    })
-                                },
-                                disabled: !enablePKCE
-                            }
-                        ] }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-pkce-checkbox-group` }
-                    />
-                    <Hint>
-                        { t("console:develop.features.applications.forms.inboundOIDC.sections.pkce.hint") }
-                    </Hint>
-                </Grid.Column>
-            </Grid.Row>
+            {
+                showPKCEField && (
+                    <>
+                        <Grid.Row columns={ 2 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Divider />
+                                <Divider hidden />
+                            </Grid.Column>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Heading as="h4">
+                                    { t("console:develop.features.applications.forms.inboundOIDC.sections.pkce" +
+                                        ".heading") }
+                                </Heading>
+                                <Field
+                                    ref={ pkce }
+                                    name={ PKCE_KEY }
+                                    label=""
+                                    required={ false }
+                                    requiredErrorMessage={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections.pkce" +
+                                            ".fields.pkce.validations.empty")
+                                    }
+                                    type="checkbox"
+                                    value={ initialValues?.pkce && findPKCE(initialValues.pkce) }
+                                    listen={ pkceValuesChangeListener }
+                                    children={ (!isSPAApplication && !isMobileApplication)
+                                        ? [
+                                            {
+                                                label: t("console:develop.features.applications.forms.inboundOIDC" +
+                                                    ".sections.pkce.fields.pkce.children.mandatory.label"),
+                                                value: ENABLE_PKCE_CHECKBOX_VALUE
+                                            },
+                                            {
+                                                disabled: !enablePKCE,
+                                                hint: {
+                                                    content: t("console:develop.features.applications.forms." +
+                                                        "inboundOIDC.sections.pkce.description", {
+                                                        productName: config.ui.productName
+                                                    }),
+                                                    header: "PKCE 'Plain'"
+                                                },
+                                                label: t("console:develop.features.applications.forms.inboundOIDC" +
+                                                    ".sections.pkce.fields.pkce.children.plainAlg.label"),
+                                                value: SUPPORT_PKCE_PLAIN_ALGORITHM_VALUE
+                                            }
+                                        ] : [
+                                            {
+                                                label: t("console:develop.features.applications.forms.inboundOIDC" +
+                                                    ".sections.pkce.fields.pkce.children.mandatory.label"),
+                                                value: ENABLE_PKCE_CHECKBOX_VALUE
+                                            }
+                                        ] }
+                                    readOnly={ readOnly }
+                                    data-testid={ `${ testId }-pkce-checkbox-group` }
+                                />
+                                <Hint>
+                                    { t("console:develop.features.applications.forms.inboundOIDC.sections.pkce.hint") }
+                                </Hint>
+                            </Grid.Column>
+                        </Grid.Row>
+                    </>
+                )
+            }
 
             { /* Access Token */ }
             <Grid.Row columns={ 2 }>
@@ -1118,7 +1609,7 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                 : metadata.accessTokenType.defaultValue
                         }
                         type="radio"
-                        children={ getAllowedList(metadata.accessTokenType, true) }
+                        children={ getAllowedListForAccessToken(metadata.accessTokenType, false) }
                         readOnly={ readOnly }
                         data-testid={ `${ testId }-access-token-type-radio-group` }
                     />
@@ -1137,37 +1628,41 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                             initialValues?.accessToken?.bindingType
                                 ? initialValues.accessToken.bindingType
                                 : metadata?.accessTokenBindingType?.defaultValue
-                                    ?? SupportedAccessTokenBindingTypes.NONE
+                                ?? SupportedAccessTokenBindingTypes.NONE
                         }
                         type="radio"
-                        children={ getAllowedList(metadata.accessTokenBindingType, true) }
+                        children={ getAllowedListForAccessToken(metadata.accessTokenBindingType, true) }
                         readOnly={ readOnly }
                         data-testid={ `${ testId }-access-token-type-radio-group` }
-                        listen={ (values) => {
+                        listen={ (values: Map<string, FormValue>) => {
                             setIsTokenBindingTypeSelected(
                                 values.get("bindingType") !== SupportedAccessTokenBindingTypes.NONE
                             );
                         } }
                     />
                     <Hint>
-                        <Trans values={ { productName: config.ui.productName } }
+                        <Trans
+                            values={ { productName: config.ui.productName } }
                             i18nKey={
                                 "console:develop.features.applications.forms.inboundOIDC.sections" +
                                 ".accessToken.fields.bindingType.description"
                             }
                         >
-                            Select type <Code withBackground>SSO-session</Code> to allow productName to bind the 
-                            <Code withBackground>access_token</Code> 
-                            and the 
-                            <Code withBackground>refresh_token</Code> 
-                            to the login session and issue a new token per session. When the application 
+                            Select type <Code withBackground>SSO-session</Code> to allow productName to bind the
+                            <Code withBackground>access_token</Code>
+                            and the
+                            <Code withBackground>refresh_token</Code>
+                            to the login session and issue a new token per session. When the application
                             session ends, the tokens will also be revoked.
                         </Trans>
                     </Hint>
                 </Grid.Column>
             </Grid.Row>
             {
-                isTokenBindingTypeSelected && (
+                (!isSPAApplication)
+                && !isMobileApplication
+                && isTokenBindingTypeSelected
+                && (
                     <>
                         <Grid.Row columns={ 1 }>
                             <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
@@ -1200,10 +1695,9 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                             ".accessToken.fields.validateBinding.hint"
                                         }
                                     >
-                                        Validate the binding attributes at the token validation. 
-                                        The client needs to present the 
-                                        <Code withBackground>access_token</Code> 
-                                        + cookie for successful authorization.
+                                        Validate the binding attributes at the token validation. The client needs to
+                                        present the <Code withBackground>access_token</Code> + cookie for successful
+                                        authorization.
                                     </Trans>
                                 </Hint>
                             </Grid.Column>
@@ -1246,18 +1740,29 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                     <Field
                         ref={ userAccessTokenExpiryInSeconds }
                         name="userAccessTokenExpiryInSeconds"
-                        label={
+                        label={ !isSPAApplication
+                            ? t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                ".accessToken.fields.expiry.label") :
                             t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".accessToken.fields.expiry.label")
+                                ".accessToken.fields.expiry.labelForSPA")
                         }
                         required={ true }
                         requiredErrorMessage={
                             t("console:develop.features.applications.forms.inboundOIDC.sections" +
                                 ".accessToken.fields.expiry.validations.empty")
                         }
+                        validation={ async (value: FormValue, validation: Validation) => {
+                            if (!isValidExpiryTime(value.toString())) {
+                                validation.isValid = false;
+                                validation.errorMessages.push(
+                                    t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                        ".accessToken.fields.expiry.validations.invalid")
+                                );
+                            }
+                        } }
                         value={
                             initialValues?.accessToken
-                                ? initialValues.accessToken?.userAccessTokenExpiryInSeconds.toString()
+                                ? initialValues.accessToken.userAccessTokenExpiryInSeconds.toString()
                                 : metadata.defaultUserAccessTokenExpiryTime
                         }
                         placeholder={
@@ -1276,121 +1781,166 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                 ".accessToken.fields.expiry.hint"
                             }
                         >
-                            Specify the validity period of the 
-                            <Code withBackground>access_token</Code> 
+                            Specify the validity period of the
+                            <Code withBackground>access_token</Code>
                             in seconds.
                         </Trans>
                     </Hint>
                 </Grid.Column>
             </Grid.Row>
-            {/* TODO  Enable this option in future*/ }
-            {/*<Grid.Row columns={ 1 }>*/ }
-            {/*    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 5 }>*/ }
-            {/*        <Field*/ }
-            {/*            name="applicationAccessTokenExpiryInSeconds"*/ }
-            {/*            label="Application access token expiry time"*/ }
-            {/*            required={ true }*/ }
-            {/*            requiredErrorMessage="Please fill the application access token expiry time"*/ }
-            {/*            value={ initialValues.accessToken ?*/ }
-            {/*                initialValues.accessToken.
-                        applicationAccessTokenExpiryInSeconds.toString() :*/ }
-            {/*                metadata.defaultApplicationAccessTokenExpiryTime }*/ }
-            {/*            placeholder="Enter the application access token expiry time "*/ }
-            {/*            type="number"*/ }
-            {/*        />*/ }
-            {/*        <Hint>Configure the application access token expiry time (in seconds).</Hint>*/ }
-            {/*    </Grid.Column>*/ }
-            {/*</Grid.Row>*/ }
+
+            { /* Application AccessToken Expiry*/ }
+            { selectedGrantTypes?.includes("client_credentials") &&
+                (
+                    <>
+                        <Grid.Row columns={ 1 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Field
+                                    name="applicationAccessTokenExpiryInSeconds"
+                                    ref={ applicationAccessTokenExpiryInSeconds }
+                                    label={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".accessToken.fields.applicationTokenExpiry.label")
+                                    }
+                                    required={ true }
+                                    requiredErrorMessage={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".accessToken.fields.applicationTokenExpiry.validations.empty")
+                                    }
+                                    value={ initialValues.accessToken ?
+                                        initialValues.accessToken.applicationAccessTokenExpiryInSeconds.toString() :
+                                        metadata.defaultApplicationAccessTokenExpiryTime }
+                                    validation={ async (value: FormValue, validation: Validation) => {
+                                        if (!isValidExpiryTime(value.toString())) {
+                                            validation.isValid = false;
+                                            validation.errorMessages.push(
+                                                t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                                    ".accessToken.fields.applicationTokenExpiry.validations.invalid")
+                                            );
+                                        }
+                                    } }
+                                    placeholder={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".accessToken.fields.applicationTokenExpiry.placeholder")
+                                    }
+                                    type="number"
+                                    min={ 1 }
+                                    readOnly={ readOnly }
+                                />
+                                <Hint>Specify the validity period of the
+                                    <Code withBackground>application_access_token</Code>
+                                    in seconds.
+                                </Hint>
+                            </Grid.Column>
+                        </Grid.Row>
+                    </>
+                )
+            }
 
             { /* Refresh Token */ }
-            <Grid.Row columns={ 2 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Divider />
-                    <Divider hidden />
-                </Grid.Column>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Heading as="h4">
-                        { t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                            ".refreshToken.heading") }
-                    </Heading>
-                    <Divider hidden />
-                    <Field
-                        ref={ refreshToken }
-                        name="RefreshToken"
-                        label=""
-                        required={ false }
-                        requiredErrorMessage={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".refreshToken.fields.renew.validations.empty")
-                        }
-                        type="checkbox"
-                        value={
-                            initialValues?.refreshToken?.renewRefreshToken
-                                ? [ "refreshToken" ]
-                                : []
-                        }
-                        children={ [
-                            {
-                                label: t("console:develop.features.applications.forms.inboundOIDC" +
-                                    ".sections.refreshToken.fields.renew.label"),
-                                value: "refreshToken"
-                            }
-                        ] }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-renew-refresh-token-checkbox` }
-                    />
-                    <Hint>
-                        <Trans
-                            i18nKey={
-                                "console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".refreshToken.fields.renew.hint"
-                            }
-                        >
-                            Select to issue a new <Code withBackground>refresh_token</Code> 
-                            each time a <Code withBackground>refresh_token</Code> is 
-                            exchanged. The existing token will be invalidated.
-                        </Trans>
-                    </Hint>
-                </Grid.Column>
-            </Grid.Row>
-            <Grid.Row columns={ 1 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Field
-                        ref={ expiryInSeconds }
-                        name="expiryInSeconds"
-                        label={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".refreshToken.fields.expiry.label")
-                        }
-                        required={ true }
-                        requiredErrorMessage={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".refreshToken.fields.expiry.validations.empty")
-                        }
-                        placeholder={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".refreshToken.fields.expiry.placeholder")
-                        }
-                        value={ initialValues?.refreshToken
-                            ? initialValues.refreshToken.expiryInSeconds.toString()
-                            : metadata.defaultRefreshTokenExpiryTime }
-                        type="number"
-                        min={ 1 }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-refresh-token-expiry-time-input` }
-                    />
-                    <Hint>
-                        <Trans
-                            i18nKey={
-                                "console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".refreshToken.fields.expiry.hint"
-                            }
-                        >
-                            Specify the validity period of the <Code withBackground>refresh_token</Code> in seconds.
-                        </Trans>
-                    </Hint>
-                </Grid.Column>
-            </Grid.Row>
+            { selectedGrantTypes?.includes("refresh_token") &&
+                (
+                    <>
+                        <Grid.Row columns={ 2 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Divider />
+                                <Divider hidden />
+                            </Grid.Column>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Heading as="h4">
+                                    { t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                        ".refreshToken.heading") }
+                                </Heading>
+                                <Field
+                                    ref={ refreshToken }
+                                    name="RefreshToken"
+                                    label=""
+                                    required={ false }
+                                    requiredErrorMessage={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".refreshToken.fields.renew.validations.empty")
+                                    }
+                                    type="checkbox"
+                                    value={
+                                        initialValues?.refreshToken?.renewRefreshToken
+                                            ? [ "refreshToken" ]
+                                            : []
+                                    }
+                                    children={ [
+                                        {
+                                            label: t("console:develop.features.applications.forms.inboundOIDC" +
+                                                ".sections.refreshToken.fields.renew.label"),
+                                            value: "refreshToken"
+                                        }
+                                    ] }
+                                    readOnly={ readOnly }
+                                    data-testid={ `${ testId }-renew-refresh-token-checkbox` }
+                                />
+                                <Hint>
+                                    <Trans
+                                        i18nKey={
+                                            "console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".refreshToken.fields.renew.hint"
+                                        }
+                                    >
+                                        Select to issue a new <Code withBackground>refresh_token</Code>
+                                        each time a <Code withBackground>refresh_token</Code> is
+                                        exchanged. The existing token will be invalidated.
+                                    </Trans>
+                                </Hint>
+                            </Grid.Column>
+                        </Grid.Row>
+                        <Grid.Row columns={ 1 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Field
+                                    ref={ expiryInSeconds }
+                                    name="expiryInSeconds"
+                                    label={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".refreshToken.fields.expiry.label")
+                                    }
+                                    required={ true }
+                                    requiredErrorMessage={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".refreshToken.fields.expiry.validations.empty")
+                                    }
+                                    placeholder={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".refreshToken.fields.expiry.placeholder")
+                                    }
+                                    validation={ async (value: FormValue, validation: Validation) => {
+                                        if (!isValidExpiryTime(value.toString())) {
+                                            validation.isValid = false;
+                                            validation.errorMessages.push(
+                                                t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                                    ".refreshToken.fields.expiry.validations.invalid")
+                                            );
+                                        }
+                                    } }
+                                    value={ initialValues?.refreshToken
+                                        ? initialValues.refreshToken.expiryInSeconds.toString()
+                                        : metadata.defaultRefreshTokenExpiryTime }
+                                    type="number"
+                                    readOnly={ readOnly }
+                                    min={ 1 }
+                                    data-testid={ `${ testId }-refresh-token-expiry-time-input` }
+                                />
+                                <Hint>
+                                    <Trans
+                                        i18nKey={
+                                            "console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".refreshToken.fields.expiry.hint"
+                                        }
+                                    >
+                                        Specify the validity period of the <Code withBackground>refresh_token</Code>
+                                        in seconds.
+                                    </Trans>
+                                </Hint>
+                            </Grid.Column>
+                        </Grid.Row>
+                    </>
+                )
+            }
 
             { /* ID Token */ }
             <Grid.Row columns={ 2 }>
@@ -1398,188 +1948,235 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                     <Divider />
                     <Divider hidden />
                 </Grid.Column>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 } className="field">
                     <Heading as="h4">
                         { t("console:develop.features.applications.forms.inboundOIDC.sections" +
                             ".idToken.heading") }
                     </Heading>
-                    <Divider hidden />
-                    <Field
-                        ref={ audience }
-                        name="audience"
-                        label={
+                    <URLInput
+                        isAllowEnabled={ false }
+                        tenantDomain={ tenantDomain }
+                        onlyOrigin={ false }
+                        labelEnabled={ false }
+                        urlState={ audienceUrls }
+                        setURLState={ (url: string) => {
+                            setAudienceUrls(url);
+
+                            const initialUrl: string = initialValues?.idToken?.audience.toString()
+                                ? ApplicationManagementUtils.buildCallBackURLWithSeparator(
+                                    initialValues?.idToken?.audience.toString())
+                                : "";
+
+                            if (initialUrl !== url) {
+                                setIsFormStale(true);
+                            }
+                        } }
+                        labelName={
                             t("console:develop.features.applications.forms.inboundOIDC.sections" +
                                 ".idToken.fields.audience.label")
                         }
                         required={ false }
-                        requiredErrorMessage={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
-                                ".fields.audience.validations.empty")
+                        value={
+                            initialValues?.idToken?.audience.toString()
+                                ? ApplicationManagementUtils.buildCallBackURLWithSeparator(
+                                    initialValues?.idToken?.audience.toString())
+                                : ""
                         }
+                        validation={ (value: string) => !value?.includes(",") }
                         placeholder={
                             t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
                                 ".fields.audience.placeholder")
                         }
-                        value={ initialValues?.idToken?.audience.toString() }
-                        validation={ (value: string, validation: Validation) => {
-                            if (value && containsDuplicateAudiences(value.split(","))) {
-                                validation.isValid = false;
-                                validation.errorMessages.push((
-                                    t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
-                                        ".fields.audience.validations.duplicate")
-                                ));
-                            }
+                        validationErrorMsg={
+                            t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
+                                ".fields.audience.validations.invalid")
+                        }
+                        showError={ showAudienceError }
+                        setShowError={ setShowAudienceError }
+                        hint={ (
+                            <Trans
+                                i18nKey={
+                                    "console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
+                                    ".fields.audience.hint"
+                                }
+                            >
+                                Specify the recipient(s) that this <Code withBackground>id_token</Code> is intended
+                                for. By default, the client ID of this application is added as an audience.
+                            </Trans>
+                        ) }
+                        readOnly={ readOnly }
+                        addURLTooltip={ t("common:addURL") }
+                        duplicateURLErrorMessage={ t("common:duplicateURLError") }
+                        getSubmit={ (submitFunction: (callback: (url?: string) => void) => void) => {
+                            submitUrl = submitFunction;
                         } }
-                        type="textarea"
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-audience-textarea` }
+                        showPredictions={ false }
+                        skipInternalValidation={ true }
+                        popupHeaderPositive={ t("console:develop.features.URLInput.withLabel."
+                            + "positive.header") }
+                        popupHeaderNegative={ t("console:develop.features.URLInput.withLabel."
+                            + "negative.header") }
+                        popupContentPositive={ t("console:develop.features.URLInput.withLabel."
+                            + "positive.content", { productName: config.ui.productName }) }
+                        popupContentNegative={ t("console:develop.features.URLInput.withLabel."
+                            + "negative.content", { productName: config.ui.productName }) }
+                        popupDetailedContentPositive={ t("console:develop.features.URLInput."
+                            + "withLabel.positive.detailedContent.0") }
+                        popupDetailedContentNegative={ t("console:develop.features.URLInput."
+                            + "withLabel.negative.detailedContent.0") }
+                        insecureURLDescription={ t("console:common.validations.inSecureURL.description") }
+                        showLessContent={ t("common:showLess") }
+                        showMoreContent={ t("common:showMore") }
                     />
-                    <Hint>
-                        <Trans
-                            i18nKey={
-                                "console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
-                            ".fields.audience.hint"
-                            }
-                        >
-                            Specify the recipient(s) that this <Code withBackground>id_token</Code> 
-                            is intended for. By default, the client ID of this application is added as an audience.
-                        </Trans>
-                    </Hint>
                 </Grid.Column>
             </Grid.Row>
-            <Grid.Row columns={ 1 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Field
-                        ref={ encryption }
-                        name="encryption"
-                        label=""
-                        required={ false }
-                        requiredErrorMessage={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
-                                ".fields.encryption.validations.empty")
-                        }
-                        type="checkbox"
-                        listen={ (values: Map<string, FormValue>): void => {
-                            const encryptionEnabled = values.get("encryption").includes("enableEncryption");
-                            if (!encryptionEnabled) {
-                                resolveInitialIDTokenEncryptionValues();
-                                values.set("algorithm", "");
-                                values.set("method", "");
-                            }
-                            setEncryptionEnable(encryptionEnabled);
-                        } }
-                        value={
-                            initialValues?.idToken?.encryption.enabled
-                                ? [ "enableEncryption" ]
-                                : []
-                        }
-                        children={ [
-                            {
-                                label: t("console:develop.features.applications.forms.inboundOIDC" +
-                                    ".sections.idToken.fields.encryption.label"),
-                                value: "enableEncryption"
-                            }
-                        ] }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-encryption-checkbox` }
-                    />
-                    <Hint>
-                        <Trans
-                            i18nKey={
-                                "console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
-                            ".fields.encryption.hint"
-                            }
-                        >
-                            Select to encrypt the <Code withBackground>id_token</Code>  when issuing the token 
-                            using the public key of your application. To use encryption, configure the JWKS 
-                            endpoint or the certificate of your application in the Certificate section below.
-                        </Trans>
-                    </Hint>
-                </Grid.Column>
-            </Grid.Row>
-            <Grid.Row columns={ 1 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Field
-                        ref={ algorithm }
-                        name="algorithm"
-                        label={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
-                                ".fields.algorithm.label")
-                        }
-                        required={ isEncryptionEnabled }
-                        requiredErrorMessage={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
-                                ".fields.algorithm.validations.empty")
-                        }
-                        type="dropdown"
-                        default={
-                            isEncryptionEnabled ? (initialValues?.idToken
-                                ? initialValues.idToken.encryption.algorithm
-                                : metadata.idTokenEncryptionAlgorithm.defaultValue) : ""
-                        }
-                        placeholder={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".idToken.fields.algorithm.placeholder")
-                        }
-                        children={ getAllowedList(metadata.idTokenEncryptionAlgorithm) }
-                        disabled={ !isEncryptionEnabled }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-encryption-algorithm-dropdown` }
-                    />
-                    <Hint disabled={ !isEncryptionEnabled }>
-                        <Trans
-                            i18nKey={
-                                "console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
-                            ".fields.algorithm.hint"
-                            }
-                        >
-                            The dropdown contains the supported <Code withBackground>id_token</Code> 
-                            encryption algorithms.
-                        </Trans>
-                    </Hint>
-                </Grid.Column>
-            </Grid.Row>
-            <Grid.Row columns={ 1 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Field
-                        ref={ method }
-                        name="method"
-                        label={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".idToken.fields.method.label")
-                        }
-                        required={ isEncryptionEnabled }
-                        requiredErrorMessage={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
-                                ".fields.method.validations.empty")
-                        }
-                        type="dropdown"
-                        default={
-                            isEncryptionEnabled ? (initialValues?.idToken
-                                ? initialValues.idToken.encryption.method
-                                : metadata.idTokenEncryptionMethod.defaultValue) : ""
-                        }
-                        placeholder={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
-                                ".fields.method.placeholder")
-                        }
-                        children={ getAllowedList(metadata.idTokenEncryptionMethod) }
-                        disabled={ !isEncryptionEnabled }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-encryption-method-dropdown` }
-                    />
-                    <Hint disabled={ !isEncryptionEnabled }>
-                        <Trans
-                            i18nKey={
-                                "console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
-                            ".fields.method.hint"
-                            }
-                        >
-                            The dropdown contains the supported <Code withBackground>id_token</Code> encryption methods.
-                        </Trans>
-                    </Hint>
-                </Grid.Column>
-            </Grid.Row>
+            {
+                applicationConfig.inboundOIDCForm.showIdTokenEncryption
+                && ApplicationTemplateIdTypes.SPA !== template?.templateId
+                && !isMobileApplication
+                && (
+                    <>
+                        <Grid.Row columns={ 1 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Field
+                                    ref={ encryption }
+                                    name="encryption"
+                                    label=""
+                                    required={ false }
+                                    disabled={ !isCertAvailableForEncrypt }
+                                    requiredErrorMessage={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
+                                            ".fields.encryption.validations.empty")
+                                    }
+                                    type="checkbox"
+                                    listen={ (values: Map<string, FormValue>): void => {
+                                        const encryptionEnabled: boolean = values.get("encryption")
+                                            .includes("enableEncryption");
+
+                                        if (!encryptionEnabled) {
+                                            resolveInitialIDTokenEncryptionValues();
+                                            values.set("algorithm", "");
+                                            values.set("method", "");
+                                        }
+                                        setEncryptionEnable(encryptionEnabled);
+                                    } }
+                                    value={
+                                        initialValues?.idToken?.encryption.enabled
+                                            ? [ "enableEncryption" ]
+                                            : []
+                                    }
+                                    children={ [
+                                        {
+                                            label: t("console:develop.features.applications.forms.inboundOIDC" +
+                                                ".sections.idToken.fields.encryption.label"),
+                                            value: "enableEncryption"
+                                        }
+                                    ] }
+                                    readOnly={ readOnly }
+                                    data-testid={ `${ testId }-encryption-checkbox` }
+                                />
+                                <Hint>
+                                    <Trans
+                                        i18nKey={
+                                            "console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
+                                            ".fields.encryption.hint"
+                                        }
+                                    >
+                                        Select to encrypt the <Code withBackground>id_token</Code>  when issuing the
+                                        token using the public key of your application. To use encryption,
+                                        configure the JWKS endpoint or the certificate of your application in the
+                                        Certificate section below.
+                                    </Trans>
+                                </Hint>
+                            </Grid.Column>
+                        </Grid.Row>
+                        <Grid.Row columns={ 1 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Field
+                                    ref={ algorithm }
+                                    name="algorithm"
+                                    label={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
+                                            ".fields.algorithm.label")
+                                    }
+                                    required={ isEncryptionEnabled && isCertAvailableForEncrypt }
+                                    requiredErrorMessage={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
+                                            ".fields.algorithm.validations.empty")
+                                    }
+                                    type="dropdown"
+                                    disabled={ !isEncryptionEnabled || !isCertAvailableForEncrypt }
+                                    default={
+                                        isEncryptionEnabled && isCertAvailableForEncrypt ? (initialValues?.idToken
+                                            ? initialValues.idToken.encryption.algorithm
+                                            : metadata.idTokenEncryptionAlgorithm.defaultValue) : ""
+                                    }
+                                    placeholder={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".idToken.fields.algorithm.placeholder")
+                                    }
+                                    children={ getAllowedList(metadata.idTokenEncryptionAlgorithm) }
+                                    readOnly={ readOnly }
+                                    data-testid={ `${ testId }-encryption-algorithm-dropdown` }
+                                />
+                                <Hint disabled={ !isEncryptionEnabled || !isCertAvailableForEncrypt }>
+                                    <Trans
+                                        i18nKey={
+                                            "console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
+                                            ".fields.algorithm.hint"
+                                        }
+                                    >
+                                        The dropdown contains the supported <Code withBackground>id_token</Code>
+                                        encryption algorithms.
+                                    </Trans>
+                                </Hint>
+                            </Grid.Column>
+                        </Grid.Row>
+                        <Grid.Row columns={ 1 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Field
+                                    ref={ method }
+                                    name="method"
+                                    disabled={ !isEncryptionEnabled || !isCertAvailableForEncrypt }
+                                    label={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".idToken.fields.method.label")
+                                    }
+                                    required={ isEncryptionEnabled && isCertAvailableForEncrypt }
+                                    requiredErrorMessage={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
+                                            ".fields.method.validations.empty")
+                                    }
+                                    type="dropdown"
+                                    default={
+                                        isEncryptionEnabled && isCertAvailableForEncrypt ? (initialValues?.idToken
+                                            ? initialValues.idToken.encryption.method
+                                            : metadata.idTokenEncryptionMethod.defaultValue) : ""
+                                    }
+                                    placeholder={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
+                                            ".fields.method.placeholder")
+                                    }
+                                    children={ getAllowedList(metadata.idTokenEncryptionMethod) }
+                                    readOnly={ readOnly }
+                                    data-testid={ `${ testId }-encryption-method-dropdown` }
+                                />
+                                <Hint disabled={ !isEncryptionEnabled || !isCertAvailableForEncrypt }>
+                                    <Trans
+                                        i18nKey={
+                                            "console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
+                                            ".fields.method.hint"
+                                        }
+                                    >
+                                        The dropdown contains the supported <Code withBackground>id_token</Code>
+                                        encryption methods.
+                                    </Trans>
+                                </Hint>
+                            </Grid.Column>
+                        </Grid.Row>
+                    </>
+                )
+            }
             <Grid.Row columns={ 1 }>
                 <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
                     <Field
@@ -1598,14 +2195,23 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                             t("console:develop.features.applications.forms.inboundOIDC.sections.idToken" +
                                 ".fields.expiry.placeholder")
                         }
+                        validation={ async (value: FormValue, validation: Validation) => {
+                            if (!isValidExpiryTime(value.toString())) {
+                                validation.isValid = false;
+                                validation.errorMessages.push(
+                                    t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                        ".idToken.fields.expiry.validations.invalid")
+                                );
+                            }
+                        } }
                         value={
                             initialValues?.idToken
                                 ? initialValues.idToken.expiryInSeconds.toString()
                                 : metadata.defaultIdTokenExpiryTime
                         }
                         type="number"
-                        min={ 1 }
                         readOnly={ readOnly }
+                        min={ 1 }
                         data-testid={ `${ testId }-id-token-expiry-time-input` }
                     />
                     <Hint>
@@ -1622,344 +2228,222 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
             </Grid.Row>
 
             { /* Logout */ }
-            <Grid.Row columns={ 2 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Divider />
-                    <Divider hidden />
-                </Grid.Column>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Heading as="h4">Logout URLs</Heading>
-                    <Divider hidden />
-                    <Field
-                        ref={ backChannelLogoutUrl }
-                        name="backChannelLogoutUrl"
-                        label={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".logoutURLs.fields.back.label")
-                        }
-                        required={ false }
-                        requiredErrorMessage={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".logoutURLs.fields.back.validations.empty")
-                        }
-                        placeholder={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".logoutURLs.fields.back.placeholder")
-                        }
-                        type="text"
-                        validation={ (value: string, validation: Validation) => {
-                            if (!FormValidation.url(value)) {
-                                validation.isValid = false;
-                                validation.errorMessages.push((
-                                    t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                        ".logoutURLs.fields.back.validations.invalid")
-                                ));
-                            }
-                        } }
-                        value={ initialValues?.logout?.backChannelLogoutUrl }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-back-channel-logout-url-input` }
-                    />
-                    <Hint>
-                        { t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                            ".logoutURLs.fields.back.hint", {
-                            productName: config.ui.productName
-                        }) }
-                    </Hint>
-                </Grid.Column>
-            </Grid.Row>
-            <Grid.Row columns={ 1 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Field
-                        ref={ frontChannelLogoutUrl }
-                        name="frontChannelLogoutUrl"
-                        label={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".logoutURLs.fields.front.label")
-                        }
-                        required={ false }
-                        requiredErrorMessage={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".logoutURLs.fields.front.validations.empty")
-                        }
-                        placeholder={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".logoutURLs.fields.front.placeholder")
-                        }
-                        type="text"
-                        validation={ (value: string, validation: Validation) => {
-                            if (!FormValidation.url(value)) {
-                                validation.isValid = false;
-                                validation.errorMessages.push((
-                                    t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                        ".logoutURLs.fields.front.validations.invalid")
-                                ));
-                            }
-                        } }
-                        value={ initialValues?.logout?.frontChannelLogoutUrl }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-front-channel-logout-url-input` }
-                    />
-                </Grid.Column>
-            </Grid.Row>
-            { /*Request Object Signature*/ }
-            <Grid.Row columns={ 2 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Divider />
-                    <Divider hidden />
-                </Grid.Column>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Heading as="h4">
-                        { t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                            ".requestObjectSignature.heading") }
-                    </Heading>
-                    <Divider hidden />
-                    <Field
-                        ref={ enableRequestObjectSignatureValidation }
-                        name="enableRequestObjectSignatureValidation"
-                        label=""
-                        required={ false }
-                        requiredErrorMessage="this is needed"
-                        type="checkbox"
-                        value={
-                            initialValues?.validateRequestObjectSignature
-                                ? [ "EnableRequestObjectSignatureValidation" ]
-                                : []
-                        }
-                        children={ [
-                            {
-                                label: t("console:develop.features.applications.forms.inboundOIDC" +
-                                    ".sections.requestObjectSignature.fields.signatureValidation.label"),
-                                value: "EnableRequestObjectSignatureValidation"
-                            }
-                        ] }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-request-object-signature-validation-checkbox` }
-                    />
-                    <Hint>
-                        <Trans
-                            i18nKey={
-                                "console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".requestObjectSignature.description"
-                            }
-                            tOptions={ { productName: config.ui.productName } }
-                        >
-                            WSO2 Identity Server supports receiving an OIDC authentication request as
-                            a request object that is passed in a single, self-contained request
-                            parameter. Enable signature validation to accept only signed
-                            <Code>request</Code> objects in the authorization request.
-                        </Trans>
-                    </Hint>
-                </Grid.Column>
-            </Grid.Row>
-            { /* Scope Validators */ }
-            <Grid.Row columns={ 2 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Divider />
-                    <Divider hidden />
-                </Grid.Column>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Heading as="h4">
-                        { t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                            ".scopeValidators.heading") }
-                    </Heading>
-                    <Divider hidden />
-                    <Field
-                        ref={ scopeValidator }
-                        name="scopeValidator"
-                        label=""
-                        required={ false }
-                        requiredErrorMessage={
-                            t("console:develop.features.applications.forms.inboundOIDC.sections" +
-                                ".scopeValidators.fields.validator.validations.empty")
-                        }
-                        type="checkbox"
-                        value={ initialValues?.scopeValidators }
-                        children={ getAllowedList(metadata.scopeValidators, true) }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-scope-validator-checkbox` }
-                    />
-                </Grid.Column>
-            </Grid.Row>
-            { /* Certificates */ }
-            <Grid.Row columns={ 1 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Divider/>
-                </Grid.Column>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    <Heading as="h4">
-                        {
-                            t("console:develop.features.applications.forms." +
-                                "advancedConfig.sections.certificate.heading") }
-                    </Heading>
-                    <Field
-                        label={
-                            t("console:develop.features.applications.forms." +
-                                "advancedConfig.sections.certificate.fields.type.label")
-                        }
-                        name="certificateType"
-                        default={ CertificateTypeInterface.JWKS }
-                        listen={
-                            (values) => {
-                                setPEMSelected(values.get("certificateType") === "PEM");
-                            }
-                        }
-                        type="radio"
-                        value={ certificate?.type }
-                        children={ [
-                            {
-                                label: t("console:develop.features.applications.forms." +
-                                    "advancedConfig.sections.certificate.fields.type.children.jwks.label"),
-                                value: CertificateTypeInterface.JWKS,
-                                hint: {
-                                    header: t("console:develop.features.applications.forms." +
-                                        "advancedConfig.sections.certificate.fields.type.children.jwks.label"),
-                                    content: t("console:develop.features.applications.forms.advancedConfig" +
-                                        ".sections.certificate.fields.jwksValue.description")
-                                }
-                            },
-                            {
-                                label: t("console:develop.features.applications.forms." +
-                                    "advancedConfig.sections.certificate.fields.type.children.pem.label"),
-                                value: CertificateTypeInterface.PEM,
-                                hint: {
-                                    header: t("console:develop.features.applications.forms." +
-                                        "advancedConfig.sections.certificate.fields.type.children.pem.label"),
-                                    content: t("console:develop.features.applications.forms.advancedConfig" +
-                                        ".sections.certificate.fields.pemValue.description")
-                                }
-                            }
-                        ] }
-                        readOnly={ readOnly }
-                        data-testid={ `${ testId }-certificate-type-radio-group` }
-                    />
-                </Grid.Column>
-            </Grid.Row>
-            <Grid.Row columns={ 1 }>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                    {
-                        isPEMSelected
-                            ?
-                            (
-                                <>
-                                    <Field
-                                        name="certificateValue"
-                                        label={
-                                            t("console:develop.features.applications.forms.advancedConfig" +
-                                                ".sections.certificate.fields.pemValue.label")
-                                        }
-                                        required={ isEncryptionEnabled }
-                                        requiredErrorMessage={
-                                            t("console:develop.features.applications.forms.advancedConfig" +
-                                                ".sections.certificate.fields.pemValue.validations.empty")
-                                        }
-                                        placeholder={
-                                            ApplicationManagementConstants.PEM_CERTIFICATE_PLACEHOLDER
-                                        }
-                                        type="textarea"
-                                        value={
-                                            (CertificateTypeInterface.PEM === certificate?.type)
-                                            && certificate?.value
-                                        }
-                                        listen={
-                                            (values) => {
-                                                setPEMValue(
-                                                    values.get("certificateValue") as string
-                                                );
-                                            }
-                                        }
-                                        readOnly={ readOnly }
-                                        data-testid={ `${ testId }-certificate-textarea` }
-                                    />
-                                    < Hint>
-                                        {
-                                            t("console:develop.features.applications.forms." +
-                                                "advancedConfig.sections.certificate.fields.pemValue.hint")
-                                        }
-                                    </Hint>
-                                    <LinkButton
-                                        className="certificate-info-link-button"
-                                        onClick={ (e: MouseEvent<HTMLButtonElement>) => {
-                                            e.preventDefault();
-                                            viewCertificate();
-                                        } }
-                                        disabled={ isEmpty(PEMValue) }
-                                        data-testid={ `${ testId }-certificate-info-button` }
-                                    >
-                                        {
-                                            t("console:develop.features.applications.forms." +
-                                                "advancedConfig.sections.certificate.fields.pemValue.actions.view")
-                                        }
-                                    </LinkButton>
-                                </>
-                            )
-                            : (
-                                <>
-                                    <Field
-                                        name="jwksValue"
-                                        label={
-                                            t("console:develop.features.applications.forms.advancedConfig" +
-                                                ".sections.certificate.fields.jwksValue.label")
-                                        }
-                                        required={ isEncryptionEnabled }
-                                        requiredErrorMessage={
-                                            t("console:develop.features.applications.forms.advancedConfig" +
-                                                ".sections.certificate.fields.jwksValue.validations.empty")
-                                        }
-                                        placeholder={
-                                            t("console:develop.features.applications.forms.advancedConfig" +
-                                                ".sections.certificate.fields.jwksValue.placeholder") }
-                                        type="text"
-                                        validation={ (value: string, validation: Validation) => {
-                                            if (!FormValidation.url(value)) {
-                                                validation.isValid = false;
-                                                validation.errorMessages.push(
-                                                    t(
-                                                        "console:develop.features.applications.forms" +
-                                                        ".advancedConfig.sections.certificate.fields.jwksValue" +
-                                                        ".validations.invalid"
-                                                    )
-                                                );
-                                            }
-                                        } }
-                                        value={
-                                            (CertificateTypeInterface.JWKS === certificate?.type)
-                                            && certificate?.value
-                                        }
-                                        readOnly={ readOnly }
-                                        data-testid={ `${ testId }-jwks-input` }
-                                    />
-                                </>
-                            )
-                    }
-                    <Hint>
-                        { t("console:develop.features.applications.forms.advancedConfig.sections" +
-                            ".certificate.hint", {
-                            productName: config.ui.productName
-                        }) }
-                    </Hint>
-                </Grid.Column>
-            </Grid.Row>
             {
-                showCertificateModal && (
-                    <CertificateFormFieldModal
-                        open={ showCertificateModal }
-                        certificate={ certificateDisplay }
-                        onClose={ () => {
-                            setShowCertificateModal(false);
-                        } }
-                    />
+                (!isSPAApplication && applicationConfig.inboundOIDCForm.showBackChannelLogout) &&
+                (
+                    <>
+                        <Grid.Row columns={ 2 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Divider />
+                                <Divider hidden />
+                            </Grid.Column>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Heading as="h4">Logout URLs</Heading>
+                                <Divider hidden />
+                                <Field
+                                    ref={ backChannelLogoutUrl }
+                                    name="backChannelLogoutUrl"
+                                    label={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".logoutURLs.fields.back.label")
+                                    }
+                                    required={ false }
+                                    requiredErrorMessage={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".logoutURLs.fields.back.validations.empty")
+                                    }
+                                    placeholder={
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".logoutURLs.fields.back.placeholder")
+                                    }
+                                    type="text"
+                                    validation={ (value: string, validation: Validation) => {
+                                        if (!FormValidation.url(value)) {
+                                            validation.isValid = false;
+                                            validation.errorMessages.push((
+                                                t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                                    ".logoutURLs.fields.back.validations.invalid")
+                                            ));
+                                        }
+                                    } }
+                                    value={ initialValues?.logout?.backChannelLogoutUrl }
+                                    readOnly={ readOnly }
+                                    data-testid={ `${ testId }-back-channel-logout-url-input` }
+                                />
+                                <Hint>
+                                    { t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                        ".logoutURLs.fields.back.hint", {
+                                        productName: config.ui.productName
+                                    }) }
+                                </Hint>
+                            </Grid.Column>
+                        </Grid.Row>
+                    </>
                 )
             }
+            { applicationConfig.inboundOIDCForm.showFrontChannelLogout && (
+                <Grid.Row columns={ 1 }>
+                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                        <Field
+                            ref={ frontChannelLogoutUrl }
+                            name="frontChannelLogoutUrl"
+                            label={
+                                t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                    ".logoutURLs.fields.front.label")
+                            }
+                            required={ false }
+                            requiredErrorMessage={
+                                t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                    ".logoutURLs.fields.front.validations.empty")
+                            }
+                            placeholder={
+                                t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                    ".logoutURLs.fields.front.placeholder")
+                            }
+                            type="text"
+                            validation={ (value: string, validation: Validation) => {
+                                if (!FormValidation.url(value)) {
+                                    validation.isValid = false;
+                                    validation.errorMessages.push((
+                                        t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".logoutURLs.fields.front.validations.invalid")
+                                    ));
+                                }
+                            } }
+                            value={ initialValues?.logout?.frontChannelLogoutUrl }
+                            readOnly={ readOnly }
+                            data-testid={ `${ testId }-front-channel-logout-url-input` }
+                        />
+                    </Grid.Column>
+                </Grid.Row>
+            ) }
+            { /*Request Object Signature*/ }
+            {
+                (!isSPAApplication && applicationConfig.inboundOIDCForm.showRequestObjectSignatureValidation) &&
+                (
+                    <>
+                        <Grid.Row columns={ 2 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Divider />
+                                <Divider hidden />
+                            </Grid.Column>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                                <Heading as="h4">
+                                    { t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                        ".requestObjectSignature.heading") }
+                                </Heading>
+                                <Field
+                                    ref={ enableRequestObjectSignatureValidation }
+                                    name="enableRequestObjectSignatureValidation"
+                                    label=""
+                                    required={ false }
+                                    requiredErrorMessage="this is needed"
+                                    type="checkbox"
+                                    value={
+                                        initialValues?.validateRequestObjectSignature
+                                            ? [ "EnableRequestObjectSignatureValidation" ]
+                                            : []
+                                    }
+                                    children={ [
+                                        {
+                                            label: t("console:develop.features.applications.forms.inboundOIDC" +
+                                                ".sections.requestObjectSignature.fields.signatureValidation.label"),
+                                            value: "EnableRequestObjectSignatureValidation"
+                                        }
+                                    ] }
+                                    readOnly={ readOnly }
+                                    data-testid={ `${ testId }-request-object-signature-validation-checkbox` }
+                                />
+                                <Hint>
+                                    <Trans
+                                        i18nKey={
+                                            "console:develop.features.applications.forms.inboundOIDC.sections" +
+                                            ".requestObjectSignature.description"
+                                        }
+                                        tOptions={ { productName: config.ui.productName } }
+                                    >
+                                        WSO2 Identity Server supports receiving an OIDC authentication request as
+                                        a request object that is passed in a single, self-contained request
+                                        parameter. Enable signature validation to accept only signed
+                                        <Code>request</Code> objects in the authorization request.
+                                    </Trans>
+                                </Hint>
+                            </Grid.Column>
+                        </Grid.Row>
+                    </>
+                )
+            }
+            { /* Scope Validators */ }
+            { applicationConfig.inboundOIDCForm.showScopeValidators && (
+                <Grid.Row columns={ 2 }>
+                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                        <Divider />
+                        <Divider hidden />
+                    </Grid.Column>
+                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                        <Heading as="h4">
+                            { t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                ".scopeValidators.heading") }
+                        </Heading>
+                        <Field
+                            ref={ scopeValidator }
+                            name="scopeValidator"
+                            label=""
+                            required={ false }
+                            requiredErrorMessage={
+                                t("console:develop.features.applications.forms.inboundOIDC.sections" +
+                                    ".scopeValidators.fields.validator.validations.empty")
+                            }
+                            type="checkbox"
+                            value={ initialValues?.scopeValidators }
+                            children={ getAllowedList(metadata.scopeValidators, true) }
+                            readOnly={ readOnly }
+                            data-testid={ `${ testId }-scope-validator-checkbox` }
+                        />
+                    </Grid.Column>
+                </Grid.Row>
+            ) }
+            { /* Certificate Section */ }
+            <Grid.Row columns={ 1 }>
+                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                    <ApplicationCertificateWrapper
+                        protocol={ SupportedAuthProtocolTypes.OIDC }
+                        deleteAllowed={ !(initialValues.idToken?.encryption?.enabled) }
+                        reasonInsideTooltipWhyDeleteIsNotAllowed={ (
+                            <Fragment>
+                                <Trans
+                                    i18nKey={ "console:develop.features.applications.forms" +
+                                    ".inboundOIDC.sections.certificates.disabledPopup" }
+                                >
+                                    This certificate is used to encrypt the <Code>id_token</Code>. First, you need
+                                    to disable <Code>id_token</Code> encryption to proceed.
+                                </Trans>
+                            </Fragment>
+                        ) }
+                        onUpdate={ onUpdate }
+                        application={ application }
+                        updateCertFinalValue={ setFinalCertValue }
+                        updateCertType={ setSelectedCertType }
+                        certificate={ certificate }
+                        readOnly={ readOnly }
+                        hidden={ isSPAApplication || !(applicationConfig.inboundOIDCForm.showCertificates) }
+                        isRequired={ true }
+                        triggerSubmit={ triggerCertSubmit }
+                    />
+                </Grid.Column>
+            </Grid.Row>
             {
                 !readOnly && (
                     <Grid.Row columns={ 1 }>
                         <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
+                            <span ref={ updateRef }></span>
                             <Button
                                 primary
                                 type="submit"
                                 size="small"
                                 className="form-button"
+                                loading={ isLoading }
+                                disabled={ isLoading }
                                 data-testid={ `${ testId }-submit-button` }
                             >
                                 { t("common:update") }
@@ -1973,7 +2457,8 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
 
     /**
      * Renders the application secret regenerate confirmation modal.
-     * @return {ReactElement}
+     *
+     * @returns the modal for confirming regenerating app secret.
      */
     const renderRegenerateConfirmationModal = (): ReactElement => (
         <ConfirmationModal
@@ -2032,7 +2517,8 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
 
     /**
      * Renders the application revoke confirmation modal.
-     * @return {ReactElement}
+     *
+     * @returns Revoke confirmation modal.
      */
     const renderRevokeConfirmationModal = (): ReactElement => (
         <ConfirmationModal
@@ -2081,10 +2567,11 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
             <ConfirmationModal.Content
                 data-testid={ `${ testId }-oidc-revoke-confirmation-modal-content` }
             >
-                { isSPAApplication
+                {
+                    isSPAApplication
                         ? (
                             t("console:develop.features.applications.confirmations" +
-                            ".revokeApplication.content"))
+                                ".revokeApplication.content"))
                         : null
                 }
             </ConfirmationModal.Content>
@@ -2093,103 +2580,107 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
 
     /**
      * Renders the application reactivate confirmation modal.
-     * @return {ReactElement}
+     *
+     * @returns Reactivate confirmation modal.
      */
     const renderReactivateConfirmationModal = (): ReactElement => {
-        return (<ConfirmationModal
-                onClose={(): void => setShowReactiveConfirmationModal(false)}
+        return (
+            <ConfirmationModal
+                onClose={ (): void => setShowReactiveConfirmationModal(false) }
                 type="warning"
-                open={showReactiveConfirmationModal}
-                assertion={initialValues?.clientId}
-                assertionHint={ isSPAApplication ? (
-                    <p>
-                        <Trans
-                            i18nKey={
-                                "console:develop.features.applications.confirmations" +
-                                ".reactivateSPA.assertionHint"
-                            }
-                            tOptions={{id: initialValues?.clientId}}
-                        >
-                            Please type <strong>{initialValues?.clientId}</strong> to confirm.
-                        </Trans>
-                    </p>
-                ) : (
-                    <p>
-                        <Trans
-                            i18nKey={
-                                "console:develop.features.applications.confirmations" +
-                                ".reactivateOIDC.assertionHint"
-                            }
-                            tOptions={{id: initialValues?.clientId}}
-                        >
-                            Please type <strong>{initialValues?.clientId}</strong> to confirm.
-                        </Trans>
-                    </p>
-                )
+                open={ showReactiveConfirmationModal }
+                assertion={ initialValues?.clientId }
+                assertionHint={
+                    isSPAApplication
+                        ? (
+                            <p>
+                                <Trans
+                                    i18nKey={
+                                        "console:develop.features.applications.confirmations" +
+                                    ".reactivateSPA.assertionHint"
+                                    }
+                                    tOptions={ { id: initialValues?.clientId } }
+                                >
+                                Please type <strong>{ initialValues?.clientId }</strong> to confirm.
+                                </Trans>
+                            </p>
+                        ) : (
+                            <p>
+                                <Trans
+                                    i18nKey={
+                                        "console:develop.features.applications.confirmations" +
+                                    ".reactivateOIDC.assertionHint"
+                                    }
+                                    tOptions={ { id: initialValues?.clientId } }
+                                >
+                                Please type <strong>{ initialValues?.clientId }</strong> to confirm.
+                                </Trans>
+                            </p>
+                        )
                 }
                 assertionType="input"
-                primaryAction={t("common:confirm")}
-                secondaryAction={t("common:cancel")}
-                onSecondaryActionClick={(): void =>
+                primaryAction={ t("common:confirm") }
+                secondaryAction={ t("common:cancel") }
+                onSecondaryActionClick={ (): void =>
                     setShowReactiveConfirmationModal(false)
                 }
-                onPrimaryActionClick={(): void => {
+                onPrimaryActionClick={ (): void => {
                     onApplicationRegenerate();
                     setShowReactiveConfirmationModal(false);
-                }}
-                data-testid={`${testId}-oidc-reactivate-confirmation-modal`}
-                closeOnDimmerClick={false}
+                } }
+                data-testid={ `${ testId }-oidc-reactivate-confirmation-modal` }
+                closeOnDimmerClick={ false }
             >
                 <ConfirmationModal.Header
-                    data-testid={`${testId}-oidc-reactivate-confirmation-modal-header`}
+                    data-testid={ `${ testId }-oidc-reactivate-confirmation-modal-header` }
                 >
-                    { 
-                        isSPAApplication
+                    {
+                        !isSPAApplication
                             ? (
                                 t("console:develop.features.applications.confirmations" +
-                                  ".reactivateSPA.header") )
+                                ".reactivateSPA.header"))
                             : (
                                 t("console:develop.features.applications.confirmations" +
-                                  ".reactivateOIDC.header") )
+                                ".reactivateOIDC.header"))
                     }
                 </ConfirmationModal.Header>
-                    { 
-                        isSPAApplication
-                            ? (                 
+                {
+                    isSPAApplication
+                        ? (
                             <ConfirmationModal.Message
                                 attached
                                 warning
-                                data-testid={`${testId}-oidc-reactivate-confirmation-modal-message`}
+                                data-testid={ `${ testId }-oidc-reactivate-confirmation-modal-message` }
                             >
-                                {t("console:develop.features.applications.confirmations" +
-                                   ".reactivateSPA.message")}
-                                </ConfirmationModal.Message> 
-                                ) : null
-                    }
+                                { t("console:develop.features.applications.confirmations" +
+                                ".reactivateSPA.message") }
+                            </ConfirmationModal.Message>
+                        ) : null
+                }
                 <ConfirmationModal.Content
-                    data-testid={`${testId}-oidc-reactivate-confirmation-modal-content`}
+                    data-testid={ `${ testId }-oidc-reactivate-confirmation-modal-content` }
                 >
                     {
                         isSPAApplication
                             ? (
                                 t("console:develop.features.applications.confirmations" +
-                                  ".reactivateSPA.content"))
+                                ".reactivateSPA.content"))
                             : (
                                 t("console:develop.features.applications.confirmations" +
-                                  ".reactivateOIDC.content"))
+                                ".reactivateOIDC.content"))
                     }
                 </ConfirmationModal.Content>
             </ConfirmationModal>
-        )
+        );
     };
 
     /**
      * Validates if a confirmation modal to warn users regarding low expiration times.
      *
-     * @param {Map<string, FormValue>} values - Form values.
-     * @param {string} url - URL.
-     * @param {string} origin - Origin.
-     * @return {boolean}
+     * @param values - Form values.
+     * @param url - URL.
+     * @param origin - Origin.
+     * @returns whether the expiry time is too low or not.
      */
     const isExpiryTimesTooLow = (values: Map<string, FormValue>, url?: string, origin?: string): boolean => {
 
@@ -2210,7 +2701,11 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                     secondaryAction={ t("common:cancel") }
                     onSecondaryActionClick={ (): void => setShowLowExpiryTimesConfirmationModal(false) }
                     onPrimaryActionClick={ (): void => {
-                        onSubmit(updateConfiguration(values, url, origin));
+                        if (!isSPAApplication) {
+                            onSubmit(updateConfiguration(values, url, origin));
+                        } else {
+                            onSubmit(updateConfigurationForSPA(values, url, origin));
+                        }
                         setShowLowExpiryTimesConfirmationModal(false);
                     } }
                     data-testid={ `${ testId }-low-expiry-times-confirmation-modal` }
@@ -2262,6 +2757,10 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                 )
                             }
                         </List>
+                        <Text>
+                            { t("console:develop.features.applications.confirmations.lowOIDCExpiryTimes." +
+                                "assertionHint") }
+                        </Text>
                     </ConfirmationModal.Content>
                 </ConfirmationModal>
             );
@@ -2271,16 +2770,24 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
 
         setShowLowExpiryTimesConfirmationModal(false);
         setLowExpiryTimesConfirmationModal(null);
+
         return false;
     };
 
     /**
      * Handle form submit.
-     * @param {Map<string, >} values - Form values.
+     *
+     * @param values - Form values.
      */
     const handleFormSubmit = (values: Map<string, FormValue>): void => {
 
         let isExpiryTimesTooLowModalShown: boolean = false;
+
+        setTriggerCertSubmit();
+        if (!isSPAApplication && (applicationConfig.inboundOIDCForm.showCertificates)  &&
+            selectedCertType !== CertificateTypeInterface.NONE && isEmpty(finalCertValue)) {
+            return;
+        }
 
         if (showCallbackURLField) {
             submitUrl((url: string) => {
@@ -2288,12 +2795,16 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                     setShowURLError(true);
                     scrollToInValidField("url");
                 } else {
-                    submitOrigin((origin) => {
+                    submitOrigin((origin: string) => {
 
                         isExpiryTimesTooLowModalShown = isExpiryTimesTooLow(values, url, origin);
 
                         if (!isExpiryTimesTooLowModalShown) {
-                            onSubmit(updateConfiguration(values, url, origin));
+                            if (!isSPAApplication) {
+                                onSubmit(updateConfiguration(values, url, origin));
+                            } else {
+                                onSubmit(updateConfigurationForSPA(values, url, origin));
+                            }
                         }
                     });
                 }
@@ -2305,48 +2816,56 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
         isExpiryTimesTooLowModalShown = isExpiryTimesTooLow(values, undefined, undefined);
 
         if (!isExpiryTimesTooLowModalShown) {
-            onSubmit(updateConfiguration(values, undefined, undefined));
+            if (!isSPAApplication) {
+                onSubmit(updateConfiguration(values, undefined, undefined));
+            } else {
+                onSubmit(updateConfiguration(values, undefined, undefined));
+            }
         }
+        setIsLoading(false);
     };
 
     return (
-        metadata ?
-            (
+        !isLoading && metadata ?
+            (<>
                 <Forms
                     onSubmit={ handleFormSubmit }
                     onSubmitError={ (requiredFields: Map<string, boolean>, validFields: Map<string, Validation>) => {
-                        const iterator = requiredFields.entries();
-                        let result = iterator.next();
+                        const iterator: IterableIterator<[string, boolean]> = requiredFields.entries();
+                        let result: IteratorResult<[string, boolean], any> = iterator.next();
 
                         while (!result.done) {
                             if (!result.value[ 1 ] || !validFields.get(result.value[ 0 ]).isValid) {
                                 scrollToInValidField(result.value[ 0 ]);
+
                                 break;
                             } else {
                                 result = iterator.next();
                             }
                         }
                     } }
+                    onStaleChange={ (isStale: boolean) => {
+                        setIsFormStale(isStale);
+                    } }
+                    ref={ formRef }
                 >
-                    <Grid className="form-container with-max-width">
+                    <Grid>
                         {
                             (initialValues?.state === State.REVOKED) && (
                                 <Grid.Row columns={ 1 }>
                                     <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                                        <Message warning visible>
-                                            <Message.Header>
-                                                {
-                                                    t("console:develop.features.applications.forms.inboundOIDC." +
-                                                        "messages.revokeDisclaimer.heading")
-                                                }
-                                            </Message.Header>
-                                            <p>
-                                                {
-                                                    t("console:develop.features.applications.forms.inboundOIDC." +
-                                                        "messages.revokeDisclaimer.content")
-                                                }
-                                            </p>
-                                        </Message>
+                                        <Message
+                                            type="warning"
+                                            visible
+                                            header={
+                                                t("console:develop.features.applications.forms.inboundOIDC." +
+                                                    "messages.revokeDisclaimer.heading")
+                                            }
+                                            content={
+                                                t("console:develop.features.applications.forms.inboundOIDC." +
+                                                    "messages.revokeDisclaimer.content")
+                                            }
+                                        />
                                     </Grid.Column>
                                 </Grid.Row>
                             )
@@ -2365,48 +2884,53 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                                     value={ initialValues?.clientId }
                                                     data-testid={ `${ testId }-client-id-readonly-input` }
                                                 />
-                                                {/*TODO - Application revoke is disabled until proper
-                                                backend support for application disabling is provided
-                                                @link https://github.com/wso2/product-is/issues/11453
                                                 {
-                                                    (!readOnly
-                                                        && initialValues?.clientSecret
-                                                        && (initialValues?.state !== State.REVOKED)) && (
-                                                        <Button
-                                                            color="red"
-                                                            className="oidc-action-button"
-                                                            onClick={ handleRevokeButton }
-                                                            data-testid={ `${ testId }-oidc-revoke-button` }
-                                                        >
-                                                            { t("common:revoke") }
-                                                        </Button>
-                                                    )
-                                                }*/}
+                                                    /**
+                                                     * TODO - Application revoke is disabled until proper
+                                                     * backend support for application disabling is provided
+                                                     * Issue - https://github.com/wso2/product-is/issues/11453
+                                                     * Comment - #issuecomment-954842169
+                                                     */
+                                                }
                                             </div>
                                         </Form.Field>
-                                        { ((initialValues?.state !== State.REVOKED) &&
-                                            isSPAApplication ) ?
-                                            (<Message info={ true }>
-                                                <Trans
-                                                    i18nKey={
-                                                        "console:develop.features.applications." +
-                                                        "forms.inboundOIDC.fields.clientSecret.message"
-                                                    }
-                                                    values={ { productName: config.ui.productName } }
-                                                >
-                                                    productName does not issue a&nbsp;
-                                                    <Code withBackground>client_secret</Code> to native
-                                                    applications or web browser-based applications for the purpose
-                                                    of client authentication.
-                                                </Trans>
-                                            </Message>) : null
+                                        {
+                                            (
+                                                applicationConfig.inboundOIDCForm.showNativeClientSecretMessage && (
+                                                    initialValues?.state !== State.REVOKED
+                                                ) && isSPAApplication
+                                            )
+                                                ? (
+                                                    <Message
+                                                        type="info"
+                                                        content={
+                                                            (<Trans
+                                                                i18nKey={
+                                                                    "console:develop.features.applications." +
+                                                                    "forms.inboundOIDC.fields.clientSecret.message"
+                                                                }
+                                                                values={ { productName: config.ui.productName } }
+                                                            >
+                                                                productName does not issue a&nbsp;
+                                                                <Code withBackground>client_secret</Code> to native
+                                                                applications or web browser-based applications for
+                                                                the purpose of client authentication.
+                                                            </Trans>)
+                                                        }
+                                                    />
+                                                )
+                                                : null
                                         }
                                     </Grid.Column>
                                 </Grid.Row>
                             )
                         }
-                        {
-                            (initialValues?.clientSecret && (initialValues?.state !== State.REVOKED)) && (
+                        { (
+                            initialValues?.clientSecret
+                            && (initialValues?.state !== State.REVOKED)
+                            && (!isSPAApplication))
+                            && (!isMobileApplication)
+                            && (
                                 <Grid.Row columns={ 2 }>
                                     <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
                                         <Form.Field>
@@ -2419,12 +2943,14 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                                             {
                                                 isClientSecretHashEnabled
                                                     ? (
-                                                        <Message info visible>
-                                                            {
+                                                        <Message
+                                                            visible
+                                                            type="info"
+                                                            content={
                                                                 t("console:develop.features.applications.forms." +
                                                                     "inboundOIDC.fields.clientSecret.hashedDisclaimer")
                                                             }
-                                                        </Message>
+                                                        />
                                                     )
                                                     : (
                                                         <div className="display-flex">
@@ -2485,7 +3011,7 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                             ((initialValues?.clientId || initialValues?.clientSecret)
                                 && (initialValues?.state !== State.REVOKED)) && (
                                 <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 16 }>
-                                    <Divider/>
+                                    <Divider />
                                 </Grid.Column>
                             )
                         }
@@ -2496,8 +3022,14 @@ export const InboundOIDCForm: FunctionComponent<InboundOIDCFormPropsInterface> =
                     { showReactiveConfirmationModal && renderReactivateConfirmationModal() }
                     { showLowExpiryTimesConfirmationModal && lowExpiryTimesConfirmationModal }
                 </Forms>
+            </>
+            ) :
+            (
+                <Container>
+                    <ContentLoader inline="centered" active/>
+                </Container>
             )
-            : null
+
     );
 };
 
@@ -2515,12 +3047,12 @@ InboundOIDCForm.defaultProps = {
         grantTypes: [],
         idToken: undefined,
         logout: undefined,
-        refreshToken: undefined,
         pkce: {
             mandatory: false,
             supportPlainTransformAlgorithm: false
         },
         publicClient: false,
+        refreshToken: undefined,
         scopeValidators: [],
         state: undefined,
         validateRequestObjectSignature: undefined

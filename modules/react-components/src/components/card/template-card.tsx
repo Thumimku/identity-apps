@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,17 +16,17 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
-import React, { FunctionComponent, MouseEvent, ReactElement, ReactNode, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Card, CardProps, Dimmer, Icon, Label, Popup } from "semantic-ui-react";
+import React, { CSSProperties, FunctionComponent, MouseEvent, ReactElement, ReactNode, useState } from "react";
+import { Card, CardProps, Icon, Label } from "semantic-ui-react";
 import { GenericIcon, GenericIconProps, GenericIconSizes } from "../icon";
+import { Popup } from "../popup";
 
 /**
  * Proptypes for the template card component.
  */
-export interface TemplateCardPropsInterface extends TestableComponentInterface {
+export interface TemplateCardPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Additional classes.
      */
@@ -77,8 +77,8 @@ export interface TemplateCardPropsInterface extends TestableComponentInterface {
     imageOptions?: Omit<GenericIconProps, "icon" | "size">;
     /**
      * Template card onclick event.
-     * @param {React.MouseEvent<HTMLAnchorElement>} e - Event,
-     * @param {CardProps} data - Card data.
+     * @param e - Event,
+     * @param data - Card data.
      */
     onClick: (e: MouseEvent<HTMLAnchorElement>, data: CardProps) => void;
     /**
@@ -109,6 +109,10 @@ export interface TemplateCardPropsInterface extends TestableComponentInterface {
      * Inline mode.
      */
     inline?: boolean;
+    /**
+     * Show an attached label as a ribbon.
+     */
+    ribbon?: ReactNode;
 }
 
 /**
@@ -132,9 +136,9 @@ export interface TemplateCardTagInterface {
 /**
  * Template card component that can be used to represent application and IDP templates.
  *
- * @param {TemplateCardPropsInterface} props - Props injected to the components.
+ * @param props - Props injected to the components.
  *
- * @return {React.ReactElement}
+ * @returns the Template Card component
  */
 export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
     props: TemplateCardPropsInterface
@@ -153,6 +157,7 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
         onClick,
         overlayOpacity,
         renderDisabledItemsAsGrayscale,
+        ribbon,
         selected,
         showTags,
         showTagIcon,
@@ -161,6 +166,7 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
         tagsAs,
         tagsSectionTitle,
         textAlign,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -176,26 +182,26 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
         className
     );
 
-    const { t } = useTranslation();
-
-    const [ dimmerState, setDimmerState ] = useState<boolean>(false);
+    const [ , setDimmerState ] = useState<boolean>(false);
 
     /**
      * Renders the tag based on render type.
      *
-     * @param {TemplateCardTagInterface | string} tag - Tag to be rendered.
-     * @param {"icon" | "label" | "default"} as - Render type.
-     * @param {number} index - Tag index in array.
-     * @return {React.ReactElement}
+     * @param tag - Tag to be rendered.
+     * @param as - Render type.
+     * @param index - Tag index in array.
+     * @returns the tag component for the corresponding render type
      */
     const renderTag = (tag: TemplateCardTagInterface | string, as: "icon" | "label" | "default",
-                       index: number): ReactElement => {
+        index: number): ReactElement => {
 
         if (typeof tag === "string") {
-            return <span className="tag default" key={ index }>
-                { tag }
-                { (tags.length === 1 || index === tags.length - 1) ? "" : "," }
-            </span>;
+            return (
+                <span className="tag default" key={ index }>
+                    { tag }
+                    { (tags.length === 1 || index === tags.length - 1) ? "" : "," }
+                </span>
+            );
         }
 
         if (as === "icon") {
@@ -204,8 +210,9 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
                     basic
                     key={ index }
                     trigger={ (
-                        <span
+                        <div
                             className="icon-wrapper"
+                            data-componentid={ `${ componentId }-logo-wrapper` }
                             data-testid={ `${ testId }-logo-wrapper` }
                         >
                             <GenericIcon
@@ -214,11 +221,12 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
                                 size={ tagSize }
                                 spaced="right"
                                 fill={ false }
+                                data-componentid={ `${ componentId }-logo` }
                                 data-testid={ `${ testId }-logo` }
                                 inline
                                 transparent
                             />
-                        </span>
+                        </div>
                     ) }
                     size="mini"
                     position="top center"
@@ -230,22 +238,29 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
 
         if (as === "label") {
             return (
-                <Label key={ index } size="mini" data-testid={ `${ testId }-logo-label` }>
+                <Label
+                    key={ index }
+                    size="mini"
+                    data-componentid={ `${ componentId }-logo-label` }
+                    data-testid={ `${ testId }-logo-label` }
+                >
                     { tag.displayName }
                 </Label>
             );
         }
 
-        return <span className="tag default" key={ index }>
-            { tag.displayName }
-            { (tags.length === 1 || index === tags.length - 1) ? "" : ", " }
-        </span>;
+        return (
+            <span className="tag default" key={ index }>
+                { tag.displayName }
+                { (tags.length === 1 || index === tags.length - 1) ? "" : ", " }
+            </span>
+        );
     };
 
     /**
      * Inline styles for image container.
      */
-    const imageContainerStyles = (): object => {
+    const imageContainerStyles = (): CSSProperties | undefined => {
 
         return {
             opacity: disabled ? overlayOpacity : 1
@@ -255,7 +270,7 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
     /**
      * Inline styles for text container.
      */
-    const textContainerStyles = (): object => {
+    const textContainerStyles = (): CSSProperties => {
 
         return {
             textAlign
@@ -269,30 +284,31 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
             onClick={ onClick }
             link={ false }
             as="div"
+            data-componentid={ componentId }
             data-testid={ testId }
             onMouseEnter={ () => setDimmerState(true) }
             onMouseLeave={ () => setDimmerState(false) }
         >
-            {
-                // TODO: This should pass as prop, where this component is used,
-                disabled && (
-                    <Dimmer className="lighter" active={ dimmerState }>
-                        { t("common:featureAvailable" ) }
-                    </Dimmer>
-                )
-            }
             {
                 image && (
                     <Card.Content
                         style={ imageContainerStyles() }
                         className="card-image-container"
                     >
+                        {
+                            ribbon && (
+                                <div className="ribbon">
+                                    { ribbon }
+                                </div>
+                            )
+                        }
                         <GenericIcon
                             square
                             transparent
                             className="card-image"
                             size={ imageSize }
                             icon={ image }
+                            data-componentid={ `${ componentId }-image` }
                             data-testid={ `${ testId }-image` }
                             { ...imageOptions }
                         />
@@ -300,18 +316,40 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
                 )
             }
             <Card.Content className="card-text-container" style={ textContainerStyles() }>
-                <Card.Header data-testid={ `${ testId }-header` }>{ name }</Card.Header>
-                <Card.Description data-testid={ `${ testId }-description` }>{ description }</Card.Description>
+                <Card.Header
+                    data-componentid={ `${ componentId }-header` }
+                    data-testid={ `${ testId }-header` }
+                >
+                    { name }
+                </Card.Header>
+                <Card.Description
+                    data-componentid={ `${ componentId }-description` }
+                    data-testid={ `${ testId }-description` }
+                >
+                    { description }
+                </Card.Description>
                 {
                     (showTags && tags && tags instanceof Array && tags.length > 0)
                         ? (
-                            <div className="tags-container" data-testid={ `${ testId }-tags-container` }>
+                            <div
+                                className="tags-container"
+                                data-componentid={ `${ componentId }-tags-container` }
+                                data-testid={ `${ testId }-tags-container` }
+                            >
                                 { tagsSectionTitle && (
-                                    <div className="title" data-testid={ `${ testId }-tags-title` }>
+                                    <div
+                                        className="title"
+                                        data-componentid={ `${ componentId }-tags-title` }
+                                        data-testid={ `${ testId }-tags-title` }
+                                    >
                                         { tagsSectionTitle }
                                     </div>
                                 ) }
-                                <div className="tags" data-testid={ `${ testId }-tags` }>
+                                <div
+                                    className="tags"
+                                    data-componentid={ `${ componentId }-tags` }
+                                    data-testid={ `${ testId }-tags` }
+                                >
                                     { showTagIcon && <Icon name="tag" className="tag-icon" size="tiny" color="grey" /> }
                                     {
                                         (tags as Array<TemplateCardTagInterface|string>)
@@ -331,6 +369,7 @@ export const TemplateCard: FunctionComponent<TemplateCardPropsInterface> = (
  * Default props for the template card.
  */
 TemplateCard.defaultProps = {
+    "data-componentid": "template-card",
     "data-testid": "template-card",
     imageSize: "tiny",
     inline: true,

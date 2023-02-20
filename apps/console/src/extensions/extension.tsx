@@ -17,11 +17,11 @@
  */
 
 import { EmptyPlaceholder, ErrorBoundary  } from "@wso2is/react-components";
-import React, { ReactElement, Suspense, lazy } from "react";
+import React, { ErrorInfo, ReactElement, Suspense, lazy, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Placeholder } from "semantic-ui-react";
 import { ExtensionsManager } from "./extensions-manager";
-import { getEmptyPlaceholderIllustrations } from "../features/core";
+import { AppUtils, EventPublisher, getEmptyPlaceholderIllustrations } from "../features/core";
 
 /**
  * Extension Interface.
@@ -29,7 +29,7 @@ import { getEmptyPlaceholderIllustrations } from "../features/core";
  * @interface ExtensionInterface - Component placeholder properties.
  */
 interface ExtensionInterface {
-    section: "feedback-button";
+    section: "feedback-button" | "tenant-dropdown";
     type: "component";
 }
 
@@ -42,33 +42,39 @@ interface ExtensionInterface {
 export const ComponentPlaceholder = (props: ExtensionInterface): ReactElement => {
 
     const { section, type } = props;
-    
+
     const { t } = useTranslation();
 
-    const fragment = ExtensionsManager.getConfig()?.sections[type + "s"]?.[section];
+    const [ Component, setComponent ] = useState<JSX.Element|any>(null);
 
-    let DynamicLoader;
+    const fragment = ExtensionsManager.getConfig()?.sections[ type + "s" ]?.[ section ];
 
-    if (fragment) {
-        DynamicLoader = lazy(() => import(`${fragment}`));
-    } else {
-        DynamicLoader = () => <></>;
-    }
+    const eventPublisher: EventPublisher = EventPublisher.getInstance();
+
+    useEffect(() => {
+
+        if (Component || !fragment) {
+            return;
+        }
+
+        setComponent(lazy(() => import(`${fragment}`)));
+    }, [ fragment ]);
 
     return (
         <ErrorBoundary
-                fallback={ (
-                    <EmptyPlaceholder
-                        image={ getEmptyPlaceholderIllustrations().genericError }
-                        imageSize="tiny"
-                        subtitle={ [
-                            t("console:common.placeholders.genericError.subtitles.0"),
-                            t("console:common.placeholders.genericError.subtitles.1")
-                        ] }
-                        title={ t("console:common.placeholders.genericError.title") }
-                    />
-                ) }
-            >
+            onChunkLoadError={ AppUtils.onChunkLoadError }
+            fallback={ (
+                <EmptyPlaceholder
+                    image={ getEmptyPlaceholderIllustrations().genericError }
+                    imageSize="tiny"
+                    subtitle={ [
+                        t("console:common.placeholders.genericError.subtitles.0"),
+                        t("console:common.placeholders.genericError.subtitles.1")
+                    ] }
+                    title={ t("console:common.placeholders.genericError.title") }
+                />
+            ) }
+        >
             <Suspense
                 fallback={ (
                     <Placeholder>
@@ -78,7 +84,9 @@ export const ComponentPlaceholder = (props: ExtensionInterface): ReactElement =>
                         </Placeholder.Header>
                     </Placeholder>
                 ) }>
-                <DynamicLoader />
+                {
+                    Component && <Component />
+                }
             </Suspense>
         </ErrorBoundary>
     );

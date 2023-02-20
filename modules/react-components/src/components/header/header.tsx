@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,30 +18,33 @@
 
 import { getGravatarImage } from "@wso2is/core/api";
 import { resolveUserDisplayName, resolveUsername } from "@wso2is/core/helpers";
-import { LinkedAccountInterface, TenantAssociationsInterface, TestableComponentInterface } from "@wso2is/core/models";
+import {
+    IdentifiableComponentInterface,
+    LinkedAccountInterface,
+    TestableComponentInterface
+} from "@wso2is/core/models";
 import classNames from "classnames";
-import React, { FunctionComponent, ReactElement, ReactNode, SyntheticEvent, useState } from "react";
+import React, { FunctionComponent, ReactElement, ReactNode, SyntheticEvent } from "react";
 import { Link } from "react-router-dom";
 import {
     Container,
     Divider,
     Dropdown,
     DropdownItemProps,
-    Grid,
+    DropdownProps,
     Icon,
     Item,
     Menu,
-    Placeholder,
-    Responsive,
-    SemanticICONS
+    Placeholder
 } from "semantic-ui-react";
 import { UserAvatar } from "../avatar";
 import { GenericIcon } from "../icon";
+import { Media } from "../media";
 
 /**
  * Header component prop types.
  */
-export interface HeaderPropsInterface extends TestableComponentInterface {
+export interface HeaderPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Top announcement component.
      */
@@ -59,6 +62,7 @@ export interface HeaderPropsInterface extends TestableComponentInterface {
     fixed?: "left" | "right" | "bottom" | "top";
     fluid?: boolean;
     isProfileInfoLoading?: boolean;
+    isPrivilegedUser?: boolean;
     linkedAccounts?: LinkedAccountInterface[];
     // TODO: Add proper type interface.
     profileInfo: any;
@@ -66,22 +70,33 @@ export interface HeaderPropsInterface extends TestableComponentInterface {
     onSidePanelToggleClick?: () => void;
     showSidePanelToggle?: boolean;
     showUserDropdown?: boolean;
+    showUserDropdownTriggerLabel?: boolean;
+    /**
+     * Show hamburger icon near the user dropdown trigger.
+     */
+    showUserDropdownTriggerBars?: boolean;
     userDropdownIcon?: any;
     userDropdownInfoAction?: React.ReactNode;
-    userDropdownLinks?: HeaderLinkInterface[];
-    tenantAssociations?: TenantAssociationsInterface;
-    onTenantSwitch?: (tenant: string | string[]) => void;
+    userDropdownLinks?: HeaderLinkCategoryInterface[];
     /**
-     * Heading for the tenant switcher.
+     * User dropdown pointing direction.
      */
-    tenantSwitchHeader?: ReactNode;
-    tenantIcon?: any;
+    userDropdownPointing?: DropdownProps[ "pointing" ];
+    onAvatarClick?: () => void;
+    /**
+     * Show account management label.
+     */
+    showOrganizationLabel?: boolean;
+    /**
+     * Organization label.
+     */
+    organizationLabel?: ReactNode;
 }
 
 /**
  * Header extension interface.
  */
-interface HeaderExtension {
+export interface HeaderExtension extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Component to render.
      */
@@ -90,6 +105,24 @@ interface HeaderExtension {
      * Float direction.
      */
     floated: "left" | "right";
+}
+
+/**
+ * Interface for categorized header links.
+ */
+export interface HeaderLinkCategoryInterface {
+    /**
+     * Category to group the links.
+     */
+    category: "APPS" | string;
+    /**
+     * Label to be displayed.
+     */
+    categoryLabel?: ReactNode;
+    /**
+     * Links array.
+     */
+    links: HeaderLinkInterface[];
 }
 
 /**
@@ -102,7 +135,7 @@ export interface HeaderLinkInterface extends StrictHeaderLinkInterface {
 /**
  * Header links strict interface.
  */
-export interface StrictHeaderLinkInterface {
+export interface StrictHeaderLinkInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Children content.
      */
@@ -110,16 +143,15 @@ export interface StrictHeaderLinkInterface {
     /**
      * Link icon.
      */
-    icon?: SemanticICONS;
+    icon?: ReactElement | any;
     /**
      * Link name.
      */
-    name: string;
+    name: ReactNode;
     /**
      * Called on dropdown item click.
-     *
-     * @param {SyntheticEvent} event - React's original SyntheticEvent.
-     * @param {object} data - All props.
+     * @param event - React's original SyntheticEvent.
+     * @param data - All props.
      */
     onClick?: (event: React.MouseEvent<HTMLDivElement>, data: DropdownItemProps) => void;
 }
@@ -127,9 +159,8 @@ export interface StrictHeaderLinkInterface {
 /**
  * Header component.
  *
- * @param {HeaderPropsInterface} props - Props injected to the component.
- *
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns Header Component.
  */
 export const Header: FunctionComponent<HeaderPropsInterface> = (
     props: HeaderPropsInterface
@@ -137,7 +168,6 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
 
     const {
         announcement,
-        tenantAssociations,
         brand,
         brandLink,
         basicProfileInfo,
@@ -147,18 +177,23 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
         fixed,
         fluid,
         isProfileInfoLoading,
+        isPrivilegedUser,
         linkedAccounts,
         profileInfo,
         userDropdownInfoAction,
         showSidePanelToggle,
         showUserDropdown,
-        tenantIcon,
-        tenantSwitchHeader,
+        showUserDropdownTriggerBars,
+        showUserDropdownTriggerLabel,
+        showOrganizationLabel,
+        organizationLabel,
         onLinkedAccountSwitch,
         onSidePanelToggleClick,
-        onTenantSwitch,
         userDropdownIcon,
         userDropdownLinks,
+        userDropdownPointing,
+        onAvatarClick,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -166,51 +201,95 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
         "app-header",
         {
             [ "fluid-header" ]: fluid,
-            [ "has-announcement" ]: announcement
+            [ "has-announcement" ]: announcement !== undefined,
+            "show-hamburger": showSidePanelToggle
         }
         , className
     );
 
-    const [ isSwitchTenantsSelected, setIsSwitchTenantsSelected ] = useState<boolean>(false);
+    /**
+     * Renders the User dropdown trigger.
+     * @returns User Dropdown rigger component.
+     */
+    const renderUserDropdownTrigger = (): ReactElement => {
 
-    const trigger = (
-        <span className="user-dropdown-trigger" data-testid={ `${ testId }-user-dropdown-trigger` }>
-            <Responsive minWidth={ 767 } className="username" data-testid={ `${ testId }-user-display-name` }>
-                {
-                    isProfileInfoLoading
-                        ? (
-                            <Placeholder data-testid={ `${ testId }-username-loading-placeholder` }>
-                                <Placeholder.Line/>
-                            </Placeholder>
-                        )
-                        : resolveUserDisplayName(profileInfo, basicProfileInfo)
-                }
-            </Responsive>
+        const renderUserDropdownTriggerAvatar = (hoverable: boolean) => (
             <UserAvatar
+                hoverable={ hoverable }
                 isLoading={ isProfileInfoLoading }
                 authState={ basicProfileInfo }
                 profileInfo={ profileInfo }
                 size="mini"
+                data-componentid={ `${ componentId }-user-avatar` }
                 data-testid={ `${ testId }-user-avatar` }
+                data-suppress=""
             />
-        </span>
-    );
+        );
+
+        return (
+            <span
+                className="user-dropdown-trigger"
+                data-componentid={ `${ componentId }-user-dropdown-trigger` }
+                data-testid={ `${ testId }-user-dropdown-trigger` }
+            >
+                {
+                    showUserDropdownTriggerLabel && (
+                        <Media
+                            greaterThan="mobile"
+                            className="username"
+                            data-componentid={ `${ componentId }-user-display-name` }
+                            data-testid={ `${ testId }-user-display-name` }
+                        >
+                            {
+                                isProfileInfoLoading
+                                    ? (
+                                        <Placeholder
+                                            data-componentid={ `${ componentId }-username-loading-placeholder` }
+                                            data-testid={ `${ testId }-username-loading-placeholder` }
+                                        >
+                                            <Placeholder.Line/>
+                                        </Placeholder>
+                                    )
+                                    : resolveUserDisplayName(profileInfo, basicProfileInfo)
+                            }
+                        </Media>
+                    )
+                }
+                {
+                    !showUserDropdownTriggerLabel && showUserDropdownTriggerBars
+                        ? (
+                            <div className="user-dropdown-trigger-with-bars-wrapper">
+                                <Icon
+                                    name="bars"
+                                    size="large"
+                                    data-componentid={ `${ componentId }-hamburger-icon` }
+                                    data-testid={ `${ testId }-hamburger-icon` }
+                                    link
+                                />
+                                { renderUserDropdownTriggerAvatar(false) }
+                            </div>
+                        )
+                        : renderUserDropdownTriggerAvatar(true)
+                }
+            </span>
+        );
+    };
 
     /**
      * Stops the dropdown from closing on click.
      *
-     * @param { React.SyntheticEvent<HTMLElement> } e - Click event.
+     * @param e - Click event.
      */
-    const handleUserDropdownClick = (e: SyntheticEvent<HTMLElement>) => {
+    const handleUserDropdownClick = (e: SyntheticEvent<HTMLElement>): void => {
         e.stopPropagation();
     };
 
     /**
      * Handles the account switch click event.
      *
-     * @param { LinkedAccountInterface } account - Target account.
+     * @param account - Target account.
      */
-    const handleLinkedAccountSwitch = (account: LinkedAccountInterface) => {
+    const handleLinkedAccountSwitch = (account: LinkedAccountInterface): void => {
         onLinkedAccountSwitch(account);
     };
 
@@ -220,382 +299,416 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
         }
 
         if (typeof profileInfo.userName === "string") {
-            const userName = profileInfo?.userName?.split("/").length > 1
-            ? profileInfo.userName.split("/")[1]
-            : profileInfo.userName;
-            return userName;
+            return profileInfo?.userName?.split("/").length > 1
+                ? profileInfo.userName.split("/")[ 1 ]
+                : profileInfo.userName;
         } else if (typeof profileInfo.userName === "object") {
-            const userName = profileInfo?.userName?.value.split("/").length > 1
-            ? profileInfo.userName.value.split("/")[1]
-            : profileInfo.userName.value;
-            return userName;
+            return profileInfo?.userName?.value.split("/").length > 1
+                ? profileInfo.userName.value.split("/")[ 1 ]
+                : profileInfo.userName.value;
         }
 
         return null;
     };
 
-    const resolveAssociatedTenants = (): ReactElement => {
-        if (Array.isArray(tenantAssociations.associatedTenants)) {
-            return (
-                <Item.Group
-                    className="tenants-list"
-                    unstackable
-                    data-testid={ `${ testId }-linked-accounts-container` }
-                >
-                    {
-                        tenantAssociations.associatedTenants.map((association, index) => (
-                            <Item
-                                className="tenant-account"
-                                key={ index }
-                                onClick={ () => onTenantSwitch(association) }
-                            >
-                                <GenericIcon
-                                    icon={ tenantIcon }
-                                    inline
-                                    size="micro"
-                                    relaxed="very"
-                                    rounded
-                                    spaced="right"
-                                    fill="white"
-                                    background={
-                                        association === tenantAssociations.currentTenant
-                                            ? "primary"
-                                            : "grey"
-                                    }
-                                    className="mt-3"
-                                />
-                                <Item.Content verticalAlign="middle">
-                                    <Item.Description>
-                                        <div
-                                            className="name"
-                                            data-testid={ `${ testId }-la-name` }
-                                        >
-                                            { association }
-                                        </div>
-                                        <div
-                                            className="email"
-                                            data-testid={ `${ testId }-la-email` }
-                                        >
-                                            { tenantAssociations.username }
-                                        </div>
-                                    </Item.Description>
-                                </Item.Content>
-                            </Item>
-                        ))
-                    }
-                </Item.Group>
-            );
+    /**
+     * Renders the list of linked accounts.
+     *
+     * @param accounts - Linked accounts.
+     * @returns Link Accounts list.
+     */
+    const renderLinkedAccounts = (accounts: LinkedAccountInterface[]): ReactElement => {
+
+        if (!(accounts && Array.isArray(accounts) && accounts.length > 0)) {
+            return null;
         }
+
+        return (
+            <Item.Group
+                unstackable
+                className="linked-accounts-list"
+                data-componentid={ `${ componentId }-linked-accounts-container` }
+                data-testid={ `${ testId }-linked-accounts-container` }
+            >
+                {
+                    accounts.map((association, index) => (
+                        <Item
+                            className="linked-account"
+                            key={ `${ association.userId }-${ index }` }
+                            onClick={ () => handleLinkedAccountSwitch(association) }
+                        >
+                            <UserAvatar
+                                bordered
+                                avatar
+                                size="little"
+                                image={ getGravatarImage(association.email) }
+                                name={ association.username }
+                                data-componentid={ `${ componentId }-la-avatar` }
+                                data-testid={ `${ testId }-la-avatar` }
+                                spaced="right"
+                                data-suppress=""
+                            />
+                            <Item.Content verticalAlign="middle">
+                                <Item.Description>
+                                    <div
+                                        className="name"
+                                        data-componentid={ `${ componentId }-la-name` }
+                                        data-testid={ `${ testId }-la-name` }
+                                    >
+                                        { resolveUsername(association.username, association.userStoreDomain) }
+                                    </div>
+                                    <div
+                                        className="email"
+                                        data-componentid={ `${ componentId }-la-email` }
+                                        data-testid={ `${ testId }-la-email` }
+                                    >
+                                        { association.tenantDomain }
+                                    </div>
+                                </Item.Description>
+                            </Item.Content>
+                        </Item>
+                    ))
+                }
+            </Item.Group>
+        );
+    };
+
+    /**
+     * Renders the links in the dropdown.
+     *
+     * @returns User Dropdown links.
+     */
+    const renderUserDropdownLinks = (): ReactElement[] => {
+
+        if (!(userDropdownLinks && userDropdownLinks.length && userDropdownLinks.length > 0)) {
+            return null;
+        }
+
+        const adjustedUserDropdownLinks: HeaderLinkCategoryInterface[] = userDropdownLinks
+            .reduce((previous: HeaderLinkCategoryInterface[], current: HeaderLinkCategoryInterface) => {
+                const { category, categoryLabel, links } : Partial<HeaderLinkCategoryInterface> = current;
+
+                if (isPrivilegedUser && category === "APPS") {
+                    // Remove my account app from privileged users.
+                    return previous;
+                }
+
+                const findObj : Partial<HeaderLinkCategoryInterface> = [ ...previous ]
+                    .find((obj) => obj.category === category);
+
+                if (!findObj) {
+                    previous.push({ category, categoryLabel, links });
+                } else {
+                    findObj.links.push(...links);
+                }
+
+                return previous;
+            }, []);
+
+        return adjustedUserDropdownLinks.map((category: HeaderLinkCategoryInterface, categoryIndex: number) => {
+
+            if (!(category.links && Array.isArray(category.links) && category.links.length > 0)) {
+                return null;
+            }
+
+            return (
+                <>
+                    { category?.categoryLabel && (
+                        <Dropdown.Header
+                            className="user-dropdown-links-category-header"
+                            content={ category.categoryLabel }
+                        />
+                    ) }
+                    {
+                        category.links.map((link: HeaderLinkInterface, linkIndex: number) => {
+
+                            if (!link) {
+                                return;
+                            }
+
+                            const {
+                                content,
+                                "data-componentid": linkComponentId,
+                                "data-testid": linkTestId,
+                                icon,
+                                name,
+                                onClick
+                            } = link;
+
+                            return (
+                                <Dropdown.Item
+                                    key={ linkIndex }
+                                    className="action-panel user-dropdown-link"
+                                    onClick={ onClick }
+                                    data-componentid={ linkComponentId }
+                                    data-testid={ linkTestId }
+                                >
+                                    {
+                                        icon && (
+                                            <GenericIcon
+                                                transparent
+                                                icon={ icon }
+                                                size="micro"
+                                                spaced="right"
+                                            />
+                                        )
+                                    }
+                                    { name }
+                                    { content }
+                                </Dropdown.Item>
+                            );
+                        })
+                    }
+                    { (categoryIndex !== userDropdownLinks.length - 1) && <Dropdown.Divider /> }
+                </>
+            );
+        });
+    };
+
+    /**
+     * Renders the header extensions.
+     *
+     * @param floated - Floated direction.
+     * @returns Header Extension links.
+     */
+    const renderHeaderExtensionLinks = (floated: HeaderExtension[ "floated" ]): ReactElement => {
+
+        return (
+            <>
+                {
+                    extensions.map((extension: HeaderExtension, index: number) => {
+                        if (extension.floated !== floated || !extension.component) {
+                            return;
+                        }
+
+                        if (typeof extension.component === "string") {
+                            return (
+                                <div
+                                    key={ index }
+                                    data-componentid={ extension[ "data-componentid" ] }
+                                    data-testid={ extension[ "data-testid" ] }
+                                    className="header-link"
+                                >
+                                    { extension.component }
+                                </div>
+                            );
+                        }
+
+                        return extension.component;
+                    })
+                }
+            </>
+        );
     };
 
     return (
-      <Menu id="app-header" className={ classes } fixed={ fixed } borderless data-testid={ testId }>
-          { announcement }
-          <Container
-              fluid={ fluid }
-              data-testid={ `${ testId }-container` }
-              className="app-header-container"
-          >
-              {
-                  showSidePanelToggle
-                      ? (
-                          <Responsive as={ Menu.Item } maxWidth={ 767 }>
-                              <Icon
-                                  name="bars"
-                                  size="large"
-                                  onClick={ onSidePanelToggleClick }
-                                  data-testid={ `${ testId }-hamburger-icon` }
-                                  link
-                              />
-                          </Responsive>
-                      )
-                      : null
-              }
-              {
-                  brand && (
-                      <Responsive className="p-0" as={ Menu.Item } minWidth={ 767 }>
-                          <Menu.Item
-                              as={ Link }
-                              to={ brandLink }
-                              header
-                              data-testid={ `${ testId }-brand-container` }
-                          >
-                              { brand }
-                          </Menu.Item>
-                      </Responsive>
+        <Menu
+            id="app-header"
+            className={ classes }
+            fixed={ fixed }
+            borderless
+            data-componentid={ componentId }
+            data-testid={ testId }
+        >
+            { announcement }
+            <Container
+                fluid={ fluid }
+                data-componentid={ `${ componentId }-container` }
+                data-testid={ `${ testId }-container` }
+                className="app-header-container"
+            >
+                {
+                    showSidePanelToggle
+                        ? (
+                            <Media lessThan="tablet">
+                                { (className: string, renderChildren: boolean) => (
+                                    <span className={ className }>
+                                        { renderChildren && (
+                                            <Menu.Item className="bars-container">
+                                                <Icon
+                                                    name="bars"
+                                                    size="large"
+                                                    onClick={ onSidePanelToggleClick }
+                                                    data-componentid={ `${ componentId }-hamburger-icon` }
+                                                    data-testid={ `${ testId }-hamburger-icon` }
+                                                    link
+                                                />
+                                            </Menu.Item>
+                                        ) }
+                                    </span>
+                                ) }
+                            </Media>
+                        )
+                        : null
+                }
+                {
+                    brand && (
+                        <Media greaterThan="mobile">
+                            { (className: string, renderChildren: boolean) => (
+                                <span className={ className }>
+                                    { renderChildren && (
+                                        <Menu.Item className="brand-container">
+                                            <Menu.Item
+                                                as={ Link }
+                                                to={ brandLink }
+                                                header
+                                                data-componentid={ `${ componentId }-brand-container` }
+                                                data-testid={ `${ testId }-brand-container` }
+                                            >
+                                                { brand }
+                                            </Menu.Item>
+                                        </Menu.Item>
+                                    ) }
+                                </span>
+                            ) }
+                        </Media>
 
-                  )
-              }
-              {
-                  extensions && (
-                      extensions instanceof Array
-                      && extensions.length > 0
-                      && extensions.some((extension: HeaderExtension) => extension.floated === "left")
-                      && (
-                          <Menu.Menu
-                              position="left"
-                              className="header-extensions left"
-                              data-testid={ `${ testId }-left-extensions` }
-                          >
-                              {
-                                  extensions.map((extension: HeaderExtension) =>
-                                      extension.floated === "left" && extension.component)
-                              }
-                          </Menu.Menu>
-                      )
-                  )
-              }
-              { (
-                  <Menu.Menu
-                      position="right"
-                      className="header-extensions right"
-                      data-testid={ `${ testId }-user-dropdown-container` }
-                  >
-                      {
-                          extensions && (
-                              extensions instanceof Array
-                              && extensions.length > 0
-                              && extensions.some((extension: HeaderExtension) =>
-                                  extension.floated === "right")
-                              && extensions.map((extension: HeaderExtension) =>
-                                  extension.floated === "right" && extension.component)
-                          )
-                      }
-                      {
-                          showUserDropdown && (
-                              <Dropdown
-                                  onBlur={ () => setIsSwitchTenantsSelected(false) }
-                                  item
-                                  trigger={ trigger }
-                                  floating
-                                  icon={ userDropdownIcon }
-                                  className="user-dropdown"
-                                  data-testid={ `${ testId }-user-dropdown` }
-                              >
-                                  {
-                                      !isSwitchTenantsSelected ? (
-                                          <Dropdown.Menu onClick={ handleUserDropdownClick }>
-                                              <Item.Group className="authenticated-user" unstackable>
-                                                  <Item
-                                                      className="header"
-                                                      key={ `logged-in-user-${ profileInfo.userName }` }
-                                                  >
-                                                      <UserAvatar
-                                                          authState={ basicProfileInfo }
-                                                          profileInfo={ profileInfo }
-                                                          isLoading={ isProfileInfoLoading }
-                                                          data-testid={ `${ testId }-user-dropdown-avatar` }
-                                                          size="x60"
-                                                      />
-                                                      <Item.Content verticalAlign="middle">
-                                                          <Item.Description>
-                                                              <div
-                                                                  className="name"
-                                                                  data-testid={
-                                                                      `${ testId }-user-dropdown-display-name`
-                                                                  }
-                                                              >
-                                                                  {
-                                                                      isProfileInfoLoading
-                                                                          ? <Placeholder>
-                                                                              <Placeholder.Line/>
-                                                                          </Placeholder>
-                                                                          : resolveUserDisplayName(
-                                                                          profileInfo, basicProfileInfo
-                                                                          )
-                                                                  }
-                                                              </div>
+                    )
+                }
+                {
+                    extensions && (
+                        extensions instanceof Array
+                        && extensions.length > 0
+                        && extensions.some((extension: HeaderExtension) => extension.floated === "left")
+                        && (
+                            <Menu.Menu
+                                position="left"
+                                className="header-extensions left"
+                                data-componentid={ `${ componentId }-left-extensions` }
+                                data-testid={ `${ testId }-left-extensions` }
+                            >
+                                { renderHeaderExtensionLinks("left") }
+                            </Menu.Menu>
+                        )
+                    )
+                }
+                { (
+                    <Menu.Menu
+                        position="right"
+                        className="header-extensions right"
+                        data-componentid={ `${ componentId }-user-dropdown-container` }
+                        data-testid={ `${ testId }-user-dropdown-container` }
+                    >
+                        { renderHeaderExtensionLinks("right") }
+                        {
+                            showUserDropdown && (
+                                <Menu.Item className="user-dropdown-menu-trigger" key="user-dropdown-trigger">
+                                    <Dropdown
+                                        item
+                                        trigger={ renderUserDropdownTrigger() }
+                                        floating
+                                        pointing={ userDropdownPointing }
+                                        icon={ userDropdownIcon }
+                                        className="user-dropdown"
+                                        data-componentid={ `${ componentId }-user-dropdown` }
+                                        data-testid={ `${ testId }-user-dropdown` }
+                                    >
+                                        {
+                                            <Dropdown.Menu
+                                                className="user-dropdown-menu"
+                                                onClick={ handleUserDropdownClick }
+                                            >
+                                                { showOrganizationLabel && (organizationLabel) }
+                                                <Item.Group className="authenticated-user" unstackable>
+                                                    <Item
+                                                        className="header"
+                                                        key={ `logged-in-user-${ profileInfo.userName }` }
+                                                        onClick={ onAvatarClick }
+                                                    >
+                                                        <UserAvatar
+                                                            hoverable={ false }
+                                                            authState={ basicProfileInfo }
+                                                            profileInfo={ profileInfo }
+                                                            isLoading={ isProfileInfoLoading }
+                                                            data-componentid={
+                                                                `${ componentId }-user-dropdown-avatar`
+                                                            }
+                                                            data-testid={ `${ testId }-user-dropdown-avatar` }
+                                                            size="x50"
+                                                            onClick={ onAvatarClick }
+                                                            data-suppress=""
+                                                        />
+                                                        <Item.Content verticalAlign="middle">
+                                                            <Item.Description
+                                                                className={
+                                                                    onAvatarClick
+                                                                        ? "linked"
+                                                                        : ""
+                                                                }
+                                                            >
+                                                                <div
+                                                                    className="name"
+                                                                    data-componentid={
+                                                                        `${ componentId }-user-dropdown-display-name`
+                                                                    }
+                                                                    data-testid={
+                                                                        `${ testId }-user-dropdown-display-name`
+                                                                    }
+                                                                    data-suppress=""
+                                                                >
+                                                                    {
+                                                                        isProfileInfoLoading
+                                                                            ? (
+                                                                                <Placeholder>
+                                                                                    <Placeholder.Line/>
+                                                                                </Placeholder>
+                                                                            )
+                                                                            : resolveUserDisplayName(
+                                                                                profileInfo, basicProfileInfo
+                                                                            )
+                                                                    }
+                                                                </div>
 
-                                                              {
-                                                                  (profileInfo.emails !== undefined
-                                                                      && profileInfo.emails !== null) && (
-                                                                      <div
-                                                                          className="email"
-                                                                          data-testid={
-                                                                              `${ testId }-user-dropdown-email`
-                                                                          }
-                                                                      >
-                                                                          { isProfileInfoLoading
-                                                                              ? (
-                                                                                  <Placeholder>
-                                                                                      <Placeholder.Line/>
-                                                                                  </Placeholder>)
-                                                                              : resolveAuthenticatedUserEmail()
-                                                                          }
-                                                                      </div>
-                                                                  )
-                                                              }
-                                                              {
-                                                                  userDropdownInfoAction && (
-                                                                      <>
-                                                                          <Divider hidden/>
-                                                                          { userDropdownInfoAction }
-                                                                      </>
-                                                                  )
-                                                              }
-                                                          </Item.Description>
-                                                      </Item.Content>
-                                                  </Item>
-                                              </Item.Group>
-                                              {
-                                                  (linkedAccounts
-                                                      && linkedAccounts.length
-                                                      && linkedAccounts.length > 0)
-                                                      ? (
-                                                          <Item.Group
-                                                              className="linked-accounts-list"
-                                                              unstackable
-                                                              data-testid={ `${ testId }-linked-accounts-container` }
-                                                          >
-                                                              {
-                                                                  linkedAccounts.map((association, index) => (
-                                                                      <Item
-                                                                          className="linked-account"
-                                                                          key={ `${ association.userId }
-                                                                  -${ index }` }
-                                                                          onClick={
-                                                                              () => handleLinkedAccountSwitch(
-                                                                                  association
-                                                                              )
-                                                                          }
-                                                                      >
-                                                                          <UserAvatar
-                                                                              bordered
-                                                                              avatar
-                                                                              size="little"
-                                                                              image={ getGravatarImage(
-                                                                                  association.email
-                                                                              ) }
-                                                                              name={ association.username }
-                                                                              data-testid={ `${ testId }-la-avatar` }
-                                                                              spaced="right"
-                                                                          />
-                                                                          <Item.Content verticalAlign="middle">
-                                                                              <Item.Description>
-                                                                                  <div
-                                                                                      className="name"
-                                                                                      data-testid={
-                                                                                          `${ testId }-la-name`
-                                                                                      }
-                                                                                  >
-                                                                                      {
-                                                                                          resolveUsername(
-                                                                                              association.username,
-                                                                                              association.userStoreDomain
-                                                                                          )
-                                                                                      }
-                                                                                  </div>
-                                                                                  <div
-                                                                                      className="email"
-                                                                                      data-testid={
-                                                                                          `${ testId }-la-email` }
-                                                                                  >
-                                                                                      { association.tenantDomain }
-                                                                                  </div>
-                                                                              </Item.Description>
-                                                                          </Item.Content>
-                                                                      </Item>
-                                                                  ))
-                                                              }
-                                                          </Item.Group>
-                                                      )
-                                                      : null
-                                              }
-                                              {
-                                                  tenantAssociations &&
-                                                  tenantAssociations.associatedTenants &&
-                                                  Array.isArray(tenantAssociations.associatedTenants)
-                                                      ? (
-                                                          <Dropdown.Item
-                                                              className="action-panel"
-                                                              onClick={ () => setIsSwitchTenantsSelected(true) }
-                                                              data-testid={ `${ testId }
-                                                            -dropdown-link-${ name }` }
-                                                          >
-                                                              <Icon
-                                                                  className="link-icon"
-                                                                  name="exchange"
-                                                              />
-                                                              { tenantSwitchHeader }
-                                                          </Dropdown.Item>
-                                                      )
-                                                      : null
-                                              }
-                                              {
-                                                  (userDropdownLinks
-                                                      && userDropdownLinks.length
-                                                      && userDropdownLinks.length > 0)
-                                                      ? userDropdownLinks.map((link, index) => {
-                                                          const {
-                                                              content,
-                                                              icon,
-                                                              name,
-                                                              onClick
-                                                          } = link;
-
-                                                          return (
-                                                              <Dropdown.Item
-                                                                  key={ index }
-                                                                  className="action-panel"
-                                                                  onClick={ onClick }
-                                                                  data-testid={ `${ testId }-dropdown-link-${ name.replace(" ", "-") }` }
-                                                              >
-                                                                  {
-                                                                      icon &&
-                                                                      <Icon
-                                                                          className="link-icon"
-                                                                          name={ icon }
-                                                                      />
-                                                                  }
-                                                                  { name }
-                                                                  { content }
-                                                              </Dropdown.Item>
-                                                          );
-                                                      })
-                                                      : null
-                                              }
-                                          </Dropdown.Menu>
-                                      ) : (
-                                          <Dropdown.Menu onClick={ handleUserDropdownClick }>
-                                              <Item.Group className="authenticated-user" unstackable>
-                                                  <Item
-                                                      className="header"
-                                                      key={ `logged-in-user-${ profileInfo.userName }` }
-                                                  >
-                                                      <Grid>
-                                                          <Grid.Row columns={ 2 }>
-                                                              <Grid.Column width={ 2 } floated="left">
-                                                                  <Icon
-                                                                      onClick={
-                                                                          () => setIsSwitchTenantsSelected(false)
-                                                                      }
-                                                                      className="link-icon spaced-right"
-                                                                      name="arrow left"
-                                                                  />
-                                                              </Grid.Column>
-                                                              <Grid.Column width={ 12 }>
-                                                                  { tenantSwitchHeader }
-                                                              </Grid.Column>
-                                                          </Grid.Row>
-                                                      </Grid>
-                                                  </Item>
-                                              </Item.Group>
-                                              {
-                                                  tenantAssociations
-                                                      ? resolveAssociatedTenants()
-                                                      : null
-                                              }
-                                          </Dropdown.Menu>
-                                      )
-                                  }
-                              </Dropdown>
-                          )
-                      }
-                  </Menu.Menu>
-              ) }
-          </Container>
-          { children }
-      </Menu>
+                                                                {
+                                                                    (profileInfo.emails !== undefined
+                                                                        && profileInfo.emails !== null
+                                                                        && resolveAuthenticatedUserEmail() !==
+                                                                            resolveUserDisplayName(
+                                                                                profileInfo, basicProfileInfo)) && (
+                                                                        <div
+                                                                            className="email"
+                                                                            data-componentid={
+                                                                                `${ componentId }-user-dropdown-email`
+                                                                            }
+                                                                            data-testid={
+                                                                                `${ testId }-user-dropdown-email`
+                                                                            }
+                                                                        >
+                                                                            { isProfileInfoLoading
+                                                                                ? (
+                                                                                    <Placeholder>
+                                                                                        <Placeholder.Line/>
+                                                                                    </Placeholder>)
+                                                                                : resolveAuthenticatedUserEmail()
+                                                                            }
+                                                                        </div>
+                                                                    )
+                                                                }
+                                                                {
+                                                                    userDropdownInfoAction && (
+                                                                        <>
+                                                                            <Divider hidden/>
+                                                                            { userDropdownInfoAction }
+                                                                        </>
+                                                                    )
+                                                                }
+                                                            </Item.Description>
+                                                        </Item.Content>
+                                                    </Item>
+                                                </Item.Group>
+                                                { renderLinkedAccounts(linkedAccounts) }
+                                                { renderUserDropdownLinks() }
+                                            </Dropdown.Menu>
+                                        }
+                                    </Dropdown>
+                                </Menu.Item>
+                            )
+                        }
+                    </Menu.Menu>
+                ) }
+            </Container>
+            { children }
+        </Menu>
     );
 };
 
@@ -603,13 +716,17 @@ export const Header: FunctionComponent<HeaderPropsInterface> = (
  * Default prop types for the header component.
  */
 Header.defaultProps = {
+    "data-componentid": "app-header",
     "data-testid": "app-header",
     fixed: "top",
     fluid: false,
+    isPrivilegedUser: false,
     onLinkedAccountSwitch: () => null,
     onSidePanelToggleClick: () => null,
     showSidePanelToggle: true,
     showUserDropdown: true,
-    tenantSwitchHeader: "Switch Tenant",
-    userDropdownIcon: null
+    showUserDropdownTriggerBars: true,
+    showUserDropdownTriggerLabel: true,
+    userDropdownIcon: null,
+    userDropdownPointing: "top right"
 };

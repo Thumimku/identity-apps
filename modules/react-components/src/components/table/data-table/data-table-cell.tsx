@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, PropsWithChildren, ReactElement } from "react";
 import { Table, TableCellProps } from "semantic-ui-react";
@@ -24,14 +24,15 @@ import { Table, TableCellProps } from "semantic-ui-react";
 /**
  * Proptypes for the Data Table Cell component.
  */
-export interface DataTableCellPropsInterface extends TableCellProps, TestableComponentInterface { }
+export interface DataTableCellPropsInterface extends TableCellProps, IdentifiableComponentInterface,
+    TestableComponentInterface { }
 
 /**
  * Data Table Cell component.
  *
- * @param {DataTableCellPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns DataTableCell component
  */
 export const DataTableCell: FunctionComponent<PropsWithChildren<DataTableCellPropsInterface>> = (
     props: PropsWithChildren<DataTableCellPropsInterface>
@@ -41,6 +42,7 @@ export const DataTableCell: FunctionComponent<PropsWithChildren<DataTableCellPro
         children,
         className,
         action,
+        [ "data-componentid" ]: componentId,
         ...rest
     } = props;
 
@@ -52,7 +54,11 @@ export const DataTableCell: FunctionComponent<PropsWithChildren<DataTableCellPro
     );
 
     return (
-        <Table.Cell className={ classes } { ...rest }>
+        <Table.Cell
+            className={ classes }
+            data-componentid={ componentId }
+            { ...rest }
+        >
             { children }
         </Table.Cell>
     );
@@ -62,5 +68,6 @@ export const DataTableCell: FunctionComponent<PropsWithChildren<DataTableCellPro
  * Default props for the component.
  */
 DataTableCell.defaultProps = {
+    "data-componentid": "data-table-cell",
     "data-testid": "data-table-cell"
 };

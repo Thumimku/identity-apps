@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,7 @@
 import { StringUtils } from "@wso2is/core/utils";
 import { InitOptions, Resource } from "i18next";
 import { I18nModuleConstants } from "./constants";
-import { I18nModuleOptionsInterface, LocaleBundles, SupportedLanguagesMeta } from "./models";
+import { I18nModuleOptionsInterface, LocaleBundles, MetaI18N, SupportedLanguagesMeta } from "./models";
 
 /**
  * Generate the i18n options.
@@ -32,10 +32,10 @@ import { I18nModuleOptionsInterface, LocaleBundles, SupportedLanguagesMeta } fro
  * @return {InitOptions} Init options config.
  */
 export const generateI18nOptions = (options: InitOptions,
-                                    override: boolean,
-                                    useBackend: boolean,
-                                    debug: boolean,
-                                    defaultTranslations?: LocaleBundles): InitOptions => {
+    override: boolean,
+    useBackend: boolean,
+    debug: boolean,
+    defaultTranslations?: LocaleBundles): InitOptions => {
 
     const DEFAULT_INIT_OPTIONS: InitOptions = {
         contextSeparator: "_",
@@ -106,7 +106,7 @@ export const getResourcesSupportedByDefault = (defaultTranslations: LocaleBundle
                 ...resources,
                 [ locale.meta.code ]: {
                     ...resources[ locale.meta.code ],
-                    ...resource as object
+                    ...resource as Record<string, unknown>
                 }
             };
         }
@@ -143,9 +143,9 @@ export const getLanguagesSupportedByDefault = (defaultTranslations: LocaleBundle
  * @return {boolean} Returns true if supported, else returns false.
  */
 export const isLanguageSupported = (detectedLanguage: string,
-                                    supportedLanguages?: string[],
-                                    meta?: SupportedLanguagesMeta,
-                                    defaultTranslations?: LocaleBundles): boolean => {
+    supportedLanguages?: string[],
+    meta?: SupportedLanguagesMeta,
+    defaultTranslations?: LocaleBundles): boolean => {
 
     let languages: string[] = defaultTranslations
         ? getLanguagesSupportedByDefault(defaultTranslations)
@@ -180,9 +180,10 @@ export const isLanguageSupported = (detectedLanguage: string,
  * @return {string} Resolved path.
  */
 export const generateBackendPaths = (language: string[],
-                                     namespace: string[],
-                                     appBaseName: string,
-                                     i18nBundleOptions: I18nModuleOptionsInterface): string => {
+    namespace: string[],
+    appBaseName: string,
+    i18nBundleOptions: I18nModuleOptionsInterface,
+    metaFile: MetaI18N): string => {
 
     // If `appBaseName` is "", avoids adding a forward slash.
     const resolvedAppBaseName: string = StringUtils.removeSlashesFromPath(appBaseName)
@@ -192,9 +193,12 @@ export const generateBackendPaths = (language: string[],
     const fullResourcePath = `${ resolvedAppBaseName }${
         StringUtils.removeSlashesFromPath(i18nBundleOptions?.resourcePath) }`;
 
+    const fileNames = metaFile[ language[ 0 ] ]?.paths[ namespace[ 0 ] ]?.split("/");
+    const fileName = fileNames ? fileNames[ fileNames?.length - 1 ] : "";
+
     if (i18nBundleOptions?.namespaceDirectories.has(namespace[0])) {
         return `/${ fullResourcePath }/${ language[0] }/${ i18nBundleOptions.namespaceDirectories.get(namespace[0]) }/${
-            namespace[0] }.json`;
+            fileName}`;
     }
 
     return `/${ fullResourcePath }/${ language[0] }/${ namespace[0] }.json`;

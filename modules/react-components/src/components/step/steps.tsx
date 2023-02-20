@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,9 +16,10 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, {
+    CSSProperties,
     Children,
     FunctionComponent,
     PropsWithChildren,
@@ -33,7 +34,7 @@ import { Step } from "./step";
 /**
  * Steps component prop types.
  */
-export interface StepsPropsInterface extends TestableComponentInterface {
+export interface StepsPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Currently active step.
      */
@@ -53,15 +54,15 @@ export interface StepsPropsInterface extends TestableComponentInterface {
     /**
      * Custom styles object
      */
-    style?: object;
+    style?:  CSSProperties | undefined;
 }
 
 /**
  * Steps component.
  *
- * @param {React.PropsWithChildren<StepsPropsInterface>} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns a React component
  */
 export const Steps: FunctionComponent<PropsWithChildren<StepsPropsInterface>> & StepsSubComponentsInterface = (
     props: PropsWithChildren<StepsPropsInterface>
@@ -74,6 +75,7 @@ export const Steps: FunctionComponent<PropsWithChildren<StepsPropsInterface>> & 
         header,
         initial,
         style,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -89,10 +91,21 @@ export const Steps: FunctionComponent<PropsWithChildren<StepsPropsInterface>> & 
     }, [ children ]);
 
     return (
-        <div className={ classes } style={ style } data-testid={ testId }>
+        <div
+            className={ classes }
+            style={ style }
+            data-testid={ testId }
+            data-componentid={ componentId }
+        >
             { header && (
                 <>
-                    <div className="header" data-testid={ `${ testId }-header` }>{ header }</div>
+                    <div
+                        className="header"
+                        data-componentid={ `${ componentId }-header` }
+                        data-testid={ `${ testId }-header` }
+                    >
+                        { header }
+                    </div>
                     <Divider hidden/>
                 </>
             ) }
@@ -144,6 +157,7 @@ Steps.Step = Step;
  */
 Steps.defaultProps = {
     current: 0,
+    "data-componentid": "steps",
     "data-testid": "steps",
     initial: 0
 };

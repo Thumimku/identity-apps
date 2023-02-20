@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,13 +16,16 @@
  * under the License.
  */
 
+import { AccessControlConstants, Show } from "@wso2is/access-control";
 import { TestableComponentInterface } from "@wso2is/core/models";
 import { Field, Forms } from "@wso2is/forms";
-import { Hint } from "@wso2is/react-components";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import { Code, DocumentationLink, Hint, Message, useDocumentation } from "@wso2is/react-components";
+import classNames from "classnames";
+import React, { Fragment, FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Grid } from "semantic-ui-react";
-import { SimpleUserStoreListItemInterface } from "../../../applications";
+import { identityProviderConfig } from "../../../../extensions";
+import { SimpleUserStoreListItemInterface } from "../../../applications/models";
 import {
     IdentityProviderInterface,
     JITProvisioningResponseInterface,
@@ -33,22 +36,29 @@ import {
  *  Just-in time provisioning configurations for the IdP.
  */
 interface JITProvisioningConfigurationFormPropsInterface extends TestableComponentInterface {
+    idpId: string;
     onSubmit: (values: IdentityProviderInterface) => void;
     initialValues: JITProvisioningResponseInterface;
     useStoreList: SimpleUserStoreListItemInterface[];
+    isReadOnly?: boolean;
+    /**
+     * Specifies if the form is submitting.
+     */
+    isSubmitting?: boolean;
 }
 
 enum JITProvisioningConstants {
     ENABLE_JIT_PROVISIONING_KEY = "enableJITProvisioning",
     PROVISIONING_USER_STORE_DOMAIN_KEY = "provisioningUserstoreDomain",
-    PROVISIONING_SCHEME_TYPE_KEY = "provisioningScheme"
+    PROVISIONING_SCHEME_TYPE_KEY = "provisioningScheme",
+    ASSOCIATE_LOCAL_USER = "associateLocalUser"
 }
 
 /**
  * Just-in time Provisioning configurations form component.
  *
- * @param {JITProvisioningConfigurationFormPropsInterface} props - Props injected to the component.
- * @return {ReactElement}
+ * @param props - Props injected to the component.
+ * @returns
  */
 export const JITProvisioningConfigurationsForm: FunctionComponent<JITProvisioningConfigurationFormPropsInterface> = (
     props: JITProvisioningConfigurationFormPropsInterface
@@ -58,35 +68,44 @@ export const JITProvisioningConfigurationsForm: FunctionComponent<JITProvisionin
         initialValues,
         onSubmit,
         useStoreList,
+        isReadOnly,
+        isSubmitting,
         [ "data-testid" ]: testId
     } = props;
 
-    const [isJITProvisioningEnabled, setIsJITProvisioningEnabled] = useState<boolean>(false);
-
     const { t } = useTranslation();
+    const { getLink } = useDocumentation();
+
+    const [ isJITProvisioningEnabled, setIsJITProvisioningEnabled ] = useState<boolean>(false);
 
     /**
      * Prepare form values for submitting.
      *
      * @param values - Form values.
-     * @return {any} Sanitized form values.
+     * @returns
      */
     const updateConfiguration = (values: any): any => {
         return {
-            ...initialValues,
-            isEnabled: values.get(JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY)
-                .includes(JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY),
-            scheme: values.get(JITProvisioningConstants.PROVISIONING_SCHEME_TYPE_KEY),
-            userstore: values.get(JITProvisioningConstants.PROVISIONING_USER_STORE_DOMAIN_KEY)
+            associateLocalUser: values.get(JITProvisioningConstants.ASSOCIATE_LOCAL_USER)
+                ?.includes(JITProvisioningConstants.ASSOCIATE_LOCAL_USER) ?? initialValues?.associateLocalUser,
+            isEnabled: values.get(
+                JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY
+            ).includes(JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY) ?? initialValues?.isEnabled,
+            scheme: values.get(
+                JITProvisioningConstants.PROVISIONING_SCHEME_TYPE_KEY
+            ) ?? initialValues?.scheme,
+            userstore: values.get(
+                JITProvisioningConstants.PROVISIONING_USER_STORE_DOMAIN_KEY
+            ) ?? initialValues.userstore
         } as JITProvisioningResponseInterface;
     };
 
     /**
      * Create user store options.
-     *
      */
     const getUserStoreOption = () => {
         const allowedOptions = [];
+
         if (useStoreList) {
             useStoreList?.map((userStore) => {
                 allowedOptions.push({
@@ -104,121 +123,221 @@ export const JITProvisioningConfigurationsForm: FunctionComponent<JITProvisionin
         if (initialValues?.isEnabled) {
             setIsJITProvisioningEnabled(initialValues?.isEnabled);
         }
-    }, [initialValues]);
+    }, [ initialValues ]);
+
+    const supportedProvisioningSchemes = [ {
+        label: t("console:develop.features.authenticationProvider" +
+            ".forms.jitProvisioning.provisioningScheme.children.0"),
+        value: SupportedJITProvisioningSchemes.PROMPT_USERNAME_PASSWORD_CONSENT
+    }, {
+        label: t("console:develop.features.authenticationProvider" +
+            ".forms.jitProvisioning.provisioningScheme.children.1"),
+        value: SupportedJITProvisioningSchemes.PROMPT_PASSWORD_CONSENT
+    }, {
+        label: t("console:develop.features.authenticationProvider" +
+            ".forms.jitProvisioning.provisioningScheme.children.2"),
+        value: SupportedJITProvisioningSchemes.PROMPT_CONSENT
+    }, {
+        label: t("console:develop.features.authenticationProvider." +
+            "forms.jitProvisioning.provisioningScheme.children.3"),
+        value: SupportedJITProvisioningSchemes.PROVISION_SILENTLY
+    } ];
+
+    const ProxyModeConflictMessage = (
+        <div
+            style={ { animationDuration: "350ms" } }
+            className={ classNames("ui image warning scale transition", {
+                "hidden animating out": isJITProvisioningEnabled,
+                "visible animating in": !isJITProvisioningEnabled
+            }) }>
+            <Message
+                data-componentid="proxy-mode-conflict-warning-message"
+                data-testid="proxy-mode-conflict-warning-message"
+                type="warning"
+                // Semantic hides warning messages inside <form> by default
+                // Overriding the behaviour here to make sure it renders properly.
+                header="Warning"
+                content={
+                    (
+                        <>
+                            JIT user provisioning should be enabled for external identity providers
+                            (connections) when there are MFA mechanisms
+                            such as <Code>TOTP</Code> and <Code>Email OTP</Code> configured
+                            in an application&apos;s login flow.
+                            <DocumentationLink link={ getLink("develop.connections.edit.advancedSettings.jit") }>
+                                Learn More
+                            </DocumentationLink>
+                        </>
+                    )
+                }
+            />
+        </div>
+    );
 
     return (
         <Forms onSubmit={ (values) => onSubmit(updateConfiguration(values)) }>
             <Grid>
-                <Grid.Row columns={ 1 }>
-                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 8 }>
-                        <Field
-                            name={ JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY }
-                            label=""
-                            required={ false }
-                            requiredErrorMessage=""
-                            value={
-                                initialValues?.isEnabled ? [JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY]
-                                    : []
-                            }
-                            type="checkbox"
-                            listen={
-                                (values) => {
-                                    setIsJITProvisioningEnabled(
-                                        values.get(JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY)
-                                            .includes(JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY)
-                                    );
+                {
+                    identityProviderConfig?.jitProvisioningSettings?.enableJitProvisioningField?.show
+                    && (
+                        <Grid.Row columns={ 1 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 7 }>
+                                <Field
+                                    name={ JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY }
+                                    label=""
+                                    required={ false }
+                                    requiredErrorMessage=""
+                                    value={
+                                        initialValues?.isEnabled
+                                            ? [ JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY ]
+                                            : []
+                                    }
+                                    type="checkbox"
+                                    listen={ (values) => {
+                                        setIsJITProvisioningEnabled(
+                                            values
+                                                .get(JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY)
+                                                .includes(JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY)
+                                        );
+                                    } }
+                                    children={ [ {
+                                        label: t("console:develop.features.authenticationProvider.forms." +
+                                            "jitProvisioning.enableJITProvisioning.label"),
+                                        value: JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY
+                                    } ] }
+                                    data-testid={ `${ testId }-is-enable` }
+                                    readOnly={ isReadOnly }
+                                />
+                                <Hint>
+                                    When enabled, users who log in with this identity provider will be
+                                    provisioned to your organization.
+                                </Hint>
+                                { !isJITProvisioningEnabled
+                                    ? ProxyModeConflictMessage
+                                    : <Fragment />
                                 }
-                            }
-                            children={ [
-                                {
-                                    label: t("console:develop.features.idp.forms." +
-                                        "jitProvisioning.enableJITProvisioning.label"),
-                                    value: JITProvisioningConstants.ENABLE_JIT_PROVISIONING_KEY
-                                }
-                            ] }
-                            toggle
-                            data-testid={ `${ testId }-is-enable` }
-                        />
-                        <Hint>
-                            { t("console:develop.features.idp.forms.jitProvisioning.enableJITProvisioning.hint") }
-                        </Hint>
-                    </Grid.Column>
-                </Grid.Row>
+                            </Grid.Column>
+                        </Grid.Row>
+                    )
+                }
+                {
+                    identityProviderConfig?.jitProvisioningSettings?.enableAssociateLocalUserField?.show &&
+                    isJITProvisioningEnabled && (
+                        <Grid.Row columns={ 1 }>
+                            <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 7 }>
+                                <Field
+                                    name={ JITProvisioningConstants.ASSOCIATE_LOCAL_USER }
+                                    label=""
+                                    required={ false }
+                                    requiredErrorMessage=""
+                                    value={
+                                        initialValues?.associateLocalUser
+                                            ? [ JITProvisioningConstants.ASSOCIATE_LOCAL_USER ]
+                                            : []
+                                    }
+                                    type="checkbox"
+                                    children={ [ {
+                                        label: t("console:develop.features.authenticationProvider.forms." +
+                                            "jitProvisioning.associateLocalUser.label"),
+                                        value: JITProvisioningConstants.ASSOCIATE_LOCAL_USER
+                                    } ] }
+                                    data-testid={ `${ testId }-is-enable` }
+                                    readOnly={ isReadOnly }
+                                />
+                                <Hint>
+                                    { t("console:develop.features.authenticationProvider.forms." +
+                                        "jitProvisioning.associateLocalUser.hint") }
+                                </Hint>
+                            </Grid.Column>
+                        </Grid.Row>
+                    )
+                }
+                {
+                    identityProviderConfig?.jitProvisioningSettings?.userstoreDomainField?.show
+                        ? (
+                            <Grid.Row columns={ 1 }>
+                                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 7 }>
+                                    <Field
+                                        name={ JITProvisioningConstants.PROVISIONING_USER_STORE_DOMAIN_KEY }
+                                        label={
+                                            t("console:develop.features.authenticationProvider" +
+                                                ".forms.jitProvisioning.provisioningUserStoreDomain.label")
+                                        }
+                                        required={ false }
+                                        requiredErrorMessage=""
+                                        type="dropdown"
+                                        default={ useStoreList && useStoreList.length > 0 && useStoreList[ 0 ].name }
+                                        value={ initialValues?.userstore }
+                                        children={ getUserStoreOption() }
+                                        disabled={ !isJITProvisioningEnabled }
+                                        data-testid={ `${ testId }-user-store-domain` }
+                                        readOnly={ isReadOnly }
+                                    />
+                                    <Hint>
+                                        {
+                                            t("console:develop.features.authenticationProvider" +
+                                                ".forms.jitProvisioning.provisioningUserStoreDomain.hint")
+                                        }
+                                    </Hint>
+                                </Grid.Column>
+                            </Grid.Row>
+                        )
+                        : <Fragment />
+                }
+                {
+                    identityProviderConfig?.jitProvisioningSettings?.provisioningSchemeField?.show
+                        ? (
+                            <Grid.Row columns={ 1 }>
+                                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 7 }>
+                                    <Fragment>
+                                        <Field
+                                            required={ false }
+                                            requiredErrorMessage=""
+                                            label={ t("console:develop.features.authenticationProvider" +
+                                                ".forms.jitProvisioning.provisioningScheme.label") }
+                                            name={ JITProvisioningConstants.PROVISIONING_SCHEME_TYPE_KEY }
+                                            default={
+                                                initialValues?.scheme
+                                                    ? initialValues?.scheme
+                                                    : SupportedJITProvisioningSchemes.PROMPT_USERNAME_PASSWORD_CONSENT
+                                            }
+                                            type="radio"
+                                            children={ supportedProvisioningSchemes }
+                                            disabled={ !isJITProvisioningEnabled }
+                                            data-testid={ `${ testId }-scheme` }
+                                            readOnly={ isReadOnly }
+                                        />
+                                        <Hint>
+                                            { t("console:develop.features.authenticationProvider" +
+                                                ".forms.jitProvisioning.provisioningScheme.hint") }
+                                        </Hint>
+                                    </Fragment>
+                                </Grid.Column>
+                            </Grid.Row>
+                        )
+                        : <Fragment />
+                }
                 <Grid.Row columns={ 1 }>
-                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 8 }>
-                        <Field
-                            name={ JITProvisioningConstants.PROVISIONING_USER_STORE_DOMAIN_KEY }
-                            label={ t("console:develop.features.idp.forms.jitProvisioning." +
-                                "provisioningUserStoreDomain.label") }
-                            required={ false }
-                            requiredErrorMessage=""
-                            type="dropdown"
-                            default={ useStoreList && useStoreList.length > 0 && useStoreList[0].name }
-                            value={ initialValues?.userstore }
-                            children={ getUserStoreOption() }
-                            disabled={ !isJITProvisioningEnabled }
-                            data-testid={ `${ testId }-user-store-domain` }
-                        />
-                        <Hint>
-                            { t("console:develop.features.idp.forms.jitProvisioning.provisioningUserStoreDomain.hint") }
-                        </Hint>
-                    </Grid.Column>
-                </Grid.Row>
-
-                <Grid.Row columns={ 1 }>
-                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 8 }>
-                        <Field
-                            label={ t("console:develop.features.idp.forms.jitProvisioning.provisioningScheme.label") }
-                            name={ JITProvisioningConstants.PROVISIONING_SCHEME_TYPE_KEY }
-                            default={ initialValues?.scheme ? initialValues?.scheme :
-                                SupportedJITProvisioningSchemes.PROMPT_USERNAME_PASSWORD_CONSENT }
-                            type="radio"
-                            children={ [
-                                {
-                                    label: t("console:develop.features.idp.forms.jitProvisioning." +
-                                        "provisioningScheme.children.0"),
-                                    value: SupportedJITProvisioningSchemes.PROMPT_USERNAME_PASSWORD_CONSENT
-                                },
-                                {
-                                    label: t("console:develop.features.idp.forms.jitProvisioning." +
-                                        "provisioningScheme.children.1"),
-                                    value: SupportedJITProvisioningSchemes.PROMPT_PASSWORD_CONSENT
-                                },
-                                {
-                                    label: t("console:develop.features.idp.forms.jitProvisioning." +
-                                        "provisioningScheme.children.2"),
-                                    value: SupportedJITProvisioningSchemes.PROMPT_CONSENT
-                                },
-                                {
-                                    label: t("console:develop.features.idp.forms.jitProvisioning." +
-                                        "provisioningScheme.children.3"),
-                                    value: SupportedJITProvisioningSchemes.PROVISION_SILENTLY
-                                }
-                            ] }
-                            disabled={ !isJITProvisioningEnabled }
-                            data-testid={ `${ testId }-scheme` }
-                        />
-                        <Hint>
-                            { t("console:develop.features.idp.forms.jitProvisioning.provisioningScheme.hint") }
-                        </Hint>
-                    </Grid.Column>
-                </Grid.Row>
-                
-                <Grid.Row columns={ 1 }>
-                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 8 }>
-                        <Button
-                            primary type="submit"
-                            size="small"
-                            className="form-button"
-                            data-testid={ `${ testId }-update-button` }
-                        >
-                            { t("common:update") }
-                        </Button>
+                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 7 }>
+                        <Show when={ AccessControlConstants.IDP_EDIT }>
+                            <Button
+                                primary
+                                type="submit"
+                                size="small"
+                                className="form-button"
+                                loading={ isSubmitting }
+                                disabled={ isSubmitting }
+                                data-testid={ `${ testId }-update-button` }
+                            >
+                                { t("common:update") }
+                            </Button>
+                        </Show>
                     </Grid.Column>
                 </Grid.Row>
             </Grid>
         </Forms>
     );
+
 };
 
 /**

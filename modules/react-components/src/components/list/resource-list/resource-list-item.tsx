@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, ReactElement, ReactNode } from "react";
 import {
@@ -26,17 +26,19 @@ import {
     Icon,
     List,
     ListItemProps,
-    Popup,
     SemanticFLOATS,
     SemanticICONS,
     SemanticWIDTHS,
     StrictGridRowProps
 } from "semantic-ui-react";
+import { Popup } from "../../popup";
 
 /**
  * Proptypes for the resource list item component.
  */
-export interface ResourceListItemPropsInterface extends ListItemProps, TestableComponentInterface {
+export interface ResourceListItemPropsInterface extends ListItemProps, IdentifiableComponentInterface,
+    TestableComponentInterface {
+
     /**
      * List items actions.
      */
@@ -83,12 +85,13 @@ export interface ResourceListItemPropsInterface extends ListItemProps, TestableC
 /**
  * Resource list action interface.
  */
-export interface ResourceListActionInterface extends TestableComponentInterface {
+export interface ResourceListActionInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     disabled?: boolean;
     hidden?: boolean;
     icon: SemanticICONS;
+    popupHeader?: ReactNode;
     onClick?: () => void;
-    popupText?: string;
+    popupText?: ReactNode;
     subActions?: DropdownItemProps[];
     type: "button" | "dropdown";
 }
@@ -96,9 +99,9 @@ export interface ResourceListActionInterface extends TestableComponentInterface 
 /**
  * Resource list item component.
  *
- * @param {ResourceListItemPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns the resource list item component.
  */
 export const ResourceListItem: FunctionComponent<ResourceListItemPropsInterface> = (
     props: ResourceListItemPropsInterface
@@ -115,6 +118,8 @@ export const ResourceListItem: FunctionComponent<ResourceListItemPropsInterface>
         itemHeader,
         metaContent,
         metaColumnWidth,
+        popupHeader,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         ...rest
     } = props;
@@ -122,26 +127,38 @@ export const ResourceListItem: FunctionComponent<ResourceListItemPropsInterface>
     const classes = classNames("resource-list-item", className);
 
     return (
-        <List.Item className={ classes } data-testid={ testId } { ...rest }>
+        <List.Item
+            className={ classes }
+            data-componentid={ componentId }
+            data-testid={ testId }
+            { ...rest }
+        >
             <Grid>
-                <Grid.Row columns={
-                    metaContent instanceof Array
-                        ? (metaContent.length + 2) as StrictGridRowProps[ "columns" ]
-                        : (itemHeader || itemDescription)
-                            ? 3
-                            : 2
-                }>
+                <Grid.Row
+                    columns={
+                        metaContent instanceof Array
+                            ? (metaContent.length + 2) as StrictGridRowProps[ "columns" ]
+                            : (itemHeader || itemDescription)
+                                ? 3
+                                : 2
+                    }
+                >
                     { (itemDescription || itemHeader)
                         ? (
                             <Grid.Column width={ descriptionColumnWidth } className="resource-item-column">
                                 { avatar }
                                 <List.Content>
-                                    <List.Header className="list-item-name" data-testid={ `${ testId }-heading` }>
+                                    <List.Header
+                                        className="list-item-name"
+                                        data-componentid={ `${ componentId }-heading` }
+                                        data-testid={ `${ testId }-heading` }
+                                    >
                                         { itemHeader }
                                     </List.Header>
                                     { itemDescription && (
                                         <List.Description
                                             className="list-item-description"
+                                            data-componentid={ `${ componentId }-description` }
                                             data-testid={ `${ testId }-description` }
                                         >
                                             { itemDescription }
@@ -158,16 +175,22 @@ export const ResourceListItem: FunctionComponent<ResourceListItemPropsInterface>
                                 metaContent?.map((content, index) => {
                                     return (
                                         <Grid.Column key={ index } width={ metaColumnWidth } verticalAlign="middle">
-                                            <List.Content data-testid={ `${ testId }-meta-content-${ index }` }>
+                                            <List.Content
+                                                data-componentid={ `${ componentId }-meta-content-${ index }` }
+                                                data-testid={ `${ testId }-meta-content-${ index }` }
+                                            >
                                                 { content }
                                             </List.Content>
                                         </Grid.Column>
-                                    )
+                                    );
                                 })
                             )
                             : (
                                 <Grid.Column width={ metaColumnWidth } verticalAlign="middle">
-                                    <List.Content data-testid={ `${ testId }-meta-content` }>
+                                    <List.Content
+                                        data-componentid={ `${ componentId }-meta-content` }
+                                        data-testid={ `${ testId }-meta-content` }
+                                    >
                                         { metaContent }
                                     </List.Content>
                                 </Grid.Column>
@@ -177,6 +200,7 @@ export const ResourceListItem: FunctionComponent<ResourceListItemPropsInterface>
                         <List.Content
                             floated={ actionsFloated }
                             className="list-item-action-panel"
+                            data-componentid={ `${ componentId }-actions` }
                             data-testid={ `${ testId }-actions` }
                         >
                             {
@@ -195,6 +219,9 @@ export const ResourceListItem: FunctionComponent<ResourceListItemPropsInterface>
                                                                         disabled={ action.disabled }
                                                                         trigger={ (
                                                                             <Icon
+                                                                                data-componentid={
+                                                                                    action[ "data-componentid" ]
+                                                                                }
                                                                                 data-testid={ action[ "data-testid" ] }
                                                                                 link
                                                                                 className="list-icon"
@@ -211,6 +238,11 @@ export const ResourceListItem: FunctionComponent<ResourceListItemPropsInterface>
                                                                     />
                                                                 ) }
                                                                 options={ action.subActions }
+                                                                data-componentid={
+                                                                    `${ componentId }-action-${
+                                                                        action.type
+                                                                    }-${ index }`
+                                                                }
                                                                 data-testid={
                                                                     `${ testId }-action-${ action.type }-${ index }`
                                                                 }
@@ -218,18 +250,29 @@ export const ResourceListItem: FunctionComponent<ResourceListItemPropsInterface>
                                                         ) :
                                                         (
                                                             <Popup
-                                                                disabled={ action.disabled }
+                                                                header={ popupHeader }
                                                                 trigger={ (
-                                                                    <Icon
-                                                                        data-testid={ action[ "data-testid" ] }
-                                                                        link
-                                                                        className="list-icon"
-                                                                        disabled={ action.disabled }
-                                                                        size="small"
-                                                                        color="grey"
-                                                                        name={ action.icon }
-                                                                        onClick={ action.onClick }
-                                                                    />
+                                                                    <div>
+                                                                        <Icon
+                                                                            data-componentid={
+                                                                                action[ "data-componentid" ]
+                                                                            }
+                                                                            data-testid={ action[ "data-testid" ] }
+                                                                            link
+                                                                            className="list-icon"
+                                                                            disabled={ action.disabled }
+                                                                            size="small"
+                                                                            color="grey"
+                                                                            name={ action.icon }
+                                                                            onClick={
+                                                                                action.disabled
+                                                                                    ? (e: React.SyntheticEvent) => {
+                                                                                        e?.preventDefault();
+                                                                                    }
+                                                                                    : action.onClick
+                                                                            }
+                                                                        />
+                                                                    </div>
                                                                 ) }
                                                                 position="top center"
                                                                 content={ action.popupText }
@@ -256,7 +299,9 @@ export const ResourceListItem: FunctionComponent<ResourceListItemPropsInterface>
 ResourceListItem.defaultProps = {
     actionsColumnWidth: 5,
     actionsFloated: "left",
+    "data-componentid": "resource-list-item",
     "data-testid": "resource-list-item",
     descriptionColumnWidth: 7,
-    metaColumnWidth: 4
+    metaColumnWidth: 4,
+    popupHeader: null
 };

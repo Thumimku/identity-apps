@@ -17,10 +17,10 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
-import { Heading, Hint } from "@wso2is/react-components";
+import { Code, Heading, Hint } from "@wso2is/react-components";
 import find from "lodash-es/find";
 import React, { FunctionComponent, ReactElement } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Divider, Form, Grid } from "semantic-ui-react";
 import { DropdownOptionsInterface } from "../attribute-settings";
 
@@ -28,15 +28,32 @@ interface AdvanceAttributeSettingsPropsInterface extends TestableComponentInterf
     dropDownOptions: DropdownOptionsInterface[];
     initialSubjectUri: string;
     initialRoleUri: string;
+    /**
+     * Controls whether role claim mapping should be rendered or not.
+     * If you only want to get subject attribute then you should make
+     * this {@code false}.
+     */
     claimMappingOn: boolean;
+    /**
+     * Specifies if the IdP Attribute Mappings are available.
+     */  
+    isMappingEmpty: boolean;
     updateRole: (roleUri: string) => void;
     updateSubject: (subjectUri: string) => void;
     roleError?: boolean;
     subjectError?: boolean;
+    /**
+     * Specifies if the component should only be read-only.
+     */
+    isReadOnly: boolean;
+    /**
+     * Is the IdP type SAML
+     */
+    isSaml: boolean;
 }
 
 export const UriAttributesSettings: FunctionComponent<AdvanceAttributeSettingsPropsInterface> = (
-    props
+    props: AdvanceAttributeSettingsPropsInterface
 ): ReactElement => {
 
     const {
@@ -48,6 +65,9 @@ export const UriAttributesSettings: FunctionComponent<AdvanceAttributeSettingsPr
         updateSubject,
         roleError,
         subjectError,
+        isReadOnly,
+        isMappingEmpty,
+        isSaml,
         [ "data-testid" ]: testId
     } = props;
 
@@ -60,18 +80,28 @@ export const UriAttributesSettings: FunctionComponent<AdvanceAttributeSettingsPr
     return (
         <>
             <Grid.Row>
-                <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 8 }>
+                <Grid.Column>
                     <Heading as="h4">
-                        { t("console:develop.features.idp.forms.uriAttributeSettings.subject.heading") }
+                        { t("console:develop.features.authenticationProvider.forms.uriAttributeSettings." +
+                            "subject.heading") }
                     </Heading>
-                    <Divider hidden/>
                     <Form>
                         <Form.Select
-                            required
                             fluid
-                            options={ dropDownOptions }
+                            options={ 
+                                dropDownOptions.concat(
+                                    {
+                                        key: "default_subject",
+                                        text: t("console:develop.features.authenticationProvider.forms." +
+                                            "uriAttributeSettings.subject." +
+                                            "placeHolder"),
+                                        value: ""
+                                    } as DropdownOptionsInterface 
+                                )
+                            }
                             value={ getValidatedInitialValue(initialSubjectUri) }
-                            placeholder={ t("console:develop.features.idp.forms.uriAttributeSettings.subject." + 
+                            placeholder={ t("console:develop.features.authenticationProvider.forms." +
+                                "uriAttributeSettings.subject." +
                                 "placeHolder") }
                             onChange={
                                 (event, data) => {
@@ -80,35 +110,66 @@ export const UriAttributesSettings: FunctionComponent<AdvanceAttributeSettingsPr
                             }
                             search
                             fullTextSearch={ false }
-                            label={ t("console:develop.features.idp.forms.uriAttributeSettings.subject.label") }
+                            label={ t("console:develop.features.authenticationProvider.forms." +
+                                "uriAttributeSettings.subject.label") }
                             data-testid={ `${ testId }-form-element-subject` }
                             error={ subjectError && {
-                                content: t("console:develop.features.idp.forms.uriAttributeSettings.subject." +
+                                content: t("console:develop.features.authenticationProvider" +
+                                    ".forms.uriAttributeSettings.subject." +
                                     "validation.empty"),
                                 pointing: "above"
                             } }
+                            readOnly={ isReadOnly }
+                            disabled={ isMappingEmpty }
                         />
                     </Form>
                     <Hint>
-                        { t("console:develop.features.idp.forms.uriAttributeSettings.subject.hint") }
+                        { isSaml 
+                            ? (
+                                <Trans
+                                    i18nKey={
+                                        "console:console:develop.features.authenticationProvider.forms" +
+                                        ".uriAttributeSettings.subject.hint"
+                                    }
+                                >
+                                The attribute that identifies the user at the enterprise identity provider. 
+                                When attributes are configured based on the authentication response of this 
+                                IdP connection, you can use one of them as the subject. Otherwise, the 
+                                default <Code>saml2:Subject</Code> in the SAML response is used as the 
+                                subject attribute.
+                                </Trans>
+                            )
+                            : (
+                                <Trans
+                                    i18nKey={
+                                        "console:console:develop.features.idp.forms.uriAttributeSettings" +
+                                        ".subject.hint"
+                                    }
+                                >
+                                Specifies the attribute that identifies the user at the identity provider.
+                                </Trans>
+                            )
+                        }
                     </Hint>
                 </Grid.Column>
             </Grid.Row>
+            <Divider hidden/>
             {
                 claimMappingOn &&
                 <Grid.Row columns={ 2 }>
-                    <Grid.Column mobile={ 16 } tablet={ 16 } computer={ 8 }>
+                    <Grid.Column>
                         <Heading as="h4">
-                            { t("console:develop.features.idp.forms.uriAttributeSettings.role.heading") }
+                            { t("console:develop.features.authenticationProvider.forms.uriAttributeSettings." +
+                                "role.heading") }
                         </Heading>
-                        <Divider hidden/>
                         <Form>
                             <Form.Select
                                 required
                                 fluid
                                 options={ dropDownOptions }
                                 value={ getValidatedInitialValue(initialRoleUri) }
-                                placeholder={ t("console:develop.features.idp.forms.uriAttributeSettings." +
+                                placeholder={ t("console:develop.features.authenticationProvider" +
+                                    ".forms.uriAttributeSettings." +
                                     "role.placeHolder") }
                                 onChange={
                                     (event, data) => {
@@ -117,17 +178,21 @@ export const UriAttributesSettings: FunctionComponent<AdvanceAttributeSettingsPr
                                 }
                                 search
                                 fullTextSearch={ false }
-                                label={ t("console:develop.features.idp.forms.uriAttributeSettings.role.label") }
+                                label={ t("console:develop.features.authenticationProvider.forms." +
+                                    "uriAttributeSettings.role.label") }
                                 data-testid={ `${ testId }-form-element-role` }
                                 error={ roleError && {
-                                    content: t("console:develop.features.idp.forms.uriAttributeSettings." +
+                                    content: t("console:develop.features.authenticationProvider" +
+                                        ".forms.uriAttributeSettings." +
                                         "role.validation.empty"),
                                     pointing: "above"
                                 } }
+                                readOnly={ isReadOnly }
                             />
                         </Form>
                         <Hint>
-                            { t("console:develop.features.idp.forms.uriAttributeSettings.role.hint") }
+                            { t("console:develop.features.authenticationProvider." +
+                                "forms.uriAttributeSettings.role.hint") }
                         </Hint>
                     </Grid.Column>
                 </Grid.Row>

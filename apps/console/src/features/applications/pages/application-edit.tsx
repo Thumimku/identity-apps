@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,62 +16,78 @@
  * under the License.
  */
 
-import { getRawDocumentation } from "@wso2is/core/api";
-import { isFeatureEnabled } from "@wso2is/core/helpers";
-import { AlertLevels, TestableComponentInterface } from "@wso2is/core/models";
+import { IdentityAppsError } from "@wso2is/core/errors";
+import { IdentityAppsApiException } from "@wso2is/core/exceptions";
+import { hasRequiredScopes, isFeatureEnabled } from "@wso2is/core/helpers";
+import { AlertLevels, StorageIdentityAppsSettingsInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import {
     AnimatedAvatar,
     AppAvatar,
-    HelpPanelLayout,
-    HelpPanelTabInterface,
     LabelWithPopup,
-    PageLayout
+    Popup,
+    PrimaryButton,
+    TabPageLayout
 } from "@wso2is/react-components";
+import { AxiosResponse } from "axios";
+import cloneDeep from "lodash-es/cloneDeep";
 import get from "lodash-es/get";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import isEmpty from "lodash-es/isEmpty";
+import React, { FunctionComponent, ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { RouteComponentProps } from "react-router";
+import { Dispatch } from "redux";
 import { Label } from "semantic-ui-react";
+import { applicationConfig } from "../../../extensions/configs/application";
 import {
     AppConstants,
     AppState,
-    ConfigReducerStateInterface,
-    DocPanelUICardInterface,
+    AppUtils,
     FeatureConfigInterface,
-    HelpPanelUtils,
     PortalDocumentationStructureInterface,
-    getHelpPanelActionIcons,
     history,
     setHelpPanelDocsContentURL,
     toggleHelpPanelVisibility
 } from "../../core";
-import { getApplicationDetails, updateApplicationConfigurations } from "../api";
-import { EditApplication, HelpPanelOverview } from "../components";
-import { getHelpPanelIcons } from "../configs";
-import { ApplicationManagementConstants } from "../constants";
+import { IdentityProviderConstants } from "../../identity-providers/constants";
+import { getOrganizations, getSharedOrganizations } from "../../organizations/api";
+import { OrganizationType } from "../../organizations/constants";
+import { 
+    OrganizationInterface, 
+    OrganizationListInterface, 
+    OrganizationResponseInterface 
+} from "../../organizations/models";
+import { getApplicationDetails } from "../api";
+import { EditApplication, InboundProtocolDefaultFallbackTemplates } from "../components";
+import { ApplicationShareModal } from "../components/modals/application-share-modal";
+import { ApplicationManagementConstants, ShareWithOrgStatus } from "../constants";
+import CustomApplicationTemplate
+    from "../data/application-templates/templates/custom-application/custom-application.json";
 import {
     ApplicationAccessTypes,
     ApplicationInterface,
     ApplicationTemplateListItemInterface,
     State,
     SupportedAuthProtocolTypes,
-    emptyApplication
+    additionalSpProperty,
+    emptyApplication,
+    idpInfoTypeInterface
 } from "../models";
-import { ApplicationManagementUtils, ApplicationTemplateManagementUtils } from "../utils";
+import { ApplicationTemplateManagementUtils } from "../utils";
 
 /**
  * Proptypes for the applications edit page component.
  */
-interface ApplicationEditPageInterface extends TestableComponentInterface, RouteComponentProps { }
+interface ApplicationEditPageInterface extends TestableComponentInterface, RouteComponentProps {
+}
 
 /**
  * Application Edit page component.
  *
- * @param {ApplicationEditPageInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns Application edit page.
  */
 const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
     props: ApplicationEditPageInterface
@@ -83,63 +99,149 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
     } = props;
 
     const urlSearchParams: URLSearchParams = new URLSearchParams(location.search);
+    const applicationHelpShownStatusKey: string = "isApplicationHelpShown";
+    const orgType: OrganizationType = useSelector((state: AppState) =>
+        state?.organization?.organizationType);
 
     const { t } = useTranslation();
 
-    const dispatch = useDispatch();
+    const dispatch: Dispatch = useDispatch();
 
-    const config: ConfigReducerStateInterface = useSelector((state: AppState) => state.config);
-    const helpPanelDocURL: string = useSelector((state: AppState) => state.helpPanel.docURL);
+    const appDescElement: React.MutableRefObject<HTMLDivElement> = useRef<HTMLDivElement>(null);
+
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
     const helpPanelDocStructure: PortalDocumentationStructureInterface = useSelector(
         (state: AppState) => state.helpPanel.docStructure);
     const applicationTemplates: ApplicationTemplateListItemInterface[] = useSelector(
         (state: AppState) => state.application.templates);
     const featureConfig: FeatureConfigInterface = useSelector((state: AppState) => state.config.ui.features);
-    const helpPanelVisibilityGlobalState: boolean = useSelector((state: AppState) => state.helpPanel.visibility);
+    const tenantDomain: string = useSelector((state: AppState) => state.auth.tenantDomain);
+    const currentOrganization: OrganizationResponseInterface = useSelector((state: AppState) => 
+        state.organization.organization);
 
     const [ application, setApplication ] = useState<ApplicationInterface>(emptyApplication);
     const [ applicationTemplate, setApplicationTemplate ] = useState<ApplicationTemplateListItemInterface>(undefined);
-    const [ isApplicationRequestLoading, setApplicationRequestLoading ] = useState<boolean>(false);
-    const [ helpPanelDocContent, setHelpPanelDocContent ] = useState<string>(undefined);
-    const [ helpPanelSampleContent, setHelpPanelSampleContent ] = useState<string>(undefined);
-    const [ helpPanelSDKContent, setHelpPanelSDKContent ] = useState<string>(undefined);
-    const [ helpPanelConfigContent, setHelpPanelConfigContent ] = useState<string>(undefined);
-    const [ helpPanelSelectedSample, setHelpPanelSelectedSample ] = useState<DocPanelUICardInterface>(undefined);
-    const [ helpPanelSelectedSDK, setHelpPanelSelectedSDK ] = useState<DocPanelUICardInterface>(undefined);
-    const [
-        helpPanelSelectedProtocol, setHelpPanelSelectedProtocol
-    ] = useState<DocPanelUICardInterface>(undefined);
-    const [ samplesTabBackButtonEnabled, setSamplesTabBackButtonEnabled ] = useState<boolean>(true);
-    const [ samples, setSamples ] = useState<DocPanelUICardInterface[]>(undefined);
-    const [ sdks, setSDKS ] = useState<DocPanelUICardInterface[]>(undefined);
-    const [ configs, setConfigs ] = useState<DocPanelUICardInterface[]>(undefined);
-    const [
-        isHelpPanelDocContentRequestLoading,
-        setHelpPanelDocContentRequestLoadingStatus
-    ] = useState<boolean>(false);
-    const [
-        isHelpPanelSamplesContentRequestLoading,
-        setHelpPanelSamplesContentRequestLoadingStatus
-    ] = useState<boolean>(false);
-    const [
-        isApplicationTemplateRequestLoading,
-        setApplicationTemplateRequestLoadingStatus
-    ] = useState<boolean>(false);
-    const [ tabsActiveIndex, setTabsActiveIndex ] = useState<number>(0);
-    const [ isExtensionsAvailable, setIsExtensionsAvailable ] = useState<boolean>(false);
-    const [ defaultActiveIndex, setDefaultActiveIndex ] = useState<number>(0);
+    const [ isApplicationRequestLoading, setApplicationRequestLoading ] = useState<boolean>(undefined);
     const [ inboundProtocolList, setInboundProtocolList ] = useState<string[]>(undefined);
-    const [ inboundProtocolConfigs, setInboundProtocolConfigs ] = useState<object>(undefined);
+    const [ inboundProtocolConfigs, setInboundProtocolConfigs ] = useState<Record<string, any>>(undefined);
+    const [ isDescTruncated, setIsDescTruncated ] = useState<boolean>(false);
+    const [ showAppShareModal, setShowAppShareModal ] = useState(false);
+    const [ subOrganizationList, setSubOrganizationList ] = useState<Array<OrganizationInterface>>([]);
+    const [ sharedOrganizationList, setSharedOrganizationList ] = useState<Array<OrganizationInterface>>([]);
+    const [ sharedWithAll, setSharedWithAll ] = useState<ShareWithOrgStatus>(ShareWithOrgStatus.UNDEFINED);
+
+    const isFirstLevelOrg: boolean = useSelector(
+        (state: AppState) => state.organization.isFirstLevelOrganization
+    );
+    const [ isConnectedAppsRedirect, setisConnectedAppsRedirect ] = useState(false);
+    const [ callBackIdpID, setcallBackIdpID ] = useState<string>();
+    const [ callBackIdpName, setcallBackIdpName ] = useState<string>();
+
+    useEffect(() => {
+        /**
+         * What's the goal of this effect?
+         * To figure out the application's description is truncated or not.
+         *
+         * Even though {@link useRef} calls twice, the PageLayout component doesn't render
+         * the passed children immediately (it will use a placeholder when it's loading),
+         * when that happens the relative element always returns 0 as the offset height
+         * and width. So, I'm relying on this boolean variable {@link isApplicationRequestLoading}
+         * to re-render it for the third time, so it returns correct values for figuring out
+         * whether the element's content is truncated or not.
+         *
+         * Please refer implementation details of {@link PageHeader}, if you check its
+         * heading content, you can see that it conditionally renders first. So, for us
+         * to correctly figure out the offset width and scroll width of the target
+         * element we need it to be persistently mounted inside the {@link Header}
+         * element.
+         *
+         * What exactly happens inside this effect?
+         *
+         * 1st Call -
+         *  React calls this with a `null` value for {@link appDescElement}
+         *  (This is expected in useRef())
+         *
+         * 2nd Call -
+         *  React updates the {@link appDescElement} with the target element.
+         *  But {@link PageHeader} will immediately unmount it (because there's a request is ongoing).
+         *  When that happens, for "some reason" we always get \{ offsetWidth, scrollWidth
+         *  and all the related attributes \} as zero or null.
+         *
+         * 3rd Call -
+         *  So, whenever there's some changes to {@link isApplicationRequestLoading}
+         *  we want React to re-update to reference so that we can accurately read the
+         *  element's measurements (once after a successful load the {@link PageHeader}
+         *  will try to render the component we actually pass down the tree)
+         *
+         *  For more additional context please refer comment:
+         *  @see https://github.com/wso2/identity-apps/pull/3028#issuecomment-1123847668
+         */
+        if (appDescElement || isApplicationRequestLoading) {
+            const nativeElement: HTMLDivElement = appDescElement.current;
+
+            if (nativeElement && (nativeElement.offsetWidth < nativeElement.scrollWidth)) {
+                setIsDescTruncated(true);
+            }
+        }
+    }, [ appDescElement, isApplicationRequestLoading ]);
+
+    /**
+     * Get whether to show the help panel
+     * Help panel only shows for the first time
+     */
+    const showHelpPanel = (): boolean => {
+
+        const userPreferences: StorageIdentityAppsSettingsInterface = AppUtils.getUserPreferences();
+
+        return !isEmpty(userPreferences) &&
+            !userPreferences.identityAppsSettings?.devPortal?.[ applicationHelpShownStatusKey ];
+    };
+
+    /**
+     * Set status of first time help panel is shown
+     */
+    const setHelpPanelShown = (): void => {
+        const userPreferences: StorageIdentityAppsSettingsInterface = AppUtils.getUserPreferences();
+
+        if (isEmpty(userPreferences) || !userPreferences?.identityAppsSettings?.devPortal) {
+            return;
+        }
+
+        const newPref: StorageIdentityAppsSettingsInterface = cloneDeep(userPreferences);
+
+        newPref.identityAppsSettings.devPortal[ applicationHelpShownStatusKey ] = true;
+        AppUtils.setUserPreferences(newPref);
+    };
 
     /**
      * Fetch the application details on initial component load.
      */
     useEffect(() => {
-        const path = history.location.pathname.split("/");
-        const id = path[ path.length - 1 ];
+        const path: string[] = history.location.pathname?.split("/");
+        const id: string = path[ path?.length - 1 ];
 
+        if (showHelpPanel()) {
+            dispatch(toggleHelpPanelVisibility(true));
+            setHelpPanelShown();
+        }
         getApplication(id);
+
     }, []);
+
+    /**
+    * Fetch the identity provider id & name when calling the app edit through connected apps
+    */
+    useEffect(() => {
+        if (typeof history.location.state !== "object") {
+            return;
+        }
+
+        setisConnectedAppsRedirect(true);    
+        const idpInfo: idpInfoTypeInterface = history.location.state as idpInfoTypeInterface;
+
+        setcallBackIdpID(idpInfo.id);
+        setcallBackIdpName(idpInfo.name);
+    });
 
     /**
      * Load the template that the application is built on.
@@ -148,32 +250,70 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
 
         if (!application
             || !(applicationTemplates
-            && applicationTemplates instanceof Array
-            && applicationTemplates.length > 0)) {
+                && applicationTemplates instanceof Array
+                && applicationTemplates.length > 0)) {
+
+            /**
+             * What's this?
+             *
+             * When navigating to an application using the direct url i.e.,
+             * /t/foo/develop/applications/:id#tab=1 this component will be
+             * mounted. But you see this {@link applicationTemplates}?; it is
+             * loaded elsewhere. For some reason, requesting the state from
+             * {@link useSelector} always returns `undefined` when
+             * directly navigating or refreshing the page. Therefore; it hangs
+             * without doing anything. It will show a overlay loader but
+             * that's it. Nothing happens afterwards.
+             *
+             * So, as a workaround; if for some reason, the {@link useSelector}
+             * return no data, we will manually emit the event
+             * {@link ApplicationActionTypes.SET_APPLICATION_TEMPLATES}. So, doing
+             * that ensures we load the application templates again.
+             *
+             * Consider this as a **failsafe workaround**. We shouldn't rely
+             * on this. This may get removed in the future.
+             */
+            ApplicationTemplateManagementUtils
+                .getApplicationTemplates()
+                .finally();
 
             return;
         }
 
-        const template = applicationTemplates.find((template) => template.id === application.templateId);
+        determineApplicationTemplate();
 
-        setApplicationTemplate(template);
     }, [ applicationTemplates, application ]);
 
-    /**
-     * Fetch the application templates if list is not available in redux.
-     */
     useEffect(() => {
-        if (applicationTemplates !== undefined) {
-            return;
+
+        /**
+         * If there's no application {@link ApplicationInterface.templateId}
+         * in the application instance, then we manually bind a templateId. You
+         * may ask why templateId is null at this point? Well, one reason
+         * is that, if you create an application via the API, the templateId
+         * is an optional property in the model instance.
+         *
+         *      So, if someone creates one without it, we don't have a template
+         * to bootstrap the model. When that happens the edit view will not
+         * work properly.
+         *
+         * We have added a mapping for application's inbound protocol
+         * {@link InboundProtocolDefaultFallbackTemplates} to pick a default
+         * template if none is present. One caveat is that, if we couldn't
+         * find any template from the fallback mapping, we always assign
+         * {@link ApplicationManagementConstants.CUSTOM_APPLICATION_OIDC} to it.
+         * Additionally @see InboundFormFactory.
+         */
+        if (!application?.templateId) {
+            if (application.inboundProtocols?.length > 0) {
+                application.templateId = InboundProtocolDefaultFallbackTemplates.get(
+                    application.inboundProtocols[ 0 /*We pick the first*/ ].type
+                ) ?? ApplicationManagementConstants.CUSTOM_APPLICATION_OIDC;
+                determineApplicationTemplate();
+            }
         }
 
-        setApplicationTemplateRequestLoadingStatus(true);
-
-        ApplicationTemplateManagementUtils.getApplicationTemplates()
-            .finally(() => {
-                setApplicationTemplateRequestLoadingStatus(false);
-            });
-    }, [ applicationTemplates ]);
+    }, [ isApplicationRequestLoading, application ]);
 
     /**
      * Push to 404 if application edit feature is disabled.
@@ -183,7 +323,7 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
             return;
         }
 
-        if(!isFeatureEnabled(featureConfig.applications,
+        if (!isFeatureEnabled(featureConfig.applications,
             ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT"))) {
 
             history.push(AppConstants.getPaths().get("PAGE_NOT_FOUND"));
@@ -198,7 +338,7 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
             return;
         }
 
-        const editApplicationDocs = get(helpPanelDocStructure,
+        const editApplicationDocs: PortalDocumentationStructureInterface[] = get(helpPanelDocStructure,
             ApplicationManagementConstants.EDIT_APPLICATIONS_DOCS_KEY);
 
         if (!editApplicationDocs) {
@@ -208,232 +348,111 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
         dispatch(
             setHelpPanelDocsContentURL(editApplicationDocs[
                 ApplicationManagementConstants.APPLICATION_TEMPLATE_DOC_MAPPING
-                    .get(applicationTemplate.id) ]?.[ApplicationManagementConstants.APPLICATION_DOCS_OVERVIEW])
+                    .get(applicationTemplate.id)]?.[ApplicationManagementConstants.APPLICATION_DOCS_OVERVIEW])
         );
     }, [ applicationTemplate, helpPanelDocStructure ]);
 
     /**
-     * Filter application samples based on the template type.
+     * Load the list of sub organizations under the current organization & list of already shared organizations of the
+     * application for application sharing.
      */
     useEffect(() => {
-        if (!applicationTemplate) {
-            return;
-        }
-        const mappedKey = ApplicationManagementConstants.APPLICATION_TEMPLATE_DOC_MAPPING
-            .get(applicationTemplate.id);
-
-        const samplesDocs = get(helpPanelDocStructure, ApplicationManagementUtils.getSampleDocsKey(mappedKey));
-        const SDKDocs = get(helpPanelDocStructure, ApplicationManagementUtils.getSDKDocsKey(mappedKey));
-        const configDocs = get(helpPanelDocStructure, ApplicationManagementUtils.getConfigDocsKey(mappedKey));
-
-        if (!samplesDocs) {
+        if (!showAppShareModal || !isOrganizationManagementEnabled) {
             return;
         }
 
-        const samples: DocPanelUICardInterface[] = ApplicationManagementUtils.generateSamplesAndSDKDocs(samplesDocs);
-        const sdks: DocPanelUICardInterface[] = ApplicationManagementUtils.generateSamplesAndSDKDocs(SDKDocs);
-        const configs: DocPanelUICardInterface[] = ApplicationManagementUtils.generateSamplesAndSDKDocs(configDocs);
-
-        if (samples instanceof Array && samples.length === 1) {
-            setHelpPanelSelectedSample(samples[ 0 ]);
-            setSamplesTabBackButtonEnabled(false);
-        }
-
-        if (sdks instanceof Array && sdks.length === 1) {
-            setHelpPanelSelectedSDK(sdks[ 0 ]);
-            setSamplesTabBackButtonEnabled(false);
-        }
-
-        if (configs instanceof Array && configs.length === 1) {
-            setHelpPanelSelectedProtocol(configs[ 0 ]);
-            setSamplesTabBackButtonEnabled(false);
-        }
-
-        setSDKS(sdks.filter((item) => item.name !== "overview"));
-        setSamples(samples.filter((item) => item.name !== "overview"));
-        setConfigs(configs.filter((item) => item.name !== "overview"));
-    }, [ applicationTemplate, helpPanelDocStructure ]);
-
-    /**
-     * Called when help panel doc URL status changes.
-     */
-    useEffect(() => {
-        if (!helpPanelDocURL) {
-            return;
-        }
-
-        setHelpPanelDocContentRequestLoadingStatus(true);
-
-        getRawDocumentation<string>(
-            config?.endpoints?.documentationContent,
-            helpPanelDocURL,
-            config?.deployment?.documentation?.provider,
-            config?.deployment?.documentation?.githubOptions?.branch)
-            .then((response) => {
-                setHelpPanelDocContent(response);
-            })
-            .finally(() => {
-                setHelpPanelDocContentRequestLoadingStatus(false);
-            });
-    }, [ helpPanelDocURL ]);
-
-    /**
-     * Called when the technology is changed in the samples section.
-     */
-    useEffect(() => {
-        if (!helpPanelSelectedSample?.docs) {
-            return;
-        }
-
-        setHelpPanelSamplesContentRequestLoadingStatus(true);
-
-        getRawDocumentation<string>(
-            config.endpoints.documentationContent,
-            helpPanelSelectedSample.docs,
-            config.deployment.documentation.provider,
-            config.deployment.documentation.githubOptions.branch)
-            .then((response) => {
-                setHelpPanelSampleContent(response);
-            })
-            .finally(() => {
-                setHelpPanelSamplesContentRequestLoadingStatus(false);
-            });
-    },[
-        helpPanelSelectedSample,
-        config.deployment.documentation.githubOptions.branch,
-        config.deployment.documentation.provider,
-        config.endpoints.documentationContent
-    ]);
-
-    /**
-     * Called when the technology is changed in the SDK section.
-     */
-    useEffect(() => {
-        if (!helpPanelSelectedSDK?.docs) {
-            return;
-        }
-
-        setHelpPanelSamplesContentRequestLoadingStatus(true);
-
-        getRawDocumentation<string>(
-            config.endpoints.documentationContent,
-            helpPanelSelectedSDK.docs,
-            config.deployment.documentation.provider,
-            config.deployment.documentation.githubOptions.branch)
-            .then((response) => {
-                setHelpPanelSDKContent(response);
-            })
-            .finally(() => {
-                setHelpPanelSamplesContentRequestLoadingStatus(false);
-            });
-    },[
-        helpPanelSelectedSDK,
-        config.deployment.documentation.githubOptions.branch,
-        config.deployment.documentation.provider,
-        config.endpoints.documentationContent
-    ]);
-
-    /**
-     * Called when the technology is changed in the Configurations section.
-     */
-    useEffect(() => {
-        if (!helpPanelSelectedProtocol?.docs) {
-            return;
-        }
-
-        setHelpPanelSamplesContentRequestLoadingStatus(true);
-
-        getRawDocumentation<string>(
-            config.endpoints.documentationContent,
-            helpPanelSelectedProtocol.docs,
-            config.deployment.documentation.provider,
-            config.deployment.documentation.githubOptions.branch)
-            .then((response) => {
-                setHelpPanelConfigContent(response);
-            })
-            .finally(() => {
-                setHelpPanelSamplesContentRequestLoadingStatus(false);
-            });
-    },[
-        helpPanelSelectedProtocol,
-        config.deployment.documentation.githubOptions.branch,
-        config.deployment.documentation.provider,
-        config.endpoints.documentationContent
-    ]);
-
-    /**
-     * Remove template name if multiple protocols configured.
-     */
-    useEffect(() => {
-        if (applicationTemplate && (application?.inboundProtocols?.length > 1)) {
-            updateApplicationConfigurations(application.id, { templateId: "" })
-                .then(() => {
-                    handleApplicationUpdate(application.id);
-                })
-                .catch((error) => {
-                    if (error?.response?.status === 404) {
-                        return;
-                    }
-
-                    if (error?.response && error?.response?.data && error?.response?.data?.description) {
-                        dispatch(addAlert({
-                            description: error.response?.data?.description,
-                            level: AlertLevels.ERROR,
-                            message: t("console:develop.features.applications.notifications.updateApplication" +
-                                ".error.message")
-                        }));
-
-                        return;
-                    }
-
-                    dispatch(addAlert({
-                        description: t("console:develop.features.applications.notifications.updateApplication" +
-                            ".genericError.description"),
+        getOrganizations(
+            null,
+            null,
+            null,
+            null,
+            true,
+            false
+        ).then((response: OrganizationListInterface) => {
+            setSubOrganizationList(response.organizations);
+        }).catch((error: IdentityAppsError) => {
+            if (error?.description) {
+                dispatch(
+                    addAlert({
+                        description: error.description,
                         level: AlertLevels.ERROR,
-                        message: t("console:develop.features.applications.notifications.updateApplication" +
-                            ".genericError.message")
-                    }));
-                });
-        }
+                        message: t(
+                            "console:manage.features.organizations.notifications." +
+                                "getOrganizationList.error.message"
+                        )
+                    })
+                );
 
-    }, [ applicationTemplate, application ]);
-
-    /**
-     * Triggered when the application state search param in the URL changes.
-     * TODO: IMPORTANT - Refactor this code.
-     */
-    useEffect(() => {
-        if (!urlSearchParams.get(ApplicationManagementConstants.APP_STATE_URL_SEARCH_PARAM_KEY)) {
-            if (isExtensionsAvailable) {
-                setDefaultActiveIndex(1);
+                return;
             }
 
-            return;
-        }
+            dispatch(
+                addAlert({
+                    description: t(
+                        "console:manage.features.organizations.notifications.getOrganizationList" +
+                            ".genericError.description"
+                    ),
+                    level: AlertLevels.ERROR,
+                    message: t(
+                        "console:manage.features.organizations.notifications." +
+                            "getOrganizationList.genericError.message"
+                    )
+                })
+            );
+        });
 
-        if (urlSearchParams.get(ApplicationManagementConstants.APP_STATE_URL_SEARCH_PARAM_KEY)
-            === ApplicationManagementConstants.APP_STATE_URL_SEARCH_PARAM_VALUE && isExtensionsAvailable) {
+        getSharedOrganizations(
+            currentOrganization.id,
+            application.id
+        ).then((response: AxiosResponse) => {
+            setSharedOrganizationList(response.data.organizations);
+        }).catch((error: IdentityAppsApiException) => {
+            if (error.response.data.description) {
+                dispatch(
+                    addAlert({
+                        description: error.response.data.description,
+                        level: AlertLevels.ERROR,
+                        message: t("console:develop.features.applications.edit.sections.shareApplication" +
+                                ".getSharedOrganizations.genericError.message")
+                    })
+                );
 
-            setDefaultActiveIndex(0);
-
-            if (helpPanelVisibilityGlobalState) {
-                dispatch(toggleHelpPanelVisibility(false));
+                return;
             }
 
-            return;
+            dispatch(
+                addAlert({
+                    description: t("console:develop.features.applications.edit.sections.shareApplication" +
+                            ".getSharedOrganizations.genericError.description"),
+                    level: AlertLevels.ERROR,
+                    message: t("console:develop.features.applications.edit.sections.shareApplication" +
+                            ".getSharedOrganizations.genericError.message")
+                })
+            );
+        }
+        );
+    }, [ getOrganizations, showAppShareModal ]);
+
+    const determineApplicationTemplate = () => {
+
+        let template: ApplicationTemplateListItemInterface = applicationTemplates
+            .find((template: ApplicationTemplateListItemInterface) => template.id === application.templateId);
+
+        if (application.templateId === ApplicationManagementConstants.CUSTOM_APPLICATION_OIDC
+            || application.templateId === ApplicationManagementConstants.CUSTOM_APPLICATION_SAML
+            || application.templateId === ApplicationManagementConstants.CUSTOM_APPLICATION_PASSIVE_STS) {
+            template = applicationTemplates.find((template: ApplicationTemplateListItemInterface) => 
+                template.id === CustomApplicationTemplate.id);
         }
 
-        if (urlSearchParams.get(ApplicationManagementConstants.APP_STATE_URL_SEARCH_PARAM_KEY)
-            === ApplicationManagementConstants.APP_STATE_URL_SEARCH_PARAM_VALUE && !HelpPanelUtils.isPanelPinned()) {
+        setApplicationTemplate(template);
 
-            toggleHelpPanelVisibility(true);
-        }
-    }, [ urlSearchParams.get(ApplicationManagementConstants.APP_STATE_URL_SEARCH_PARAM_KEY), isExtensionsAvailable ]);
+    };
 
     /**
      * Retrieves application details from the API.
      *
-     * @param {string} id - Application id.
+     * @param id - Application id.
      */
     const getApplication = (id: string): void => {
         setApplicationRequestLoading(true);
@@ -441,8 +460,23 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
         getApplicationDetails(id)
             .then((response: ApplicationInterface) => {
                 setApplication(response);
+
+                const isSharedWithAll: additionalSpProperty[] = response?.advancedConfigurations
+                    ?.additionalSpProperties?.filter((property: additionalSpProperty) =>
+                        property?.name === "shareWithAllChildren"
+                    );
+
+                if (!isSharedWithAll || isSharedWithAll.length === 0) {
+                    setSharedWithAll(ShareWithOrgStatus.UNDEFINED);
+                } else {
+                    setSharedWithAll(
+                        JSON.parse(isSharedWithAll[ 0 ].value)
+                            ? ShareWithOrgStatus.TRUE
+                            : ShareWithOrgStatus.FALSE
+                    );
+                }
             })
-            .catch((error) => {
+            .catch((error: IdentityAppsApiException) => {
                 if (error.response && error.response.data && error.response.data.description) {
                     dispatch(addAlert({
                         description: error.response.data.description,
@@ -470,7 +504,14 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
      * Handles the back button click event.
      */
     const handleBackButtonClick = (): void => {
-        history.push(AppConstants.getPaths().get("APPLICATIONS"));
+        if (!isConnectedAppsRedirect) {
+            history.push(AppConstants.getPaths().get("APPLICATIONS"));
+        } else {
+            history.push({
+                pathname: AppConstants.getPaths().get("IDP_EDIT").replace(":id", callBackIdpID),
+                state: IdentityProviderConstants.CONNECTED_APPS_TAB_ID
+            });
+        }
     };
 
     /**
@@ -483,286 +524,18 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
     /**
      * Called when an application updates.
      *
-     * @param {string} id - Application id.
+     * @param id - Application id.
      */
     const handleApplicationUpdate = (id: string): void => {
         getApplication(id);
     };
 
     /**
-     * Handles help panel sample change event.
-     *
-     * @param sample - Selected sample.
-     */
-    const handleHelpPanelSelectedSample = (sample: any) => {
-        setHelpPanelSelectedSample(sample);
-    };
-
-    /**
-     * Handles help panel SDK change event.
-     *
-     * @param sdk - Selected SDK.
-     */
-    const handleHelpPanelSelectedSDK = (sdk: any) => {
-        setHelpPanelSelectedSDK(sdk);
-    };
-
-    /**
-     * Handles help panel Protocol change event.
-     *
-     * @param protocol - Selected Protool.
-     */
-    const handleHelpPanelSelectedProtocol = (protocol: any) => {
-        setHelpPanelSelectedProtocol(protocol);
-    };
-
-    /**
-     * Handles the tab change from overview.
-     *
-     * @param tabId - number
-     */
-    const handleTabChange = (tabId: number): void => {
-        setTabsActiveIndex(tabId);
-    };
-
-    const helpPanelTabs: HelpPanelTabInterface[] = [
-        {
-            content: (
-                <HelpPanelOverview
-                    applicationType={ applicationTemplate?.name }
-                    inboundProtocols={ application?.inboundProtocols }
-                    handleTabChange={ handleTabChange }
-                />
-                ),
-            //heading: t("console:develop.features.applications.helpPanel.tabs.start.heading"),
-            heading: "Server Endpoints",
-            hidden: application?.inboundProtocols?.length <= 0,
-            icon: {
-                icon: getHelpPanelIcons().tabs.guide
-            }
-        }
-        // TODO : Should be removed after getting started flow is implemented.
-        /*{
-            content: (
-                helpPanelSelectedProtocol
-                    ? (
-                        <>
-                            <PageHeader
-                                title={ `${ helpPanelSelectedProtocol.displayName } Configurations` }
-                                titleAs="h4"
-                                backButton={ samplesTabBackButtonEnabled && {
-                                    onClick: () => setHelpPanelSelectedProtocol(undefined),
-                                    text: t("console:develop.features.applications.helpPanel.tabs.samples." +
-                                        "content.sample.goBack")
-                                } }
-                                bottomMargin={ false }
-                                data-testid={ `${ testId }-help-panel-samples-tab-page-header` }
-                            />
-                            <Divider hidden/>
-                            {
-                                helpPanelSelectedProtocol?.docs && (
-                                    isHelpPanelSamplesContentRequestLoading
-                                        ? <ContentLoader dimmer/>
-                                        : (
-                                            <Markdown
-                                                source={ helpPanelConfigContent }
-                                                data-testid={ `${ testId }-help-panel-configs-tab-markdown-renderer` }
-                                            />
-                                        )
-                                )
-                            }
-                        </>
-                    )
-                    : (
-                        <>
-                            <Heading as="h4">
-                                { t("console:develop.features.applications.helpPanel.tabs.configs.content." +
-                                    "title") }
-                            </Heading>
-                            <Hint>
-                                { t("console:develop.features.applications.helpPanel.tabs.configs.content." +
-                                    "subTitle") }
-                            </Hint>
-                            <Divider hidden/>
-
-                            <Grid>
-                                <Grid.Row columns={ 4 }>
-                                    {
-                                        configs && configs.map((configs, index) => (
-                                            <Grid.Column key={ index }>
-                                                <SelectionCard
-                                                    size="auto"
-                                                    header={ configs.displayName }
-                                                    image={ getInboundProtocolLogos()[ configs.image ] }
-                                                    imageSize="mini"
-                                                    spaced="bottom"
-                                                    onClick={ () => handleHelpPanelSelectedProtocol(configs) }
-                                                    data-testid={ `${ testId }-help-panel-samples-tab-selection-card` }
-                                                />
-                                            </Grid.Column>
-                                        ))
-                                    }
-                                </Grid.Row>
-                            </Grid>
-                        </>
-                    )
-            ),
-            heading: t("console:develop.features.applications.helpPanel.tabs.configs.heading"),
-            hidden: !configs || (configs instanceof Array && configs.length < 1),
-            icon: {
-                icon: getHelpPanelIcons().tabs.guide
-            }
-        },
-        {
-            content: (
-                helpPanelSelectedSample
-                    ? (
-                        <>
-                            <PageHeader
-                                title={ `${ helpPanelSelectedSample.displayName } Sample Application` }
-                                titleAs="h1"
-                                backButton={ samplesTabBackButtonEnabled && {
-                                    onClick: () => setHelpPanelSelectedSample(undefined),
-                                    text: t("console:develop.features.applications.helpPanel.tabs.samples." +
-                                        "content.sample.goBack")
-                                } }
-                                bottomMargin={ false }
-                                data-testid={ `${ testId }-help-panel-samples-tab-page-header` }
-                            />
-                            <Divider hidden/>
-                            {
-                                helpPanelSelectedSample?.docs && (
-                                    isHelpPanelSamplesContentRequestLoading
-                                        ? <ContentLoader dimmer/>
-                                        : (
-                                            <SamplesGuideComponent
-                                                sampleType={ helpPanelSelectedSample.name }
-                                                application={ application }
-                                                markDownSource={ helpPanelSampleContent }
-                                                data-testid={ `${ testId }-help-panel-samples-tab-markdown-renderer` }
-                                            />
-                                        )
-                                )
-                            }
-                        </>
-                    )
-                    : (
-                        <>
-                            <Heading as="h4">
-                                { t("console:develop.features.applications.helpPanel.tabs.samples.content." +
-                                    "sample.title") }
-                            </Heading>
-                            <Hint>
-                                { t("console:develop.features.applications.helpPanel.tabs.samples.content." +
-                                    "sample.subTitle") }
-                            </Hint>
-                            <Divider hidden/>
-
-                            <Grid>
-                                <Grid.Row columns={ 4 }>
-                                    {
-                                        samples && samples.map((sample, index) => (
-                                            <Grid.Column key={ index }>
-                                                <SelectionCard
-                                                    size="auto"
-                                                    header={ sample.displayName }
-                                                    image={ getTechnologyLogos[ sample.image ] }
-                                                    imageSize="mini"
-                                                    spaced="bottom"
-                                                    onClick={ () => handleHelpPanelSelectedSample(sample) }
-                                                    data-testid={ `${ testId }-help-panel-samples-tab-selection-card` }
-                                                />
-                                            </Grid.Column>
-                                        ))
-                                    }
-                                </Grid.Row>
-                            </Grid>
-                        </>
-                    )
-            ),
-            heading: t("common:samples"),
-            hidden: !samples || (samples instanceof Array && samples.length < 1),
-            icon: {
-                icon: getHelpPanelIcons().tabs.samples
-            }
-        },
-        {
-            content: (
-                helpPanelSelectedSDK
-                    ? (
-                        <>
-                            <PageHeader
-                                title={ `${ helpPanelSelectedSDK.displayName } SDK` }
-                                titleAs="h4"
-                                backButton={ samplesTabBackButtonEnabled && {
-                                    onClick: () => setHelpPanelSelectedSDK(undefined),
-                                    text: t("console:develop.features.applications.helpPanel.tabs.sdks." +
-                                        "content.sdk.goBack")
-                                } }
-                                bottomMargin={ false }
-                                data-testid={ `${ testId }-help-panel-samples-tab-page-header` }
-                            />
-                            <Divider hidden/>
-                            {
-                                helpPanelSelectedSDK?.docs && (
-                                    isHelpPanelSamplesContentRequestLoading
-                                        ? <ContentLoader dimmer/>
-                                        : (
-                                            <Markdown
-                                                source={ helpPanelSDKContent }
-                                                data-testid={ `${ testId }-help-panel-samples-tab-markdown-renderer` }
-                                            />
-                                        )
-                                )
-                            }
-                        </>
-                    )
-                    : (
-                        <>
-                            <Heading as="h4">
-                                { t("console:develop.features.applications.helpPanel.tabs.sdks.content." +
-                                    "sdk.title") }
-                            </Heading>
-                            <Hint>
-                                { t("console:develop.features.applications.helpPanel.tabs.sdks.content." +
-                                    "sdk.subTitle") }
-                            </Hint>
-                            <Divider hidden/>
-
-                            <Grid>
-                                <Grid.Row columns={ 4 }>
-                                    {
-                                        sdks && sdks.map((sdk, index) => (
-                                            <Grid.Column key={ index }>
-                                                <SelectionCard
-                                                    size="auto"
-                                                    header={ sdk.displayName }
-                                                    image={ getTechnologyLogos[ sdk.image ] }
-                                                    imageSize="mini"
-                                                    spaced="bottom"
-                                                    onClick={ () => handleHelpPanelSelectedSDK(sdk) }
-                                                    data-testid={ `${ testId }-help-panel-samples-tab-selection-card` }
-                                                />
-                                            </Grid.Column>
-                                        ))
-                                    }
-                                </Grid.Row>
-                            </Grid>
-                        </>
-                    )
-            ),
-            heading: t("common:sdks"),
-            hidden: !sdks || (sdks instanceof Array && sdks.length < 1),
-            icon: {
-                icon: getHelpPanelIcons().tabs.sdks
-            }
-        }*/
-    ];
-
-    /**
      * Resolves the application status label.
-     * @return {ReactElement}
+     *
+     * @returns Application status label.
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const resolveApplicationStatusLabel = (): ReactElement => {
 
         if (!inboundProtocolList || !inboundProtocolConfigs) {
@@ -770,7 +543,7 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
         }
 
         if (inboundProtocolList.length === 0) {
-            
+
             return (
                 <LabelWithPopup
                     popupHeader={ t("console:develop.features.applications.popups.appStatus.notConfigured.header") }
@@ -781,9 +554,9 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
         }
 
         if (inboundProtocolList.length === 1
-            && inboundProtocolList.includes(SupportedAuthProtocolTypes.OIDC)
-            && inboundProtocolConfigs
-            && inboundProtocolConfigs[ SupportedAuthProtocolTypes.OIDC ]) {
+                && inboundProtocolList.includes(SupportedAuthProtocolTypes.OIDC)
+                && inboundProtocolConfigs
+                && inboundProtocolConfigs[ SupportedAuthProtocolTypes.OIDC ]) {
 
             if (inboundProtocolConfigs[ SupportedAuthProtocolTypes.OIDC ].state === State.REVOKED) {
 
@@ -806,55 +579,58 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
         );
     };
 
+    const onApplicationSharingCompleted: () => void = useCallback(() => {
+        getApplication(application.id);
+    }, [ getApplication, application ]);
+
     /**
      * Returns if the application is readonly or not by evaluating the `readOnly` attribute in
-     * URL and the `access` attribute in application info response.
+     * URL, the `access` attribute in application info response && the scope validation.
      *
-     * @return {boolean} If an application is Read Only or not.
+     * @returns If an application is Read Only or not.
      */
     const resolveReadOnlyState = (): boolean => {
 
         return urlSearchParams.get(ApplicationManagementConstants.APP_READ_ONLY_STATE_URL_SEARCH_PARAM_KEY) === "true"
-            || application.access === ApplicationAccessTypes.READ;
+            || application.access === ApplicationAccessTypes.READ
+            || !hasRequiredScopes(featureConfig?.applications, featureConfig?.applications?.scopes?.update,
+                allowedScopes);
     };
 
     return (
-        <HelpPanelLayout
-            activeIndex={ tabsActiveIndex }
-            sidebarDirection="right"
-            sidebarMiniEnabled={ true }
-            tabs={ helpPanelTabs }
-            onHelpPanelPinToggle={ () => HelpPanelUtils.togglePanelPin() }
-            isPinned={ HelpPanelUtils.isPanelPinned() }
-            icons={ {
-                close: getHelpPanelActionIcons().close,
-                pin: getHelpPanelActionIcons().pin,
-                unpin: getHelpPanelActionIcons().unpin
-            } }
-            sidebarToggleTooltip={ t("console:develop.features.helpPanel.actions.open") }
-            pinButtonTooltip={ t("console:develop.features.helpPanel.actions.pin") }
-            unpinButtonTooltip={ t("console:develop.features.helpPanel.actions.unPin") }
-            onHelpPanelVisibilityChange={ (isVisible: boolean) => dispatch(toggleHelpPanelVisibility(isVisible)) }
-            visible={ helpPanelVisibilityGlobalState }
-        >
-            <PageLayout
-                isLoading={ isApplicationRequestLoading }
-                title={ (
-                    <>
-                        <span>{ application.name }</span>
-                        {/*TODO - Application status is not shown until the backend support for disabling is given
+        <TabPageLayout
+            pageTitle="Edit Application"
+            title={ (
+                <>
+                    <span>{ application.name }</span>
+                    { /*TODO - Application status is not shown until the backend support for disabling is given
                         @link https://github.com/wso2/product-is/issues/11453
-                        { resolveApplicationStatusLabel() }*/}
-                    </>
-                ) }
-                contentTopMargin={ true }
-                description={ (
-                    <div className="with-label ellipsis">
-                        { applicationTemplate?.name && <Label size="small">{ applicationTemplate.name }</Label> }
-                        { application.description }
-                    </div>
-                ) }
-                image={
+                        { resolveApplicationStatusLabel() }*/ }
+                </>
+            ) }
+            contentTopMargin={ true }
+            description={ (
+                applicationConfig.editApplication.getOverriddenDescription(inboundProtocolConfigs?.oidc?.clientId,
+                    tenantDomain, applicationTemplate?.name)
+                    ?? (
+                        <div className="with-label ellipsis" ref={ appDescElement }>
+                            { applicationTemplate?.name && (
+                                <Label size="small">{ applicationTemplate.name }</Label>
+                            ) }
+                            <Popup
+                                disabled={ !isDescTruncated }
+                                content={ application?.description }
+                                trigger={ (
+                                    <span>{ application?.description }</span>
+                                ) }
+                            />
+                        </div>
+                    )
+            ) }
+            image={
+                applicationConfig.editApplication.getOverriddenImage(inboundProtocolConfigs?.oidc?.clientId,
+                    tenantDomain)
+                ?? (
                     application.imageUrl
                         ? (
                             <AppAvatar
@@ -870,39 +646,81 @@ const ApplicationEditPage: FunctionComponent<ApplicationEditPageInterface> = (
                                 floated="left"
                             />
                         )
-                }
-                backButton={ {
-                    "data-testid": `${ testId }-page-back-button`,
-                    onClick: handleBackButtonClick,
-                    text: t("console:develop.pages.applicationsEdit.backButton")
+                )
+            }
+            loadingStateOptions={ {
+                count: 5,
+                imageType: "square"
+            } }
+            isLoading={ isApplicationRequestLoading }
+            backButton={ {
+                "data-testid": `${testId}-page-back-button`,
+                onClick: handleBackButtonClick,
+                text: isConnectedAppsRedirect ? t("console:develop.features.idp.connectedApps.applicationEdit.back", 
+                    { idpName: callBackIdpName }) : t("console:develop.pages.applicationsEdit.backButton")
+            } }
+            titleTextAlign="left"
+            bottomMargin={ false }
+            pageHeaderMaxWidth={ true }
+            data-testid={ `${ testId }-page-layout` }
+            truncateContent={ true }
+            action={ (
+                <>
+                    {
+                        applicationConfig.editApplication.getActions(inboundProtocolConfigs?.oidc?.clientId,
+                            tenantDomain, testId)
+                    }
+
+                    {
+                        (isOrganizationManagementEnabled
+                            && applicationConfig.editApplication.showApplicationShare
+                            && !application.advancedConfigurations?.fragment
+                            && application.access === ApplicationAccessTypes.WRITE
+                            && (isFirstLevelOrg || window[ "AppUtils" ].getConfig().organizationName)
+                            && hasRequiredScopes(featureConfig?.applications,
+                                featureConfig?.applications?.scopes?.update, allowedScopes)
+                            && orgType !== OrganizationType.SUBORGANIZATION) && (
+                            <PrimaryButton onClick={ () => setShowAppShareModal(true) }>
+                                { t("console:develop.features.applications.edit.sections" +
+                                    ".shareApplication.shareApplication") }
+                            </PrimaryButton>
+                        )
+                    }
+                </>
+            ) }
+        >
+            <EditApplication
+                application={ application }
+                featureConfig={ featureConfig }
+                isLoading={ isApplicationRequestLoading }
+                setIsLoading={ setApplicationRequestLoading }
+                onDelete={ handleApplicationDelete }
+                onUpdate={ handleApplicationUpdate }
+                template={ applicationTemplate }
+                data-testid={ testId }
+                urlSearchParams={ urlSearchParams }
+                getConfiguredInboundProtocolsList={ (list: string[]) => {
+                    setInboundProtocolList(list);
                 } }
-                titleTextAlign="left"
-                bottomMargin={ false }
-                pageHeaderMaxWidth={ true }
-                data-testid={ `${ testId }-page-layout` }
-                truncateContent={ true }
-            >
-                <EditApplication
-                    application={ application }
-                    defaultActiveIndex={ defaultActiveIndex }
-                    featureConfig={ featureConfig }
-                    isLoading={ isApplicationRequestLoading }
-                    onDelete={ handleApplicationDelete }
-                    onUpdate={ handleApplicationUpdate }
-                    template={ applicationTemplate }
-                    data-testid={ testId }
-                    isTabExtensionsAvailable={ (isAvailable) => setIsExtensionsAvailable(isAvailable) }
-                    urlSearchParams={ urlSearchParams }
-                    getConfiguredInboundProtocolsList={ (list: string[]) => {
-                        setInboundProtocolList(list);
-                    } }
-                    getConfiguredInboundProtocolConfigs={ (configs: object) => {
-                        setInboundProtocolConfigs(configs);
-                    } }
-                    readOnly={ resolveReadOnlyState() }
+                getConfiguredInboundProtocolConfigs={ (configs: Record<string, unknown>) => {
+                    setInboundProtocolConfigs(configs);
+                } }
+                readOnly={ resolveReadOnlyState() }
+            />
+
+            { (showAppShareModal && application) && (
+                <ApplicationShareModal
+                    open={ showAppShareModal }
+                    applicationId={ application.id }
+                    clientId={ inboundProtocolConfigs?.oidc?.clientId }
+                    subOrganizationList={ subOrganizationList }
+                    sharedOrganizationList={ sharedOrganizationList }
+                    onClose={ () => setShowAppShareModal(false) }
+                    onApplicationSharingCompleted={ onApplicationSharingCompleted }
+                    isSharedWithAll={ sharedWithAll }
                 />
-            </PageLayout>
-        </HelpPanelLayout>
+            ) }
+        </TabPageLayout>
     );
 };
 

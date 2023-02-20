@@ -49,11 +49,12 @@
 @signOnMethodsAuthStepSectionDisplay: flex;
 @signOnMethodsAuthStepSectionOverflow: auto;
 @signOnMethodsAuthStepSectionMaxHeight: 375px;
-@signOnMethodsAuthStepSectionBorder: @defaultBorderWidth solid @defaultBorderColor;
-@signOnMethodsAuthStepSectionPadding: 3em;
-@signOnMethodsAuthStepSectionMaxWidth: 1150px;
-@signOnMethodsAuthStepBorder: 1px dashed rgba(34,36,38,.15);
-@signOnMethodsAuthStepButtonMarginRight: 10px;
+@signOnMethodsAuthStepSectionBorder: none;
+@signOnMethodsAuthStepSectionPadding: 1em 3em 1em 0;
+@signOnMethodsAuthStepSectionMaxWidth: 75vw;
+@signOnMethodsAuthCardFontSize: 0.9em;
+@signOnMethodsAuthStepMinHeight: 95px;
+@signOnMethodsAuthStepBorderColor: rgba(34,36,38,.15);
 
 @signOnMethodsAuthStepContainerMarginRight: 68px;
 
@@ -61,10 +62,18 @@
 @signOnMethodsAuthStepWidth: 210px;
 @signOnMethodsAuthStepOverflow: auto;
 @signOnMethodsAuthStepFlexDirection: row;
-@signOnMethodsAuthStepMinHeight: 220px;
+@signOnMethodsAuthStepPadding: 15px;
 
 /*-------------------------------
       IDP Template Grid
 --------------------------------*/
 
 @idpTemplateGridPaddingTop: 1.5em;
+
+/*----------------------------------
+          Form Container
+------------------------------------*/
+
+@formContainerMaxWidth: 750px;
+@formWrapperMaxHeight: 55vh;
+@applicationSubjectSelectWidth: 820px;

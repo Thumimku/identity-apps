@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
-import { HttpMethods } from "../models";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
+import { ChallengesQuestionsInterface, HttpMethods } from "../models";
 import { store } from "../store";
 
 /**
@@ -25,26 +25,24 @@ import { store } from "../store";
  *
  * @type {AxiosHttpClientInstance}
  */
-const httpClient = IdentityClient.getInstance().httpRequest.bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance().httpRequest.bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Method that sends multiple api requests at once.
  */
-const httpRequestAll = IdentityClient.getInstance().httpRequestAll.bind(IdentityClient.getInstance());
+const httpRequestAll = AsgardeoSPAClient.getInstance().httpRequestAll.bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Fetch the configured security questions of the user.
  *
  * @return {Promise<any>} a promise containing the response.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const getSecurityQs = (): Promise<any> => {
     const headers = {
         "Accept": "application/json",
-        "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost
+        "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost
     };
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     const getQuestions = (): any => {
         return {
             headers,
@@ -53,7 +51,6 @@ export const getSecurityQs = (): Promise<any> => {
         };
     };
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     const getAnswers = (): any => {
         return {
             headers,
@@ -63,10 +60,11 @@ export const getSecurityQs = (): Promise<any> => {
     };
 
     return httpRequestAll([ getQuestions(), getAnswers() ])
-        .then(([questions, answers]) => {
+        .then(([ questions, answers ]) => {
             if (questions.status !== 200 && answers.status !== 200) {
                 return Promise.reject(new Error("Failed to get security questions and answers"));
             }
+
             return Promise.resolve([ questions.data, answers.data ]);
         }).catch(error => {
             return Promise.reject(error);
@@ -79,13 +77,12 @@ export const getSecurityQs = (): Promise<any> => {
  * @param {object} data the new set of challenge questions and the answers.
  * @return {Promise<any>} a promise containing the response.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export const addSecurityQs = (data: object): Promise<any> => {
+export const addSecurityQs = (data: ChallengesQuestionsInterface[]): Promise<any> => {
     const requestConfig = {
         data,
         headers: {
             "Accept": "application/json",
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost
         },
         method: HttpMethods.POST,
         url: store.getState().config.endpoints.challengeAnswers
@@ -96,6 +93,7 @@ export const addSecurityQs = (data: object): Promise<any> => {
             if (response.status !== 201) {
                 return Promise.reject(new Error("Failed to add security questions"));
             }
+
             return Promise.resolve(response.status);
         })
         .catch((error) => {
@@ -109,13 +107,12 @@ export const addSecurityQs = (data: object): Promise<any> => {
  * @param {object} data the new set of challenge questions and the answers.
  * @return {Promise<any>} a promise containing the response.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export const updateSecurityQs = (data: object): Promise<any> => {
+export const updateSecurityQs = (data: ChallengesQuestionsInterface[]): Promise<any> => {
     const requestConfig = {
         data,
         headers: {
             "Accept": "application/json",
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost
         },
         method: HttpMethods.PUT,
         url: store.getState().config.endpoints.challengeAnswers
@@ -126,6 +123,7 @@ export const updateSecurityQs = (data: object): Promise<any> => {
             if (response.status !== 200) {
                 return Promise.reject(new Error("Failed to update security questions."));
             }
+
             return Promise.resolve(response);
         })
         .catch((error) => {

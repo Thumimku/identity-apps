@@ -1,25 +1,22 @@
 {
+    "extends": "../../tsconfig.base.react.json",
     "compilerOptions": {
-        "experimentalDecorators": true,
-        "outDir": "./dist/src",
-        "declaration": true,
-        "rootDirs": ["src", "stories"],
-        "baseUrl": ".",
-        "declarationDir": "dist/typings",
-        "typeRoots": [ "./types/*", "node_modules/@types" ],
-        "paths": {
-            "*": ["types/*"],
-            "@wso2is/core/api": ["node_modules/@wso2is/core/dist/src/api"],
-            "@wso2is/core/configs": ["node_modules/@wso2is/core/dist/src/configs"],
-            "@wso2is/core/constants": ["node_modules/@wso2is/core/dist/src/constants"],
-            "@wso2is/core/exceptions": ["node_modules/@wso2is/core/dist/src/exceptions"],
-            "@wso2is/core/helpers": ["node_modules/@wso2is/core/dist/src/helpers"],
-            "@wso2is/core/hooks": ["node_modules/@wso2is/core/dist/src/hooks"],
-            "@wso2is/core/models": ["node_modules/@wso2is/core/dist/src/models"],
-            "@wso2is/core/store": ["node_modules/@wso2is/core/dist/src/store"],
-            "@wso2is/core/utils": ["node_modules/@wso2is/core/dist/src/utils"]
-        }
+        "allowJs": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "noFallthroughCasesInSwitch": true
     },
-    "exclude": ["node_modules", "dist", "scripts", "stories"],
-    "extends": "../../configs/common.tsconfig.json"
+    "files": [],
+    "include": [],
+    "references": [
+        {
+            "path": "./tsconfig.lib.json"
+        },
+        {
+            "path": "./tsconfig.spec.json"
+        },
+        {
+            "path": "./.storybook/tsconfig.json"
+        }
+    ]
 }

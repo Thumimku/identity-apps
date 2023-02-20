@@ -18,13 +18,20 @@
 
 <%@ page import="java.io.File" %>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <%@ include file="includes/localize.jsp" %>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
+
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("isPolicyPage", true);
+%>
 
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -35,49 +42,43 @@
     <% } %>
 </head>
 <body class="login-portal layout authentication-portal-layout policy-page-layout cookie-policy-page-layout">
-    <main class="policy-page">
-        <div id="app-header" class="ui borderless top fixed app-header menu">
-            <div class="ui container">
-                <div class="header item product-logo">
-                    <!-- product-title -->
-                    <%
-                        File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
-                        if (productTitleFile.exists()) {
-                    %>
-                        <jsp:include page="extensions/product-title.jsp"/>
-                    <% } else { %>
-                        <jsp:include page="includes/product-title.jsp"/>
-                    <% } %>
-                </div>
-            </div>
-        </div>
+    <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+        <layout:component componentName="ProductHeader" >
+            <%-- product-title --%>
+            <%
+                File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
+                if (productTitleFile.exists()) {
+            %>
+                <jsp:include page="extensions/product-title.jsp"/>
+            <% } else { %>
+                <jsp:include page="includes/product-title.jsp"/>
+            <% } %>
+        </layout:component>
+        <layout:component componentName="MainSection" >
+            <%-- page-content --%>
+            <%
+                File privacyPolicyFile = new File(getServletContext().getRealPath("extensions/privacy-policy-content.jsp"));
+                if (privacyPolicyFile.exists()) {
+            %>
+                    <jsp:include page="extensions/privacy-policy-content.jsp"/>
+            <% } else { %>
+                    <jsp:include page="includes/privacy-policy-content.jsp"/>
+            <% } %>
+        </layout:component>
+        <layout:component componentName="ProductFooter" >
+            <%-- product-footer --%>
+            <%
+                File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                if (productFooterFile.exists()) {
+            %>
+                <jsp:include page="extensions/product-footer.jsp"/>
+            <% } else { %>
+                <jsp:include page="includes/product-footer.jsp"/>
+            <% } %>
+        </layout:component>
+    </layout:main>
 
-        <div class="app-content policy-page-content" style="padding-top: 62px;">
-            <div class="ui container">
-                <!-- page-content -->
-                <%
-                    File privacyPolicyFile = new File(getServletContext().getRealPath("extensions/privacy-policy-content.jsp"));
-                    if (privacyPolicyFile.exists()) {
-                %>
-                        <jsp:include page="extensions/privacy-policy-content.jsp"/>
-                <% } else { %>
-                        <jsp:include page="includes/privacy-policy-content.jsp"/>
-                <% } %>
-            </div>
-        </div>
-    </main>
-
-    <!-- product-footer -->
-    <%
-        File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-        if (productFooterFile.exists()) {
-    %>
-        <jsp:include page="extensions/product-footer.jsp"/>
-    <% } else { %>
-        <jsp:include page="includes/product-footer.jsp"/>
-    <% } %>
-
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {
@@ -87,9 +88,11 @@
         <jsp:include page="includes/footer.jsp"/>
     <% } %>
 
+    <% String onThisPageText = AuthenticationEndpointUtil.i18n(resourceBundle, "on.this.page"); %>
+
     <script type="text/javascript" src="js/u2f-api.js"></script>
     <script type="text/javascript">
-        var ToC = "<nav role='navigation' class='table-of-contents'>" + "<h4>On this page:</h4>" + "<ul class='ui list nav'>";
+        var ToC = "<nav role='navigation' class='table-of-contents'>" + "<h4><%=onThisPageText%>:</h4>" + "<ul class='ui list nav'>";
         var newLine, el, title, link;
 
         $("#privacyPolicy h2, #privacyPolicy h3").each(function() {

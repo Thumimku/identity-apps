@@ -16,9 +16,8 @@
  * under the License.
  */
 
-import { AuthenticatedUserInterface } from "@wso2/identity-oidc-js";
+import { AuthenticatedUserInfo } from "@asgardeo/auth-react";
 import {
-    AlertInterface,
     LinkedAccountInterface,
     ProfileInfoInterface,
     ProfileSchemaInterface
@@ -26,24 +25,25 @@ import {
 import {
     commonAuthenticateReducer,
     commonConfigReducer,
-    commonGlobalReducer,
     commonProfileReducer,
     commonRequestLoadersReducer
 } from "@wso2is/core/store";
-import { I18nModuleOptionsInterface, SupportedLanguagesMeta } from "@wso2is/i18n";
-import { System } from "react-notification-system";
+import { I18nModuleOptionsInterface } from "@wso2is/i18n";
 import { combineReducers } from "redux";
 import { reducer as formReducer } from "redux-form";
 import {
+    accessControlReducer,
     commonConfigReducerInitialState,
-    commonGlobalReducerInitialState,
     commonProfileReducerInitialState,
     commonRequestLoadersInitialState,
-    helpPanelReducer
+    globalReducer,
+    helpPanelReducer,
+    organizationReducer
 } from "./reducers";
+import { routeReducer } from "./reducers/routes";
 import { applicationReducer } from "../../applications/store";
 import { commonAuthenticateReducerInitialState } from "../../authentication/store";
-import { identityProviderReducer } from "../../identity-providers";
+import { identityProviderReducer } from "../../identity-providers/store";
 import { governanceConnectorReducer } from "../../server-configurations";
 import {
     AuthReducerStateInterface,
@@ -59,10 +59,11 @@ import {
  * @type {Reducer<any>} Root reducer to be used when creating the store.
  */
 export const reducers = combineReducers({
+    accessControl: accessControlReducer,
     application: applicationReducer,
     auth: commonAuthenticateReducer<
         AuthReducerStateInterface,
-        AuthenticatedUserInterface>(commonAuthenticateReducerInitialState),
+        AuthenticatedUserInfo>(commonAuthenticateReducerInitialState),
     config: commonConfigReducer<
         DeploymentConfigInterface,
         ServiceResourceEndpointsInterface,
@@ -71,14 +72,16 @@ export const reducers = combineReducers({
         UIConfigInterface
         >(commonConfigReducerInitialState),
     form: formReducer,
-    global: commonGlobalReducer<AlertInterface, System, SupportedLanguagesMeta>(commonGlobalReducerInitialState),
+    global: globalReducer,
     governanceConnector: governanceConnectorReducer,
     helpPanel: helpPanelReducer,
     identityProvider: identityProviderReducer,
     loaders: commonRequestLoadersReducer(commonRequestLoadersInitialState),
+    organization: organizationReducer,
     profile: commonProfileReducer<
         ProfileInfoInterface,
         ProfileSchemaInterface[],
         LinkedAccountInterface[]
-        >(commonProfileReducerInitialState)
+        >(commonProfileReducerInitialState),
+    routes: routeReducer
 });

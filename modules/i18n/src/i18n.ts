@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,11 +17,11 @@
  */
 
 import i18next, { InitOptions, Module, TFunction, i18n as i18nInterface } from "i18next";
-import { UnsupportedI18nFrameworkException } from "./exceptions";
-import { generateI18nOptions } from "./helpers";
-import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import XHR from "i18next-xhr-backend";
+import { initReactI18next } from "react-i18next";
+import { UnsupportedI18nFrameworkException } from "./exceptions";
+import { generateI18nOptions } from "./helpers";
 
 /**
  * Supported list of i18n frameworks.
@@ -73,8 +73,8 @@ export class I18n {
      * @return {Promise<i18next.TFunction>} Init promise.
      */
     public static init(options?: InitOptions, override?: boolean, autoDetect?: boolean, useBackend?: boolean,
-                       debug?: boolean, framework: SupportedI18nFrameworks = this.defaultFramework,
-                       plugins?: Module[]): Promise<TFunction> {
+        debug?: boolean, framework: SupportedI18nFrameworks = this.defaultFramework,
+        plugins?: Module[]): Promise<TFunction> {
 
         // Resolve debug mode.
         if (options && (options.debug === true || options.debug === false)) {
@@ -107,6 +107,6 @@ export class I18n {
             throw new UnsupportedI18nFrameworkException(framework);
         }
 
-        return this.instance.init(generateI18nOptions(options, override, useBackend, this.debug))
+        return this.instance.init(generateI18nOptions(options, override, useBackend, this.debug));
     }
 }

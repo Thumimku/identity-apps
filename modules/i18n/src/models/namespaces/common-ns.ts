@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,30 +25,44 @@ export interface CommonNS {
     activate: string;
     active: string;
     add: string;
+    addKey: string;
     addURL: string;
     all: string;
     applicationName: string;
     applications: string;
     approvalStatus: string;
     approve: string;
+    apps: string;
+    assignee: string;
     assignees: string;
     authenticator: string;
     authentication: string;
     authenticator_plural: string;
+    back: string;
     browser: string;
     cancel: string;
-    close: string;
     challengeQuestionNumber: string;
     change: string;
+    chunkLoadErrorMessage: {
+        heading: string;
+        description: string;
+        primaryActionText: string;
+    }
     claim: string;
+    clear: string;
+    clientId: string;
+    close: string;
     comingSoon: string;
     completed: string;
     configure: string;
     confirm: string;
     contains: string;
     continue: string;
+    copyToClipboard: string;
     createdOn: string;
+    create: string;
     dangerZone: string;
+    darkMode: string;
     delete: string;
     description: string;
     deviceModel: string;
@@ -61,12 +75,14 @@ export interface CommonNS {
     edit: string;
     endsWith: string;
     equals: string;
+    exitFullScreen: string;
     explore: string;
     export: string;
     featureAvailable: string;
     filter: string;
     finish: string;
     goBackHome: string;
+    goFullScreen: string;
     help: string;
     hide: string;
     hidePassword: string;
@@ -74,17 +90,24 @@ export interface CommonNS {
     import: string;
     initiator: string;
     ipAddress: string;
+    issuer: string;
     lastAccessed: string;
     lastModified: string;
     lastSeen: string;
     lastUpdatedOn: string;
+    learnMore: string;
+    lightMode: string;
+    loading: string;
     loginTime: string;
     logout: string;
     maximize: string;
+    maxValidation: string;
     minimize: string;
+    minValidation: string;
     more: string;
     myAccount: string;
     name: string;
+    new: string;
     next: string;
     operatingSystem: string;
     operations: string;
@@ -92,6 +115,7 @@ export interface CommonNS {
     personalInfo: string;
     pin: string;
     pinned: string;
+    preview: string;
     previous: string;
     priority: string;
     privacy: string;
@@ -115,11 +139,14 @@ export interface CommonNS {
     sdks: string;
     search: string;
     security: string;
+    settings: string;
+    setup: string;
     show: string;
     showAll: string;
     showLess: string;
     showMore: string;
     showPassword: string;
+    skip: string;
     generatePassword: string;
     startsWith: string;
     step: string;
@@ -146,4 +173,9 @@ export interface CommonNS {
     disabled: string;
     enable: string;
     disable: string;
+    networkErrorMessage: {
+        heading: string;
+        description: string;
+        primaryActionText: string;
+    }
 }

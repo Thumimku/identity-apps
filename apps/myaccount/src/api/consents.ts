@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
+import { AxiosRequestConfig, AxiosResponse } from "axios";
 import {
     ConsentInterface,
     ConsentReceiptInterface,
@@ -27,38 +28,30 @@ import {
     UpdateReceiptInterface
 } from "../models";
 import { store } from "../store";
-import { AxiosRequestConfig, AxiosResponse } from "axios";
 
 /**
  * Initialize an axios Http client.
  * @type {AxiosHttpClientInstance}
  */
-const httpClient = IdentityClient.getInstance().httpRequest.bind(IdentityClient.getInstance());
-const httpClientAll = IdentityClient.getInstance().httpRequestAll.bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance().httpRequest.bind(AsgardeoSPAClient.getInstance());
+const httpClientAll = AsgardeoSPAClient.getInstance().httpRequestAll.bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Fetches a list of consented applications of the currently authenticated user.
  *
  * @return {Promise<any>} A promise containing the response.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export const fetchConsentedApps = async (state: ConsentState, username): Promise<ConsentInterface[]> => {
-
-    const userName = username.split("@");
-
-    if (userName.length > 1) {
-        userName.pop();
-    }
+export const fetchConsentedApps = async (state: ConsentState, username: string): Promise<ConsentInterface[]> => {
 
     const requestConfig = {
         headers: {
             "Accept": "application/json",
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost,
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost,
             "Content-Type": "application/json"
         },
         method: HttpMethods.GET,
         params: {
-            piiPrincipalId: userName.join("@"),
+            piiPrincipalId: username,
             state
         },
         url: store.getState().config.endpoints.consentManagement.consent.listAllConsents
@@ -78,12 +71,11 @@ export const fetchConsentedApps = async (state: ConsentState, username): Promise
  *
  * @return {Promise<any>} A promise containing the response.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const fetchConsentReceipt = (receiptId: string): Promise<any> => {
     const requestConfig = {
         headers: {
             "Accept": "application/json",
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost,
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost,
             "Content-Type": "application/json"
         },
         method: HttpMethods.GET,
@@ -120,15 +112,16 @@ export const fetchAllPurposes = async (limit: number = 0, offset: number = 0): P
     const requestConfig: AxiosRequestConfig = {
         headers: {
             "Accept": "application/json",
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
         },
         method: HttpMethods.GET,
-        params: { 'limit': limit, 'offset': offset },
+        params: { "limit": limit, "offset": offset },
         url: store.getState().config.endpoints.consentManagement.purpose.list
     };
 
     try {
         const response: AxiosResponse = await httpClient(requestConfig);
+
         return Promise.resolve<PurposeModelPartial[]>(response.data as PurposeModelPartial[]);
     } catch (error) {
         return Promise.reject(error);
@@ -173,18 +166,20 @@ export const fetchPurposesByIDs = async (purposeIDs: Iterable<number>): Promise<
         const requestConfiguration: AxiosRequestConfig = {
             headers: {
                 "Accept": "application/json",
-                "Content-Type": "application/json",
+                "Content-Type": "application/json"
             },
             method: HttpMethods.GET,
             /* Contains a additional path parameter :purposeId */
             url: `${ url }/${ purposeID }`
         };
+
         requestConfigurations.push(requestConfiguration);
     }
 
     try {
         const response: AxiosResponse[] = await httpClientAll(requestConfigurations);
         const models = response.map(res => res.data as PurposeModel);
+
         return Promise.resolve<PurposeModel[]>(models);
     } catch (error) {
         return Promise.reject(error);
@@ -196,7 +191,6 @@ export const fetchPurposesByIDs = async (purposeIDs: Iterable<number>): Promise<
  *
  * @return {Promise<any>} A promise containing the response.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const revokeConsentedApp = (appId: string): Promise<any> => {
     const requestConfig = {
         headers: {
@@ -222,7 +216,6 @@ export const revokeConsentedApp = (appId: string): Promise<any> => {
  * @param {any} dispatch - `dispatch` function from redux.
  * @returns {(next) => (action) => any} Passes the action to the next middleware
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const updateConsentedClaims = (receipt: ConsentReceiptInterface): Promise<any> => {
     const body: UpdateReceiptInterface = {
         collectionMethod: "Web Form - My Account",
@@ -237,7 +230,7 @@ export const updateConsentedClaims = (receipt: ConsentReceiptInterface): Promise
                     validity: category.validity
                 })),
                 primaryPurpose: purpose.primaryPurpose,
-                purposeCategoryId: [1],
+                purposeCategoryId: [ 1 ],
                 purposeId: purpose.purposeId,
                 termination: purpose.termination,
                 thirdPartyDisclosure: purpose.thirdPartyDisclosure,

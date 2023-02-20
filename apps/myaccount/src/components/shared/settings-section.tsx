@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,20 +17,22 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
-import { GenericIcon } from "@wso2is/react-components";
+import { GenericIcon, Media, Message } from "@wso2is/react-components";
 import classNames from "classnames";
-import React, { Fragment, FunctionComponent, MouseEvent, PropsWithChildren } from "react";
-import { Card, Grid, Header, Icon, List, Menu, Message, Responsive, SemanticICONS } from "semantic-ui-react";
+import React, { Fragment, FunctionComponent, MouseEvent, PropsWithChildren, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Card, Dimmer, Grid, Header, Icon, List, Menu, SemanticICONS } from "semantic-ui-react";
 import { ThemeIconSizes } from "./icon";
 
 /**
- * Proptypes for the settings section component. See also
+ * Prop-types for the settings section component. See also
  * {@link SettingsSection.defaultProps}
+ * @deprecated Use the `SectionProps` from {@link @wso2is/react-components#SectionProps}.
  */
 interface SettingsSectionProps extends TestableComponentInterface {
     className?: string;
     contentPadding?: boolean;
-    description?: string;
+    description?: React.ReactNode;
     header: string;
     icon?: any;
     iconMini?: any;
@@ -48,13 +50,17 @@ interface SettingsSectionProps extends TestableComponentInterface {
     secondaryActionIcon?: SemanticICONS;
     showActionBar?: boolean;
     topActionBar?: React.ReactNode;
+    disabled?: boolean;
+    renderDisabledItemsAsGrayscale?: boolean;
+    overlayOpacity?: number;
 }
 
 /**
  * Settings section component.
  *
- * @param {PropsWithChildren<any>} props
- * @return {any}
+ * @deprecated Use the `Section` from {@link @wso2is/react-components#Section}.
+ * @param props - Props injected to the component.
+ * @returns Settings Section component.
  */
 export const SettingsSection: FunctionComponent<PropsWithChildren<SettingsSectionProps>> = (
     props: PropsWithChildren<SettingsSectionProps>
@@ -64,6 +70,7 @@ export const SettingsSection: FunctionComponent<PropsWithChildren<SettingsSectio
         className,
         contentPadding,
         description,
+        disabled,
         header,
         icon,
         iconMini,
@@ -76,6 +83,7 @@ export const SettingsSection: FunctionComponent<PropsWithChildren<SettingsSectio
         primaryAction,
         primaryActionDisabled,
         primaryActionIcon,
+        renderDisabledItemsAsGrayscale,
         secondaryAction,
         secondaryActionDisabled,
         secondaryActionIcon,
@@ -84,19 +92,27 @@ export const SettingsSection: FunctionComponent<PropsWithChildren<SettingsSectio
         topActionBar
     } = props;
 
-    const classes = classNames({
-        "with-top-action-bar": topActionBar
-    }, className);
+    const classes = classNames(
+        {
+            disabled,
+            grayscale : disabled && renderDisabledItemsAsGrayscale,
+            "with-top-action-bar": topActionBar !== undefined
+        },
+        className);
+
+    const { t } = useTranslation();
+
+    const [ dimmerState, setDimmerState ] = useState<boolean>(false);
 
     /**
      * Construct the action element.
      *
      * @param action - action which is passed in.
-     * @param {SemanticICONS} actionIcon - Icon for the action.
-     * @param {boolean} actionDisabled - Flag to determine if the action should be disabled.
+     * @param actionIcon - Icon for the action.
+     * @param actionDisabled - Flag to determine if the action should be disabled.
      * @param actionOnClick - On Click handler of the action.
-     * @param {"primary" | "secondary"} actionType - Type of the action.
-     * @return Constructed element.
+     * @param actionType - Type of the action.
+     * @returns Constructed element.
      */
     const constructAction = (
         action: any,
@@ -140,7 +156,21 @@ export const SettingsSection: FunctionComponent<PropsWithChildren<SettingsSectio
     };
 
     return (
-        <Card className={ `settings-card ${ classes }` } fluid padded="very" data-testid={ `${testId}-card` }>
+        <Card
+            className={ `settings-card ${ classes }` }
+            fluid
+            padded="very"
+            onMouseEnter={ () => setDimmerState(true) }
+            onMouseLeave={ () => setDimmerState(false) }
+            data-testid={ `${testId}-card` }
+        >
+            {
+                disabled && (
+                    <Dimmer className="lighter" active={ dimmerState }>
+                        { t("common:featureAvailable" ) }
+                    </Dimmer>
+                )
+            }
             <Card.Content data-testid={ `${testId}-card-content` }>
                 <Grid>
                     <Grid.Row className="header-section" columns={ 2 } data-testid={ `${testId}-card-content-header` }>
@@ -149,45 +179,38 @@ export const SettingsSection: FunctionComponent<PropsWithChildren<SettingsSectio
                             <Card.Meta>{ description }</Card.Meta>
                         </Grid.Column>
                         {
-                            icon || iconMini ? (
-                                    <Grid.Column width={ 6 } className="no-padding">
-                                        <Responsive as={ Fragment } { ...Responsive.onlyComputer }>
-                                            {
-                                                icon ? (
-                                                        <GenericIcon
-                                                            transparent
-                                                            icon={ icon }
-                                                            as="data-url"
-                                                            size={ iconSize }
-                                                            floated={ iconFloated }
-                                                            defaultIcon={ iconStyle === "default" }
-                                                            twoTone={ iconStyle === "twoTone" }
-                                                            colored={ iconStyle === "colored" }
-                                                        />
-                                                    )
-                                                    : null
-                                            }
-                                        </Responsive>
-                                        <Responsive as={ Fragment } maxWidth={ Responsive.onlyTablet.maxWidth }>
-                                            {
-                                                iconMini ? (
-                                                        <GenericIcon
-                                                            transparent
-                                                            icon={ iconMini }
-                                                            as="data-url"
-                                                            size={ iconSize }
-                                                            floated={ iconFloated }
-                                                            defaultIcon={ iconStyle === "default" }
-                                                            twoTone={ iconStyle === "twoTone" }
-                                                            colored={ iconStyle === "colored" }
-                                                        />
-                                                    )
-                                                    : null
-                                            }
-                                        </Responsive>
-                                    </Grid.Column>
-                                )
-                                : null
+                            (icon || iconMini) && (
+                                <Grid.Column width={ 6 } className="no-padding">
+                                    <Media greaterThanOrEqual="computer">
+                                        { icon && (
+                                            <GenericIcon
+                                                transparent
+                                                icon={ icon }
+                                                as="data-url"
+                                                size={ iconSize }
+                                                floated={ iconFloated }
+                                                defaultIcon={ iconStyle === "default" }
+                                                twoTone={ iconStyle === "twoTone" }
+                                                colored={ iconStyle === "colored" }
+                                            />
+                                        ) }
+                                    </Media>
+                                    <Media lessThan="computer">
+                                        { iconMini && (
+                                            <GenericIcon
+                                                transparent
+                                                icon={ iconMini }
+                                                as="data-url"
+                                                size={ iconSize }
+                                                floated={ iconFloated }
+                                                defaultIcon={ iconStyle === "default" }
+                                                twoTone={ iconStyle === "twoTone" }
+                                                colored={ iconStyle === "colored" }
+                                            />
+                                        ) }
+                                    </Media>
+                                </Grid.Column>
+                            )
                         }
                     </Grid.Row>
                     <Grid.Row
@@ -196,72 +219,68 @@ export const SettingsSection: FunctionComponent<PropsWithChildren<SettingsSectio
                         data-testid={ `${testId}-card-content-items` }
                     >
                         <Grid.Column className="no-padding" width={ 16 }>
-                            {
-                                topActionBar
-                                ? (
-                                        <Menu className="top-action-panel no-margin-bottom">
-                                            <Menu.Menu position="right">
-                                                { topActionBar }
-                                            </Menu.Menu>
-                                        </Menu>
-                                    )
-                                : null
-                            }
+                            { topActionBar && (
+                                <Menu className="top-action-panel no-margin-bottom">
+                                    <Menu.Menu position="right">
+                                        { topActionBar }
+                                    </Menu.Menu>
+                                </Menu>
+                            ) }
                             { children }
                         </Grid.Column>
                     </Grid.Row>
                 </Grid>
             </Card.Content>
             {
-                (primaryAction || secondaryAction || placeholder) && showActionBar ? (
-                        <Card.Content className="extra-content" extra>
-                            <List selection={ !secondaryAction } verticalAlign="middle">
-                                <List.Item
-                                    active
-                                    className="action-button"
-                                    tabIndex={ 0 }
-                                    disabled={ !!placeholder }
-                                    // if both `primaryAction` & `secondaryAction` are passed in,
-                                    // disable list item `onClick`.
-                                    onClick={ !(primaryAction && secondaryAction)
-                                        ? onSecondaryActionClick || onPrimaryActionClick
-                                        : null
-                                    }
-                                    data-testid={ primaryAction
-                                        ? `${testId}-card-primary-button` 
-                                        : secondaryAction
+                (primaryAction || secondaryAction || placeholder) && showActionBar && (
+                    <Card.Content className="extra-content" extra>
+                        <List selection={ !secondaryAction } verticalAlign="middle">
+                            <List.Item
+                                active
+                                className="action-button"
+                                tabIndex={ 0 }
+                                disabled={ !!placeholder }
+                                // if both `primaryAction` & `secondaryAction` are passed in,
+                                // disable list item `onClick`.
+                                onClick={ !(primaryAction && secondaryAction)
+                                    ? onSecondaryActionClick || onPrimaryActionClick
+                                    : null
+                                }
+                                data-testid={ primaryAction
+                                    ? `${testId}-card-primary-button`
+                                    : secondaryAction
                                         ? `${testId}-card-secondary-button`
-                                        : `${testId}-card-placeholder`}
-                                    onKeyPress={ (e: KeyboardEvent) => {
-                                        if (e.key !== "Enter") {
-                                            return;
-                                        }
-        
-                                        if (onPrimaryActionClick) {
-                                            onPrimaryActionClick(e);
-                                            return;
-                                        }
-        
-                                        if (onSecondaryActionClick) {
-                                            onSecondaryActionClick(e);
-                                            return;
-                                        }
-                                    } }
-                                >
-                                    {
-                                        placeholder
-                                            ? (
-                                                <List.Header className="action-button-text">
-                                                    <Message info>
-                                                        <Icon name="info circle" />{ placeholder }
-                                                    </Message>
-                                                </List.Header>
-                                            )
-                                            : (
-                                                <>
-                                                    {
-                                                        primaryAction
-                                                            ? constructAction(
+                                        : `${testId}-card-placeholder` }
+                                onKeyPress={ (e: KeyboardEvent) => {
+                                    if (e.key !== "Enter") {
+                                        return;
+                                    }
+
+                                    if (onPrimaryActionClick) {
+                                        onPrimaryActionClick(e);
+
+                                        return;
+                                    }
+
+                                    if (onSecondaryActionClick) {
+                                        onSecondaryActionClick(e);
+
+                                        return;
+                                    }
+                                } }
+                            >
+                                {
+                                    placeholder
+                                        ? (
+                                            <List.Header className="action-button-text">
+                                                <Message type="info" content={ placeholder } />
+                                            </List.Header>
+                                        )
+                                        : (
+                                            <>
+                                                {
+                                                    primaryAction
+                                                        ? constructAction(
                                                             primaryAction,
                                                             primaryActionIcon,
                                                             primaryActionDisabled,
@@ -269,12 +288,12 @@ export const SettingsSection: FunctionComponent<PropsWithChildren<SettingsSectio
                                                                 ? onPrimaryActionClick
                                                                 : null,
                                                             "primary"
-                                                            )
-                                                            : null
-                                                    }
-                                                    {
-                                                        secondaryAction
-                                                            ? constructAction(
+                                                        )
+                                                        : null
+                                                }
+                                                {
+                                                    secondaryAction
+                                                        ? constructAction(
                                                             secondaryAction,
                                                             secondaryActionIcon,
                                                             secondaryActionDisabled,
@@ -282,24 +301,23 @@ export const SettingsSection: FunctionComponent<PropsWithChildren<SettingsSectio
                                                                 ? onSecondaryActionClick
                                                                 : null,
                                                             "secondary"
-                                                            )
-                                                            : null
-                                                    }
-                                                </>
-                                            )
-                                    }
-                                </List.Item>
-                            </List>
-                        </Card.Content>
-                    )
-                    : null
+                                                        )
+                                                        : null
+                                                }
+                                            </>
+                                        )
+                                }
+                            </List.Item>
+                        </List>
+                    </Card.Content>
+                )
             }
         </Card>
     );
 };
 
 /**
- * Default proptypes for the settings section component.
+ * Default prop-types for the settings section component.
  */
 SettingsSection.defaultProps = {
     className: "",

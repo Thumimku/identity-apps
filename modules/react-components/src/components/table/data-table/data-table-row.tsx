@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, PropsWithChildren, ReactElement } from "react";
 import { Table, TableRowProps } from "semantic-ui-react";
@@ -24,14 +24,15 @@ import { Table, TableRowProps } from "semantic-ui-react";
 /**
  * Proptypes for the Data Table Row component.
  */
-export interface DataTableRowPropsInterface extends TableRowProps, TestableComponentInterface { }
+export interface DataTableRowPropsInterface extends TableRowProps, IdentifiableComponentInterface,
+    TestableComponentInterface { }
 
 /**
  * Data Table Row component.
  *
- * @param {DataTableRowPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns the Data Table Row component
  */
 export const DataTableRow: FunctionComponent<PropsWithChildren<DataTableRowPropsInterface>> = (
     props: PropsWithChildren<DataTableRowPropsInterface>
@@ -41,13 +42,18 @@ export const DataTableRow: FunctionComponent<PropsWithChildren<DataTableRowProps
         children,
         className,
         selectable,
+        [ "data-componentid" ]: componentId,
         ...rest
     } = props;
 
     const classes = classNames("data-table-row", className, !selectable && "no-selectable");
 
     return (
-        <Table.Row className={ classes } { ...rest }>
+        <Table.Row
+            className={ classes }
+            data-componentid={ componentId }
+            { ...rest }
+        >
             { children }
         </Table.Row>
     );
@@ -57,5 +63,6 @@ export const DataTableRow: FunctionComponent<PropsWithChildren<DataTableRowProps
  * Default props for the component.
  */
 DataTableRow.defaultProps = {
+    "data-componentid": "data-table-row",
     "data-testid": "data-table-row"
 };

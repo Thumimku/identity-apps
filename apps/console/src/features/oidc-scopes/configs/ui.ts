@@ -16,14 +16,17 @@
  * under the License.
  */
 
-import { AppConstants } from "../../core/constants";
+import {  FunctionComponent, SVGProps } from "react";
+import { ReactComponent as DocumentIcon } from "../../../themes/default/assets/images/icons/document-icon.svg";
+import { ReactComponent as GearsIcon } from "../../../themes/default/assets/images/icons/gears-icon.svg";
 
-export const getOIDCScopeWizardStepIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getOIDCScopeWizardStepIcons = (): {
+    claimConfig: FunctionComponent<SVGProps<SVGSVGElement>>;
+    general: FunctionComponent<SVGProps<SVGSVGElement>>;
+} => {
 
     return {
-        claimConfig: import(`../../../themes/${ theme }/assets/images/icons/gears-icon.svg`),
-        general: import(`../../../themes/${ theme }/assets/images/icons/document-icon.svg`)
+        claimConfig: GearsIcon,
+        general: DocumentIcon
     };
 };

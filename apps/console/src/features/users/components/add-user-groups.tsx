@@ -53,7 +53,6 @@ export const AddUserGroup: FunctionComponent<AddUserGroupPropsInterface> = (
         handleGroupListChange,
         handleTempListChange,
         handleInitialTempListChange,
-        handleInitialGroupListChange,
         handleSetGroupId
     } = props;
 
@@ -120,7 +119,7 @@ export const AddUserGroup: FunctionComponent<AddUserGroupPropsInterface> = (
         }
         handleTempListChange(checkedGroups);
         handleInitialTempListChange(checkedGroups);
-        setIsSelectUnassignedAllGroupsChecked(initialValues?.groupList?.length === checkedGroups.length)
+        setIsSelectUnassignedAllGroupsChecked(initialValues?.groupList?.length === checkedGroups.length);
     };
 
     /**
@@ -163,6 +162,8 @@ export const AddUserGroup: FunctionComponent<AddUserGroupPropsInterface> = (
                     emptyPlaceholderContent={ t("console:manage.features.transferList.list.emptyPlaceholders.users." +
                         "roles.unselected", { type: "groups" }) }
                     data-testid="user-mgt-add-user-wizard-modal-unselected-groups-select-all-checkbox"
+                    emptyPlaceholderDefaultContent={ t("console:manage.features.transferList.list."
+                        + "emptyPlaceholders.default") }
                 >
                     {
                         initialValues?.groupList?.map((group, index)=> {

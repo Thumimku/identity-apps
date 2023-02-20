@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,15 +17,15 @@
  */
 
 import { RouteInterface } from "@wso2is/core/models";
-import { ReactElement } from "react";
 import { ApplicationTemplatesConfigInterface } from "../features/applications/data/application-templates";
-import { IdentityProviderTemplatesConfigInterface } from "../features/identity-providers/data/identity-provider-templates";
+import {
+    IdentityProviderTemplatesConfigInterface
+} from "../features/identity-providers/data/identity-provider-templates";
 
 /**
  * Interface for the core extensions config.
  */
 export interface ExtensionsConfigInterface {
-    componentExtensions: ReactElement[] | any[];
     routes: ExtensionRoutesInterface;
     sections: SectionExtensionsConfigInterface;
     templateExtensions: TemplateExtensionsConfigInterface;
@@ -35,6 +35,8 @@ export interface ExtensionsConfigInterface {
  * Interface for routes extensions.
  */
 export interface ExtensionRoutesInterface {
+    auth?: RouteInterface[];
+    default?: RouteInterface[];
     develop?: RouteInterface[];
     fullscreen?: RouteInterface[];
     manage?: RouteInterface[];

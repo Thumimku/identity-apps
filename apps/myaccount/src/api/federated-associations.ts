@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
 import { HttpMethods } from "../models";
 import { store } from "../store";
 
@@ -25,16 +25,15 @@ import { store } from "../store";
  *
  * @type {AxiosHttpClientInstance}
  */
-const httpClient = IdentityClient.getInstance().httpRequest.bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance().httpRequest.bind(AsgardeoSPAClient.getInstance());
 
 /**
  * This function calls the federated association API endpoint and gets the list of federated associations
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const getFederatedAssociations = (): Promise<any> => {
     const requestConfig = {
         headers: {
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost,
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost,
             "Content-Type": "application/json"
         },
         method: HttpMethods.GET,
@@ -58,11 +57,10 @@ export const getFederatedAssociations = (): Promise<any> => {
  * This removes the specified federated association
  * @param id
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const deleteFederatedAssociation = (id: string): Promise<any> => {
     const requestConfig = {
         headers: {
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost,
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost,
             "Content-Type": "application/json"
         },
         method: HttpMethods.DELETE,
@@ -81,11 +79,10 @@ export const deleteFederatedAssociation = (id: string): Promise<any> => {
 /**
  * This removes all the federated associations
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const deleteAllFederatedAssociation = (): Promise<any> => {
     const requestConfig = {
         headers: {
-            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost,
+            "Access-Control-Allow-Origin": store.getState()?.config?.deployment?.clientHost,
             "Content-Type": "application/json"
         },
         method: HttpMethods.DELETE,

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,22 +17,35 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
-import { ResourceTab } from "@wso2is/react-components";
+import {
+    ContentLoader,
+    EmphasizedSegment,
+    ResourceTab,
+    ResourceTabPaneInterface
+} from "@wso2is/react-components";
 import React, {
     FunctionComponent,
-    ReactElement
+    ReactElement,
+    useEffect,
+    useState
 } from "react";
+import { TabProps } from "semantic-ui-react";
 import {
     AdvanceSettings,
     AttributeSettings,
     AuthenticatorSettings,
+    ConnectedApps,
     GeneralSettings,
     OutboundProvisioningSettings
 } from "./settings";
 import { JITProvisioningSettings } from "./settings/jit-provisioning-settings";
+import { identityProviderConfig } from "../../../extensions";
+import { IdentityProviderConstants, IdentityProviderManagementConstants } from "../constants";
 import {
     IdentityProviderAdvanceInterface,
-    IdentityProviderInterface
+    IdentityProviderInterface,
+    IdentityProviderTabTypes,
+    IdentityProviderTemplateInterface
 } from "../models";
 
 /**
@@ -55,13 +68,49 @@ interface EditIdentityProviderPropsInterface extends TestableComponentInterface 
      * Callback to update the idp details.
      */
     onUpdate: (id: string) => void;
+    /**
+     * Check if IDP is Google
+     */
+    isGoogle: boolean;
+    /**
+     * Check if the requesting IDP is enterprise
+     * with SAML and OIDC protocols.
+     */
+    isEnterprise?: boolean | undefined;
+    isOidc: boolean | undefined;
+    isSaml: boolean | undefined;
+    /**
+     * IDP template.
+     */
+    template: IdentityProviderTemplateInterface;
+    /**
+     * Callback to see if tab extensions are available
+     */
+    isTabExtensionsAvailable: (isAvailable: boolean) => void;
+    /**
+     * Type of IDP.
+     * @see {@link IdentityProviderManagementConstants } Use one of `IDP_TEMPLATE_IDS`.
+     */
+    type: string;
+    /**
+     * Specifies if the component should only be read-only.
+     */
+    isReadOnly: boolean;
+    /**
+     * Specifies if it is needed to redirect to a specific tabindex
+     */
+    isAutomaticTabRedirectionEnabled?: boolean;
+    /**
+     * Specifies, to which tab(tabid) it need to redirect.
+     */
+    tabIdentifier?: string;
 }
 
 /**
  * Identity Provider edit component.
  *
- * @param {EditIdentityProviderPropsInterface} props - Props injected to the component.
- * @return {ReactElement}
+ * @param props - Props injected to the component.
+ * @returns React Element
  */
 export const EditIdentityProvider: FunctionComponent<EditIdentityProviderPropsInterface> = (
     props: EditIdentityProviderPropsInterface
@@ -70,10 +119,26 @@ export const EditIdentityProvider: FunctionComponent<EditIdentityProviderPropsIn
     const {
         identityProvider,
         isLoading,
+        isSaml,
+        isOidc,
         onDelete,
         onUpdate,
+        template,
+        isTabExtensionsAvailable,
+        type,
+        isReadOnly,
+        isAutomaticTabRedirectionEnabled,
+        tabIdentifier,
         [ "data-testid" ]: testId
     } = props;
+
+    const [ tabPaneExtensions, setTabPaneExtensions ] = useState<ResourceTabPaneInterface[]>(undefined);
+    const [ defaultActiveIndex, setDefaultActiveIndex ] = useState<number | string>(0);
+
+    const isOrganizationEnterpriseAuthenticator: boolean = identityProvider.federatedAuthenticators
+        .defaultAuthenticatorId === IdentityProviderManagementConstants.ORGANIZATION_ENTERPRISE_AUTHENTICATOR_ID;
+
+    const urlSearchParams: URLSearchParams = new URLSearchParams(location.search);
 
     const idpAdvanceConfig: IdentityProviderAdvanceInterface = {
         alias: identityProvider.alias,
@@ -82,9 +147,24 @@ export const EditIdentityProvider: FunctionComponent<EditIdentityProviderPropsIn
         isFederationHub: identityProvider.isFederationHub
     };
 
+    const Loader = (): ReactElement => (
+        <EmphasizedSegment padded>
+            <ContentLoader inline="centered" active/>
+        </EmphasizedSegment>
+    );
+
     const GeneralIdentityProviderSettingsTabPane = (): ReactElement => (
         <ResourceTab.Pane controlledSegmentation>
             <GeneralSettings
+                hideIdPLogoEditField={
+                    identityProviderConfig
+                        .utils
+                        ?.hideLogoInputFieldInIdPGeneralSettingsForm(
+                            identityProvider?.federatedAuthenticators?.defaultAuthenticatorId
+                        )
+                }
+                isSaml={ isSaml }
+                isOidc={ isOidc }
                 editingIDP={ identityProvider }
                 description={ identityProvider.description }
                 isEnabled={ identityProvider.isEnabled }
@@ -94,6 +174,8 @@ export const EditIdentityProvider: FunctionComponent<EditIdentityProviderPropsIn
                 onDelete={ onDelete }
                 onUpdate={ onUpdate }
                 data-testid={ `${ testId }-general-settings` }
+                isReadOnly = { isReadOnly }
+                loader={ Loader }
             />
         </ResourceTab.Pane>
     );
@@ -106,7 +188,26 @@ export const EditIdentityProvider: FunctionComponent<EditIdentityProviderPropsIn
                 initialRoleMappings={ identityProvider.roles.mappings }
                 isLoading={ isLoading }
                 onUpdate={ onUpdate }
+                hideIdentityClaimAttributes={
+                    /*identity claim attributes are disabled for saml*/
+                    isSaml && identityProviderConfig.utils.hideIdentityClaimAttributes(
+                        identityProvider.federatedAuthenticators.defaultAuthenticatorId
+                    )
+                }
+                isRoleMappingsEnabled={
+                    isSaml || identityProviderConfig.utils.isRoleMappingsEnabled(
+                        identityProvider.federatedAuthenticators.defaultAuthenticatorId
+                    )
+                }
                 data-testid={ `${ testId }-attribute-settings` }
+                provisioningAttributesEnabled={
+                    isSaml || identityProviderConfig.utils.isProvisioningAttributesEnabled(
+                        identityProvider.federatedAuthenticators.defaultAuthenticatorId
+                    )
+                }
+                isReadOnly={ isReadOnly }
+                loader={ Loader }
+                isSaml={ isSaml }
             />
         </ResourceTab.Pane>
     );
@@ -118,6 +219,8 @@ export const EditIdentityProvider: FunctionComponent<EditIdentityProviderPropsIn
                 isLoading={ isLoading }
                 onUpdate={ onUpdate }
                 data-testid={ `${ testId }-authenticator-settings` }
+                isReadOnly={ isReadOnly }
+                loader={ Loader }
             />
         </ResourceTab.Pane>
     );
@@ -130,6 +233,8 @@ export const EditIdentityProvider: FunctionComponent<EditIdentityProviderPropsIn
                 isLoading={ isLoading }
                 onUpdate={ onUpdate }
                 data-testid={ `${ testId }-outbound-provisioning-settings` }
+                isReadOnly={ isReadOnly }
+                loader={ Loader }
             />
         </ResourceTab.Pane>
     );
@@ -142,6 +247,8 @@ export const EditIdentityProvider: FunctionComponent<EditIdentityProviderPropsIn
                 isLoading={ isLoading }
                 onUpdate={ onUpdate }
                 data-testid={ `${ testId }-jit-provisioning-settings` }
+                isReadOnly={ isReadOnly }
+                loader={ Loader }
             />
         </ResourceTab.Pane>
     );
@@ -153,53 +260,165 @@ export const EditIdentityProvider: FunctionComponent<EditIdentityProviderPropsIn
                 advancedConfigurations={ idpAdvanceConfig }
                 onUpdate={ onUpdate }
                 data-testid={ `${ testId }-advance-settings` }
+                isReadOnly={ isReadOnly }
+                isLoading={ isLoading }
+                loader={ Loader }
             />
         </ResourceTab.Pane>
     );
 
+    const ConnectedAppsTabPane = (): ReactElement => (
+        <ResourceTab.Pane controlledSegmentation>
+            <ConnectedApps
+                editingIDP={ identityProvider }
+                isReadOnly={ isReadOnly }
+                isLoading={ isLoading }
+                loader={ Loader }
+                data-componentid={ `${ testId }-connected-apps-settings` }
+            />
+        </ResourceTab.Pane>
+    );
+
+    useEffect(() => {
+        if (tabPaneExtensions) {
+            return;
+        }
+
+        if (!template?.content?.quickStart || !identityProvider?.id) {
+            return;
+        }
+
+        const extensions: ResourceTabPaneInterface[] = identityProviderConfig
+            .editIdentityProvider.getTabExtensions({
+                content: template.content.quickStart,
+                identityProvider: identityProvider,
+                template: template
+            });
+
+        if (Array.isArray(extensions) && extensions.length > 0) {
+            isTabExtensionsAvailable(true);
+            if (!urlSearchParams.get(IdentityProviderManagementConstants.IDP_STATE_URL_SEARCH_PARAM_KEY)) {
+                setDefaultActiveIndex(1);
+            }
+        }
+
+        setTabPaneExtensions(extensions);
+    }, [
+        template,
+        tabPaneExtensions,
+        identityProvider
+    ]);
+
     const getPanes = () => {
-        const panes = [];
+        const panes: ResourceTabPaneInterface[] = [];
+
+        if (tabPaneExtensions && tabPaneExtensions.length > 0) {
+            panes.push(...tabPaneExtensions);
+        }
 
         panes.push({
+            "data-tabid": IdentityProviderConstants.GENERAL_TAB_ID,
             menuItem: "General",
             render: GeneralIdentityProviderSettingsTabPane
         });
 
-        panes.push({
-            menuItem: "Attributes",
-            render: AttributeSettingsTabPane
-        });
-
-        panes.push({
-            menuItem: "Authentication",
+        !isOrganizationEnterpriseAuthenticator && panes.push({
+            "data-tabid": IdentityProviderConstants.SETTINGS_TAB_ID,
+            menuItem: "Settings",
             render: AuthenticatorSettingsTabPane
         });
 
-        panes.push({
-            menuItem: "Outbound Provisioning",
-            render: OutboundProvisioningSettingsTabPane
-        });
+        /**
+         * If the protocol is SAML and if the feature is enabled in
+         * configuration level we can show the attributes section.
+         * {@link identityProviderConfig} contains the configuration
+         * to enable or disable this via extensions. Please refer
+         * {@link apps/console/src/extensions#} configs folder and
+         * models folder for types. identity-provider.ts
+         */
+        const attributesForSamlEnabled: boolean = isSaml &&
+            identityProviderConfig.editIdentityProvider.attributesSettings;
+
+        // Evaluate whether to Show/Hide `Attributes`.
+        if ((attributesForSamlEnabled || shouldShowAttributeSettings(type))
+            && !isOrganizationEnterpriseAuthenticator) {
+            panes.push({
+                "data-tabid": IdentityProviderConstants.ATTRIBUTES_TAB_ID,
+                menuItem: "Attributes",
+                render: AttributeSettingsTabPane
+            });
+        }
 
         panes.push({
-            menuItem: "Just-in-Time Provisioning",
-            render: JITProvisioningSettingsTabPane
+            "data-tabid": IdentityProviderConstants.CONNECTED_APPS_TAB_ID,
+            menuItem: "Connected Apps",
+            render: ConnectedAppsTabPane
         });
 
-        panes.push({
-            menuItem: "Advanced",
-            render: AdvancedSettingsTabPane
-        });
+        if (identityProviderConfig.editIdentityProvider.showOutboundProvisioning
+            && !isOrganizationEnterpriseAuthenticator ) {
+            panes.push({
+                "data-tabid": IdentityProviderConstants.OUTBOUND_PROVISIONING_TAB_ID,
+                menuItem: "Outbound Provisioning",
+                render: OutboundProvisioningSettingsTabPane
+            });
+        }
+
+        if (identityProviderConfig.editIdentityProvider.showJitProvisioning
+            && !isOrganizationEnterpriseAuthenticator) {
+            panes.push({
+                "data-tabid": IdentityProviderConstants.JIT_PROVISIONING_TAB_ID,
+                menuItem: identityProviderConfig.jitProvisioningSettings?.menuItemName,
+                render: JITProvisioningSettingsTabPane
+            });
+        }
+
+        if (identityProviderConfig.editIdentityProvider.showAdvancedSettings
+            && !isOrganizationEnterpriseAuthenticator) {
+            panes.push({
+                "data-tabid": IdentityProviderConstants.ADVANCED_TAB_ID,
+                menuItem: "Advanced",
+                render: AdvancedSettingsTabPane
+            });
+        }
 
         return panes;
     };
 
+    /**
+     * Evaluate internally whether to show/hide `Attributes` tab.
+     *
+     * @param type - IDP Type.
+     *
+     * @returns Should show attribute settings or not.
+     */
+    const shouldShowAttributeSettings = (type: string): boolean => {
+
+        const isTabEnabledInExtensions: boolean | undefined = identityProviderConfig
+            .editIdentityProvider
+            .isTabEnabledForIdP(type, IdentityProviderTabTypes.USER_ATTRIBUTES);
+
+        return isTabEnabledInExtensions !== undefined
+            ? isTabEnabledInExtensions
+            : true;
+    };
+
+    if (!identityProvider || isLoading) {
+        return <Loader />;
+    }
+
     return (
-        identityProvider && (
-            <ResourceTab
-                data-testid={ `${ testId }-resource-tabs` }
-                panes={ getPanes() }
-            />
-        )
+        <ResourceTab
+            isLoading={ isLoading }
+            data-testid={ `${ testId }-resource-tabs` }
+            panes={ getPanes() }
+            defaultActiveIndex={ defaultActiveIndex }
+            onTabChange={ (e: React.MouseEvent<HTMLDivElement, MouseEvent>, data: TabProps ) => {
+                setDefaultActiveIndex(data.activeIndex);
+            } }
+            isAutomaticTabRedirectionEnabled={ isAutomaticTabRedirectionEnabled }
+            tabIdentifier={ tabIdentifier }
+        />
     );
 };
 

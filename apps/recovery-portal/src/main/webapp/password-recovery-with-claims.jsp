@@ -20,6 +20,7 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.owasp.encoder.Encode" %>
 <%@ page import="org.wso2.carbon.identity.base.IdentityRuntimeException" %>
+<%@ page import="org.wso2.carbon.identity.captcha.util.CaptchaUtil" %>
 <%@ page import="org.wso2.carbon.identity.core.util.IdentityTenantUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointConstants" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointUtil" %>
@@ -33,12 +34,15 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <jsp:directive.include file="includes/localize.jsp"/>
 <jsp:directive.include file="tenant-resolve.jsp"/>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
 
 <%
     ReCaptchaApi reCaptchaApi = new ReCaptchaApi();
+    String username = request.getParameter("username");
 
     if (StringUtils.isNotEmpty(tenantDomain)) {
         try {
@@ -65,6 +69,9 @@
     } catch (ApiException e) {
         request.setAttribute("error", true);
         request.setAttribute("errorMsg", e.getMessage());
+        if (!StringUtils.isBlank(username)) {
+            request.setAttribute("username", username);
+        }
         request.getRequestDispatcher("error.jsp").forward(request, response);
         return;
     }
@@ -82,6 +89,9 @@
     } catch (ApiException e) {
         request.setAttribute("error", true);
         request.setAttribute("errorMsg", e.getMessage());
+        if (!StringUtils.isBlank(username)) {
+            request.setAttribute("username", username);
+        }
         request.getRequestDispatcher("error.jsp").forward(request, response);
         return;
     }
@@ -90,6 +100,9 @@
         request.setAttribute("error", true);
         request.setAttribute("errorMsg", IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
                 "No.recovery.supported.claims.found"));
+        if (!StringUtils.isBlank(username)) {
+            request.setAttribute("username", username);
+        }
         request.getRequestDispatcher("error.jsp").forward(request, response);
         return;
     }
@@ -115,10 +128,15 @@
     }
 %>
 
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "large");
+%>
+
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -130,16 +148,17 @@
 
     <%
         if (reCaptchaEnabled) {
+            String reCaptchaAPI = CaptchaUtil.reCaptchaAPIURL();
     %>
-    <script src='<%=(request.getAttribute("reCaptchaAPI"))%>'></script>
+    <script src='<%=(reCaptchaAPI)%>'></script>
     <%
         }
     %>
 </head>
 <body class="login-portal layout recovery-layout">
-    <main class="center-segment">
-        <div class="ui container large center aligned middle aligned">
-            <!-- product-title -->
+    <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+        <layout:component componentName="ProductHeader" >
+            <%-- product-title --%>
             <%
                 File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
                 if (productTitleFile.exists()) {
@@ -148,6 +167,8 @@
             <% } else { %>
             <jsp:include page="includes/product-title.jsp"/>
             <% } %>
+        </layout:component>
+        <layout:component componentName="MainSection" >
             <div class="ui segment">
                 <h2><%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Recover.password")%></h2>
                 <% if (error) { %>
@@ -256,21 +277,24 @@
 
                         <%
                             if (reCaptchaEnabled) {
+                                String reCaptchaKey = CaptchaUtil.reCaptchaSiteKey();
                         %>
                         <div class="field">
                             <div class="g-recaptcha"
-                                 data-sitekey=
-                                         "<%=Encode.forHtmlContent((String)request.getAttribute("reCaptchaKey"))%>">
+                                    data-size="invisible"
+                                    data-callback="onCompleted"
+                                    data-action="passwordRecovery"
+                                    data-sitekey=
+                                            "<%=Encode.forHtmlContent(reCaptchaKey)%>">
                             </div>
                         </div>
                         <%
                             }
                         %>
-
                         <div class="ui divider hidden"></div>
 
                         <div class="align-right buttons">
-                            <a href="javascript:goBack()" class="ui button link-button">
+                            <a href="javascript:goBack()" class="ui button secondary">
                                 <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Cancel")%>
                             </a>
                             <button id="recoverySubmit"
@@ -282,70 +306,81 @@
                     </form>
                 </div>
             </div>
-        </div>
-    </main>
-    <!-- /content/body -->
-
-<!-- product-footer -->
-<%
-    File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-    if (productFooterFile.exists()) {
-%>
-<jsp:include page="extensions/product-footer.jsp"/>
-<% } else { %>
-<jsp:include page="includes/product-footer.jsp"/>
-<% } %>
-<!-- footer -->
-<%
-    File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
-    if (footerFile.exists()) {
-%>
-<jsp:include page="extensions/footer.jsp"/>
-<% } else { %>
-<jsp:include page="includes/footer.jsp"/>
-<% } %>
-
-<script type="text/javascript">
-    function goBack() {
-        window.history.back();
-    }
-
-    $(document).ready(function () {
-
-        $("#recoverDetailsForm").submit(function (e) {
-            var errorMessage = $("#error-msg");
-            errorMessage.hide();
-
-            var claimFields = document.querySelectorAll(".claims");
-            var filled = 0;
-            for(var i = 0;i < claimFields.length;i++){
-                var input = claimFields[i];
-                if(input.value.length > 0)
-                {
-                    filled++;
-                }
-            }
-            if(filled < 1) {
-                errorMessage.text("Please fill at least one user details field.");
-                errorMessage.show();
-                $("html, body").animate({scrollTop: errorMessage.offset().top}, 'slow');
-                return false;
-            }
-
-            <% if (reCaptchaEnabled) { %>
-            var reCaptchaResponse = $("[name='g-recaptcha-response']")[0].value;
-
-            if (reCaptchaResponse.trim() == '') {
-                errorMessage.text("Please select reCaptcha.");
-                errorMessage.show();
-                $("html, body").animate({scrollTop: errorMessage.offset().top}, 'slow');
-                return false;
-            }
+        </layout:component>
+        <layout:component componentName="ProductFooter" >
+            <%-- product-footer --%>
+            <%
+                File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                if (productFooterFile.exists()) {
+            %>
+            <jsp:include page="extensions/product-footer.jsp"/>
+            <% } else { %>
+            <jsp:include page="includes/product-footer.jsp"/>
             <% } %>
+        </layout:component>
+    </layout:main>
 
-            return true;
+
+    <%-- footer --%>
+    <%
+        File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
+        if (footerFile.exists()) {
+    %>
+    <jsp:include page="extensions/footer.jsp"/>
+    <% } else { %>
+    <jsp:include page="includes/footer.jsp"/>
+    <% } %>
+
+    <script type="text/javascript">
+        function goBack() {
+            window.history.back();
+        }
+
+
+        function onCompleted() {
+            $('#recoverDetailsForm').submit();
+        }
+
+        $(document).ready(function () {
+
+            $("#recoverDetailsForm").submit(function (e) {
+
+                <%
+                    if (reCaptchaEnabled) {
+                %>
+                if (!grecaptcha.getResponse()) {
+                    e.preventDefault();
+                    grecaptcha.execute();
+
+                    return true;
+                }
+                <%
+                    }
+                %>
+                var errorMessage = $("#error-msg");
+                errorMessage.hide();
+
+                var claimFields = document.querySelectorAll(".claims");
+                var filled = 0;
+                for(var i = 0;i < claimFields.length;i++){
+                    var input = claimFields[i];
+                    if(input.value.length > 0)
+                    {
+                        filled++;
+                    }
+                }
+                if(filled < 1) {
+                    errorMessage.text("Please fill at least one user details field.");
+                    errorMessage.show();
+                    $("html, body").animate({scrollTop: errorMessage.offset().top}, 'slow');
+                    return false;
+                }
+
+
+                return true;
+            });
+
         });
-    });
-</script>
+    </script>
 </body>
 </html>

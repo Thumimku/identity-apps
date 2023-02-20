@@ -33,6 +33,8 @@ export class ProfileConstants {
     // SCIM2 schema IDs
     public static readonly SCIM2_CORE_USER_SCHEMA: string = "urn:ietf:params:scim:schemas:core:2.0:User";
     public static readonly SCIM2_ENT_USER_SCHEMA: string = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+    public static readonly SCIM2_WSO2_USER_SCHEMA: string = "urn:scim:wso2:schema";
+    public static readonly SCIM2_WSO2_CUSTOM_SCHEMA: string = "urn:scim:wso2:schema";
 
     // API errors
     public static readonly SCHEMA_FETCH_REQUEST_INVALID_RESPONSE_CODE_ERROR: string = "Received an invalid status " +
@@ -58,6 +60,7 @@ export class ProfileConstants {
      * @default
      */
     public static readonly SCIM2_SCHEMA_DICTIONARY: Map<string, string> = new Map<string, string>()
+        .set("ACTIVE", "active")
         .set("EMAILS", "emails")
         .set("USERNAME", "userName")
         .set("NAME", "name")
@@ -69,7 +72,18 @@ export class ProfileConstants {
         .set("PROFILE_URL", "profileUrl")
         .set("ACCOUNT_LOCKED", "accountLocked")
         .set("ACCOUNT_DISABLED", "accountDisabled")
-        .set("ONETIME_PASSWORD", "oneTimePassword");
+        .set("ONETIME_PASSWORD", "oneTimePassword")
+        .set("DOB", "dateOfBirth")
+        .set("LOCAL_CREDENTIAL_EXISTS", "localCredentialExists")
+        .set("USER_SOURCE_ID", "userSourceId")
+        .set("ACTIVE", "active")
+        .set("RESROUCE_TYPE", "ResourceType")
+        .set("EXTERNAL_ID", "ExternalID")
+        .set("META_DATA", "MetaData")
+        .set("IDP_TYPE", "idpType")
+        .set("IMS", "ims")
+        .set("PHOTOS", "photos")
+        .set("META_VERSION", "meta.version");
 
     /**
      * States if the SCIM schema is mutable.

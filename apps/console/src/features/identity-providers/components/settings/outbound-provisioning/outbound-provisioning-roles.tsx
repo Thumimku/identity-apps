@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,17 +16,19 @@
  * under the License.
  */
 
-import { getRolesList } from "@wso2is/core/api";
+import { AccessControlConstants, Show } from "@wso2is/access-control";
 import { AlertLevels, RoleListInterface, RolesInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
-import { Heading, Hint } from "@wso2is/react-components";
+import { Heading, Hint, Popup } from "@wso2is/react-components";
 import filter from "lodash-es/filter";
 import isEmpty from "lodash-es/isEmpty";
 import isEqual from "lodash-es/isEqual";
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { Button, DropdownItemProps, Form, Grid, Icon, Label, Popup } from "semantic-ui-react";
+import { Button, DropdownItemProps, Form, Grid, Icon, Label } from "semantic-ui-react";
+import { OrganizationUtils } from "../../../../organizations/utils";
+import { getRolesList } from "../../../../roles/api";
 import { updateIDPRoleMappings } from "../../../api";
 import { IdentityProviderRolesInterface } from "../../../models";
 import { handleGetRoleListError, handleUpdateIDPRoleMappingsError } from "../../utils";
@@ -34,6 +36,8 @@ import { handleGetRoleListError, handleUpdateIDPRoleMappingsError } from "../../
 interface OutboundProvisioningRolesPropsInterface extends TestableComponentInterface {
     idpId: string;
     idpRoles: IdentityProviderRolesInterface;
+    isReadOnly?: boolean;
+    onUpdate: (id: string) => void;
 }
 
 export const OutboundProvisioningRoles: FunctionComponent<OutboundProvisioningRolesPropsInterface> = (
@@ -42,24 +46,27 @@ export const OutboundProvisioningRoles: FunctionComponent<OutboundProvisioningRo
     const {
         idpId,
         idpRoles,
+        isReadOnly,
+        onUpdate,
         [ "data-testid" ]: testId
     } = props;
 
-    const [selectedRole, setSelectedRole] = useState<string>(undefined);
-    const [selectedRoles, setSelectedRoles] = useState<string[]>(undefined);
-    const [roleList, setRoleList] = useState<RolesInterface[]>(undefined);
+    const [ selectedRole, setSelectedRole ] = useState<string>(undefined);
+    const [ selectedRoles, setSelectedRoles ] = useState<string[]>(undefined);
+    const [ roleList, setRoleList ] = useState<RolesInterface[]>(undefined);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     const dispatch = useDispatch();
 
     const { t } = useTranslation();
-    
+
     const handleRoleAdd = (event) => {
         event.preventDefault();
         if (isEmpty(selectedRole)) {
             return;
         }
         if (isEmpty(selectedRoles.find(role => role === selectedRole))) {
-            setSelectedRoles([...selectedRoles, selectedRole]);
+            setSelectedRoles([ ...selectedRoles, selectedRole ]);
         }
         setSelectedRole("");
     };
@@ -72,10 +79,15 @@ export const OutboundProvisioningRoles: FunctionComponent<OutboundProvisioningRo
     };
 
     useEffect(() => {
+        if (!OrganizationUtils.isCurrentOrganizationRoot()) {
+            return;
+        }
+
         getRolesList(null)
             .then((response) => {
                 if (response.status === 200) {
                     const allRole: RoleListInterface = response.data;
+
                     setRoleList(allRole?.Resources?.filter((role) => {
                         return !(role.displayName
                             .includes("Application/") || role.displayName.includes("Internal/"));
@@ -90,21 +102,28 @@ export const OutboundProvisioningRoles: FunctionComponent<OutboundProvisioningRo
     }, []);
 
     const handleOutboundProvisioningRoleMapping = (outboundProvisioningRoles: string[]) => {
+        setIsSubmitting(true);
+
         updateIDPRoleMappings(idpId, {
-                ...idpRoles,
-                outboundProvisioningRoles: outboundProvisioningRoles
-            }
+            ...idpRoles,
+            outboundProvisioningRoles: outboundProvisioningRoles
+        }
         ).then(() => {
             dispatch(addAlert(
                 {
-                    description: t("console:develop.features.idp.notifications.updateIDPRoleMappings." + 
+                    description: t("console:develop.features.authenticationProvider." +
+                        "notifications.updateIDPRoleMappings." +
                         "success.description"),
                     level: AlertLevels.SUCCESS,
-                    message: t("console:develop.features.idp.notifications.updateIDPRoleMappings.success.message")
+                    message: t("console:develop.features.authenticationProvider." +
+                        "notifications.updateIDPRoleMappings.success.message")
                 }
             ));
+            onUpdate(idpId);
         }).catch(error => {
             handleUpdateIDPRoleMappingsError(error);
+        }).finally(() => {
+            setIsSubmitting(false);
         });
     };
 
@@ -113,7 +132,8 @@ export const OutboundProvisioningRoles: FunctionComponent<OutboundProvisioningRo
             <Grid.Row>
                 <Grid.Column width={ 8 }>
                     <Heading as="h5">
-                        { t("console:develop.features.idp.forms.outboundProvisioningRoles" + ".heading") }
+                        { t("console:develop.features.authenticationProvider.forms.outboundProvisioningRoles"
+                            + ".heading") }
                     </Heading>
                 </Grid.Column>
             </Grid.Row>
@@ -130,7 +150,8 @@ export const OutboundProvisioningRoles: FunctionComponent<OutboundProvisioningRo
                                 } as DropdownItemProps;
                             }) }
                             value={ selectedRole }
-                            placeholder={ t("console:develop.features.idp.forms.outboundProvisioningRoles" + 
+                            placeholder={ t("console:develop.features.authenticationProvider" +
+                                ".forms.outboundProvisioningRoles" +
                                 ".placeHolder") }
                             onChange={
                                 (event, data) => {
@@ -141,44 +162,49 @@ export const OutboundProvisioningRoles: FunctionComponent<OutboundProvisioningRo
                                 }
                             }
                             search
-                            label={ t("console:develop.features.idp.forms.outboundProvisioningRoles.label") }
+                            label={ t("console:develop.features.authenticationProvider.forms." +
+                                "outboundProvisioningRoles.label") }
                             data-testid={ `${ testId }-role-select-dropdown` }
+                            readOnly={ isReadOnly }
                         />
                         <Popup
                             trigger={
                                 (
-                                    <Button
-                                        onClick={ (e) => handleRoleAdd(e) }
-                                        icon="add"
-                                        type="button"
-                                        disabled={ false }
-                                        className="inline"
-                                    />
+                                    <Show when={ AccessControlConstants.IDP_EDIT }>
+                                        <Button
+                                            onClick={ (e) => handleRoleAdd(e) }
+                                            icon="add"
+                                            type="button"
+                                            disabled={ false }
+                                            className="inline"
+                                        />
+                                    </Show>
                                 )
                             }
                             position="top center"
-                            content={ t("console:develop.features.idp.forms.outboundProvisioningRoles.popup.content") }
+                            content={ t("console:develop.features.authenticationProvider.forms." +
+                                "outboundProvisioningRoles.popup.content") }
                             inverted
                             data-testid={ `${ testId }-add-button` }
                         />
                     </Form>
                     <Hint>
-                        { t("console:develop.features.idp.forms.outboundProvisioningRoles.hint") }
+                        { t("console:develop.features.authenticationProvider.forms.outboundProvisioningRoles.hint") }
                     </Hint>
 
                     {
                         selectedRoles && selectedRoles?.map((selectedRole, index) => {
                             return (
-                                <Label
-                                    key={ index }
-                                >
-                                    { selectedRole }
-                                    <Icon
-                                        name="delete"
-                                        onClick={ () => handleRoleRemove(selectedRole) }
-                                        data-testid={ `${ testId }-delete-button` }
-                                    />
-                                </Label>
+                                <Show key={ index } when={ AccessControlConstants.IDP_EDIT }>
+                                    <Label>
+                                        { selectedRole }
+                                        <Icon
+                                            name="delete"
+                                            onClick={ () => handleRoleRemove(selectedRole) }
+                                            data-testid={ `${ testId }-delete-button` }
+                                        />
+                                    </Label>
+                                </Show>
                             );
                         })
                     }
@@ -186,19 +212,23 @@ export const OutboundProvisioningRoles: FunctionComponent<OutboundProvisioningRo
             </Grid.Row>
             <Grid.Row>
                 <Grid.Column width={ 8 }>
-                    <Button
-                        primary
-                        size="small"
-                        onClick={ () => {
-                            if (selectedRoles === undefined) {
-                                return;
-                            }
-                            handleOutboundProvisioningRoleMapping(selectedRoles);
-                        } }
-                        data-testid={ `${ testId }-update-button` }
-                    >
-                        { t("common:update") }
-                    </Button>
+                    <Show when={ AccessControlConstants.IDP_EDIT }>
+                        <Button
+                            primary
+                            size="small"
+                            loading={ isSubmitting }
+                            disabled={ isSubmitting }
+                            onClick={ () => {
+                                if (selectedRoles === undefined) {
+                                    return;
+                                }
+                                handleOutboundProvisioningRoleMapping(selectedRoles);
+                            } }
+                            data-testid={ `${ testId }-update-button` }
+                        >
+                            { t("common:update") }
+                        </Button>
+                    </Show>
                 </Grid.Column>
             </Grid.Row>
         </Grid>

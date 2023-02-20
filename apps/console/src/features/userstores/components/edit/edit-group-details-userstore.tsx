@@ -25,7 +25,9 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { Grid, Icon } from "semantic-ui-react";
 import { SqlEditor } from "..";
+import { userstoresConfig } from "../../../../extensions";
 import { patchUserStore } from "../../api";
+import { CONSUMER_USERSTORE_ID } from "../../constants";
 import { RequiredBinary, TypeProperty, UserstoreType } from "../../models";
 
 /**
@@ -71,6 +73,7 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
     const [ showMore, setShowMore ] = useState(false);
     const [ disabled, setDisabled ] = useState(true);
     const [ sql, setSql ] = useState<Map<string, string>>(null);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     const dispatch = useDispatch();
 
@@ -103,6 +106,7 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
     useEffect(() => {
         if (properties) {
             const master = properties?.required.find(property => property.name === "ReadGroups");
+
             setDisabled(!(master?.value === "true"));
         }
     }, [ properties ]);
@@ -112,7 +116,7 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
             return {
                 operation: "REPLACE",
                 path: `/properties/${property.name}`,
-                value: values.get(property.name).toString()
+                value: values.get(property.name)?.toString()
             };
         });
 
@@ -121,7 +125,7 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                 return {
                     operation: "REPLACE",
                     path: `/properties/${property.name}`,
-                    value: values.get(property.name).toString()
+                    value: values.get(property.name)?.toString()
                 };
             })
             : null;
@@ -131,7 +135,7 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                 return {
                     operation: "REPLACE",
                     path: `/properties/${property.name}`,
-                    value: sql.get(property.name).toString()
+                    value: sql.get(property.name)?.toString()
                 };
             })
             : null;
@@ -141,7 +145,7 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                 return {
                     operation: "REPLACE",
                     path: `/properties/${property.name}`,
-                    value: sql.get(property.name).toString()
+                    value: sql.get(property.name)?.toString()
                 };
             })
             : null;
@@ -151,7 +155,7 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                 return {
                     operation: "REPLACE",
                     path: `/properties/${property.name}`,
-                    value: sql.get(property.name).toString()
+                    value: sql.get(property.name)?.toString()
                 };
             })
             : null;
@@ -161,7 +165,7 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                 return {
                     operation: "REPLACE",
                     path: `/properties/${property.name}`,
-                    value: sql.get(property.name).toString()
+                    value: sql.get(property.name)?.toString()
                 };
             })
             : null;
@@ -177,6 +181,8 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
             ]
             : requiredData;
 
+        setIsSubmitting(true);
+
         patchUserStore(id, data)
             .then(() => {
                 dispatch(addAlert<AlertInterface>({
@@ -187,7 +193,7 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                         "updateUserstore.success.message")
                 }));
 
-                // ATM, userstore operations run as an async task in the backend. Hence, The changes aren't 
+                // ATM, userstore operations run as an async task in the backend. Hence, The changes aren't
                 // applied at once. As a temp solution, a notification informing the delay is shown here.
                 // See https://github.com/wso2/product-is/issues/9767 for updates on the backend improvement.
                 // TODO: Remove delay notification and fetch the new updates once backend is fixed.
@@ -209,6 +215,9 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                     message: error?.message || t("console:manage.features.userstores.notifications." +
                         "updateUserstore.genericError.message")
                 }));
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
@@ -228,7 +237,7 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                                     const toggle = property.attributes
                                         .find(attribute => attribute.name === "type")?.value === "boolean";
                                     const master = property.name === "ReadGroups";
-    
+
                                     return (
                                         isPassword
                                             ? (
@@ -246,75 +255,79 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                                                     placeholder={
                                                         t("console:manage.features.userstores.forms." +
                                                             "custom.placeholder",
-                                                            {
-                                                                name: property.description.split("#")[ 0 ]
-                                                            })
+                                                        {
+                                                            name: property.description.split("#")[ 0 ]
+                                                        })
                                                     }
                                                     data-testid={ `${ testId }-form-password-input-${ property.name }` }
                                                 />
                                             )
                                             : toggle
-                                                ? master
-                                                    ? (
-                                                        <Field
-                                                            name={ property.name }
-                                                            value={ property.value ?? property.defaultValue }
-                                                            type="toggle"
-                                                            key={ index }
-                                                            required={ false }
-                                                            label={ property.description.split("#")[ 0 ] }
-                                                            requiredErrorMessage={
-                                                                t("console:manage.features.userstores.forms." +
+                                                ? (id !== CONSUMER_USERSTORE_ID)
+                                                && (
+                                                    master
+                                                        ? (
+                                                            <Field
+                                                                name={ property.name }
+                                                                value={ property.value ?? property.defaultValue }
+                                                                type="toggle"
+                                                                key={ index }
+                                                                required={ false }
+                                                                label={ property.description.split("#")[ 0 ] }
+                                                                requiredErrorMessage={
+                                                                    t("console:manage.features.userstores.forms." +
                                                                     "custom.requiredErrorMessage",
                                                                     {
                                                                         name: property.description.split("#")[ 0 ]
                                                                     })
-                                                            }
-                                                            listen={ (values: Map<string, FormValue>) => {
-                                                                setDisabled(
-                                                                    values.get(property.name)
-                                                                        .toString() === "false"
-                                                                );
-                                                            } }
-                                                            toggle
-                                                            placeholder={
-                                                                t("console:manage.features.userstores.forms." +
+                                                                }
+                                                                listen={ (values: Map<string, FormValue>) => {
+                                                                    setDisabled(
+                                                                        values.get(property.name)
+                                                                            .toString() === "false"
+                                                                    );
+                                                                } }
+                                                                toggle
+                                                                placeholder={
+                                                                    t("console:manage.features.userstores.forms." +
                                                                     "custom.placeholder",
                                                                     {
                                                                         name: property.description.split("#")[ 0 ]
                                                                     })
-                                                            }
-                                                            data-testid={ `${ testId }-form-toggle-master-${
-                                                                property.name }` }
-                                                        />
-                                                    )
-                                                    : (
-                                                        <Field
-                                                            name={ property.name }
-                                                            value={ property.value ?? property.defaultValue }
-                                                            type="toggle"
-                                                            key={ index }
-                                                            required={ false }
-                                                            label={ property.description.split("#")[ 0 ] }
-                                                            requiredErrorMessage={
-                                                                t("console:manage.features.userstores.forms.edit." +
-                                                                    "custom.requiredErrorMessage",
+                                                                }
+                                                                data-testid={ `${ testId }-form-toggle-master-${ 
+                                                                    property.name }` }
+                                                            />
+                                                        )
+                                                        : (
+                                                            <Field
+                                                                name={ property.name }
+                                                                value={ property.value ?? property.defaultValue }
+                                                                type="toggle"
+                                                                key={ index }
+                                                                required={ false }
+                                                                label={ property.description.split("#")[ 0 ] }
+                                                                requiredErrorMessage={
+                                                                    t("console:manage.features.userstores.forms.edit." +
+                                                                        "custom.requiredErrorMessage",
                                                                     {
                                                                         name: property.description.split("#")[ 0 ]
                                                                     })
-                                                            }
-                                                            disabled={ disabled }
-                                                            toggle
-                                                            placeholder={
-                                                                t("console:manage.features.userstores.forms." +
-                                                                    "custom.placeholder",
+                                                                }
+                                                                disabled={ disabled }
+                                                                toggle
+                                                                placeholder={
+                                                                    t("console:manage.features.userstores.forms." +
+                                                                        "custom.placeholder",
                                                                     {
                                                                         name: property.description.split("#")[ 0 ]
                                                                     })
-                                                            }
-                                                            data-testid={ `${ testId }-form-toggle-${ property.name }` }
-                                                        />
-                                                    )
+                                                                }
+                                                                data-testid={ `${ testId }-form-toggle-${ 
+                                                                    property.name }` }
+                                                            />
+                                                        )
+                                                )
                                                 : (
                                                     <Field
                                                         name={ property.name }
@@ -326,17 +339,22 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                                                         requiredErrorMessage={
                                                             t("console:manage.features.userstores.forms.edit." +
                                                                 "custom.requiredErrorMessage",
-                                                                {
-                                                                    name: property.description.split("#")[ 0 ]
-                                                                })
+                                                            {
+                                                                name: property.description.split("#")[ 0 ]
+                                                            })
                                                         }
-                                                        disabled={ disabled }
+                                                        disabled={
+                                                            userstoresConfig.userstoreEdit.groupDetails.showToggles
+                                                            && id !== CONSUMER_USERSTORE_ID
+                                                                ? disabled
+                                                                : false
+                                                        }
                                                         placeholder={
                                                             t("console:manage.features.userstores.forms." +
                                                                 "custom.placeholder",
-                                                                {
-                                                                    name: property.description.split("#")[ 0 ]
-                                                                })
+                                                            {
+                                                                name: property.description.split("#")[ 0 ]
+                                                            })
                                                         }
                                                         data-testid={ `${ testId }-form-text-input-${ property.name }` }
                                                     />
@@ -344,17 +362,18 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                                     );
                                 })
                             }
-    
+
                         </Grid.Column>
                     </Grid.Row>
                 </Grid>
-    
+
                 { !disabled
                     && (properties?.optional.nonSql.length > 0
                         || properties?.optional.sql.delete.length > 0
                         || properties?.optional.sql.insert.length > 0
                         || properties?.optional.sql.select.length > 0
                         || properties?.optional.sql.update.length > 0)
+                    && (id !== CONSUMER_USERSTORE_ID)
                     && (
                         <Grid columns={ 1 }>
                             <Grid.Column width={ 8 } textAlign="center">
@@ -369,112 +388,112 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                             </Grid.Column>
                         </Grid>
                     ) }
-    
+
                 { !disabled
                     && showMore && properties?.optional.nonSql.length > 0 && (
-                        <Grid>
-                            <Grid.Row columns={ 1 }>
-                                <Grid.Column width={ 8 }>
-                                    {
-                                        properties?.optional?.nonSql.map((property: TypeProperty, index: number) => {
-                                            const name = property.description.split("#")[ 0 ];
-                                            const isPassword = property.attributes
-                                                .find(attribute => attribute.name === "type").value === "password";
-                                            const toggle = property.attributes
-                                                .find(attribute => attribute.name === "type")?.value === "boolean";
-    
-                                            return (
-                                                isPassword
+                    <Grid>
+                        <Grid.Row columns={ 1 }>
+                            <Grid.Column width={ 8 }>
+                                {
+                                    properties?.optional?.nonSql.map((property: TypeProperty, index: number) => {
+                                        const name = property.description.split("#")[ 0 ];
+                                        const isPassword = property.attributes
+                                            .find(attribute => attribute.name === "type").value === "password";
+                                        const toggle = property.attributes
+                                            .find(attribute => attribute.name === "type")?.value === "boolean";
+
+                                        return (
+                                            isPassword
+                                                ? (
+                                                    <Field
+                                                        name={ property.name }
+                                                        type="password"
+                                                        key={ index }
+                                                        required={ false }
+                                                        label={ name }
+                                                        requiredErrorMessage={
+                                                            t("console:manage.features.userstores.forms.edit." +
+                                                                "custom.requiredErrorMessage",
+                                                            {
+                                                                name: property.description.split("#")[ 0 ]
+                                                            })
+                                                        }
+                                                        showPassword={ t("common:showPassword") }
+                                                        hidePassword={ t("common:hidePassword") }
+                                                        placeholder={
+                                                            t("console:manage.features.userstores.forms." +
+                                                                    "custom.placeholder",
+                                                            {
+                                                                name: property.description.split("#")[ 0 ]
+                                                            })
+                                                        }
+                                                        data-testid={ `${ testId }-form-non-sql-password-input-${ 
+                                                            property.name }` }
+                                                    />
+                                                )
+                                                : toggle
                                                     ? (
                                                         <Field
                                                             name={ property.name }
-                                                            type="password"
+                                                            value={ property.value ?? property.defaultValue }
+                                                            type="toggle"
                                                             key={ index }
                                                             required={ false }
-                                                            label={ name }
+                                                            label={ property.description.split("#")[ 0 ] }
                                                             requiredErrorMessage={
-                                                                t("console:manage.features.userstores.forms.edit." +
-                                                                    "custom.requiredErrorMessage",
-                                                                    {
-                                                                        name: property.description.split("#")[ 0 ]
-                                                                    })
+                                                                t("console:manage.features.userstores.forms." +
+                                                                        "custom.requiredErrorMessage",
+                                                                {
+                                                                    name: property.description.split("#")[ 0 ]
+                                                                })
                                                             }
-                                                            showPassword={ t("common:showPassword") }
-                                                            hidePassword={ t("common:hidePassword") }
+                                                            disabled={ disabled }
+                                                            toggle
                                                             placeholder={
                                                                 t("console:manage.features.userstores.forms." +
                                                                     "custom.placeholder",
-                                                                    {
-                                                                        name: property.description.split("#")[ 0 ]
-                                                                    })
+                                                                {
+                                                                    name: property.description.split("#")[ 0 ]
+                                                                })
                                                             }
-                                                            data-testid={ `${ testId }-form-non-sql-password-input-${
+                                                            data-testid={ `${ testId }-form-non-sql-toggle-${ 
+                                                                property.name }` }
+                                                        />
+                                                    ) :
+                                                    (
+                                                        <Field
+                                                            name={ property.name }
+                                                            value={ property.value ?? property.defaultValue }
+                                                            type="text"
+                                                            key={ index }
+                                                            required={ false }
+                                                            label={ property.description.split("#")[ 0 ] }
+                                                            requiredErrorMessage={
+                                                                t("console:manage.features.userstores.forms" +
+                                                                    ".custom.requiredErrorMessage",
+                                                                {
+                                                                    name: property.description.split("#")[ 0 ]
+                                                                })
+                                                            }
+                                                            disabled={ disabled }
+                                                            placeholder={
+                                                                t("console:manage.features.userstores.forms." +
+                                                                    "custom.placeholder",
+                                                                {
+                                                                    name: property.description.split("#")[ 0 ]
+                                                                })
+                                                            }
+                                                            data-testid={ `${ testId }-form-non-sql-text-input-${ 
                                                                 property.name }` }
                                                         />
                                                     )
-                                                    : toggle
-                                                        ? (
-                                                            <Field
-                                                                name={ property.name }
-                                                                value={ property.value ?? property.defaultValue }
-                                                                type="toggle"
-                                                                key={ index }
-                                                                required={ false }
-                                                                label={ property.description.split("#")[ 0 ] }
-                                                                requiredErrorMessage={
-                                                                    t("console:manage.features.userstores.forms." +
-                                                                        "custom.requiredErrorMessage",
-                                                                        {
-                                                                            name: property.description.split("#")[ 0 ]
-                                                                        })
-                                                                }
-                                                                disabled={ disabled }
-                                                                toggle
-                                                                placeholder={
-                                                                    t("console:manage.features.userstores.forms." +
-                                                                        "custom.placeholder",
-                                                                        {
-                                                                            name: property.description.split("#")[ 0 ]
-                                                                        })
-                                                                }
-                                                                data-testid={ `${ testId }-form-non-sql-toggle-${
-                                                                    property.name }` }
-                                                            />
-                                                        ) :
-                                                        (
-                                                            <Field
-                                                                name={ property.name }
-                                                                value={ property.value ?? property.defaultValue }
-                                                                type="text"
-                                                                key={ index }
-                                                                required={ false }
-                                                                label={ property.description.split("#")[ 0 ] }
-                                                                requiredErrorMessage={
-                                                                    t("console:manage.features.userstores.forms" +
-                                                                        ".custom.requiredErrorMessage",
-                                                                        {
-                                                                            name: property.description.split("#")[ 0 ]
-                                                                        })
-                                                                }
-                                                                disabled={ disabled }
-                                                                placeholder={
-                                                                    t("console:manage.features.userstores.forms." +
-                                                                        "custom.placeholder",
-                                                                        {
-                                                                            name: property.description.split("#")[ 0 ]
-                                                                        })
-                                                                }
-                                                                data-testid={ `${ testId }-form-non-sql-text-input-${
-                                                                    property.name }` }
-                                                            />
-                                                        )
-                                            );
-                                        })
-                                    }
-                                </Grid.Column>
-                            </Grid.Row>
-                        </Grid>
-                    )
+                                        );
+                                    })
+                                }
+                            </Grid.Column>
+                        </Grid.Row>
+                    </Grid>
+                )
                 }
                 { !disabled
                     && showMore
@@ -488,6 +507,7 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                                 <SqlEditor
                                     onChange={ (name: string, value: string) => {
                                         const tempSql = new Map(sql);
+                                        
                                         tempSql.set(name, value);
                                         setSql(tempSql);
                                     } }
@@ -501,7 +521,12 @@ export const EditGroupDetails: FunctionComponent<EditGroupDetailsPropsInterface>
                 }
                 <Grid columns={ 1 }>
                     <Grid.Column width={ 8 }>
-                        <PrimaryButton type="submit" data-testid={ `${ testId }-form-submit-button` }>
+                        <PrimaryButton
+                            type="submit"
+                            loading={ isSubmitting }
+                            disabled={ isSubmitting || disabled }
+                            data-testid={ `${ testId }-form-submit-button` }
+                        >
                             Update
                         </PrimaryButton>
                     </Grid.Column>

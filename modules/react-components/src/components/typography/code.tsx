@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,14 +16,14 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { PropsWithChildren, ReactElement } from "react";
 
 /**
  * Code component prop types.
  */
-export interface CodePropsInterface extends TestableComponentInterface {
+export interface CodePropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Extra CSS classes.
      */
@@ -33,6 +33,14 @@ export interface CodePropsInterface extends TestableComponentInterface {
      */
     compact?: boolean;
     /**
+     * Size of the font.
+     */
+    fontSize?: "inherit" | "default";
+    /**
+     * Font color.
+     */
+    fontColor?: "inherit" | "default";
+    /**
      * Should the component render with a background.
      */
     withBackground?: boolean;
@@ -41,9 +49,9 @@ export interface CodePropsInterface extends TestableComponentInterface {
 /**
  * Text with code formatting. Wrapper around `<code>` element.
  *
- * @param {CodePropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns Code React Component
  */
 export const Code: React.FunctionComponent<PropsWithChildren<CodePropsInterface>> = (
     props: PropsWithChildren<CodePropsInterface>
@@ -54,6 +62,9 @@ export const Code: React.FunctionComponent<PropsWithChildren<CodePropsInterface>
         children,
         className,
         compact,
+        fontColor,
+        fontSize,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         ...rest
     } = props;
@@ -61,13 +72,22 @@ export const Code: React.FunctionComponent<PropsWithChildren<CodePropsInterface>
     const classes = classNames("inline-code",
         {
             compact,
+            [ `font-size-${ fontSize }` ]: fontSize,
+            [ `font-color-${ fontColor }` ]: fontColor,
             "transparent" : !withBackground
         },
         className
     );
 
     return (
-        <code className={ classes } data-testid={ testId } { ...rest }>{ children }</code>
+        <code
+            className={ classes }
+            data-componentid={ componentId }
+            data-testid={ testId }
+            { ...rest }
+        >
+            { children }
+        </code>
     );
 };
 
@@ -75,6 +95,7 @@ export const Code: React.FunctionComponent<PropsWithChildren<CodePropsInterface>
  * Default props for the Code component.
  */
 Code.defaultProps = {
+    "data-componentid": "code",
     "data-testid": "code",
     withBackground: true
 };

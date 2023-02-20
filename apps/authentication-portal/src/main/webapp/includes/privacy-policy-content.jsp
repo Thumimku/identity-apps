@@ -17,21 +17,21 @@
 --%>
 
 <%@ include file="localize.jsp" %>
-<!-- page content -->
+<%-- page content --%>
 <div class="ui grid">
     <div class="two column row"></div>
         <div class="four wide computer four wide tablet column">
             <div id="toc" class="ui segment toc"></div>
         </div>
         <div class="twelve wide computer twelve wide tablet column">
-            <!-- content -->
+            <%-- content --%>
             <div>
                 <div>
                     <h1>
                         <%=AuthenticationEndpointUtil.i18n(resourceBundle, "wso2.identity.server")%> - <%=AuthenticationEndpointUtil.i18n(resourceBundle, "privacy.policy.general")%>
                     </h1>
                 </div>
-                <div">
+                <div>
                     <%-- Customizable content. Due to this nature, i18n is not implemented for this section --%>
                     <div id="privacyPolicy" class="padding-double">
                         <h4><a href="http://wso2.org/library/identity-server">About WSO2 Identity Server</a></h4>
@@ -39,7 +39,7 @@
 
                         <h2 id="privacy-policy">Privacy Policy</h2>
                         <p>This policy describes how WSO2 IS captures your personal information, the purposes of collection, and information about the retention of your personal information.</p>
-                        <p>Please note that this policy is for reference only, and is applicable for the software as a product. WSO2 Inc. and its developers have no access to the information held within WSO2 IS. Please see the <a href="privacy_policy.do#disclaimer">Disclaimer</a> section for more information</p>
+                        <p>Please note that this policy is for reference only, and is applicable for the software as a product. WSO2 LLC. and its developers have no access to the information held within WSO2 IS. Please see the <a href="privacy_policy.do#disclaimer">Disclaimer</a> section for more information</p>
                         <p>Entities, organisations or individuals controlling the use and administration of WSO2 IS should create their own privacy policies setting out the manner in which data is controlled or processed by the respective entity, organisation or individual.</p>
 
                         <h2 id="what-is-personal-information">What is personal information?</h2>
@@ -120,7 +120,9 @@
                         </ul>
 
                         <h3 id="how-to-request-removal-of-your-personal-information">How to request removal of your personal information</h3>
-                        <p>You can request the administrator to delete your account. The administrator is the administrator of the tenant you are registered under, or the super-administrator if you do not use the tenant feature.</p>
+                        <p>You can request the administrator to delete your account. The administrator is the
+                            administrator of the organization you are registered under, or the super-administrator if
+                            you do not use the organization feature.</p>
                         <p>Additionally, you can request to anonymize all traces of your activities that WSO2 IS may have retained in logs, databases or analytical storage.</p>
 
                         <h2 id="more-information">More information</h2>
@@ -147,7 +149,7 @@
                     <%-- /Costomizable content --%>
                 </div>
             </div>
-            <!-- /content -->
+            <%-- /content --%>
         </div>
     </div>
 </div>

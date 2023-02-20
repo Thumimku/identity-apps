@@ -17,14 +17,29 @@
   --%>
 
 <%@ page import="java.io.File" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <%@include file="includes/localize.jsp" %>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
+
+<%
+    String errorCode = StringUtils.EMPTY;
+    if (request.getParameter("error") != null) {
+        errorCode = request.getParameter("error");
+    }
+%>
+
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "medium");
+%>
 
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -35,10 +50,9 @@
     <% } %>
 </head>
 <body class="login-portal layout authentication-portal-layout" onload="loadFunc()">
-    <main class="center-segment">
-        <div class="ui container medium center aligned middle">
-
-            <!-- product-title -->
+    <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+        <layout:component componentName="ProductHeader" >
+            <%-- product-title --%>
             <%
                 File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
                 if (productTitleFile.exists()) {
@@ -47,13 +61,19 @@
             <% } else { %>
                 <jsp:include page="includes/product-title.jsp"/>
             <% } %>
-
+        </layout:component>
+        <layout:component componentName="MainSection" >
             <div class="ui segment">
                 <h3 class="ui header">
                     <%=AuthenticationEndpointUtil.i18n(resourceBundle, "device.flow.sign.in")%>
                 </h3>
 
                 <div class="segment-form">
+                    <% if (errorCode != "") { %>
+                    <div class="ui visible negative message" lockedReasonid="error-msg" data-testid="login-page-error-message">
+                        <%=AuthenticationEndpointUtil.i18n(resourceBundle, errorCode)%>
+                    </div>
+                <% } %>
                     <form class="ui large form" action="../oauth2/device" method="post" id="loginForm">
                         <div class="field">
                             <div class="ui fluid left icon input">
@@ -63,7 +83,7 @@
                                         value=""
                                         name="user_code"
                                         tabindex="0"
-                                        placeholder="user code"
+                                        placeholder="<%=AuthenticationEndpointUtil.i18n(resourceBundle, "device.flow.user.code") %>"
                                         required>
                                 <i aria-hidden="true" class="user icon"></i>
                             </div>
@@ -80,20 +100,21 @@
                     </form>
                 </div>
             </div>
-        </div>
-    </main>
+        </layout:component>
+        <layout:component componentName="ProductFooter" >
+            <%-- product-footer --%>
+            <%
+                File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                if (productFooterFile.exists()) {
+            %>
+            <jsp:include page="extensions/product-footer.jsp"/>
+            <% } else { %>
+            <jsp:include page="includes/product-footer.jsp"/>
+            <% } %>
+        </layout:component>
+    </layout:main>
 
-    <!-- product-footer -->
-    <%
-        File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-        if (productFooterFile.exists()) {
-    %>
-    <jsp:include page="extensions/product-footer.jsp"/>
-    <% } else { %>
-    <jsp:include page="includes/product-footer.jsp"/>
-    <% } %>
-
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {

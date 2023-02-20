@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,30 +16,38 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import React, { FunctionComponent, ReactElement } from "react";
 import { ButtonProps, Button as SemanticButton } from "semantic-ui-react";
 
 /**
  * Default button Prop types.
  */
-export interface DefaultButtonPropsInterface extends ButtonProps, TestableComponentInterface { }
+export interface DefaultButtonPropsInterface extends ButtonProps, IdentifiableComponentInterface,
+    TestableComponentInterface { }
 
 /**
  * Default button component.
  *
- * @param {ButtonProps} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns a React component
  */
 export const Button: FunctionComponent<DefaultButtonPropsInterface> = (
     props: DefaultButtonPropsInterface
 ): ReactElement => {
 
-    const { [ "data-testid" ]: testId } = props;
+    const {
+        [ "data-componentid" ]: componentId,
+        [ "data-testid" ]: testId
+    } = props;
 
     return (
-        <SemanticButton { ...props } data-testid={ testId } />
+        <SemanticButton
+            { ...props }
+            data-componentid={ componentId }
+            data-testid={ testId }
+        />
     );
 };
 
@@ -47,5 +55,6 @@ export const Button: FunctionComponent<DefaultButtonPropsInterface> = (
  * Default props for the default button component.
  */
 Button.defaultProps = {
+    "data-componentid": "default-button",
     "data-testid": "default-button"
 };

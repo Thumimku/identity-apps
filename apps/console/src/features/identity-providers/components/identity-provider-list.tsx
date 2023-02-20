@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,27 +16,33 @@
  * under the License.
  */
 
+import { AccessControlConstants, Show } from "@wso2is/access-control";
+import { hasRequiredScopes } from "@wso2is/core/helpers";
 import { AlertLevels, LoadableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import {
     AnimatedAvatar,
     AppAvatar,
     ConfirmationModal,
+    ContentLoader,
     DataTable,
     EmptyPlaceholder,
     LinkButton,
     PrimaryButton,
     TableActionsInterface,
-    TableColumnInterface,
-    ContentLoader
+    TableColumnInterface
 } from "@wso2is/react-components";
 import React, { FunctionComponent, ReactElement, ReactNode, SyntheticEvent, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
-import { Divider, Header, Icon, List, SemanticICONS } from "semantic-ui-react";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+import { Divider, Header, Icon, Label, List, SemanticICONS } from "semantic-ui-react";
 import { handleIDPDeleteError } from "./utils";
+import { getApplicationDetails } from "../../applications/api";
+import { ApplicationBasicInterface } from "../../applications/models";
 import {
     AppConstants,
+    AppState,
+    FeatureConfigInterface,
     UIConstants,
     getEmptyPlaceholderIllustrations,
     history
@@ -50,8 +56,6 @@ import {
     IdentityProviderListResponseInterface,
     StrictIdentityProviderInterface
 } from "../models";
-import { getApplicationDetails } from "../../applications/api";
-import { ApplicationBasicInterface } from "../../applications/models";
 
 /**
  * Proptypes for the identity provider list component.
@@ -79,8 +83,8 @@ interface IdentityProviderListPropsInterface extends LoadableComponentInterface,
     onIdentityProviderDelete?: () => void;
     /**
      * On list item select callback.
-     * @param {React.SyntheticEvent} event - Click event.
-     * @param {IdentityProviderInterface} idp - Selected IDP
+     * @param event - Click event.
+     * @param idp - Selected IDP
      */
     onListItemClick?: (event: SyntheticEvent, idp: IdentityProviderInterface) => void;
     /**
@@ -104,8 +108,8 @@ interface IdentityProviderListPropsInterface extends LoadableComponentInterface,
 /**
  * Identity provider list component.
  *
- * @param {IdentityProviderListPropsInterface} props Props injected to the component.
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns Identity Provider List component.
  */
 export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsInterface> = (
     props: IdentityProviderListPropsInterface
@@ -133,14 +137,18 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
     const [ connectedApps, setConnectedApps ] = useState<string[]>(undefined);
     const [ showDeleteErrorDueToConnectedAppsModal, setShowDeleteErrorDueToConnectedAppsModal ] =
         useState<boolean>(false);
+    const [ loading, setLoading ] = useState(false);
     const [ isAppsLoading, setIsAppsLoading ] = useState(true);
 
     const { t } = useTranslation();
 
+    const featureConfig: FeatureConfigInterface = useSelector((state: AppState) => state.config.ui.features);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
+
     /**
      * Redirects to the identity provider edit page when the edit button is clicked.
      *
-     * @param {string} idpId Identity provider id.
+     * @param idpId - Identity provider id.
      */
     const handleIdentityProviderEdit = (idpId: string): void => {
         history.push(AppConstants.getPaths().get("IDP_EDIT").replace(":id", idpId));
@@ -149,7 +157,7 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
     /**
      * Deletes an identity provider when the delete identity provider button is clicked.
      *
-     * @param {string} idpId Identity provider id.
+     * @param idpId - Identity provider id.
      */
     const handleIdentityProviderDeleteAction = (idpId: string): void => {
 
@@ -177,15 +185,17 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
                     );
 
                     const appNames: string[] = [];
+
                     results.forEach((app) => {
                         appNames.push(app.name);
-                    })
+                    });
                     setConnectedApps(appNames);
                 }
             })
             .catch((error) => {
                 dispatch(addAlert({
-                    description: error?.description || "Error occurred while trying to retrieve connected applications.",
+                    description: error?.description
+                        || "Error occurred while trying to retrieve connected applications.",
                     level: AlertLevels.ERROR,
                     message: error?.message || "Error Occurred."
                 }));
@@ -198,9 +208,11 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
     /**
      * Deletes an identity provider when the delete identity provider button is clicked.
      *
-     * @param {string} idpId Identity provider id.
+     * @param idpId - Identity provider id.
      */
     const handleIdentityProviderDelete = (idpId: string): void => {
+
+        setLoading(true);
         deleteIdentityProvider(idpId)
             .then(() => {
                 dispatch(addAlert({
@@ -213,6 +225,7 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
                 handleIDPDeleteError(error);
             })
             .finally(() => {
+                setLoading(false);
                 setShowDeleteConfirmationModal(false);
                 setDeletingIDP(undefined);
                 onIdentityProviderDelete();
@@ -222,7 +235,7 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
     /**
      * Resolve the relevant placeholder.
      *
-     * @return {React.ReactElement}
+     * @returns Placeholder.
      */
     const showPlaceholders = (): ReactElement => {
         // When the search returns empty.
@@ -250,12 +263,14 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
                 <EmptyPlaceholder
                     className="list-placeholder"
                     action={ onEmptyListPlaceholderActionClick && (
-                        <PrimaryButton
-                            onClick={ onEmptyListPlaceholderActionClick }
-                        >
-                            <Icon name="add"/>
-                            { t("console:develop.features.idp.buttons.addIDP") }
-                        </PrimaryButton>
+                        <Show when={ AccessControlConstants.IDP_WRITE }>
+                            <PrimaryButton
+                                onClick={ onEmptyListPlaceholderActionClick }
+                            >
+                                <Icon name="add"/>
+                                { t("console:develop.features.idp.buttons.addIDP") }
+                            </PrimaryButton>
+                        </Show>
                     ) }
                     image={ getEmptyPlaceholderIllustrations().newList }
                     imageSize="tiny"
@@ -273,7 +288,7 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
     /**
      * Resolves data table columns.
      *
-     * @return {TableColumnInterface[]}
+     * @returns Data Table Columns.
      */
     const resolveTableColumns = (): TableColumnInterface[] => {
         return [
@@ -282,47 +297,61 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
                 dataIndex: "name",
                 id: "name",
                 key: "name",
-                render: (idp: IdentityProviderInterface): ReactNode => (
-                    <Header
-                        image
-                        as="h6"
-                        className="header-with-icon"
-                        data-testid={ `${ testId }-item-heading` }
-                    >
-                        {
-                            idp.image
-                                ? (
-                                    <AppAvatar
-                                        size="mini"
-                                        name={ idp.name }
-                                        image={ idp.image }
-                                        spaced="right"
-                                        data-testid={ `${ testId }-item-image` }
-                                    />
-                                )
-                                : (
-                                    <AppAvatar
-                                        image={ (
-                                            <AnimatedAvatar
-                                                name={ idp.name }
-                                                size="mini"
-                                                data-testid={ `${ testId }-item-image-inner` }
-                                            />
-                                        ) }
-                                        size="mini"
-                                        spaced="right"
-                                        data-testid={ `${ testId }-item-image` }
-                                    />
-                                )
-                        }
-                        <Header.Content>
-                            { idp.name }
-                            <Header.Subheader data-testid={ `${ testId }-item-sub-heading` }>
-                                { idp.description }
-                            </Header.Subheader>
-                        </Header.Content>
-                    </Header>
-                ),
+                render: (idp: IdentityProviderInterface): ReactNode => {
+                    const isOrgIdp: boolean = (idp.federatedAuthenticators.defaultAuthenticatorId ===
+                        IdentityProviderManagementConstants.ORGANIZATION_ENTERPRISE_AUTHENTICATOR_ID);
+
+                    return (
+                        <Header
+                            image
+                            as="h6"
+                            className="header-with-icon"
+                            data-testid={ `${testId}-item-heading` }
+                        >
+                            {
+                                idp.image
+                                    ? (
+                                        <AppAvatar
+                                            size="mini"
+                                            name={ idp.name }
+                                            image={ idp.image }
+                                            spaced="right"
+                                            data-testid={ `${testId}-item-image` }
+                                        />
+                                    )
+                                    : (
+                                        <AppAvatar
+                                            image={ (
+                                                <AnimatedAvatar
+                                                    name={ idp.name }
+                                                    size="mini"
+                                                    data-testid={ `${testId}-item-image-inner` }
+                                                />
+                                            ) }
+                                            size="mini"
+                                            spaced="right"
+                                            data-testid={ `${testId}-item-image` }
+                                        />
+                                    )
+                            }
+                            <Header.Content>
+                                { idp.name }
+                                {
+                                    isOrgIdp && (
+                                        <Label
+                                            size="mini"
+                                            color="teal">
+                                            Organization IDP
+                                        </Label>
+                                    )
+                                }
+                                <Header.Subheader data-testid={ `${testId}-item-sub-heading` }>
+                                    { idp.description }
+                                </Header.Subheader>
+                            </Header.Content>
+                        </Header>
+                    );
+                },
                 title: t("console:develop.features.idp.list.name")
             },
             {
@@ -339,7 +368,7 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
     /**
      * Resolves data table actions.
      *
-     * @return {TableActionsInterface[]}
+     * @returns Data Table Actions.
      */
     const resolveTableActions = (): TableActionsInterface[] => {
         if (!showListItemActions) {
@@ -350,16 +379,26 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
             {
                 "data-testid": `${ testId }-item-edit-button`,
                 hidden: (): boolean => false,
-                icon: (): SemanticICONS => "pencil alternate",
+                icon: (): SemanticICONS =>
+                    hasRequiredScopes(featureConfig?.identityProviders,
+                        featureConfig?.identityProviders?.scopes?.update, allowedScopes)
+                        ? "pencil alternate"
+                        : "eye",
                 onClick: (e: SyntheticEvent, idp: IdentityProviderInterface): void =>
                     handleIdentityProviderEdit(idp.id),
-                popupText:(): string => t("common:edit"),
+                popupText: (): string =>
+                    hasRequiredScopes(featureConfig?.identityProviders,
+                        featureConfig?.identityProviders?.scopes?.update, allowedScopes)
+                        ? t("common:edit")
+                        : t("common:view"),
                 renderer: "semantic-icon"
             },
             {
                 "data-testid": `${ testId }-item-delete-button`,
                 hidden: (idp: IdentityProviderInterface): boolean =>
-                    IdentityProviderManagementConstants.DELETING_FORBIDDEN_IDPS.includes(idp.name),
+                    IdentityProviderManagementConstants.DELETING_FORBIDDEN_IDPS.includes(idp.name)
+                    || !hasRequiredScopes(featureConfig?.identityProviders,
+                        featureConfig?.identityProviders?.scopes?.delete, allowedScopes),
                 icon: (): SemanticICONS => "trash alternate",
                 onClick: (e: SyntheticEvent, idp: IdentityProviderInterface): void =>
                     handleIdentityProviderDeleteAction(idp.id),
@@ -384,7 +423,7 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
                 data={ list?.identityProviders?.filter((idp: IdentityProviderInterface) => idp.name !== "LOCAL") }
                 onRowClick={ (e: SyntheticEvent, idp: IdentityProviderInterface): void => {
                     handleIdentityProviderEdit(idp.id);
-                    onListItemClick(e, idp);
+                    onListItemClick && onListItemClick(e, idp);
                 } }
                 placeholders={ showPlaceholders() }
                 selectable={ selection }
@@ -395,27 +434,18 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
             {
                 deletingIDP && (
                     <ConfirmationModal
+                        primaryActionLoading={ loading }
                         onClose={ (): void => setShowDeleteConfirmationModal(false) }
-                        type="warning"
+                        type="negative"
                         open={ showDeleteConfirmationModal }
                         assertion={ deletingIDP?.name }
-                        assertionHint={ (
-                            <p>
-                                <Trans
-                                    i18nKey="console:develop.features.idp.confirmations.deleteIDP.assertionHint"
-                                    tOptions={ { name: deletingIDP?.name } }
-                                >
-                                    Please type <strong>{ deletingIDP?.name }</strong> to confirm.
-                                </Trans>
-                            </p>
-                        ) }
-                        assertionType="input"
+                        assertionHint={ t("console:develop.features.authenticationProvider."+
+                        "confirmations.deleteIDP.assertionHint") }
+                        assertionType="checkbox"
                         primaryAction={ t("common:confirm") }
                         secondaryAction={ t("common:cancel") }
                         onSecondaryActionClick={ (): void => setShowDeleteConfirmationModal(false) }
-                        onPrimaryActionClick={
-                            (): void => handleIdentityProviderDelete(deletingIDP.id)
-                        }
+                        onPrimaryActionClick={ (): void => handleIdentityProviderDelete(deletingIDP.id) }
                         data-testid={ `${ testId }-delete-confirmation-modal` }
                         closeOnDimmerClick={ false }
                     >
@@ -424,7 +454,7 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
                         </ConfirmationModal.Header>
                         <ConfirmationModal.Message
                             attached
-                            warning
+                            negative
                             data-testid={ `${ testId }-delete-confirmation-modal-message` }
                         >
                             { t("console:develop.features.idp.confirmations.deleteIDP.message") }
@@ -439,7 +469,7 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
                 showDeleteErrorDueToConnectedAppsModal && (
                     <ConfirmationModal
                         onClose={ (): void => setShowDeleteErrorDueToConnectedAppsModal(false) }
-                        type="warning"
+                        type="negative"
                         open={ showDeleteErrorDueToConnectedAppsModal }
                         secondaryAction={ t("common:close") }
                         onSecondaryActionClick={ (): void => setShowDeleteErrorDueToConnectedAppsModal(false) }
@@ -449,8 +479,11 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
                         <ConfirmationModal.Header data-testid={ `${ testId }-delete-idp-confirmation` }>
                             { t("console:develop.features.idp.confirmations.deleteIDPWithConnectedApps.header") }
                         </ConfirmationModal.Header>
-                        <ConfirmationModal.Message attached warning
-                                                   data-testid={ `${ testId }-delete-idp-confirmation` }>
+                        <ConfirmationModal.Message
+                            attached
+                            negative
+                            data-testid={ `${ testId }-delete-idp-confirmation` }
+                        >
                             { t("console:develop.features.idp.confirmations.deleteIDPWithConnectedApps.message") }
                         </ConfirmationModal.Message>
                         <ConfirmationModal.Content data-testid={ `${ testId }-delete-idp-confirmation` }>
@@ -459,8 +492,8 @@ export const IdentityProviderList: FunctionComponent<IdentityProviderListPropsIn
                             <List ordered className="ml-6">
                                 {
                                     isAppsLoading ? (
-                                            <ContentLoader/>
-                                        ) :
+                                        <ContentLoader/>
+                                    ) :
                                         connectedApps?.map((app, index) => {
                                             return (
                                                 <List.Item key={ index }>{ app }</List.Item>

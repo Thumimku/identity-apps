@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,10 +14,13 @@
  * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import {
+    IdentifiableComponentInterface,
+    LoadingStateOptionsInterface,
+    TestableComponentInterface
+} from "@wso2is/core/models";
 import classNames from "classnames";
 import get from "lodash-es/get";
 import isEqual from "lodash-es/isEqual";
@@ -29,8 +32,6 @@ import {
     Header,
     Icon,
     Placeholder,
-    Popup,
-    Responsive,
     SemanticICONS,
     SemanticWIDTHS,
     Table,
@@ -47,6 +48,8 @@ import { DataTableHeaderCell } from "./data-table-header-cell";
 import { DataTableRow } from "./data-table-row";
 import { Avatar } from "../../avatar";
 import { GenericIconProps } from "../../icon";
+import { Media } from "../../media";
+import { Popup } from "../../popup";
 
 /**
  * Interface for the Data Table sub components.
@@ -63,8 +66,8 @@ export interface DataTableSubComponentsInterface {
 /**
  * Interface for the data table component.
  */
-export interface DataTablePropsInterface<T = {}> extends Omit<TableProps, "columns" | "sortable">,
-    TestableComponentInterface {
+export interface DataTablePropsInterface<T = Record<string, any>> extends Omit<TableProps, "columns" | "sortable">,
+    IdentifiableComponentInterface, TestableComponentInterface {
 
     /**
      * Set of actions.
@@ -117,10 +120,10 @@ export interface DataTablePropsInterface<T = {}> extends Omit<TableProps, "colum
     /**
      * Optional meta for the loading state.
      */
-    loadingStateOptions?: TableLoadingStateOptionsInterface;
+    loadingStateOptions?: LoadingStateOptionsInterface;
     /**
      * Callback to inform the new set of visible columns.
-     * @param {TableColumnInterface[]} columns - New columns.
+     * @param columns - New columns.
      */
     onColumnSelectionChange?: (columns: TableColumnInterface[]) => void;
     /**
@@ -196,8 +199,9 @@ export interface DataRendererPropsInterface {
 /**
  * Table Data Interface.
  */
-export interface TableDataInterface<T = {}> extends StrictDataPropsInterface, DynamicTableDataInterface,
-    DataTableCellPropsInterface { }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface TableDataInterface<T = Record<string, any>> extends StrictDataPropsInterface,
+    DynamicTableDataInterface, DataTableCellPropsInterface { }
 
 /**
  * Table Data Dynamic Interface.
@@ -224,7 +228,7 @@ export interface StrictColumnPropsInterface {
     id: string;
     /**
      * Get the new sort order.
-     * @param {DataTableSortOrder} sortOrder - New sort order.
+     * @param sortOrder - New sort order.
      */
     getSortOrder?: (sortOrder: DataTableSortOrder, column: TableColumnInterface) => void;
     /**
@@ -273,7 +277,8 @@ export interface DynamicTableColumnInterface {
 /**
  * Table Actions Interface.
  */
-export interface TableActionsInterface<T = {}> extends TestableComponentInterface {
+export interface TableActionsInterface<T = Record<string, any>>
+    extends TestableComponentInterface, Partial<IdentifiableComponentInterface> {
     /**
      * Component render node.
      */
@@ -312,21 +317,6 @@ export interface TableActionsInterface<T = {}> extends TestableComponentInterfac
     link?: (item: TableDataInterface<T>) => boolean;
 }
 
-
-/**
- * Interface for loading state options.
- */
-export interface TableLoadingStateOptionsInterface {
-    /**
-     * Number of loading rows.
-     */
-    count: number;
-    /**
-     * Loading state image type.
-     */
-    imageType?: "circular" | "square";
-}
-
 export interface TableExtensionInterface {
     /**
      * Position to place the extension.
@@ -345,11 +335,11 @@ export interface TableExtensionInterface {
 /**
  * Data Driven Table Component.
  *
- * @param {DataTablePropsInterface} props - Props injected to the component.
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns Data Driven Table Component.
  */
 
-export const DataTable = <T extends object = {}>(
+export const DataTable = <T extends Record<string, any> = Record<string, any>>(
     props: DataTablePropsInterface<T>
 ): ReactElement => {
 
@@ -379,6 +369,7 @@ export const DataTable = <T extends object = {}>(
         testId,
         isRowSelectable,
         transparent,
+        [ "data-componentid" ]: componentId,
         ...rest
     } = props;
 
@@ -421,7 +412,7 @@ export const DataTable = <T extends object = {}>(
     /**
      * Evaluate column props.
      *
-     * @param {TableColumnInterface[]} columns - Columns.
+     * @param columns - Columns.
      */
     const evaluateColumnProps = (columns: TableColumnInterface[]) => {
         if (!isColumnsValid(columns)) {
@@ -668,27 +659,28 @@ export const DataTable = <T extends object = {}>(
     /**
      * Shows the loading state placeholder rows.
      *
-     * @return {React.ReactElement[]}
+     * @returns Loading Placeholders.
      */
     const showLoadingPlaceholders = (): ReactElement[] => {
 
         const placeholders: ReactElement[] = [];
 
-        for (let i = 0; i < loadingStateOptions.count; i++) {
+        for (let i = 0; i < loadingStateOptions?.count; i++) {
             placeholders.push(
                 <DataTable.Row key={ i }>
                     <DataTable.Cell>
                         <Header as="h6" image>
                             {
-                                loadingStateOptions.imageType && (
+                                loadingStateOptions?.imageType && (
                                     <Avatar
                                         image={ (
                                             <Placeholder style={ { height: 35, width: 35 } }>
                                                 <Placeholder.Image />
                                             </Placeholder>
                                         ) }
+                                        shape={ loadingStateOptions?.imageType }
                                         isLoading={ true }
-                                        avatarType={ loadingStateOptions.imageType === "circular" ? "user" : "app" }
+                                        avatarType={ loadingStateOptions?.imageType === "circular" ? "user" : "app" }
                                         size="mini"
                                         floated="left"
                                     />
@@ -720,6 +712,7 @@ export const DataTable = <T extends object = {}>(
         <Table
             className={ classes }
             selectable={ !isLoading && selectable }
+            data-componentid={ componentId }
             data-testid={ testId }
             { ...dynamicTableProps }
             { ...rest }
@@ -781,10 +774,12 @@ export const DataTable = <T extends object = {}>(
                                                                 )
                                                             }
                                                         </Grid.Column>
-                                                        <Responsive
-                                                            as={ Grid.Column }
-                                                            minWidth={ Responsive.onlyMobile.maxWidth }
-                                                            mobile={ 16 } tablet={ 8 } computer={ 8 }
+                                                        <Grid.Column
+                                                            as={ Media }
+                                                            greaterThanOrEqual="mobile"
+                                                            mobile={ 16 }
+                                                            tablet={ 8 }
+                                                            computer={ 8 }
                                                             textAlign="right"
                                                         >
                                                             {
@@ -804,11 +799,13 @@ export const DataTable = <T extends object = {}>(
                                                                     />
                                                                 )
                                                             }
-                                                        </Responsive>
-                                                        <Responsive
-                                                            as={ Grid.Column }
-                                                            maxWidth={ Responsive.onlyMobile.maxWidth }
-                                                            mobile={ 16 } tablet={ 8 } computer={ 8 }
+                                                        </Grid.Column>
+                                                        <Grid.Column
+                                                            as={ Media }
+                                                            lessThan="mobile"
+                                                            mobile={ 16 }
+                                                            tablet={ 8 }
+                                                            computer={ 8 }
                                                             textAlign="left"
                                                         >
                                                             {
@@ -828,7 +825,7 @@ export const DataTable = <T extends object = {}>(
                                                                     />
                                                                 )
                                                             }
-                                                        </Responsive>
+                                                        </Grid.Column>
                                                     </Grid.Row>
                                                 </Grid>
                                             </DataTable.HeaderCell>
@@ -965,6 +962,7 @@ export const DataTable = <T extends object = {}>(
 };
 
 DataTable.defaultProps = {
+    "data-componentid": "data-table",
     "data-testid": "data-table",
     isRowSelectable: () => true,
     selectable: true,

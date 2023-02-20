@@ -19,6 +19,7 @@ The following sub modules are available for use and can be imported in to the pr
 7. models - Commonly used models and schemas. (`wso2is/core/models`)
 8. store - Common redux actions, types and reducers (`wso2is/core/store`)
 9. utils - Common utils (`wso2is/core/utils`)
+9. workers - Contains used web workers (`wso2is/core/workers`)
 
 ## Notes
 
@@ -37,7 +38,8 @@ The following sub modules are available for use and can be imported in to the pr
             "@wso2is/core/hooks",
             "@wso2is/core/models",
             "@wso2is/core/store",
-            "@wso2is/core/utils"
+            "@wso2is/core/utils",
+            "@wso2is/core/workers"
         ]
     }
 }
@@ -52,15 +54,16 @@ Please declare the following paths inside the `tsconfig.json` of your applicatio
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
-            "@wso2is/core/api": ["node_modules/@wso2is/core/dist/src/api"],
-            "@wso2is/core/configs": ["node_modules/@wso2is/core/dist/src/configs"],
-            "@wso2is/core/constants": ["node_modules/@wso2is/core/dist/src/constants"],
-            "@wso2is/core/exceptions": ["node_modules/@wso2is/core/dist/src/exceptions"],
-            "@wso2is/core/helpers": ["node_modules/@wso2is/core/dist/src/helpers"],
-            "@wso2is/core/hooks": ["node_modules/@wso2is/core/dist/src/hooks"],
-            "@wso2is/core/models": ["node_modules/@wso2is/core/dist/src/models"],
-            "@wso2is/core/store": ["node_modules/@wso2is/core/dist/src/store"],
-            "@wso2is/core/utils": ["node_modules/@wso2is/core/dist/src/utils"]
+            "@wso2is/core/api": [ "node_modules/@wso2is/core/dist/types/api" ],
+            "@wso2is/core/configs": [ "node_modules/@wso2is/core/dist/types/configs" ],
+            "@wso2is/core/constants": [ "node_modules/@wso2is/core/dist/types/constants" ],
+            "@wso2is/core/exceptions": [ "node_modules/@wso2is/core/dist/types/exceptions" ],
+            "@wso2is/core/helpers": [ "node_modules/@wso2is/core/dist/types/helpers" ],
+            "@wso2is/core/hooks": [ "node_modules/@wso2is/core/dist/types/hooks" ],
+            "@wso2is/core/models": [ "node_modules/@wso2is/core/dist/types/models" ],
+            "@wso2is/core/store": [ "node_modules/@wso2is/core/dist/types/store" ],
+            "@wso2is/core/utils": [ "node_modules/@wso2is/core/dist/types/utils" ],
+            "@wso2is/core/workers": [ "node_modules/@wso2is/core/dist/types/workers" ]
         }
     }
 }

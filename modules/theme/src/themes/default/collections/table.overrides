@@ -27,6 +27,13 @@
     }
 }
 
+.ui.table {
+    .thead.user-attribute-table-header {
+        padding-top: 0.5em;
+        padding-bottom: 0.5em;
+    }
+}
+
 /*-------------------------------
           Data Table
 --------------------------------*/
@@ -47,6 +54,11 @@
         .data-table-header {
             th {
                 font-weight: @dataTableHeaderFontWeight;
+
+                .header-with-popup {
+                    display: flex;
+                    align-items: center;
+                }
             }
         }
 
@@ -72,6 +84,7 @@
         .data-table-cell {
             .header-with-icon {
                 display: @dataTableRowHeaderDisplay;
+                align-items: center;
 
                 .content {
                     vertical-align: @dataTableRowHeaderContentVerticalAlignment;
@@ -108,6 +121,11 @@
             }
         }
     }
+
+     &.opaque {
+            border: none;
+            background: none;
+        }
 }
 
 @media only screen and (max-width: @tabletBreakpoint) {

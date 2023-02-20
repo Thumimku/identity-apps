@@ -1,7 +1,7 @@
 <%--
-  ~ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~ Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
   ~
-  ~  WSO2 Inc. licenses this file to you under the Apache License,
+  ~  WSO2 LLC. licenses this file to you under the Apache License,
   ~  Version 2.0 (the "License"); you may not use this file except
   ~  in compliance with the License.
   ~  You may obtain a copy of the License at
@@ -23,25 +23,35 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.owasp.encoder.Encode" %>
 <%@ page import="org.wso2.carbon.identity.application.authentication.endpoint.util.Constants" %>
+<%@ page import="org.wso2.carbon.identity.captcha.util.CaptchaUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointConstants" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementServiceUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.ApiException" %>
+<%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.api.ReCaptchaApi" %>
+<%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.model.ReCaptchaProperties" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.SelfRegistrationMgtClient" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.SelfRegistrationMgtClientException" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.api.UsernameRecoveryApi" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.model.Claim" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.model.User" %>
 <%@ page import="org.wso2.carbon.identity.core.util.IdentityTenantUtil" %>
+<%@ page import="org.wso2.carbon.utils.multitenancy.MultitenantUtils" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Locale" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.TreeMap" %>
 <%@ page import="org.json.JSONObject" %>
+
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <jsp:directive.include file="includes/localize.jsp"/>
 <jsp:directive.include file="tenant-resolve.jsp"/>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
 
 <%
     boolean error = IdentityManagementEndpointUtil.getBooleanValue(request.getAttribute("error"));
@@ -67,6 +77,12 @@
     boolean isPasswordProvisionEnabled = Boolean.parseBoolean(request.getParameter("passwordProvisionEnabled"));
     boolean isSaaSApp = Boolean.parseBoolean(request.getParameter("isSaaSApp"));
     String callback = Encode.forHtmlAttribute(request.getParameter("callback"));
+    String emailUsernameEnable = application.getInitParameter("EnableEmailUserName");
+    if (StringUtils.isNotBlank(emailUsernameEnable) && Boolean.parseBoolean(emailUsernameEnable)) {
+        if (StringUtils.countMatches(username, IdentityManagementEndpointConstants.TENANT_DOMAIN_SEPARATOR) == 1) {
+            username = username + IdentityManagementEndpointConstants.TENANT_DOMAIN_SEPARATOR + tenantDomain;
+        }
+    }
     User user = IdentityManagementServiceUtil.getInstance().resolveUser(username, tenantDomain, isSaaSApp);
 
     if (skipSignUpEnableCheck) {
@@ -104,6 +120,25 @@
                 application.getInitParameter(IdentityManagementEndpointConstants.ConfigConstants.USER_PORTAL_URL), tenantDomain);
     }
 
+    ReCaptchaApi reCaptchaApi = new ReCaptchaApi();
+    try {
+        ReCaptchaProperties reCaptchaProperties = reCaptchaApi.getReCaptcha(tenantDomain, true, "ReCaptcha",
+                "self-registration");
+
+        if (reCaptchaProperties.getReCaptchaEnabled()) {
+            Map<String, List<String>> headers = new HashMap<>();
+            headers.put("reCaptcha", Arrays.asList(String.valueOf(true)));
+            headers.put("reCaptchaAPI", Arrays.asList(reCaptchaProperties.getReCaptchaAPI()));
+            headers.put("reCaptchaKey", Arrays.asList(reCaptchaProperties.getReCaptchaKey()));
+            IdentityManagementEndpointUtil.addReCaptchaHeaders(request, headers);
+        }
+    } catch (ApiException e) {
+        request.setAttribute("error", true);
+        request.setAttribute("errorMsg", e.getMessage());
+        request.getRequestDispatcher("error.jsp").forward(request, response);
+        return;
+    }
+
     Integer userNameValidityStatusCode = usernameValidityResponse.getInt("code");
     if (!SelfRegistrationStatusCodes.CODE_USER_NAME_AVAILABLE.equalsIgnoreCase(userNameValidityStatusCode.toString())) {
         if (allowchangeusername || !skipSignUpEnableCheck) {
@@ -118,13 +153,19 @@
         } else {
             String errorCode = String.valueOf(userNameValidityStatusCode);
             if (SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT.equalsIgnoreCase(errorCode)) {
-                errorMsg = "Invalid tenant domain - " + user.getTenantDomain() + ".";
+                errorMsg = IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "invalid.tenant.domain")
+                    + " - " + user.getTenantDomain() + ".";
             } else if (SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS.equalsIgnoreCase(errorCode)) {
-                errorMsg = "Username '" + username + "' is already taken.";
+                errorMsg = IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Username")
+                    + " '" + username + "' " + IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "already.taken.username");
             } else if (SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID.equalsIgnoreCase(errorCode)) {
-                errorMsg = user.getUsername() + " is an invalid user name. Please pick a valid username.";
+                errorMsg = user.getUsername() + " "
+                    + IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "invalid.user.name.pick.valid.username");
+            } else if (SelfRegistrationStatusCodes.ERROR_CODE_INVALID_USERSTORE.equalsIgnoreCase(errorCode)) {
+                errorMsg = IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "invalid.userstore.domain") + " - " + user.getRealm();
             }
-            request.setAttribute("errorMsg", errorMsg + " Please contact the administrator to fix this issue.");
+            request.setAttribute("errorMsg", errorMsg + " "
+                + IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "please.contact.administrator.to.fix.issue"));
             request.setAttribute("errorCode", errorCode);
             request.getRequestDispatcher("error.jsp").forward(request, response);
         }
@@ -169,13 +210,43 @@
     boolean reCaptchaEnabled = false;
     if (request.getAttribute("reCaptcha") != null && "TRUE".equalsIgnoreCase((String) request.getAttribute("reCaptcha"))) {
         reCaptchaEnabled = true;
+    } else if (request.getParameter("reCaptcha") != null && Boolean.parseBoolean(request.getParameter("reCaptcha"))) {
+        reCaptchaEnabled = true;
+    }
+%>
+<%!
+    /**
+     * Retrieve all county codes and country display names and
+     * store into a map where key/value pair is defined as the
+     * country code/country display name.
+     *
+     * @return {Map<string, string>}
+     */
+    private Map<String, String> getCountryList() {
+        String[] countryCodes = Locale.getISOCountries();
+
+        Map<String, String> mapCountries = new TreeMap<>();
+
+        for (String countryCode : countryCodes) {
+            Locale locale = new Locale("", countryCode);
+            String country_code = locale.getCountry();
+            String country_display_name = locale.getDisplayCountry();
+            mapCountries.put(country_code, country_display_name);
+        }
+
+        return mapCountries;
     }
 %>
 
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "large");
+%>
+
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -187,16 +258,18 @@
 
     <%
         if (reCaptchaEnabled) {
+            String reCaptchaAPI = CaptchaUtil.reCaptchaAPIURL();
     %>
-    <script src='<%=(request.getAttribute("reCaptchaAPI"))%>'></script>
+    <script src='<%=(reCaptchaAPI)%>'></script>
     <%
         }
     %>
+    <link rel="stylesheet" href="libs/addons/calendar.min.css"/>
 </head>
 <body class="login-portal layout recovery-layout">
-    <main class="center-segment">
-        <div class="ui container large center aligned middle aligned">
-            <!-- product-title -->
+    <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+        <layout:component componentName="ProductHeader" >
+            <%-- product-title --%>
             <%
                 File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
                 if (productTitleFile.exists()) {
@@ -205,13 +278,15 @@
             <% } else { %>
             <jsp:include page="includes/product-title.jsp"/>
             <% } %>
+        </layout:component>
+        <layout:component componentName="MainSection" >
             <div class="ui segment">
 
                 <h2>
                     <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Create.account")%>
                 </h2>
                 <div class="ui divider hidden"></div>
-                <!-- content -->
+                <%-- content --%>
                 <div class="segment-form">
                     <% if (skipSignUpEnableCheck) { %>
                     <form class="ui large form" action="../commonauth" method="post" id="register">
@@ -236,7 +311,7 @@
                                 </p>
                             </div>
                             <div class="ui divider hidden"></div>
-                            <!-- validation -->
+                            <%-- validation --%>
                             <div>
                                 <div id="regFormError" class="ui negative message" style="display:none"></div>
                                 <div id="regFormSuc" class="ui positive message" style="display:none"></div>
@@ -252,10 +327,10 @@
                                     <div class="two fields">
                                 <% } %>
                                     <div class="<% if (firstNamePII.getRequired() || !piisConfigured) {%> required <%}%> field">
-                                        <label class="control-label">
+                                        <label for="firstname" class="control-label">
                                             <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "First.name")%>
                                         </label>
-                                        <input type="text" name="http://wso2.org/claims/givenname" class="form-control"
+                                        <input type="text" name="http://wso2.org/claims/givenname" class="form-control" id="firstname"
                                             <% if (firstNamePII.getRequired() || !piisConfigured) {%> required <%}%>
                                             <% if (skipSignUpEnableCheck && StringUtils.isNotEmpty(firstNameValue)) { %>
                                                value="<%= Encode.forHtmlAttribute(firstNameValue)%>" disabled <% } %>>
@@ -268,10 +343,10 @@
                                                     request.getParameter(IdentityManagementEndpointConstants.ClaimURIs.LAST_NAME_CLAIM);
                                     %>
                                     <div class="<% if (lastNamePII.getRequired() || !piisConfigured) {%> required <%}%> field">
-                                        <label class="control-label">
+                                        <label for="lastname" class="control-label">
                                             <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Last.name")%>
                                         </label>
-                                        <input type="text" name="http://wso2.org/claims/lastname" class="form-control"
+                                        <input type="text" name="http://wso2.org/claims/lastname" class="form-control" id="lastname"
                                             <% if (lastNamePII.getRequired() || !piisConfigured) {%> required <%}%>
                                             <% if (skipSignUpEnableCheck && StringUtils.isNotEmpty(lastNameValue)) { %>
                                                value="<%= Encode.forHtmlAttribute(lastNameValue)%>" disabled <% } %>>
@@ -288,14 +363,14 @@
                                 </div>
                                 <div class="two fields">
                                     <div class="required field">
-                                        <label class="control-label">
+                                        <label for="password" class="control-label">
                                             <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Password")%>
                                         </label>
                                         <input id="password" name="password" type="password"
                                                class="form-control" required>
                                     </div>
                                     <div class="required field">
-                                        <label class="control-label">
+                                        <label for="password2" class="control-label">
                                             <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Confirm.password")%>
                                         </label>
                                         <input id="password2" name="password2" type="password" class="form-control"
@@ -310,11 +385,14 @@
                                                 request.getParameter(IdentityManagementEndpointConstants.ClaimURIs.EMAIL_CLAIM);
                                 %>
                                 <div class="<% if (emailNamePII.getRequired() || !piisConfigured) {%> required <%}%> field">
-                                    <label class="control-label">
+                                    <label for="email" class="control-label">
                                         <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Email")%>
                                     </label>
-                                    <input type="email" name="http://wso2.org/claims/emailaddress" class="form-control"
+                                    <input id="email" type="email" name="http://wso2.org/claims/emailaddress" class="form-control"
                                            data-validate="email"
+                                       <% if (MultitenantUtils.isEmailUserName()) { %>
+                                           value="<%= user.getUsername()%>" readonly
+                                       <% } %>
                                         <% if (emailNamePII.getValidationRegex() != null) {
                                                 String pattern = Encode.forHtmlContent(emailNamePII.getValidationRegex());
                                                 String[] patterns = pattern.split("\\\\@");
@@ -345,7 +423,7 @@
                                             .equals(claim, IdentityManagementEndpointConstants.ClaimURIs.EMAIL_CLAIM)) {
                                 %>
                                 <div class="required field">
-                                    <label class="control-label">
+                                    <label for="<%=Encode.forHtmlAttribute(claim)%>" class="control-label">
                                         <%=IdentityManagementEndpointUtil.i18nBase64(recoveryResourceBundle, claimDisplayName)%>
                                     </label>
                                     <input type="text" name="missing-<%=Encode.forHtmlAttribute(claim)%>"
@@ -373,9 +451,52 @@
                                             String claimValue = request.getParameter(claimURI);
                                 %>
                                 <div class="<% if (claim.getRequired()) {%> required <%}%>field">
-                                    <label <% if (claim.getRequired()) {%> class="control-label" <%}%>>
+                                    <label for="country-dropdown" <% if (claim.getRequired()) {%> class="control-label" <%}%>>
                                         <%=IdentityManagementEndpointUtil.i18nBase64(recoveryResourceBundle, claim.getDisplayName())%>
                                     </label>
+                                    <% if(claimURI.contains("claims/country")) { %>
+                                    <div class="field">
+                                        <div class="ui fluid search selection dropdown"  id="country-dropdown">
+                                            <input
+                                                type="hidden"
+                                                name="<%= Encode.forHtmlAttribute(claimURI) %>"
+                                                <% if (claim.getRequired()) { %>
+                                                required
+                                                <% } %>
+                                                <% if(skipSignUpEnableCheck && StringUtils.isNotEmpty(claimValue)) {%>
+                                                value="<%= Encode.forHtmlAttribute(claimValue)%>" disabled<%}%>
+                                            />
+                                            <i class="dropdown icon"></i>
+                                            <div class="default text"></div>
+                                            <div class="menu">
+                                                <c:forEach items="<%=getCountryList()%>" var="country">
+                                                    <div class="item" data-value="${country.value}">
+                                                        <i class="${country.key.toLowerCase()} flag"></i>
+                                                        ${country.value}
+                                                    </div>
+                                                </c:forEach>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <% } else if (claimURI.contains("claims/dob")) { %>
+                                    <div class="field">
+                                        <div class="ui calendar" id="date_picker">
+                                            <div class="ui input right icon" style="width: 100%;">
+                                                <i class="calendar icon"></i>
+                                                <input
+                                                    type="text"
+                                                    autocomplete="off"
+                                                    name="<%= Encode.forHtmlAttribute(claimURI) %>"
+                                                <% if (claim.getRequired()) { %>
+                                                    required
+                                                <% } %>
+                                                <% if(skipSignUpEnableCheck && StringUtils.isNotEmpty(claimValue)) {%>
+                                                    value="<%= Encode.forHtmlAttribute(claimValue)%>" disabled<%}%>
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <% } else { %>
                                     <input type="text" name="<%= Encode.forHtmlAttribute(claimURI) %>"
                                            class="form-control"
                                         <% if (claim.getValidationRegex() != null) { %>
@@ -390,15 +511,17 @@
                                 <%
                                         }
                                     }
+                                }
                                 %>
                             </div>
 
                             <% } else { %>
                             <div>
                                 <div class="field">
-                                    <label class="control-label">User Name
+                                    <label for="<%=Encode.forHtmlAttribute(username)%>" class="control-label">
+                                        <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Username")%>
                                     </label>
-                                    <input type="text" class="form-control"
+                                    <input type="text" class="form-control" id="<%=Encode.forHtmlAttribute(username)%>"
                                            value="<%=Encode.forHtmlAttribute(username)%>" disabled>
                                 </div>
                                 <%
@@ -408,10 +531,10 @@
 
                                         if (StringUtils.isNotEmpty(claimValue)) { %>
                                 <div class="field">
-                                    <label class="control-label">
+                                    <label for="claim" class="control-label">
                                         <%=IdentityManagementEndpointUtil.i18nBase64(recoveryResourceBundle, claim.getDisplayName())%>
                                     </label>
-                                    <input type="text" class="form-control"
+                                    <input type="text" class="form-control" id="claim"
                                            value="<%= Encode.forHtmlAttribute(claimValue)%>" disabled>
                                 </div>
                                 <% }
@@ -444,19 +567,19 @@
                                     <%
                                         if (consentDisplayType == "template") {
                                     %>
-                                    <!--User Consents from Template-->
+                                    <%--User Consents from Template--%>
                                         <div class="consent-statement"></div>
-                                    <!--End User Consents from Template-->
+                                    <%--End User Consents from Template--%>
                                     <% } else if (consentDisplayType == "tree") { %>
-                                    <!--User Consents Tree-->
+                                    <%--User Consents Tree--%>
                                         <div id="tree-table"></div>
-                                    <!--End User Consents Tree-->
+                                    <%--End User Consents Tree--%>
                                     <%
                                     } else if (consentDisplayType == "row") {
                                     %>
-                                    <!--User Consents Row-->
+                                    <%--User Consents Row--%>
                                         <div id="row-container"></div>
-                                    <!--End User Consents Row-->
+                                    <%--End User Consents Row--%>
                                     <%
                                         }
                                     %>
@@ -468,10 +591,15 @@
                             <div class="field">
                                 <%
                                     if (reCaptchaEnabled) {
+                                        String reCaptchaKey = CaptchaUtil.reCaptchaSiteKey();
                                 %>
                                 <div class="field">
                                     <div class="g-recaptcha"
-                                         data-sitekey="<%=Encode.forHtmlContent((String)request.getAttribute("reCaptchaKey"))%>">
+                                            data-size="invisible"
+                                            data-callback="onCompleted"
+                                            data-action="register"
+                                            data-sitekey=
+                                                    "<%=Encode.forHtmlContent(reCaptchaKey)%>">
                                     </div>
                                 </div>
                                 <%
@@ -479,7 +607,7 @@
                                 %>
                                 <div class="ui divider hidden"></div>
                                 <div>
-                                    <!--Cookie Policy-->
+                                    <%--Cookie Policy--%>
                                     <div class="ui message info compact" role="alert">
                                         <div>
                                             <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
@@ -491,26 +619,26 @@
                                             <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "For.more.details")%>
                                         </div>
                                     </div>
-                                    <!--End Cookie Policy-->
+                                    <%--End Cookie Policy--%>
                                 </div>
                                 <div class="ui divider hidden"></div>
                                 <div>
-                                    <!--Terms/Privacy Policy-->
+                                    <%--Terms/Privacy Policy--%>
                                     <div class="required field">
                                         <div class="ui checkbox">
                                             <input id="termsCheckbox" type="checkbox"/>
-                                            <label><%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
+                                            <label for="termsCheckbox" ><%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
                                                     "I.confirm.that.read.and.understood")%>
                                                 <a href="/authenticationendpoint/privacy_policy.do" target="policy-pane">
                                                     <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Privacy.policy")%>
                                                 </a></label>
                                         </div>
                                     </div>
-                                    <!--End Terms/Privacy Policy-->
+                                    <%--End Terms/Privacy Policy--%>
                                 </div>
                                 <div class="ui divider hidden"></div>
                                 <div class="align-right buttons">
-                                    <a href="javascript:goBack()" class="ui button link-button">
+                                    <a href="javascript:goBack()" class="ui button secondary">
                                         <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Cancel")%>
                                     </a>
                                     <button id="registrationSubmit"
@@ -547,21 +675,21 @@
                         </form>
                 </div>
             </div>
-        </div>
-    </main>
-    <!-- /content/body -->
-    <!-- product-footer -->
-    <%
-        File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-        if (productFooterFile.exists()) {
-    %>
-    <jsp:include page="extensions/product-footer.jsp"/>
-    <% } else { %>
-    <jsp:include page="includes/product-footer.jsp"/>
-    <% } %>
+        </layout:component>
+        <layout:component componentName="ProductFooter" >
+            <%-- product-footer --%>
+            <%
+                File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                if (productFooterFile.exists()) {
+            %>
+            <jsp:include page="extensions/product-footer.jsp"/>
+            <% } else { %>
+            <jsp:include page="includes/product-footer.jsp"/>
+            <% } %>
+        </layout:component>
+    </layout:main>
 
-
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {
@@ -605,7 +733,7 @@
         </div>
     </div>
 
-    <script type="text/javascript" src="libs/handlebars.min-v4.7.6.js"></script>
+    <script type="text/javascript" src="libs/handlebars.min-v4.7.7.js"></script>
     <script type="text/javascript" src="libs/jstree/dist/jstree.min.js"></script>
     <script type="text/javascript" src="libs/jstree/src/jstree-actions.js"></script>
     <script type="text/javascript" src="js/consent_template_1.js"></script>
@@ -630,6 +758,10 @@
 
         function goBack() {
             window.history.back();
+        }
+
+        function onCompleted() {
+           $("#register").submit();
         }
 
         $(document).ready(function () {
@@ -658,6 +790,7 @@
 
             var agreementChk = $(".agreement-checkbox input");
             var registrationBtn = $("#registrationSubmit");
+            var countryDropdown = $("#country-dropdown");
 
             if (agreementChk.length > 0) {
                 registrationBtn.prop("disabled", true).addClass("disabled");
@@ -670,9 +803,47 @@
                 }
             });
 
+            countryDropdown.dropdown('hide');
+            $("> input.search", countryDropdown).attr("role", "presentation");
+
+            $("#date_picker").calendar({
+                type: 'date',
+                formatter: {
+                    date: function (date, settings) {
+                        var EMPTY_STRING = "";
+                        var DATE_SEPARATOR = "-";
+                        var STRING_ZERO = "0";
+                        if (!date) return EMPTY_STRING;
+                            var day = date.getDate() + EMPTY_STRING;
+                        if (day.length < 2) {
+                            day = STRING_ZERO + day;
+                        }
+                        var month = (date.getMonth() + 1) + EMPTY_STRING;
+                        if (month.length < 2) {
+                            month = STRING_ZERO + month;
+                        }
+                        var year = date.getFullYear();
+                        return year + DATE_SEPARATOR + month + DATE_SEPARATOR + day;
+                    }
+                }
+            });
+
             $(".form-info").popup();
 
             $("#register").submit(function (e) {
+
+                <%
+                    if (reCaptchaEnabled) {
+                %>
+                if (!grecaptcha.getResponse()) {
+                    e.preventDefault();
+                    grecaptcha.execute();
+
+                    return true;
+                }
+                <%
+                    }
+                %>
                 var unsafeCharPattern = /[<>`\"]/;
                 var elements = document.getElementsByTagName("input");
                 var invalidInput = false;
@@ -701,6 +872,26 @@
                     return false;
                 }
 
+                var firstname = $("#firstname").val();
+
+                if (firstname && !firstname.trim()) {
+                    error_msg.text("<%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
+                        "Invalid.firstname")%>");
+                    error_msg.show();
+                    $("html, body").animate({scrollTop: error_msg.offset().top}, 'slow');
+                    return false;
+                }
+
+                var lastname = $("#lastname").val();
+
+                if (lastname && !lastname.trim()) {
+                    error_msg.text("<%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
+                        "Invalid.lastname")%>");
+                    error_msg.show();
+                    $("html, body").animate({scrollTop: error_msg.offset().top}, 'slow');
+                    return false;
+                }
+
                 var password = $("#password").val();
                 var password2 = $("#password2").val();
 
@@ -719,21 +910,6 @@
                         $("html, body").animate({scrollTop: error_msg.offset().top}, 'slow');
                         return false;
                 }
-
-                <%
-                if(reCaptchaEnabled) {
-                %>
-                var resp = $("[name='g-recaptcha-response']")[0].value;
-                if (resp.trim() == '') {
-                    error_msg.text("<%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
-                        "Please.select.reCaptcha")%>");
-                    error_msg.show();
-                    $("html, body").animate({scrollTop: error_msg.offset().top}, 'slow');
-                    return false;
-                }
-                <%
-                }
-                %>
 
                 <%
                 if (hasPurposes) {
@@ -778,7 +954,6 @@
 
                 return true;
             });
-
 
             function compareArrays(arr1, arr2) {
                 return $(arr1).not(arr2).length == 0 && $(arr2).not(arr1).length == 0
@@ -1115,7 +1290,7 @@
                 var rowTemplate =
                     '{{#purposes}}' +
                     '<div class="ui bulleted list">' +
-                    '<div class="item"><span>{{purpose}} {{#if description}}<i id="description" class="info circle icon" data-variation="inverted" data-content="{{description}}" data-placement="right"/>{{/if}}</span></div></div>' +
+                    '<div class="item"><span>{{purpose}} {{#if description}}<i id="description" class="info circle icon" data-variation="inverted" data-content="{{description}}" data-placement="right"></i>{{/if}}</span></div></div>' +
                     '<div class="ui form">' +
                     '{{#grouped_each 2 piiCategories}}' +
                     '{{#each this }}' +
@@ -1123,12 +1298,12 @@
                     '<div class="ui checkbox">' +
                     '<input type="checkbox" name="switch" id="consent-checkbox-{{../../purposeId}}-{{piiCategoryId}}" {{#if mandatory}}required{{/if}} />' +
                     '<label for="consent-checkbox-{{../../purposeId}}-{{piiCategoryId}}" data-piicategoryid="{{piiCategoryId}}" data-mandetorypiicatergory="{{mandatory}}" data-purposeid="{{../../purposeId}}">' +
-                    '<span>{{#if displayName}}{{displayName}}{{else}}{{piiCategory}}{{/if}}'+
+                    '<span>{{#if displayName}}{{displayName}}{{else}}{{piiCategory}}{{/if}}</span>'+
                     '</label></div>' +
                     '</div>'+
                     '{{/each}}' +
                     '{{/grouped_each}}' +
-                    '</div></div>' +
+                    '</div>' +
                     '{{/purposes}}';
 
                 var rows = Handlebars.compile(rowTemplate);
@@ -1140,5 +1315,6 @@
 
         });
     </script>
+    <script src="libs/addons/calendar.min.js"></script>
 </body>
 </html>

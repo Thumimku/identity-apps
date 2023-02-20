@@ -70,6 +70,14 @@
 @appHeaderPortalSwitchExtensionActiveColor: @textColor !important;
 @appHeaderPortalSwitchExtensionActiveBorderBottom: 3px solid @primaryColor;
 
+@appHeaderExtensionItemPaddingLeft: 3px;
+@appHeaderExtensionItemPaddingRight: 3px;
+@appHeaderExtensionInnerItemPadding: 0;
+
+@appHeaderExtensionLinkBackground: transparent;
+@appHeaderExtensionLinkHoverBackground: @iconHoverBgColor;
+@appHeaderExtensionLinkColor: inherit;
+
 /*-------------------
       App Footer
 --------------------*/
@@ -133,12 +141,14 @@
 --------------------*/
 
 @userDropdownMinWidth: 270px;
-@userDropdownPadding: 8px;
+@userDropdownPadding: 0;
 @userDropdownLinkMargin: 8px 0;
-@userDropdownLinkedAccountMargin: 8px 0;
-@userDropdownTenantMargin: 5px 0;
-@userDropdownTenantPadding: 5px 10px;
+@userDropdownLinkedAccountMargin: 0;
 @userDropdownTriggerTextColor: inherit;
+@userDropdownMenuTriggerPaddingLeft: 5px;
+@userDropdownTriggerWrapperBackground: transparent;
+@userDropdownTriggerHoverWrapperBackground: @iconHoverBgColor;
+@userDropdownLinkMinHeight: 46px;
 
 /*-------------------------------
       Governance Connectors
@@ -146,3 +156,32 @@
 
 @governanceConnectorCategoriesMenuWidth: 18rem;
 @activeBorderWidth: 5px;
+
+/*-------------------
+    Tenant Dropdown
+--------------------*/
+
+@tenantDropdownPadding: 12px 8px;
+@tenantDropdownMinWidth: 270px;
+@tenantDropdownTenantMargin: 5px 0;
+@tenantDropdownTenantPadding: 14px 20px;
+@tenantDropdownWrapperSpacingLeft: 15px;
+@tenantDropdownTriggerDisplayNameMaxWidth: 120px;
+@tenantDropdownSeparatorBorderColor: #7a8084;
+@tenantDropdownTriggerBorderRadius: 25px;
+@tenantDropdownTriggerTextColor: @textColor;
+@tenantDropdownTriggerHoverBackground: #EAEFF4;
+@tenantDropdownTriggerActiveBackground: #EAEFF4;
+@tenantDropdownDefaultLabelBackground: #eaeaea;
+@tenantDropdownDefaultLabelBorderColor: #767676;
+@tenantDropdownDefaultButtonBackground: #fff1eb;
+@tenantDropdownDefaultButtonBorderColor: #ffa176;
+@tenantDropdownDefaultButtonHoverBorderColor: #e64800;
+@tenantDropdownLinkMargin: 0;
+@tenantDropdownLinkMinHeight: 46px;
+
+/*-------------------
+   Feature Status
+--------------------*/
+@previewStatusBgColor: #c3e6f6;
+@previewStatusTextColor: #01698a;

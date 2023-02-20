@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import React, { FunctionComponent, MouseEvent, ReactElement, ReactNode } from "react";
 import { ModalProps } from "semantic-ui-react";
 import { Heading } from "../../typography";
@@ -25,7 +25,8 @@ import { ConfirmationModal } from "../confirmation-modal";
 /**
  * Session Management Modal props interface.
  */
-export interface SessionTimeoutModalPropsInterface extends ModalProps, TestableComponentInterface {
+export interface SessionTimeoutModalPropsInterface extends ModalProps, IdentifiableComponentInterface,
+    TestableComponentInterface {
 
     /**
      * Check whether session timeout modal or session timer modal.
@@ -42,11 +43,11 @@ export interface SessionTimeoutModalPropsInterface extends ModalProps, TestableC
     /**
      * Secondary button text.
      */
-    secondaryButtonText?: string;
+    secondaryButtonText?: string | ReactNode;
     /**
      * Primary button text.
      */
-    primaryButtonText?: string;
+    primaryButtonText?: string | ReactNode;
     /**
      * Callback function for the primary action button.
      */
@@ -60,8 +61,8 @@ export interface SessionTimeoutModalPropsInterface extends ModalProps, TestableC
 /**
  * Session Timeout modal.
  *
- * @param {SessionTimeoutModalPropsInterface} props - Props injected to the component.
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns the session timeout modal.
  */
 export const SessionTimeoutModal: FunctionComponent<SessionTimeoutModalPropsInterface> = (
     props: SessionTimeoutModalPropsInterface
@@ -75,6 +76,7 @@ export const SessionTimeoutModal: FunctionComponent<SessionTimeoutModalPropsInte
         onPrimaryActionClick,
         primaryButtonText,
         secondaryButtonText,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         ...rest
     } = props;
@@ -88,12 +90,13 @@ export const SessionTimeoutModal: FunctionComponent<SessionTimeoutModalPropsInte
             secondaryAction={ sessionTimeOut? null: secondaryButtonText }
             onSecondaryActionClick={ sessionTimeOut ? null: onSecondaryActionClick }
             onPrimaryActionClick={ onPrimaryActionClick }
+            data-componentid={ componentId }
             data-testid={ testId }
             { ...rest }
         >
-            <ConfirmationModal.Content>
-                <Heading as="h3">{ heading }</Heading>
-                <p>
+            <ConfirmationModal.Content data-componentid={ `${ componentId }-content` }>
+                <Heading as="h3" data-componentid={ `${ componentId }-heading` }>{ heading }</Heading>
+                <p data-componentid={ `${ componentId }-description` }>
                     { description }
                 </p>
             </ConfirmationModal.Content>
@@ -105,6 +108,7 @@ export const SessionTimeoutModal: FunctionComponent<SessionTimeoutModalPropsInte
  * Default props for the component.
  */
 SessionTimeoutModal.defaultProps = {
+    "data-componentid": "session-timeout-modal",
     "data-testid": "session-timeout-modal",
     description: "You will be logged out of the current session due to inactivity." +
         "\nPlease choose Stay logged in if you would like to continue the session.",

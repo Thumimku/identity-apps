@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,16 +16,27 @@
  * under the License.
  */
 
+import { hasRequiredScopes } from "@wso2is/core/helpers";
 import { AlertLevels, ExternalClaim, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import { useTrigger } from "@wso2is/forms";
 import { LinkButton, ListLayout, PrimaryButton } from "@wso2is/react-components";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import kebabCase from "lodash-es/kebabCase";
+import React, { Dispatch, FunctionComponent, ReactElement, SetStateAction, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Divider, DropdownProps, Grid, Icon, Modal, PaginationProps } from "semantic-ui-react";
 import { ClaimsList, ListType } from "../../";
-import { AdvancedSearchWithBasicFilters, UIConstants, filterList, sortList } from "../../../../core";
+import { attributeConfig } from "../../../../../extensions";
+import {
+    AdvancedSearchWithBasicFilters,
+    AppState,
+    EventPublisher,
+    FeatureConfigInterface,
+    UIConstants,
+    filterList,
+    sortList
+} from "../../../../core";
 import { addExternalClaim } from "../../../api";
 import { ClaimManagementConstants } from "../../../constants";
 import { AddExternalClaim } from "../../../models";
@@ -53,14 +64,26 @@ interface EditExternalClaimsPropsInterface extends TestableComponentInterface {
      * Attribute type
      */
     attributeType?: string;
+    /**
+     * Attribute URI
+     */
+    attributeUri: string;
+    /**
+     * Mapped local claim list
+     */
+    mappedLocalClaims: string[];
+    /**
+     * Update mapped claims on delete or edit
+     */
+    updateMappedClaims?: Dispatch<SetStateAction<boolean>>;
 }
 
 /**
  * This lists the external claims.
  *
- * @param {EditExternalClaimsPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {ReactElement}
+ * @returns EditExternalClaims component.
  */
 export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterface> = (
     props: EditExternalClaimsPropsInterface
@@ -68,6 +91,9 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
 
     const {
         attributeType,
+        attributeUri,
+        mappedLocalClaims,
+        updateMappedClaims,
         [ "data-testid" ]: testId
     } = props;
 
@@ -90,6 +116,9 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
         }
     ];
 
+    const featureConfig: FeatureConfigInterface = useSelector((state: AppState) => state.config.ui.features);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
+
     const [ offset, setOffset ] = useState(0);
     const [ listItemLimit, setListItemLimit ] = useState<number>(UIConstants.DEFAULT_RESOURCE_LIST_ITEM_LIMIT);
     const [ filteredClaims, setFilteredClaims ] = useState<ExternalClaim[]>([]);
@@ -98,6 +127,8 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
     const [ showAddExternalClaim, setShowAddExternalClaim ] = useState(false);
     const [ searchQuery, setSearchQuery ] = useState<string>("");
     const [ triggerClearQuery, setTriggerClearQuery ] = useState<boolean>(false);
+    const [ disableSubmit, setDisableSubmit ] = useState<boolean>(true);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     const [ triggerAddExternalClaim, setTriggerAddExternalClaim ] = useTrigger();
     const [ resetPagination, setResetPagination ] = useTrigger();
@@ -106,9 +137,12 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
 
     const { dialectID, claims, update, isLoading } = props;
 
+    const eventPublisher: EventPublisher = EventPublisher.getInstance();
+
     useEffect(() => {
         if (claims) {
             setFilteredClaims(claims);
+            handleSearchQueryClear(); // Clear the search field upon new claims
         }
     }, [ claims ]);
 
@@ -119,11 +153,11 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
     /**
      * Slices and returns a portion of the list.
      *
-     * @param {ExternalClaim[]} list.
-     * @param {number} limit.
-     * @param {number} offset.
+     * @param list - List to be paginated.
+     * @param limit - Pagination limit.
+     * @param offset - Pagination offset.
      *
-     * @return {ExternalClaim[]}
+     * @returns paginated list.
      */
     const paginate = (list: ExternalClaim[], limit: number, offset: number): ExternalClaim[] => {
         return list?.slice(offset, offset + limit);
@@ -132,8 +166,8 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
     /**
      * Handles change in the number of items to show.
      *
-     * @param {React.MouseEvent<HTMLAnchorElement>} event.
-     * @param {data} data.
+     * @param event - Dropdown changed event.
+     * @param data - Dropdown data.
      */
     const handleItemsPerPageDropdownChange = (event: React.MouseEvent<HTMLAnchorElement>, data: DropdownProps) => {
         setListItemLimit(data.value as number);
@@ -141,8 +175,8 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
 
     /**
     * Paginates.
-    * @param {React.MouseEvent<HTMLAnchorElement>} event.
-    * @param {PaginationProps} data.
+    * @param event - Pagination changed event.
+    * @param data - Pagination data.
     */
     const handlePaginationChange = (event: React.MouseEvent<HTMLAnchorElement>, data: PaginationProps) => {
         setOffset((data.activePage as number - 1) * listItemLimit);
@@ -151,8 +185,8 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
     /**
      * Handle sort strategy change.
      *
-     * @param {React.SyntheticEvent<HTMLElement>} event.
-     * @param {DropdownProps} data.
+     * @param event - Sort strategy changed event.
+     * @param data - Dropdown data.
      */
     const handleSortStrategyChange = (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
         setSortBy(SORT_BY.filter(option => option.value === data.value)[ 0 ]);
@@ -161,7 +195,7 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
     /**
     * Handles sort order change.
      *
-    * @param {boolean} isAscending.
+    * @param isAscending - Is sort oder ascending or not.
     */
     const handleSortOrderChange = (isAscending: boolean) => {
         setSortOrder(isAscending);
@@ -171,13 +205,14 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
      * Handles the `onFilter` callback action from the
      * advanced search component.
      *
-     * @param {string} query - Search query.
+     * @param query - Search query.
      */
     const handleExternalClaimFilter = (query: string): void => {
         try {
             const filteredList: ExternalClaim[] = filterList(
                 claims, query, sortBy.value, sortOrder
             );
+
             setFilteredClaims(filteredList);
             setSearchQuery(query);
             setOffset(0);
@@ -209,17 +244,21 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
             });
         });
 
+        setIsSubmitting(true);
         Promise.all(addAttributesRequests).then(() => {
             dispatch(addAlert(
                 {
                     description: t("console:manage.features.claims.external.notifications." +
-                        "addExternalAttribute.success.description"),
+                        "addExternalAttribute.success.description", {
+                        type: resolveType(attributeType)
+                    }),
                     level: AlertLevels.SUCCESS,
                     message: t("console:manage.features.claims.external.notifications." +
                         "addExternalAttribute.success.message")
                 }
             ));
             update();
+            updateMappedClaims(true);
         }).catch(error => {
             dispatch(addAlert(
                 {
@@ -233,8 +272,16 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
                 }
             ));
         }).finally(() => {
+            setIsSubmitting(false);
             setShowAddExternalClaim(false);
         });
+    };
+
+    /**
+     * Handles the update button disable state.
+     */
+    const handleClaimListChange = (buttonState: boolean): void => {
+        setDisableSubmit(buttonState);
     };
 
     return (
@@ -289,18 +336,32 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
             totalPages={ Math.ceil(filteredClaims?.length / listItemLimit) }
             totalListSize={ filteredClaims?.length }
             rightActionPanel={
-                <PrimaryButton
-                    onClick={ (): void => {
-                        setShowAddExternalClaim(true);
-                    } }
-                    disabled={ showAddExternalClaim }
-                    data-testid={ `${ testId }-list-layout-add-button` }
-                >
-                    <Icon name="add" />
-                    { t("console:manage.features.claims.external.pageLayout.edit.primaryAction",
-                        { type: resolveType(attributeType, true) }) }
-                </PrimaryButton>
-            }
+                attributeConfig?.editAttributeMappings?.showAddExternalAttributeButton(dialectID) && hasRequiredScopes(
+                    featureConfig?.attributeDialects,
+                    featureConfig?.attributeDialects?.scopes?.create, allowedScopes
+                ) && (
+                    /**
+                     * `loading` property is used to check whether the current selected
+                     * dialect is same as the dialect which the claims are loaded.
+                     * If it's different, this condition will wait until the correct
+                     * dialects are loaded onto the view.
+                     */
+                    <PrimaryButton
+                        loading={ claims && attributeUri !== claims[0]?.claimDialectURI  }
+                        onClick={ (): void => {
+                            if (attributeUri !== claims[0]?.claimDialectURI ) {
+                                return;
+                            }
+                            setShowAddExternalClaim(true);
+                        } }
+                        disabled={ showAddExternalClaim || (claims && attributeUri !== claims[0]?.claimDialectURI) }
+                        data-testid={ `${ testId }-list-layout-add-button` }
+                    >
+                        <Icon name="add"/>
+                        { t("console:manage.features.claims.external.pageLayout.edit.primaryAction",
+                            { type: resolveType(attributeType, true) }) }
+                    </PrimaryButton>
+                ) }
             data-testid={ `${ testId }-list-layout` }
         >
             {
@@ -327,7 +388,11 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
                                 values={ claims }
                                 shouldShowInitialValues={ false }
                                 attributeType={ attributeType }
+                                claimDialectUri={ attributeUri }
+                                dialectId={ dialectID }
                                 wizard={ false }
+                                mappedLocalClaims={ mappedLocalClaims }
+                                onClaimListChange={ handleClaimListChange }
                             />
                         </Modal.Content>
                         <Modal.Actions>
@@ -338,7 +403,12 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
                                 { t("common:cancel") }
                             </LinkButton>
                             <PrimaryButton
+                                disabled={ disableSubmit || isSubmitting }
+                                loading={ isSubmitting }
                                 onClick={ () => {
+                                    eventPublisher.publish("manage-attribute-mappings-add-new-attribute", {
+                                        type: kebabCase(attributeType)
+                                    });
                                     setTriggerAddExternalClaim();
                                 } }
                                 data-testid={ `${ testId }-add-external-claim-modal-save-button` }
@@ -372,7 +442,7 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
                                 filterAttributePlaceholder={
                                     t("console:manage.features.claims.external.advancedSearch.form.inputs" +
                                         ".filterAttribute.placeholder", {
-                                            type: resolveType(attributeType, true, true)
+                                        type: resolveType(attributeType, true, true)
                                     })
                                 }
                                 filterConditionsPlaceholder={
@@ -391,6 +461,7 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
                                 data-testid={ `${ testId }-list-advanced-search` }
                             />
                         ) }
+                        showTableHeaders={ true }
                         isLoading={ isLoading }
                         list={ paginate(filteredClaims, listItemLimit, offset) }
                         localClaim={ ListType.EXTERNAL }
@@ -400,7 +471,9 @@ export const EditExternalClaims: FunctionComponent<EditExternalClaimsPropsInterf
                         onSearchQueryClear={ handleSearchQueryClear }
                         searchQuery={ searchQuery }
                         data-testid={ `${ testId }-list` }
-                        attributeType = { attributeType }
+                        attributeType={ attributeType }
+                        featureConfig={ featureConfig }
+                        updateMappedClaims={ updateMappedClaims }
                     />
                 </Grid.Column>
             </Grid>

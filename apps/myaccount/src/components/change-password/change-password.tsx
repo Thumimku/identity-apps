@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2022, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,30 +17,28 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
-import { Field, FormValue, Forms, Validation, useTrigger } from "@wso2is/forms";
-import React, { FunctionComponent, Suspense, useState } from "react";
+import { Field, FormValue, Forms, useTrigger } from "@wso2is/forms";
+import { PasswordValidation, ValidationStatusInterface } from "@wso2is/react-components";
+import React, { Dispatch, FunctionComponent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Container, Divider, Form, Modal } from "semantic-ui-react";
 import { updatePassword } from "../../api";
+import { fetchPasswordValidationConfig } from "../../api/validation";
 import { getSettingsSectionIcons } from "../../configs";
 import { CommonConstants } from "../../constants";
+import { passwordValidationConfig } from "../../extensions/configs/password-validation";
 import { AlertInterface, AlertLevels } from "../../models";
+import { ValidationFormInterface } from "../../models/validation";
 import { AppState } from "../../store";
 import { setActiveForm } from "../../store/actions";
-import { endUserSession } from "../../utils";
+import { useEndUserSession } from "../../utils";
 import { EditSection, SettingsSection } from "../shared";
 
 /**
- * Import password strength meter dynamically.
- */
-const PasswordMeter = React.lazy(() => import("react-password-strength-bar"));
-
-/**
  * Constant to store the change password from identifier.
- * @type {string}
  */
-const CHANGE_PASSWORD_FORM_IDENTIFIER = "changePasswordForm";
+const CHANGE_PASSWORD_FORM_IDENTIFIER: string = "changePasswordForm";
 
 /**
  * Prop types for the change password component.
@@ -53,8 +51,8 @@ interface ChangePasswordProps extends TestableComponentInterface {
 /**
  * Change password component.
  *
- * @param {ChangePasswordProps} props - Props injected to the change password component.
- * @return {JSX.Element}
+ * @param props - Props injected to the change password component.
+ * @returns JSX.Element
  */
 export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: ChangePasswordProps): JSX.Element => {
 
@@ -69,22 +67,108 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
     });
     const [ password, setPassword ] = useState<string>("");
     const [ showConfirmationModal, setShowConfirmationModal ] = useState(false);
-    const [ passwordScore, setPasswordScore ] = useState<number>(-1);
+    const [ passwordConfig, setPasswordConfig ] = useState<ValidationFormInterface>(undefined);
+    const [ isValidPassword, setIsValidPassword ] = useState<boolean>(true);
+    const [ , setPasswordValidationStatus ] = useState<ValidationStatusInterface>(undefined);
 
     const activeForm: string = useSelector((state: AppState) => state.global.activeForm);
 
     const [ reset, resetForm ] = useTrigger();
 
     const { t } = useTranslation();
-    const dispatch = useDispatch();
+    const dispatch: Dispatch<any> = useDispatch();
+
+    const endUserSession: () => Promise<boolean> = useEndUserSession();
+
+    /**
+     * Get the configurations.
+     */
+    useEffect(() => {
+
+        if (passwordValidationConfig.showPasswordValidation) {
+            getConfigurations();
+        }
+    }, []);
+
+    /**
+     * Callback function to validate password.
+     *
+     * @param valid - validation status.
+     * @param validationStatus - detailed validation status.
+     */
+    const onPasswordValidate = (valid: boolean, validationStatus: ValidationStatusInterface): void => {
+
+        setPasswordValidationStatus(validationStatus);
+        setIsValidPassword(valid);
+    };
 
     /**
      * Handles the `onSubmit` event of forms.
      *
-     * @param {string} formName - Name of the form
+     * @param formName - Name of the form.
      */
     const handleSubmit = (): void => {
-        setShowConfirmationModal(true);
+
+        if (!passwordValidationConfig.showPasswordValidation) {
+            setShowConfirmationModal(true);
+        } else {
+            if (isValidPassword) {
+                setShowConfirmationModal(true);
+            } else {
+                onAlertFired({
+                    description: t(
+                        "myAccount:components.changePassword.forms.passwordResetForm.validations.invalidNewPassword." +
+                        "description"
+                    ),
+                    level: AlertLevels.ERROR,
+                    message: t(
+                        "myAccount:components.changePassword.forms.passwordResetForm.validations." +
+                        "invalidNewPassword.message"
+                    )
+                });
+            }
+        }
+    };
+
+    /**
+     * Calls API to get validation configuration.
+     */
+    const getConfigurations = (): void => {
+
+        fetchPasswordValidationConfig()
+            .then((response: ValidationFormInterface) => {
+                setPasswordConfig(response);
+            })
+            .catch((error: any) => {
+                if (error.response && error.response.data && error.response.detail) {
+                    onAlertFired({
+                        description: t(
+                            "myAccount:components.changePassword.forms.passwordResetForm.validations." +
+                            "validationConfig.error.description",
+                            { description: error.response.data.detail }
+                        ),
+                        level: AlertLevels.ERROR,
+                        message: t(
+                            "myAccount:components.changePassword.forms.passwordResetForm.validations." +
+                            "validationConfig.error.message"
+                        )
+                    });
+
+                    return;
+                }
+
+                onAlertFired({
+                    description: t(
+                        "myAccount:components.changePassword.forms.passwordResetForm.validations." +
+                        "validationConfig.genericError.description"
+                    ),
+                    level: AlertLevels.ERROR,
+                    message: t(
+                        "myAccount:components.changePassword.forms.passwordResetForm.validations." +
+                        "validationConfig.genericError.message"
+                    )
+                });
+            });
     };
 
     /**
@@ -93,7 +177,7 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
     const changePassword = () => {
 
         updatePassword(currentPassword, newPassword)
-            .then((response) => {
+            .then((response: any) => {
                 if (response.status && response.status === 200) {
                     // reset the form.
                     resetForm();
@@ -112,11 +196,10 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
                         )
                     });
 
-                    // Terminate the user session.
                     endUserSession();
                 }
             })
-            .catch((error) => {
+            .catch((error: any) => {
                 // Axios throws a generic `Network Error` for 401 status.
                 // As a temporary solution, a check to see if a response
                 // is available has be used.
@@ -148,11 +231,18 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
                      * error message. i.e., removes strings like
                      * SUS-605000 , 60501 - , 60502 |
                      */
-                    let message = error.response?.data?.detail ?? "";
+                    let message: string = error.response?.data?.detail ?? "";
+
                     if (message.match(/^\w+?\d{1,5}/g)) {
-                        const fragments = message.split(",");
+                        const fragments: string[] = message.split(",");
+
                         if (fragments?.length > 1) {
-                            message = fragments[1]?.trim();
+                            /**
+                             * If message spilt fragments have more than one elemnets,
+                             * we remove first element only i.e., removes strings like
+                             * SUS-605000 , 60501 - , 60502 |
+                             */
+                            message = message.replace(message.split(",")[0] +",","")?.trim();
                         }
                     }
 
@@ -200,7 +290,7 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
         setShowConfirmationModal(false);
     };
 
-    const confirmationModal = (
+    const confirmationModal: JSX.Element = (
         <Modal
             size="mini"
             open={ showConfirmationModal }
@@ -217,13 +307,15 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
             </Modal.Content>
             <Modal.Actions data-testid={ `${testId}-confirmation-modal-actions` }>
                 <Button
-                    className="link-button" onClick={ handleConfirmationModalClose }
+                    className="link-button"
+                    onClick={ handleConfirmationModalClose }
                     data-testid={ `${testId}-confirmation-modal-actions-cancel-button` }
                 >
                     { t("common:cancel") }
                 </Button>
                 <Button
-                    primary={ true } onClick={ changePassword }
+                    primary={ true }
+                    onClick={ changePassword }
                     data-testid={ `${testId}-confirmation-modal-actions-continue-button` }
                 >
                     { t("common:continue") }
@@ -232,11 +324,12 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
         </Modal>
     );
 
-    const showChangePasswordView = activeForm === CommonConstants.SECURITY + CHANGE_PASSWORD_FORM_IDENTIFIER
+    const showChangePasswordView: JSX.Element = activeForm === CommonConstants.SECURITY
+    + CHANGE_PASSWORD_FORM_IDENTIFIER
         ? (
             <EditSection data-testid={ `${testId}-edit-section` } >
                 <Forms
-                    onSubmit={ (value) => {
+                    onSubmit={ (value: Map<string, FormValue>) => {
                         setCurrentPassword(value.get("currentPassword").toString());
                         setNewPassword(value.get("newPassword").toString());
                         handleSubmit();
@@ -246,6 +339,7 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
                 >
                     <Field
                         data-testid={ `${testId}-current-password-field` }
+                        className="addon-field-wrapper"
                         autoFocus={ true }
                         hidePassword={ t("common:hidePassword") }
                         label={ t(
@@ -268,6 +362,7 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
                     />
                     <Field
                         data-testid={ `${testId}-new-password-field` }
+                        className="addon-field-wrapper"
                         hidePassword={ t("common:hidePassword") }
                         label={ t(
                             "myAccount:components.changePassword.forms.passwordResetForm.inputs" + ".newPassword.label"
@@ -289,56 +384,61 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
                             setPassword(values.get("newPassword").toString());
                         } }
                     />
-                    <Form.Field width={ 9 } data-testid={ `${testId}-new-password-strength-meter-field` }>
-                        <Suspense fallback={ null }>
-                            <PasswordMeter
+
+                    { (passwordValidationConfig.showPasswordValidation  && passwordConfig) &&
+                        (<Form.Field width={ 9 } data-testid={ `${testId}-new-password-validation-field` }>
+                            <PasswordValidation
                                 password={ password }
-                                onChangeScore={ (score: number) => {
-                                    setPasswordScore(score);
+                                minLength={ passwordConfig.minLength }
+                                maxLength={ passwordConfig.maxLength }
+                                minNumbers={ passwordConfig.minNumbers }
+                                minUpperCase={ passwordConfig.minUpperCaseCharacters }
+                                minLowerCase={ passwordConfig.minLowerCaseCharacters }
+                                minSpecialChr={ passwordConfig.minSpecialCharacters }
+                                minUniqueChr={ passwordConfig.minUniqueCharacters }
+                                maxConsecutiveChr={ passwordConfig.maxConsecutiveCharacters }
+                                onPasswordValidate={ onPasswordValidate }
+                                translations={ {
+                                    case:  (passwordConfig?.minUpperCaseCharacters > 0 &&
+                                        passwordConfig?.minLowerCaseCharacters > 0) ?
+                                        t("myAccount:components.changePassword.forms.passwordResetForm." +
+                                            "validations.passwordCaseRequirement", {
+                                            minLowerCase: passwordConfig.minLowerCaseCharacters,
+                                            minUpperCase: passwordConfig.minUpperCaseCharacters
+                                        }) : (
+                                            passwordConfig?.minUpperCaseCharacters > 0 ?
+                                                t("myAccount:components.changePassword.forms.passwordResetForm." +
+                                                    "validations.passwordUpperCaseRequirement", {
+                                                    minUpperCase: passwordConfig.minUpperCaseCharacters
+                                                }) : t("myAccount:components.changePassword.forms." +
+                                                    "passwordResetForm.validations.passwordLowerCaseRequirement", {
+                                                    minLowerCase: passwordConfig.minLowerCaseCharacters
+                                                })
+                                        ),
+                                    consecutiveChr: t("myAccount:components.changePassword.forms." +
+                                        "passwordResetForm.validations.passwordRepeatedChrRequirement", {
+                                        repeatedChr: passwordConfig.maxConsecutiveCharacters
+                                    }),
+                                    length: t("myAccount:components.changePassword.forms.passwordResetForm.validations."
+                                        + "passwordLengthRequirement", {
+                                        max: passwordConfig.maxLength, min: passwordConfig.minLength
+                                    }),
+                                    numbers: t("myAccount:components.changePassword.forms.passwordResetForm." +
+                                        "validations.passwordNumRequirement", {
+                                        min: passwordConfig.minNumbers
+                                    }),
+                                    specialChr: t("myAccount:components.changePassword.forms.passwordResetForm." +
+                                        "validations.passwordCharRequirement", {
+                                        minSpecialChr: passwordConfig.minSpecialCharacters
+                                    }),
+                                    uniqueChr: t("myAccount:components.changePassword.forms.passwordResetForm." +
+                                        "validations.passwordUniqueChrRequirement", {
+                                        uniqueChr: passwordConfig.minUniqueCharacters
+                                    })
                                 } }
-                                scoreWords={ [
-                                    t("common:tooShort"),
-                                    t("common:weak"),
-                                    t("common:okay"),
-                                    t("common:good"),
-                                    t("common:strong")
-                                ] }
-                                shortScoreWord={ t("common:tooShort") }
                             />
-                        </Suspense>
-                    </Form.Field>
-                    <Field
-                        data-testid={ `${testId}-new-password-confirm-field` }
-                        hidePassword={ t("common:hidePassword") }
-                        label={ t(
-                            "myAccount:components.changePassword.forms.passwordResetForm.inputs"
-                            + ".confirmPassword.label"
+                        </Form.Field>
                         ) }
-                        name="confirmPassword"
-                        placeholder={ t(
-                            "myAccount:components.changePassword.forms.passwordResetForm.inputs." +
-                            "confirmPassword.placeholder"
-                        ) }
-                        required={ true }
-                        requiredErrorMessage={ t(
-                            "myAccount:components.changePassword.forms.passwordResetForm." +
-                            "inputs.confirmPassword.validations.empty"
-                        ) }
-                        showPassword={ t("common:showPassword") }
-                        type="password"
-                        validation={ (value: string, validation: Validation, formValues) => {
-                            if (formValues.get("newPassword") !== value) {
-                                validation.isValid = false;
-                                validation.errorMessages.push(
-                                    t(
-                                        "myAccount:components.changePassword.forms.passwordResetForm.inputs" +
-                                        ".confirmPassword.validations.mismatch"
-                                    )
-                                );
-                            }
-                        } }
-                        width={ 9 }
-                    />
                     <Field
                         hidden={ true }
                         type="divider"
@@ -348,7 +448,7 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
                             size="small"
                             type="submit"
                             value={ t("common:submit").toString() }
-                            data-testid={ `${testId}-form-actions-group-submit-button`}
+                            data-testid={ `${testId}-form-actions-group-submit-button` }
                         />
                         <Field
                             className="link-button"
@@ -358,7 +458,7 @@ export const ChangePassword: FunctionComponent<ChangePasswordProps> = (props: Ch
                             size="small"
                             type="button"
                             value={ t("common:cancel").toString() }
-                            data-testid={ `${testId}-form-actions-group-cancel-button`}
+                            data-testid={ `${testId}-form-actions-group-cancel-button` }
                         />
                     </Form.Group>
 

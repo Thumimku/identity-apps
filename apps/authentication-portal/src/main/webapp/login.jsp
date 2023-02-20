@@ -1,12 +1,12 @@
 <%--
-  ~ Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~ Copyright (c) 2014, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
   ~
-  ~ WSO2 Inc. licenses this file to you under the Apache License,
+  ~ WSO2 LLC. licenses this file to you under the Apache License,
   ~ Version 2.0 (the "License"); you may not use this file except
   ~ in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~    http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing,
   ~ software distributed under the License is distributed on an
@@ -14,31 +14,42 @@
   ~ KIND, either express or implied.  See the License for the
   ~ specific language governing permissions and limitations
   ~ under the License.
-  --%>
+--%>
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="com.google.gson.Gson" %>
 <%@ page import="org.wso2.carbon.identity.application.authentication.endpoint.util.AuthContextAPIClient" %>
+<%@ page import="org.apache.commons.collections.CollectionUtils" %>
+<%@ page import="org.wso2.carbon.identity.application.authentication.endpoint.util.EndpointConfigManager" %>
+<%@ page import="org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils" %>
+<%@ page import="org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade" %>
+<%@ page import="org.wso2.carbon.identity.application.authentication.framework.config.model.ExternalIdPConfig" %>
 <%@ page import="org.wso2.carbon.identity.application.authentication.endpoint.util.Constants" %>
 <%@ page import="org.wso2.carbon.identity.core.util.IdentityCoreConstants" %>
 <%@ page import="org.wso2.carbon.identity.core.util.IdentityUtil" %>
+<%@ page import="org.wso2.carbon.base.ServerConfiguration" %>
+<%@ page import="org.wso2.carbon.identity.captcha.util.CaptchaUtil" %>
 <%@ page import="static org.wso2.carbon.identity.application.authentication.endpoint.util.Constants.STATUS" %>
 <%@ page import="static org.wso2.carbon.identity.application.authentication.endpoint.util.Constants.STATUS_MSG" %>
 <%@ page import="static org.wso2.carbon.identity.application.authentication.endpoint.util.Constants.CONFIGURATION_ERROR" %>
 <%@ page import="static org.wso2.carbon.identity.application.authentication.endpoint.util.Constants.AUTHENTICATION_MECHANISM_NOT_CONFIGURED" %>
 <%@ page import="static org.wso2.carbon.identity.application.authentication.endpoint.util.Constants.ENABLE_AUTHENTICATION_WITH_REST_API" %>
 <%@ page import="static org.wso2.carbon.identity.application.authentication.endpoint.util.Constants.ERROR_WHILE_BUILDING_THE_ACCOUNT_RECOVERY_ENDPOINT_URL" %>
+<%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.IdentityProviderDataRetrievalClient" %>
+<%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.IdentityProviderDataRetrievalClientException" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointConstants" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Map" %>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <%@ include file="includes/localize.jsp" %>
 <jsp:directive.include file="includes/init-url.jsp"/>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
 
 <%!
     private static final String FIDO_AUTHENTICATOR = "FIDOAuthenticator";
+    private static final String MAGIC_LINK_AUTHENTICATOR = "MagicLinkAuthenticator";
     private static final String IWA_AUTHENTICATOR = "IwaNTLMAuthenticator";
     private static final String IS_SAAS_APP = "isSaaSApp";
     private static final String BASIC_AUTHENTICATOR = "BasicAuthenticator";
@@ -46,6 +57,9 @@
     private static final String OPEN_ID_AUTHENTICATOR = "OpenIDAuthenticator";
     private static final String JWT_BASIC_AUTHENTICATOR = "JWTBasicAuthenticator";
     private static final String X509_CERTIFICATE_AUTHENTICATOR = "x509CertificateAuthenticator";
+    private static final String GOOGLE_AUTHENTICATOR = "GoogleOIDCAuthenticator";
+    private String reCaptchaAPI = null;
+    private String reCaptchaKey = null;
 %>
 
 <%
@@ -66,8 +80,10 @@
     if (Boolean.parseBoolean(request.getParameter(Constants.AUTH_FAILURE))) {
         loginFailed = "true";
         String error = request.getParameter(Constants.AUTH_FAILURE_MSG);
-        if (error != null && !error.isEmpty()) {
-            errorMessage = error;
+        // Check the error is not null and whether there is a corresponding value in the resource bundle.
+        if (!(StringUtils.isBlank(error)) &&
+            !error.equalsIgnoreCase(AuthenticationEndpointUtil.i18n(resourceBundle, error))) {
+                errorMessage = error;
         }
     }
 %>
@@ -82,7 +98,7 @@
             localAuthenticatorNames = Arrays.asList(authList.split(","));
         }
     }
-    
+
     String multiOptionURIParam = "";
     if (localAuthenticatorNames.size() > 1 || idpAuthenticatorMapping != null && idpAuthenticatorMapping.size() > 1) {
         String baseURL;
@@ -94,8 +110,10 @@
             request.getRequestDispatcher("error.do").forward(request, response);
             return;
         }
-        
-        String queryParamString = request.getQueryString() != null ? ("?" + request.getQueryString()) : "";
+
+        // Build the query string using the parameter map since the query string can contain fewer parameters
+        // due to parameter filtering.
+        String queryParamString = AuthenticationEndpointUtil.resolveQueryString(request.getParameterMap());
         multiOptionURIParam = "&multiOptionURI=" + Encode.forUriComponent(baseURL + queryParamString);
     }
 %>
@@ -109,6 +127,11 @@
     if (request.getParameter("reCaptchaResend") != null && Boolean.parseBoolean(request.getParameter("reCaptchaResend"))) {
         reCaptchaResendEnabled = true;
     }
+
+    if (reCaptchaEnabled || reCaptchaResendEnabled) {
+        reCaptchaKey = CaptchaUtil.reCaptchaSiteKey();
+        reCaptchaAPI = CaptchaUtil.reCaptchaAPIURL();
+    }
 %>
 <%
     String inputType = request.getParameter("inputType");
@@ -116,36 +139,27 @@
     String usernameIdentifier = null;
 
     if (isIdentifierFirstLogin(inputType)) {
-        String authAPIURL = application.getInitParameter(Constants.AUTHENTICATION_REST_ENDPOINT_URL);
-        if (StringUtils.isBlank(authAPIURL)) {
-            authAPIURL = IdentityUtil.getServerURL("/api/identity/auth/v1.1/", true, true);
-        }
-        if (!authAPIURL.endsWith("/")) {
-            authAPIURL += "/";
-        }
-        authAPIURL += "context/" + request.getParameter("sessionDataKey");
-        String contextProperties = AuthContextAPIClient.getContextProperties(authAPIURL);
-        Gson gson = new Gson();
-        Map<String, Object> parameters = gson.fromJson(contextProperties, Map.class);
-        if (parameters != null) {
-            username = (String) parameters.get("username");
-            usernameIdentifier = (String) parameters.get("username");
+        if (request.getParameter(Constants.USERNAME) != null) {
+            username = request.getParameter(Constants.USERNAME);
+            usernameIdentifier = request.getParameter(Constants.USERNAME);
         } else {
             String redirectURL = "error.do";
             response.sendRedirect(redirectURL);
+            return;
         }
     }
 
     // Login context request url.
     String sessionDataKey = request.getParameter("sessionDataKey");
     String appName = request.getParameter("sp");
-    String loginContextRequestUrl = logincontextURL + "?sessionDataKey=" + sessionDataKey + "&application="
-            + appName;
+    String authenticators = request.getParameter("authenticators");
+    String loginContextRequestUrl = logincontextURL + "?sessionDataKey=" + Encode.forUriComponent(sessionDataKey) + "&application="
+            + Encode.forUriComponent(appName) + "&authenticators=" + Encode.forUriComponent(authenticators);
     if (!IdentityTenantUtil.isTenantQualifiedUrlsEnabled()) {
         // We need to send the tenant domain as a query param only in non tenant qualified URL mode.
-        loginContextRequestUrl += "&tenantDomain=" + tenantDomain;
+        loginContextRequestUrl += "&tenantDomain=" + Encode.forUriComponent(tenantDomain);
     }
-    
+
     String t = request.getParameter("t");
     String ut = request.getParameter("ut");
     if (StringUtils.isNotBlank(t)) {
@@ -166,13 +180,22 @@
             usernameIdentifier = usernameIdentifier.split("@")[0] + "@" + usernameIdentifier.split("@")[1];
         }
     }
+
+    String restrictedBrowsersForGOT = "";
+    if (StringUtils.isNotEmpty(EndpointConfigManager.getGoogleOneTapRestrictedBrowsers())) {
+        restrictedBrowsersForGOT = EndpointConfigManager.getGoogleOneTapRestrictedBrowsers();
+    }
 %>
 
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "medium");
+%>
 
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -185,16 +208,23 @@
     <%
         if (reCaptchaEnabled || reCaptchaResendEnabled) {
     %>
-        <script src='<%=(Encode.forJavaScriptSource(request.getParameter("reCaptchaAPI")))%>'></script>
+    <script src="<%=Encode.forHtmlContent(reCaptchaAPI)%>"></script>
     <%
         }
     %>
 </head>
 <body class="login-portal layout authentication-portal-layout" onload="checkSessionKey()">
-    <main class="center-segment">
-        <div class="ui container medium center aligned middle aligned">
 
-            <!-- product-title -->
+    <% request.setAttribute("pageName", "sign-in"); %>
+    <% if (new File(getServletContext().getRealPath("extensions/timeout.jsp")).exists()) { %>
+        <jsp:include page="extensions/timeout.jsp"/>
+    <% } else { %>
+        <jsp:include page="util/timeout.jsp"/>
+    <% } %>
+
+    <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+        <layout:component componentName="ProductHeader" >
+            <%-- product-title --%>
             <%
                 File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
                 if (productTitleFile.exists()) {
@@ -203,7 +233,8 @@
             <% } else { %>
                 <jsp:include page="includes/product-title.jsp"/>
             <% } %>
-
+        </layout:component>
+        <layout:component componentName="MainSection" >
             <div class="ui segment">
                 <h3 class="ui header ellipsis">
                     <% if (isIdentifierFirstLogin(inputType)) { %>
@@ -238,6 +269,7 @@
                                     String redirectURL = "error.do?" + STATUS + "=" + CONFIGURATION_ERROR + "&" +
                                             STATUS_MSG + "=" + AUTHENTICATION_MECHANISM_NOT_CONFIGURED;
                                     response.sendRedirect(redirectURL);
+                                    return;
                                 }
                             } else if (localAuthenticatorNames.contains(BASIC_AUTHENTICATOR)) {
                                 isBackChannelBasicAuth = false;
@@ -273,7 +305,7 @@
                     </div>
                     <% } %>
                     <div class="field">
-                        <div class="ui vertical ui center aligned segment form" style="max-width: 300px; margin: 0 auto;">
+                        <div class="ui vertical ui center aligned segment form">
                             <%
                                 int iconId = 0;
                                 if (idpAuthenticatorMapping != null) {
@@ -282,9 +314,27 @@
                                     if (!idpEntry.getKey().equals(Constants.RESIDENT_IDP_RESERVED_NAME)) {
                                         String idpName = idpEntry.getKey();
                                         boolean isHubIdp = false;
+                                        boolean isGoogleIdp = false;
+
+                                        String GOOGLE_CLIENT_ID = "";
+                                        String GOOGLE_CALLBACK_URL = "";
+                                        boolean GOOGLE_ONE_TAP_ENABLED = false;
+
                                         if (idpName.endsWith(".hub")) {
                                             isHubIdp = true;
                                             idpName = idpName.substring(0, idpName.length() - 4);
+                                        } else if (idpName.contains("Google")) {
+                                            isGoogleIdp = true;
+                                        }
+
+                                        // Uses the `IdentityProviderDataRetrievalClient` to get the IDP image.
+                                        String imageURL = "libs/themes/default/assets/images/identity-providers/enterprise-idp-illustration.svg";
+
+                                        try {
+                                            IdentityProviderDataRetrievalClient identityProviderDataRetrievalClient = new IdentityProviderDataRetrievalClient();
+                                            imageURL = identityProviderDataRetrievalClient.getIdPImage(tenantDomain, idpName);
+                                        } catch (IdentityProviderDataRetrievalClientException e) {
+                                            // Exception is ignored and the default `imageURL` value will be used as a fallback.
                                         }
                             %>
                                 <% if (isHubIdp) { %>
@@ -308,17 +358,126 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <br>
                                 <% } else { %>
-                                    <div class="field">
-                                        <button class="ui icon button fluid"
-                                            onclick="handleNoDomain(this,
-                                                '<%=Encode.forJavaScriptAttribute(Encode.forUriComponent(idpName))%>',
-                                                '<%=Encode.forJavaScriptAttribute(Encode.forUriComponent(idpEntry.getValue()))%>')"
-                                            id="icon-<%=iconId%>"
-                                            title="<%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with")%> <%=Encode.forHtmlAttribute(idpName)%>">
-                                            <%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with")%> <strong><%=Encode.forHtmlContent(idpName)%></strong>
-                                        </button>
-                                    </div>
+                                    <% if (StringUtils.equals(idpEntry.getValue(),GOOGLE_AUTHENTICATOR)) {
+                                            isGoogleIdp = true;
+                                            IdentityProviderDataRetrievalClient identityProviderDataRetrievalClient = new IdentityProviderDataRetrievalClient();
+                                            List<String> configKeys = new ArrayList<>();
+                                            configKeys.add("ClientId");
+                                            configKeys.add("callbackUrl");
+                                            configKeys.add("IsGoogleOneTapEnabled");
+
+                                            try {
+                                                Map<String,String> idpConfigMap = identityProviderDataRetrievalClient.getFederatedIdpConfigs(tenantDomain, GOOGLE_AUTHENTICATOR, idpName, configKeys);
+                                                if (idpConfigMap != null && !idpConfigMap.isEmpty()) {
+                                                    GOOGLE_CLIENT_ID = idpConfigMap.get("ClientId");
+                                                    GOOGLE_CALLBACK_URL = idpConfigMap.get("callbackUrl");
+                                                    String oneTapEnabledString = idpConfigMap.get("IsGoogleOneTapEnabled");
+                                                    if (StringUtils.isNotEmpty(oneTapEnabledString)) {
+                                                        GOOGLE_ONE_TAP_ENABLED = oneTapEnabledString.equals("true");
+                                                   }
+                                                }
+                                            } catch (IdentityProviderDataRetrievalClientException e) {
+                                                // Exception is ignored
+                                            }
+                                    %>
+
+                                        <div class="external-login blurring external-login-dimmer">
+                                            <div class="field" id="googleSignIn" style="display: none;">
+                                                <button
+                                                    class="ui button secondary fluid"
+                                                    onclick="handleNoDomain(this,
+                                                        '<%=Encode.forJavaScriptAttribute(Encode.forUriComponent(idpName))%>',
+                                                        '<%=Encode.forJavaScriptAttribute(Encode.forUriComponent(idpEntry.getValue()))%>')"
+                                                    id="icon-<%=iconId%>"
+                                                    title="<%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with")%> <%=Encode.forHtmlAttribute(idpName)%>"
+                                                >
+                                                    <img role="presentation" class="ui image" src="<%=Encode.forHtmlAttribute(imageURL)%>">
+                                                    <span><%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with")%> <%=Encode.forHtmlContent(idpName)%></span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <% if (GOOGLE_ONE_TAP_ENABLED) { %>
+
+                                            <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+                                            <div id="google_parent" class="google-one-tap-container"></div>
+
+                                            <form action="<%=GOOGLE_CALLBACK_URL%>" method="post" id="googleOneTapForm" style="display: none;">
+                                                <input type="hidden" name="state" value="<%=Encode.forHtmlAttribute(request.getParameter("sessionDataKey"))%>"/>
+                                                <input type="hidden" name="idp" value="<%=idpName%>"/>
+                                                <input type="hidden" name="authenticator"  value="<%=idpEntry.getValue()%>"/>
+                                                <input type="hidden" name="one_tap_enabled"  value="true"/>
+                                                <input type="hidden" name="internal_submission"  value="true"/>
+                                                <input type="hidden" name="credential" id="credential"/>
+                                            </form>
+
+                                            <script>
+                                                if (navigator) {
+                                                    var userAgent = navigator.userAgent;
+                                                    var browserName = void 0;
+                                                    var restrictedBrowsersForGOT = "<%=restrictedBrowsersForGOT%>";
+
+                                                    if (userAgent.match(/chrome|chromium|crios/i)) {
+                                                        browserName = "chrome";
+                                                    } else if (userAgent.match(/firefox|fxios/i)) {
+                                                        browserName = "firefox";
+                                                    } else if (userAgent.match(/safari/i)) {
+                                                        browserName = "safari";
+                                                    } else if (userAgent.match(/opr\//i)) {
+                                                        browserName = "opera";
+                                                    } else if (userAgent.match(/edg/i)) {
+                                                        browserName = "edge";
+                                                    } else {
+                                                        browserName = "No browser detection";
+                                                    }
+
+                                                    if (restrictedBrowsersForGOT !== null
+                                                        && restrictedBrowsersForGOT !== ''
+                                                        && restrictedBrowsersForGOT.toLowerCase().includes(browserName)) {
+                                                        document.getElementById("googleSignIn").style.display = "block";
+                                                    } else {
+                                                        window.onload = function callGoogleOneTap() {
+                                                            google.accounts.id.initialize({
+                                                                client_id: "<%=Encode.forJavaScriptAttribute(GOOGLE_CLIENT_ID)%>",
+                                                                prompt_parent_id: "google_parent",
+                                                                cancel_on_tap_outside: false,
+                                                                nonce: "<%=Encode.forJavaScriptAttribute(request.getParameter("sessionDataKey"))%>",
+                                                                callback: handleCredentialResponse
+                                                            });
+                                                            google.accounts.id.prompt((notification) => {
+                                                                onMoment(notification);
+                                                            });
+                                                        }
+                                                    }
+                                                }
+                                            </script>
+                                        <% } else { %>
+                                            <script>
+                                                document.getElementById("googleSignIn").style.display = "block";
+                                            </script>
+                                        <% } %>
+                                        <br>
+                                    <% } else { %>
+                                        <div class="external-login blurring external-login-dimmer">
+                                            <div class="field">
+                                                <button
+                                                    class="ui button secondary fluid"
+                                                    onclick="handleNoDomain(this,
+                                                        '<%=Encode.forJavaScriptAttribute(Encode.forUriComponent(idpName))%>',
+                                                        '<%=Encode.forJavaScriptAttribute(Encode.forUriComponent(idpEntry.getValue()))%>')"
+                                                    id="icon-<%=iconId%>"
+                                                    title="<%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with")%> <%=Encode.forHtmlAttribute(idpName)%>"
+                                                >
+                                                    <img role="presentation" class="ui image" src="<%=Encode.forHtmlAttribute(imageURL)%>">
+                                                    <span><%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with")%> <%=Encode.forHtmlContent(idpName)%></span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <br>
+                                    <% } %>
                                 <% } %>
                             <% } else if (localAuthenticatorNames.size() > 0) {
                                 if (localAuthenticatorNames.contains(IWA_AUTHENTICATOR)) {
@@ -353,18 +512,44 @@
                                 if (localAuthenticatorNames.contains(FIDO_AUTHENTICATOR)) {
                             %>
                             <div class="field">
-                                <button class="ui grey basic labeled icon button fluid"
+                                <button class="ui grey labeled icon button fluid"
                                     onclick="handleNoDomain(this,
                                         '<%=Encode.forJavaScriptAttribute(Encode.forUriComponent(idpEntry.getKey()))%>',
                                         'FIDOAuthenticator')"
                                     id="icon-<%=iconId%>"
-                                    title="<%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with")%> FIDO">
+                                    title="<%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with")%>
+                                    <%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with" )%>">
                                     <i class="usb icon"></i>
-                                    <img src="libs/themes/default/assets/images/icons/fido-logo.png" height="13px" /> Key
+                                    <img role="presentation" src="libs/themes/default/assets/images/icons/fingerprint.svg" alt="Fido Logo" />
+                                    <span>
+                                        <%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with" )%>
+                                        <%=AuthenticationEndpointUtil.i18n(resourceBundle, "fido.authenticator" )%>
+                                    </span>
                                 </button>
                             </div>
                             <%
-                                        }
+                                }
+                                if (localAuthenticatorNames.contains(MAGIC_LINK_AUTHENTICATOR)) {
+                            %>
+                            <div class="social-login blurring social-dimmer">
+                                <div class="field">
+                                    <button class="ui button" onclick="handleNoDomain(this,
+                                        '<%=Encode.forJavaScriptAttribute(Encode.forUriComponent(idpEntry.getKey()))%>',
+                                        '<%=MAGIC_LINK_AUTHENTICATOR%>')" id="icon-<%=iconId%>"
+                                        title="<%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with")%>
+                                            <%=AuthenticationEndpointUtil.i18n(resourceBundle, "magic.link")%>"
+                                        data-componentid="login-page-sign-in-with-magic-link">
+                                        <img role="presentation" class="ui image" src="libs/themes/default/assets/images/icons/magic-link-icon.svg" alt="Magic Link Logo" />
+                                        <span>
+                                            <%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.with")%>
+                                            <%=AuthenticationEndpointUtil.i18n(resourceBundle, "magic.link")%>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                            <br>
+                            <%
+                                }
                                 if (localAuthenticatorNames.contains("totp")) {
                             %>
                             <div class="field">
@@ -378,30 +563,30 @@
                                 </button>
                             </div>
                             <%
-                                        }
-                                    }
-
-                                }
+                            }
+                            }
+                            }
                             } %>
                             </div>
                         </div>
                     <% } %>
                 </div>
             </div>
-        </div>
-    </main>
+        </layout:component>
+        <layout:component componentName="ProductFooter" >
+            <%-- product-footer --%>
+            <%
+                File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                if (productFooterFile.exists()) {
+            %>
+                <jsp:include page="extensions/product-footer.jsp"/>
+            <% } else { %>
+                <jsp:include page="includes/product-footer.jsp"/>
+            <% } %>
+        </layout:component>
+    </layout:main>
 
-    <!-- product-footer -->
-    <%
-        File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-        if (productFooterFile.exists()) {
-    %>
-        <jsp:include page="extensions/product-footer.jsp"/>
-    <% } else { %>
-        <jsp:include page="includes/product-footer.jsp"/>
-    <% } %>
-
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {
@@ -411,11 +596,48 @@
         <jsp:include page="includes/footer.jsp"/>
     <% } %>
 
+    <%
+        String contextPath =
+                ServerConfiguration.getInstance().getFirstProperty(IdentityCoreConstants.PROXY_CONTEXT_PATH);
+        if (contextPath != null && contextPath != "") {
+            if (contextPath.trim().charAt(0) != '/') {
+                contextPath = "/" + contextPath;
+            }
+            if (contextPath.trim().charAt(contextPath.length() - 1) == '/') {
+                contextPath = contextPath.substring(0, contextPath.length() - 1);
+            }
+            contextPath = contextPath.trim();
+        } else {
+            contextPath = "";
+        }
+    %>
     <script>
+        function onMoment(notification) {
+            displayGoogleSignIn(notification.isNotDisplayed() || notification.isSkippedMoment());
+        }
+
+        function displayGoogleSignIn(display) {
+            var element = document.getElementById("googleSignIn");
+            if (element != null) {
+                if (display) {
+                    element.style.display = "block";
+                } else {
+                    element.style.display = "none";
+                }
+            }
+        }
+
+        function handleCredentialResponse(response) {
+           $('#credential').val(response.credential);
+           $('#googleOneTapForm').submit();
+        }
+
         function checkSessionKey() {
+            var proxyPath = "<%=contextPath%>"
             $.ajax({
                 type: "GET",
-                url: "<%=loginContextRequestUrl%>",
+                url: proxyPath + "<%=loginContextRequestUrl%>",
+                xhrFields: { withCredentials: true },
                 success: function (data) {
                     if (data && data.status == 'redirect' && data.redirectUrl && data.redirectUrl.length > 0) {
                         window.location.href = data.redirectUrl;
@@ -453,25 +675,6 @@
                 $(this).hide();
                 $('.main-link').next().hide();
             });
-
-            <%
-                if(reCaptchaEnabled) {
-            %>
-                var error_msg = $("#error-msg");
-
-                $("#loginForm").submit(function (e) {
-                    var resp = $("[name='g-recaptcha-response']")[0].value;
-                    if (resp.trim() == '') {
-                        error_msg.text("<%=AuthenticationEndpointUtil.i18n(resourceBundle,"please.select.recaptcha")%>");
-                        error_msg.show();
-                        $("html, body").animate({scrollTop: error_msg.offset().top}, 'slow');
-                        return false;
-                    }
-                    return true;
-                });
-            <%
-                }
-            %>
         });
 
         function myFunction(key, value, name) {

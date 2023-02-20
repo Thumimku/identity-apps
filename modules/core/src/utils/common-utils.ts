@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import * as Country from "country-language";
 import { MD5 } from "crypto-js";
 import sortBy from "lodash-es/sortBy";
 import moment from "moment";
@@ -28,8 +29,6 @@ export class CommonUtils {
     /**
      * Private constructor to avoid object instantiation from outside
      * the class.
-     *
-     * @hideconstructor
      */
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     private constructor() { }
@@ -42,6 +41,7 @@ export class CommonUtils {
     static humanizeDateDifference = (date: string): string => {
         const now = moment(new Date());
         const receivedDate = moment(date);
+
         return "Last modified " + moment.duration(now.diff(receivedDate)).humanize() + " ago";
     };
 
@@ -51,12 +51,12 @@ export class CommonUtils {
      * // returns [ version = "5.11.0", release = "m23", type = "milestone" ]
      * const [ version, release, type ] = CommonUtils.parseProductVersion("5.11.0-m23-SNAPSHOT");
      *
-     * @param {string} version- Raw version in the form of `5.11.0-m23-SNAPSHOT`.
-     * @param {boolean} allowSnapshot - Show the SNAPSHOT label.
-     * @return {[string, string, ProductReleaseTypes]}
+     * @param version- Raw version in the form of `5.11.0-m23-SNAPSHOT`.
+     * @param allowSnapshot - Show the SNAPSHOT label.
+     * @returns Parsed product version.
      */
     public static parseProductVersion(version: string,
-                                      allowSnapshot: boolean = false): [ string, string, ProductReleaseTypes ]  {
+        allowSnapshot: boolean = false): [ string, string, ProductReleaseTypes ]  {
 
         const tokens: string[] = version.split("-");
         const versionNo: string = tokens[0];
@@ -85,12 +85,12 @@ export class CommonUtils {
     /**
      * Iterates through the announcements array and gets the valid announcement to be displayed.
      *
-     * @param {AnnouncementBannerInterface[]} announcements - Array of announcements.
-     * @param {string[]} seen - Set of seen announcements.
-     * @return {AnnouncementBannerInterface} Valid announcement.
+     * @param announcements - Array of announcements.
+     * @param seen - Set of seen announcements.
+     * @returns Valid announcement.
      */
     public static getValidAnnouncement(announcements: AnnouncementBannerInterface[],
-                                       seen: string[]): AnnouncementBannerInterface {
+        seen: string[]): AnnouncementBannerInterface {
 
         const sorted: AnnouncementBannerInterface[] = sortBy(announcements, [ "order" ]);
         let selected: AnnouncementBannerInterface = null;
@@ -102,6 +102,7 @@ export class CommonUtils {
 
             if (!isExpired && !isSeen) {
                 selected = item;
+
                 break;
             }
         }
@@ -112,8 +113,8 @@ export class CommonUtils {
     /**
      * Get user image from gravatar.com.
      *
-     * @param {string} emailAddress - email address received authenticated user.
-     * @returns {string} - gravatar image path.
+     * @param emailAddress - email address received authenticated user.
+     * @returns Gravatar image path.
      */
     public static getGravatar(emailAddress: string): string {
         return "https://www.gravatar.com/avatar/" + MD5(emailAddress.trim()) + "?d=404";
@@ -129,16 +130,16 @@ export class CommonUtils {
 
     /**
      * Scroll page to a specific target element.
-     * 
-     * @param {any} element - target element.
-     * @param {number?} offset - scroll stop offset value.
+     *
+     * @param element - target element.
+     * @param offset - scroll stop offset value.
      */
-    public static scrollToTarget (element: any, offset?: number): void {
+    public static scrollToTarget (element: Element, offset?: number): void {
         const bodyRect = document.body.getBoundingClientRect().top;
         const elementRect = element.getBoundingClientRect().top;
         const elementPosition = elementRect - bodyRect;
         const offsetPosition = offset ? elementPosition - offset : elementPosition;
-    
+
         window.scrollTo({
             behavior: "smooth",
             top: offsetPosition
@@ -148,13 +149,14 @@ export class CommonUtils {
     /**
      * Copy to clipboard with fallback.
      *
-     * @param {string} text - Text to copy.
-     * @return {Promise<boolean>}
+     * @param text - Text to copy.
+     * @returns A promise of type boolean.
      */
     public static copyTextToClipboard(text: string): Promise<boolean> {
 
         const fallbackCopyTextToClipboard = (copyingText: string): Promise<boolean> => {
             const dummyTextArea: HTMLTextAreaElement = document.createElement("textarea");
+
             dummyTextArea.value = copyingText;
 
             // Avoid scrolling to bottom
@@ -168,8 +170,10 @@ export class CommonUtils {
 
             try {
                 const copyStatus: boolean = document.execCommand("copy");
+
                 dummyTextArea.remove();
                 document.body.removeChild(dummyTextArea);
+
                 return Promise.resolve<boolean>(copyStatus);
             } catch (e) {
                 return Promise.resolve(false);
@@ -181,5 +185,50 @@ export class CommonUtils {
         }
 
         return navigator.clipboard.writeText(text).then(() => true, () => false);
+    }
+
+    /**
+     * Get the list of countries to be added to the country dropdown input field.
+     *
+     * @returns List of country objects.
+     */
+    public static getCountryList(): {
+        flag: string;
+        key: number;
+        text: string;
+        value: string;
+    }[] {
+        const countryCodesToSkip = [ "AQ", "BQ", "CW", "GG", "IM", "JE", "BL", "MF", "SX", "SS" ];
+        const countries: any[] = Country.getCountries();
+        const countryDropDown: {
+            flag: string;
+            key: number;
+            text: string;
+            value: string;
+        }[] = [];
+
+        countries.forEach((country, index) => {
+            if (!countryCodesToSkip.includes(country.code_2)) {
+                countryDropDown.push({
+                    flag: country.code_2.toLowerCase(),
+                    key: index,
+                    text: country.name,
+                    value: country.name
+                });
+            }
+        });
+
+        return countryDropDown;
+    }
+
+    /**
+     * Returns boolean value for both boolean strings and primitive boolean value.
+     *
+     * @param booleanResult - Result that needs to be converted to boolean.
+     * Can be a string or a boolean value.
+     * @returns Parsed boolean value.
+     */
+    public static parseBoolean(booleanResult: string | unknown): boolean {
+        return (String(booleanResult).toLowerCase() === "true");
     }
 }

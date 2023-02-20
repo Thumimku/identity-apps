@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wso2.identity.apps</groupId>
         <artifactId>identity-apps</artifactId>
-        <version>1.2.111-SNAPSHOT</version>
+        <version>1.6.227-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -55,6 +55,7 @@
         <dependency>
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-client</artifactId>
+            <scope>provided</scope>
             <exclusions>
                 <exclusion>
                     <groupId>javax.ws.rs</groupId>
@@ -80,6 +81,7 @@
         <dependency>
             <groupId>com.sun.jersey.contribs</groupId>
             <artifactId>jersey-multipart</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -121,6 +123,7 @@
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.mgt.endpoint.util</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
@@ -203,6 +206,16 @@
             <artifactId>org.wso2.carbon.identity.recovery</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.governance</groupId>
+            <artifactId>org.wso2.carbon.identity.captcha</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.identity.apps</groupId>
+            <artifactId>org.wso2.identity.apps.taglibs.layout.controller</artifactId>
+            <version>1.4.34</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -223,6 +236,9 @@
                         <resource>
                             <!-- this is relative to the pom.xml directory -->
                             <directory>src/main/resources/</directory>
+                            <excludes>
+                                <exclude>RecoveryEndpointConfig.properties</exclude>
+                            </excludes>
                         </resource>
                     </webResources>
                     <warName>accountrecoveryendpoint</warName>
@@ -233,5 +249,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

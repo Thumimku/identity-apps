@@ -28,6 +28,10 @@ interface AttributeListItemPropInterface extends TestableComponentInterface {
     placeholder: string;
     updateMapping?: (mapping: IdentityProviderCommonClaimMappingInterface) => void;
     mapping?: string;
+    /**
+     * Specifies if the component should only be read-only.
+     */
+    isReadOnly: boolean;
 }
 
 /**
@@ -36,7 +40,7 @@ interface AttributeListItemPropInterface extends TestableComponentInterface {
  * @param props AttributeListItemPropInterface
  */
 export const AttributeListItem: FunctionComponent<AttributeListItemPropInterface> = (
-    props
+    props: AttributeListItemPropInterface
 ): ReactElement => {
 
     const {
@@ -44,6 +48,7 @@ export const AttributeListItem: FunctionComponent<AttributeListItemPropInterface
         updateMapping,
         mapping,
         placeholder,
+        isReadOnly,
         [ "data-testid" ]: testId
     } = props;
 
@@ -71,13 +76,14 @@ export const AttributeListItem: FunctionComponent<AttributeListItemPropInterface
                             onChange={ handleClaimMapping }
                             required
                             data-testid={ `${ testId }-input` }
+                            readOnly={ isReadOnly }
                         />
                         { isEmpty(mapping) &&
                         (
                             <Label
-                                basic color='red'
-                                pointing='left'>
-                                { t("console:develop.features.idp.forms.attributeSettings." +
+                                basic color="red"
+                                pointing="left">
+                                { t("console:develop.features.authenticationProvider.forms.attributeSettings." +
                                     "attributeListItem.validation.empty") }
                             </Label>
                         ) }

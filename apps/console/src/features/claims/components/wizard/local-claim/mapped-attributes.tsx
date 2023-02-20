@@ -16,13 +16,16 @@
 * under the License.
 */
 
-import { getUserStoreList } from "@wso2is/core/api";
 import { TestableComponentInterface } from "@wso2is/core/models";
 import { Field, FormValue, Forms } from "@wso2is/forms";
 import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { Divider, Grid } from "semantic-ui-react";
+import { attributeConfig } from "../../../../../extensions";
+import { AppState, store } from "../../../../core";
 import { UserStoreListItem } from "../../../../userstores";
+import { getUserStoreList } from "../../../../userstores/api";
 
 /**
  * Prop types of `MappedAttributes` component
@@ -61,20 +64,32 @@ export const MappedAttributes: FunctionComponent<MappedAttributesPropsInterface>
     } = props;
 
     const [ userStore, setUserStore ] = useState<UserStoreListItem[]>([]);
+    const hiddenUserStores: string[] = useSelector((state: AppState) => state.config.ui.hiddenUserStores);
 
     const { t } = useTranslation();
 
     useEffect(() => {
         const userstore: UserStoreListItem[] = [];
-        userstore.push({
-            description: "",
-            enabled: true,
-            id: "PRIMARY",
-            name: "PRIMARY",
-            self: ""
-        });
+
+        if (attributeConfig.localAttributes.createWizard.showPrimaryUserStore) {
+            userstore.push({
+                description: "",
+                enabled: true,
+                id: "PRIMARY",
+                name: "PRIMARY",
+                self: ""
+            });
+        }
         getUserStoreList().then((response) => {
-            userstore.push(...response.data);
+            if (hiddenUserStores && hiddenUserStores.length > 0) {
+                response.data.map((store: UserStoreListItem) => {
+                    if (hiddenUserStores.length > 0 && !hiddenUserStores.includes(store.name)) {
+                        userstore.push(store);
+                    }
+                });
+            } else {
+                userstore.push(...response.data);
+            }
             setUserStore(userstore);
         }).catch(() => {
             setUserStore(userstore);
@@ -103,30 +118,35 @@ export const MappedAttributes: FunctionComponent<MappedAttributesPropsInterface>
                                     };
                                 })
                             };
+
                             onSubmit(submitData, values);
                         } }
                     >
                         <Grid>
                             { userStore.map((store: UserStoreListItem, index: number) => {
                                 return (
-                                    <Grid.Row columns={ 2 } key={ index }>
-                                        <Grid.Column width={ 4 }>
-                                            { store.name }
-                                        </Grid.Column>
-                                        <Grid.Column width={ 12 }>
-                                            <Field
-                                                type="text"
-                                                name={ store.name }
-                                                placeholder={ t("console:manage.features.claims.local.forms." +
-                                                    "attribute.placeholder") }
-                                                required={ true }
-                                                requiredErrorMessage={ t("console:manage.features.claims.local.forms." +
-                                                    "attribute.requiredErrorMessage") }
-                                                value={ values?.get(store.name).toString() }
-                                                data-testid={ `${ testId }-form-store-name-input` }
-                                            />
-                                        </Grid.Column>
-                                    </Grid.Row>
+                                    <>
+                                        { store?.enabled && (
+                                            <Grid.Row columns={ 2 } key={ index }>
+                                                <Grid.Column className="centered-text" width={ 4 }>
+                                                    { store.name }
+                                                </Grid.Column>
+                                                <Grid.Column width={ 12 }>
+                                                    <Field
+                                                        type="text"
+                                                        name={ store.name }
+                                                        placeholder={ t("console:manage.features.claims.local.forms." +
+                                                            "attribute.placeholder") }
+                                                        required={ true }
+                                                        requiredErrorMessage={ t("console:manage.features.claims." +
+                                                            "local.forms.attribute.requiredErrorMessage") }
+                                                        value={ values?.get(store.name)?.toString() }
+                                                        data-testid={ `${ testId }-form-store-name-input` }
+                                                    />
+                                                </Grid.Column>
+                                            </Grid.Row>
+                                        ) }
+                                    </>
                                 );
                             }) }
                         </Grid>

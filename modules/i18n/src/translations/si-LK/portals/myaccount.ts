@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +18,11 @@
 
 import { MyAccountNS } from "../../../models";
 
+/**
+ * NOTES: No need to care about the max-len for this file since it's easier to
+ * translate the strings to other languages easily with editor translation tools.
+ */
+/* eslint-disable max-len */
 export const myAccount: MyAccountNS = {
     components: {
         accountRecovery: {
@@ -27,26 +32,11 @@ export const myAccount: MyAccountNS = {
                 },
                 heading: "කේත ප්\u200Dරතිසාධනය"
             },
-            preference: {
-                notifications: {
-                    error: {
-                        description: "{{description}}",
-                        message: "ප්‍රතිසාධන මනාපය ලබා ගැනීමේ දෝෂයකි"
-                    },
-                    genericError: {
-                        description: "ප්‍රතිසාධන මනාපය ලබා ගැනීමේදී දෝෂයක් ඇතිවිය",
-                        message: "මොකක්හරි වැරැද්දක් වෙලා"
-                    },
-                    success: {
-                        description: "ප්‍රතිසාධන මනාපය සාර්ථකව ලබා ගන්නා ලදි",
-                        message: "ප්‍රතිසාධන මනාප ලබා ගැනීම සාර්ථකයි"
-                    }
-                }
-            },
             emailRecovery: {
                 descriptions: {
-                    add: "ප්\u200Dරතිසාධන ඊමේල් තැපැල් ලිපිනයක් එක් කරන්න",
-                    update: "ප්\u200Dරතිසාධන ඊමේල් තැපැල් ලිපිනය යාවත්කාලීන කරන්න ({{email}})"
+                    add: "ප්රතිසාධන ඊමේල් තැපැල් ලිපිනයක් එක් කරන්න",
+                    update: "ප්රතිසාධන ඊමේල් තැපැල් ලිපිනය යාවත්කාලීන කරන්න ({{email}})",
+                    view: "ප්‍රතිසාධන ඊමේල් තැපැල් ලිපිනය බලන්න ({{email}})"
                 },
                 forms: {
                     emailResetForm: {
@@ -77,6 +67,22 @@ export const myAccount: MyAccountNS = {
                             description: "පරිශීලක පැතිකඩෙහි ඊමේල් ලිපිනය සාර්ථකව යාවත්කාලීන කර ඇත",
                             message: "ඊමේල් ලිපිනය සාර්ථකව යාවත්කාලීන කර ඇත"
                         }
+                    }
+                }
+            },
+            preference: {
+                notifications: {
+                    error: {
+                        description: "{{description}}",
+                        message: "ප්‍රතිසාධන මනාපය ලබා ගැනීමේ දෝෂයකි"
+                    },
+                    genericError: {
+                        description: "ප්‍රතිසාධන මනාපය ලබා ගැනීමේදී දෝෂයක් ඇතිවිය",
+                        message: "මොකක්හරි වැරැද්දක් වෙලා"
+                    },
+                    success: {
+                        description: "ප්‍රතිසාධන මනාපය සාර්ථකව ලබා ගන්නා ලදි",
+                        message: "ප්‍රතිසාධන මනාප ලබා ගැනීම සාර්ථකයි"
                     }
                 }
             },
@@ -270,6 +276,19 @@ export const myAccount: MyAccountNS = {
                             description: "ඔබ ඇතුලත් කළ මුරපදය අවලංගු බව පෙනේ. කරුණාකර නැවත උත්සාහ කරන්න",
                             message: "මුරපද වෙනස් කිරීමේ දෝෂයකිි"
                         },
+                        invalidNewPassword: {
+                            description: "මුරපදය අවශ්‍ය සීමාවන් සපුරාලන්නේ නැත.",
+                            message: "වලංගු නොවන මුරපදයක්"
+                        },
+                        passwordCaseRequirement: "අවම වශයෙන් {{minUpperCase}} ලොකු අකුරු සහ {{minLowerCase}} " +
+                            "සිම්පල් අකුරු",
+                        passwordCharRequirement: "විශේෂ අක්ෂරවලින් අවම වශයෙන් {{minSpecialChr}}",
+                        passwordLengthRequirement: "අක්ෂර {{min}} සහ {{max}} අතර විය යුතුය",
+                        passwordLowerCaseRequirement: "අවම වශයෙන් {{minLowerCase}} කුඩා අකුරු(ය)",
+                        passwordNumRequirement: "අවම වශයෙන් {{min}} අංකය(ය)",
+                        passwordRepeatedChrRequirement: "පුනරාවර්තන අක්ෂර(ය) {{repeatedChr}} ට වඩා වැඩි නොවේ",
+                        passwordUniqueChrRequirement: "අවම වශයෙන් {{uniqueChr}} අනන්‍ය අක්ෂර(ය)",
+                        passwordUpperCaseRequirement: "අවම වශයෙන් {{minUpperCase}} ලොකු අකුරු(ය)",
                         submitError: {
                             description: "{{description}}",
                             message: "මුරපද වෙනස් කිරීමේ දෝෂයකි"
@@ -277,6 +296,16 @@ export const myAccount: MyAccountNS = {
                         submitSuccess: {
                             description: "මුරපදය සාර්ථකව වෙනස් කර ඇත",
                             message: "මුරපද යළි පිහිටුවීම සාර්ථකයි"
+                        },
+                        validationConfig: {
+                            error: {
+                                description: "{{description}}",
+                                message: "නැවත ලබා ගැනීමේ දෝෂය"
+                            },
+                            genericError: {
+                                description: "වලංගුකරණ වින්‍යාස දත්ත ලබා ගැනීමට නොහැකි විය.",
+                                message: "මොකක්හරි වැරැද්දක් වෙලා"
+                            }
                         }
                     }
                 }
@@ -376,6 +405,12 @@ export const myAccount: MyAccountNS = {
                 }
             }
         },
+        cookieConsent: {
+            confirmButton: "මම එකඟයි",
+            content: "ඔබට හොඳම සමස්ත අත්දැකීම ලබා ගැනීම සහතික කිරීම සඳහා අපි කුකීස් භාවිතා කරමු. මෙම කුකීස් " +
+                "භාවිතා කරනුයේ සුමට හා පුද්ගලීකරණය කළ සේවාවන් සපයන අතරම අඛණ්ඩ අඛණ්ඩ සැසියක් පවත්වා ගන්න." +
+                "අපි කුකීස් භාවිතා කරන ආකාරය ගැන තව දැනගන්න, අපගේ <1>Cookie Policy</1> එක බලන්න."
+        },
         federatedAssociations: {
             deleteConfirmation: "මෙම ක්‍රියාව මගින්, ඔබේ ගිණුමේ මෙම බාහිර පිවිසුම ඉවත් කරයි. එය සනාථ කිරීමට ඔබට " +
                 "අවශ්‍යද?",
@@ -426,6 +461,20 @@ export const myAccount: MyAccountNS = {
         },
         footer: {
             copyright: "WSO2 Identity Server © {{year}}"
+        },
+        header: {
+            appSwitch: {
+                console: {
+                    description: "සංවර්ධකයින් හෝ පරිපාලකයින් ලෙස කළමනාකරණය කරන්න",
+                    name: "Console"
+                },
+                myAccount: {
+                    description: "ඔබේම ගිණුම කළමනාකරණය කරන්න",
+                    name: "My Account"
+                },
+                tooltip: "Apps"
+            },
+            organizationLabel: "මෙම ගිණුම කළමනාකරණය කරන්නේ"
         },
         linkedAccounts: {
             accountTypes: {
@@ -527,36 +576,94 @@ export const myAccount: MyAccountNS = {
                 }
             }
         },
+        loginVerifyData: {
+            description: "පුරනය වීමේදී ඔබගේ අනන්‍යතාවය තවදුරටත් තහවුරු කර ගැනීමට මෙම දත්ත භාවිතා කරයි",
+            heading: "ඔබගේ පිවිසුම සත්‍යාපනය සඳහා භාවිතා කරන දත්ත ",
+            modals: {
+                clearTypingPatternsModal: {
+                    heading: "තහවුරු කිරීම",
+                    message: "මෙම ක්‍රියාව මගින් TypingDNA හි සුරකින ලද ඔබේ ටයිප් රටා ඉවත් කරනු ඇත. ඉදිරියට " +
+                        "යාමට ඔබ කැමතිද?"
+                }
+            },
+            notifications: {
+                clearTypingPatterns: {
+                    error: {
+                        description: "ටයිප් කිරීමේ රටා ඉවත් කළ නොහැක. කරුණාකර ඔබේ අඩවි පරිපාලක අමතන්න",
+                        message: "යතුරු ලියන රටා ඉවත් කිරීමට අපොහොසත් විය"
+                    },
+                    success: {
+                        description: "TypingDNA හි ඔබේ යතුරු ලියන රටා සාර්ථකව ඉවත් කර ඇත",
+                        message: "ටයිප් කිරීමේ රටා සාර්ථකව නිෂ්කාශනය විය"
+                    }
+                }
+            },
+            typingdna: {
+                description: "ඔබේ ටයිප් කිරීමේ රටා මෙතැනින් ඉවත් කළ හැකිය",
+                heading: "TypingDNA ටයිප් කිරීමේ රටා"
+            }
+        },
         mfa: {
             authenticatorApp: {
+                addHint: "වින්‍යාස කරන්න",
+                configuredDescription: "සාධක දෙකක සත්‍යාපනය සඳහා ඔබේ වින්‍යාසගත සත්‍යාපන " +
+                    "යෙදුමෙන් ඔබට TOTP කේත භාවිතා කළ හැකිය. ඔබට යෙදුමට ප්‍රවේශය නොමැති නම් " +
+                    "මෙතැනින් ඔබට නව සත්‍යාපන යෙදුමක් සැකසිය හැකිය",
+                deleteHint: "ඉවත් කරන්න",
                 description: "යෙදුම් වලට ප්‍රවේශවීමේදී දෙවන සාධකය ලෙස කාලය " +
                     "මත පදනම් වූ, එක් වරක් මුර කේත (TOTP ලෙසද හැඳින්වේ) භාවිතා " +
                     "කිරීමට Authenticator යෙදුමක් භාවිතයෙන් QR කේතය පරිලෝකනය කරන්න.",
+                enableHint: "TOTP සබල/අබල කරන්න",
                 heading: "සත්‍යාපන යෙදුම",
-                hint: "QR කේතය පෙන්වන්න",
+                hint: "පෙන්වන්න",
                 modals: {
-                    heading: "Set Up An Authenticator App",
+                    delete : {
+                        heading: "තහවුරු කිරීම",
+                        message: "මෙම ක්‍රියාව මඟින් ඔබේ පැතිකඩට එකතු කළ QR කේතය ඉවත් කෙරේ. " +
+                            "ඔබ දිගටම කරගෙන යාමට කැමතිද ?"
+                    },
                     done: "සාර්ථකත්වය! දැන් ඔබට සාධක දෙකක සත්‍යාපනය සඳහා ඔබේ සත්‍යාපන යෙදුම භාවිතා කළ හැකිය",
+                    heading: "Authenticator යෙදුමක් සකසන්න",
                     scan: {
+                        additionNote: "QR කේතය ඔබේ පැතිකඩට සාර්ථකව එකතු කර ඇත!",
                         authenticatorApps: "සත්‍යාපන යෙදුම්",
                         generate: "නව කේතයක් ජනනය කරන්න",
                         heading: "සත්‍යාපන යෙදුමක් භාවිතයෙන් මෙම QR කේතය පරිලෝකනය කරන්න",
                         messageBody: "ඔබට මෙහි ඇති සත්‍යාපන යෙදුම් ලැයිස්තුවක් සොයාගත හැකිය.",
-                        messageHeading: "සත්‍යාපන යෙදුමක් ස්ථාපනය කර නොමැතිද?"
+                        messageHeading: "සත්‍යාපන යෙදුමක් ස්ථාපනය කර නොමැතිද?",
+                        regenerateConfirmLabel: "නව QR කේතයක් පුනර්ජනනය කිරීම තහවුරු කරන්න",
+                        regenerateWarning: {
+                            extended: "ඔබ නව QR කේතයක් නැවත උත්පාදනය කරන විට, ඔබ එය පරිලෝකනය කර ඔබගේ සත්‍යාපන යෙදුම නැවත පිහිටුවිය යුතුය. ඔබට තවදුරටත් පෙර QR කේතය සමඟින් පුරනය වීමට නොහැකි වනු ඇත.",
+                            generic: "ඔබ නව QR කේතයක් නැවත උත්පාදනය කරන විට, ඔබ එය පරිලෝකනය කර ඔබගේ සත්‍යාපන යෙදුම නැවත පිහිටුවිය යුතුය. ඔබගේ පෙර පිහිටුවීම තවදුරටත් ක්‍රියා නොකරනු ඇත."
+                        }
                     },
+                    toolTip: "යෙදුමක් නැද්ද? <1>App Store</1> හෝ <3>Google Play</3> " +
+                        "වෙතින් Google Authenticator වැනි සත්‍යාපන යෙදුමක් බාගන්න.",
                     verify: {
                         error: "සත්‍යාපනය අසාර්ථක විය. කරුණාකර නැවත උත්සාහ කරන්න.",
-                        heading: "සත්‍යාපන යෙදුමෙන් සත්‍යාපන කේතය ඇතුළත් කරන්න",
+                        heading: "සත්‍යාපනය සඳහා ජනනය කළ කේතය ඇතුළත් කරන්න",
                         label: "සත්යාපන කේතය",
                         placeholder: "ඔබගේ සත්‍යාපන කේතය ඇතුළත් කරන්න",
-                        requiredError: "සත්‍යාපන කේතය ඇතුළත් කරන්න",
                         reScan: "නැවත පරිලෝකනය කරන්න",
-                        reScanQuestion: "QR කේතය නැවත පරිලෝකනය කිරීමට අවශ්‍යද?"
-                    },
-                    toolTip: "යෙදුමක් නැද්ද? <3> යෙදුම් වෙළඳසැල </ 3> App Store <3> Google Play </ 3> " +
-                    "වෙතින් Google Authenticator වැනි සත්‍යාපන යෙදුමක් බාගන්න."
+                        reScanQuestion: "QR කේතය නැවත පරිලෝකනය කිරීමට අවශ්‍යද?",
+                        requiredError: "සත්‍යාපන කේතය ඇතුළත් කරන්න"
+                    }
                 },
                 notifications: {
+                    deleteError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        },
+                        genericError: {
+                            description: "TOTP සත්‍යාපනකාරක වින්‍යාසය මැකීමේදී දෝෂයක් සිදු විය",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        }
+                    },
+                    deleteSuccess: {
+                        genericMessage: "සාර්ථකව ඉවත් කරන ලදී",
+                        message: "TOTP වින්‍යාසය සාර්ථකව ඉවත් කරන ලදී."
+                    },
                     initError: {
                         error: {
                             description: "{{error}}",
@@ -576,72 +683,200 @@ export const myAccount: MyAccountNS = {
                             description: "නව QR කේතයක් ලබා ගැනීමට උත්සාහ කිරීමේදී දෝෂයකි",
                             message: "මොකක්හරි වැරැද්දක් වෙලා"
                         }
+                    },
+                    updateAuthenticatorError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        },
+                        genericError: {
+                            description: "සබල කළ සත්‍යාපන ලැයිස්තුව යාවත්කාලීන කිරීමට උත්සාහ කිරීමේදී දෝෂයක් ඇති විය",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        }
                     }
-                }
+                },
+                regenerate: "නැවත උත්පාදනය කරන්න"
+            },
+            backupCode: {
+                description: "ඔබට බහු-සාධක සත්‍යාපන කේත ලබා ගැනීමට නොහැකි වූ විට ඔබගේ ගිණුමට ප්‍රවේශ වීමට උපස්ථ කේත භාවිතා " +
+                    "කරන්න. අවශ්‍ය නම් ඔබට නව කේත නැවත උත්පාදනය කළ හැක.",
+                download: {
+                    heading: "ඔබගේ උපස්ථ කේත සුරකින්න.",
+                    info1: "ඔබට එක් එක් උපස්ථ කේතය භාවිතා කළ හැක්කේ එක් වරක් පමණි.",
+                    info2: "මෙම කේත ජනනය කරන ලදී ",
+                    subHeading: "ඔබ ඔබගේ දුරකථනයෙන් බැහැරව සිටින විට Asgardeo වෙත පුරනය වීමට ඔබට මෙම උපස්ථ " +
+                        "කේත භාවිතා කළ හැක. මෙම උපස්ථ කේත ආරක්ෂිත නමුත් ප්‍රවේශ විය හැකි ස්ථානයක තබා ගන්න."
+                },
+                heading: "උපස්ථ කේත",
+                modals: {
+                    actions: {
+                        copied: "පිටපත් කර ඇත",
+                        copy: "කේත පිටපත් කරන්න",
+                        download: "කේත බාගන්න",
+                        regenerate: "නැවත උත්පාදනය කරන්න"
+                    },
+                    description: "ඔබ ඔබගේ දුරකථනයෙන් බැහැරව සිටින විට පුරනය වීමට උපස්ථ කේත භාවිතා කරන්න. " +
+                        "ඒවා සියල්ලම භාවිතා කරන විට ඔබට තවත් උත්පාදනය කළ හැකිය",
+                    generate: {
+                        description: "ඔබගේ උපස්ථ කේත සියල්ලම භාවිතා වේ. නව උපස්ථ කේත කට්ටලයක් ජනනය කරමු",
+                        heading: "උත්පාදනය කරන්න"
+                    },
+                    heading: "උපස්ථ කේත",
+                    info: "සෑම කේතයක්ම භාවිතා කළ හැක්කේ එක් වරක් පමණි",
+                    regenerate: {
+                        description: "ඔබ නව කේත ජනනය කිරීමෙන් පසු, ඔබේ පැරණි කේත තවදුරටත් ක්‍රියා නොකරනු ඇත. "
+                            + "නව කේත උත්පාදනය වූ පසු ඒවා සුරැකීමට වග බලා ගන්න.",
+                        heading: "තහවුරු කිරීම"
+                    },
+                    subHeading: "ඔබට පුරනය වීමට භාවිතා කළ හැකි එක් වරක් මුරකේත",
+                    warn: "මෙම කේත දිස්වන්නේ එක් වරක් පමණි. ඒවා දැන් සුරැකීමට සහ ආරක්ෂිත නමුත් ප්‍රවේශ විය හැකි "
+                        + "ස්ථානයක ගබඩා කිරීමට වග බලා ගන්න."
+                },
+                mutedHeader: "ප්රතිසාධන විකල්ප",
+                notifications: {
+                    deleteError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        },
+                        genericError: {
+                            description: "උපස්ථ කේත මකා දැමීමේදී දෝෂයක් සිදු විය",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        }
+                    },
+                    downloadError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        },
+                        genericError: {
+                            description: "නව උපස්ථ කේත බාගැනීමට උත්සාහ කිරීමේදී දෝෂයක් ඇති විය",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        }
+                    },
+                    downloadSuccess: {
+                        genericMessage: {
+                            description: "උපස්ථ කේත සාර්ථකව බාගත කර ඇත.",
+                            message: "උපස්ථ කේත සාර්ථකව බාගන්නා ලදී."
+                        },
+                        message: {
+                            description: "{{message}}",
+                            message: "උපස්ථ කේත සාර්ථකව බාගන්නා ලදී."
+                        }
+                    },
+                    refreshError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        },
+                        genericError: {
+                            description: "නව උපස්ථ කේත උත්පාදනය කිරීමට උත්සාහ කිරීමේදී දෝෂයක් ඇති විය",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        }
+                    },
+                    retrieveAuthenticatorError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        },
+                        genericError: {
+                            description: "සක්‍රීය සත්‍යාපන ලැයිස්තුව ලබා ගැනීමට උත්සාහ කිරීමේදී දෝෂයක් ඇති විය",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        }
+                    },
+                    retrieveError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        },
+                        genericError: {
+                            description: "උපස්ථ කේත ලබා ගැනීමේදී දෝෂයක් ඇති විය",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        }
+                    },
+                    updateAuthenticatorError: {
+                        error: {
+                            description: "{{error}}",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        },
+                        genericError: {
+                            description: "සබල කළ සත්‍යාපන ලැයිස්තුව යාවත්කාලීන කිරීමට උත්සාහ කිරීමේදී දෝෂයක් ඇති විය",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
+                        }
+                    }
+                },
+                remaining: "ඉතිරිව ඇත"
             },
             fido: {
-                description: "FIDO යතුරක් සම්බන්ධ කිරීමෙන් සත්\u200Dයාපනය කිරීම",
+                description: "ඔබට ඔබගේ ගිණුමට පුරනය වීමට ඔබගේ උපාංගයේ FIDO2 ආරක්‍ෂක යතුරක් හෝ ජෛවමිතික භාවිත කළ හැක.",
                 form: {
-                    label: "ආරක්ෂක උපාංගය",
-                    placeholder: "උපාංග නාමයක් ඇතුළත් කරන්න",
-                    remove: "උපාංගය ඉවත් කරන්න",
-                    required: "කරුණාකර ඔබගේ ආරක්ෂක උපාංගයේ නම ඇතුළත් කරන්න"
+                    label: "ආරක්ෂක යතුර/ජීවමිතික",
+                    placeholder: "ආරක්ෂක යතුර/ජීවමිතික සඳහා නමක් ඇතුළත් කරන්න",
+                    remove: "ආරක්ෂක යතුර/ජීවමිතික ඉවත් කරන්න",
+                    required: "කරුණාකර ඔබගේ ආරක්ෂක යතුර/ජෛවමිතික සඳහා නමක් ඇතුළත් කරන්න"
                 },
-                heading: "FIDO",
+                heading: "ආරක්ෂක යතුර/ජීවමිතික",
                 modals: {
+                    deleteConfirmation: {
+                        assertionHint: "කරුණාකර ඔබගේ ක්‍රියාව තහවුරු කරන්න.",
+                        content: "මෙම ක්‍රියාව ආපසු හැරවිය නොහැකි අතර ආරක්ෂක යතුර/ජෛවමිතික ස්ථිරවම මකනු ඇත.",
+                        description: "ඔබ මෙම ආරක්‍ෂක යතුර/ජීවමිතික මකා දැමුවහොත්, ඔබට නැවත ඔබගේ ගිණුමට " +
+                            "පුරනය වීමට නොහැකි විය හැක. කරුණාකර ප්‍රවේශමෙන් ඉදිරියට යන්න.",
+                        heading: "ඔයාට විශ්වාස ද?"
+                    },
                     deviceRegistrationErrorModal: {
-                        description:
-                            "උපාංග ලියාපදිංචිය බාධා විය. මෙය හිතාමතා නොකළේ නම්, ඔබට එම ප්‍රවාහය නැවත උත්සාහ කළ " +
-                            "හැකිය, නැතහොත් පැරණි ආරක්ෂක යතුරක් සමඟ නැවත උත්සාහ කරන්න.",
-                        heading: "උපාංග ලියාපදිංචි කිරීම අසාර්ථක විය"
+                        description: "ආරක්ෂක යතුර/ජීවමිතික ලියාපදිංචිය බාධා විය. මෙය චේතනාන්විත නොවේ නම්, " +
+                            "ඔබට එම ප්‍රවාහයම නැවත උත්සාහ කිරීමට කිරීමට හැකිය.",
+                        heading: "ආරක්ෂිත යතුර/ජීවමිතික ලියාපදිංචිය අසාර්ථක විය",
+                        tryWithOlderDevice: "ඔබට පැරණි ආරක්ෂක යතුරක්/ජෛවමිතිකයක් සමඟින් නැවත උත්සාහ කිරීමටද හැකිය."
                     }
                 },
                 notifications: {
                     removeDevice: {
                         error: {
                             description: "{{description}}",
-                            message: "උපාංගය ඉවත් කිරීමේදී දෝෂයක් ඇතිවිය"
+                            message: "ආරක්ෂක යතුර/ජීවමිතික ඉවත් කිරීමේදී දෝෂයක් සිදු විය"
                         },
                         genericError: {
-                            description: "උපාංගය ඉවත් කිරීමේදී දෝෂයක් ඇතිවිය",
-                            message: "දෝෂයක් ඇතිවිය!!!"
+                            description: "ආරක්ෂක යතුර/ජීවමිතික ඉවත් කිරීමේදී දෝෂයක් සිදු විය",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
                         },
                         success: {
-                            description: "උපාංගය ලැයිස්තුවෙන් සාර්ථකව ඉවත් කරන ලදි",
-                            message: "ඔබගේ උපාංගය සාර්ථකව ඉවත් කරන ලදි"
+                            description: "ආරක්ෂිත යතුර/ජීවමිතික ලැයිස්තුවෙන් සාර්ථකව ඉවත් කරන ලදී",
+                            message: "ඔබගේ ආරක්‍ෂක යතුර/ජීවමිතික සාර්ථකව ඉවත් කරන ලදී"
                         }
                     },
                     startFidoFlow: {
                         error: {
                             description: "{{description}}",
-                            message: "උපාංගය ලියාපදිංචි කිරීමේදී දෝෂයක් ඇතිවිය"
+                            message: "ආරක්ෂක යතුර/ජීවමිතික ලබා ගැනීමේදී දෝෂයක් සිදු විය"
                         },
                         genericError: {
-                            description: "උපාංගය ලියාපදිංචි කිරීමේදී දෝෂයක් ඇතිවිය",
-                            message: "දෝෂයක් ඇතිවිය!!!"
+                            description: "ආරක්ෂක යතුර/ජීවමිතික ලබා ගැනීමේදී දෝෂයක් සිදු විය",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
                         },
                         success: {
-                            description:
-                                "උපාංගය සාර්ථකව ලියාපදිංචි කර ඇති අතර දැන් ඔබට එය සත්‍යාපන සාධකයක් ලෙස භාවිතා කළ හැකිය",
-                            message: "ඔබගේ උපාංගය සාර්ථකව ලියාපදිංචි කර ඇත"
+                            description: "ආරක්ෂිත යතුර/ජීවමිතික සාර්ථකව ලියාපදිංචි කර ඇති අතර දැන් " +
+                                "ඔබට එය සත්‍යාපනය සඳහා භාවිතා කළ හැක.",
+                            message: "ඔබගේ ආරක්‍ෂක යතුර/ජෛවමිතික සාර්ථකව ලියාපදිංචි විය"
                         }
                     },
                     updateDeviceName: {
                         error: {
                             description: "{{description}}",
-                            message: "ආරක්ෂක උපාංගයේ නම යාවත්කාලීන කිරීමේදී දෝෂයක් ඇතිවිය"
+                            message: "ආරක්ෂක යතුර/ජෛවමිතික නම යාවත්කාලීන කිරීමේදී දෝෂයක් ඇති විය"
                         },
                         genericError: {
-                            description: "ආරක්ෂක උපාංගයේ නම යාවත්කාලීන කිරීමේදී දෝෂයක් ඇතිවිය",
-                            message: "දෝෂයක් ඇතිවිය!!!"
+                            description: "ආරක්ෂක යතුර/ජෛවමිතික නම යාවත්කාලීන කිරීමේදී දෝෂයක් ඇති විය",
+                            message: "මොකක්හරි වැරැද්දක් වෙලා"
                         },
                         success: {
-                            description: "ඔබගේ ආරක්ෂක උපාංගයේ නම සාර්ථකව යාවත්කාලීන කරන ලදි",
-                            message: "ආරක්ෂක උපාංගයේ නම සාර්ථකව යාවත්කාලීන කරන ලදි"
+                            description: "ඔබගේ ආරක්‍ෂක යතුර/ජෛවමිතික නම සාර්ථකව යාවත්කාලීන කරන ලදී",
+                            message: "ආරක්ෂිත යතුර/ජෛවමිතික නම සාර්ථකව යාවත්කාලීන කරන ලදී"
                         }
                     }
                 },
-                tryButton: "පැරණි උපාංගයක් සමඟ උත්සාහ කරන්න"
+                tryButton: "පැරණි ආරක්ෂක යතුරක්/Biometric සමඟ උත්සාහ කරන්න"
             },
             smsOtp: {
                 descriptions: {
@@ -664,6 +899,35 @@ export const myAccount: MyAccountNS = {
                         }
                     }
                 }
+            }
+        },
+        mobileUpdateWizard: {
+            done: "සාර්ථකත්වය! ඔබගේ ජංගම දුරකථන අංකය සාර්ථකව සත්‍යාපනය කර ඇත.",
+            notifications: {
+                resendError: {
+                    error: {
+                        description: "{{error}}",
+                        message: "මොකක්හරි වැරැද්දක් වෙලා"
+                    },
+                    genericError: {
+                        description: "නව සත්‍යාපන කේතයක් ලබා ගැනීමට උත්සාහ කිරීමේදී දෝෂයක් ඇතිවිය",
+                        message: "මොකක්හරි වැරැද්දක් වෙලා"
+                    }
+                },
+                resendSuccess: {
+                    message: "කේත නැවත යැවීමේ ඉල්ලීම සාර්ථකව යවන ලදි"
+                }
+            },
+            submitMobile: {
+                heading: "ඔබගේ නව ජංගම දුරකථන අංකය ඇතුළත් කරන්න"
+            },
+            verifySmsOtp: {
+                error: "සත්‍යාපනය අසාර්ථක විය. කරුණාකර නැවත උත්සාහ කරන්න.",
+                generate: "නව සත්‍යාපන කේතයක් යවන්න",
+                heading: "ඔබගේ ජංගම දුරකථන අංකයට යවන ලද සත්‍යාපන කේතය ඇතුළත් කරන්න",
+                label: "සත්යාපන කේතය",
+                placeholder: "ඔබගේ සත්‍යාපන කේතය ඇතුළත් කරන්න",
+                requiredError: "සත්‍යාපන කේතය ඇතුළත් කරන්න"
             }
         },
         overview: {
@@ -698,6 +962,14 @@ export const myAccount: MyAccountNS = {
                     },
                     description: "ඔබට යෙදුම් සදහා සැපයීමට අවශ්\u200Dය දත්ත පාලනය කිරීම",
                     header: "අනුමැතිය කළමනාකරණය කිරීම"
+                },
+                profileStatus: {
+                    completionPercentage: "ඔබගේ ගිණුම සම්පුර්ණ කිරීමේ ප්‍රතිශතය {{percentage}}%",
+                    description: "ඔබගේ පැතිකඩ කළමනාකරණය කරන්න",
+                    header: "ඔබගේ  {{productName}} ගිණුම",
+                    profileText: "ඔබගේ පුද්ගලික පැතිකඩ පිළිබඳ විස්තර",
+                    readOnlyDescription: "ඔබගේ පැතිකඩ බලන්න",
+                    userSourceText: "({{source} හරහා පුරනය වී ඇත)"
                 }
             }
         },
@@ -741,7 +1013,7 @@ export const myAccount: MyAccountNS = {
                     para1: "මෙම ප්‍රතිපත්තියෙන් WSO2 IS ඔබේ පුද්ගලික තොරතුරු, එකතු කිරීමේ අරමුණු සහ ඔබේ පුද්ගලික " +
                         "තොරතුරු රඳවා තබා ගැනීම පිළිබඳ තොරතුරු ග්‍රහණය කරගන්නේ කෙසේද යන්න විස්තර කරයි.",
                     para2: "මෙම ප්‍රතිපත්තිය යොමු කිරීම සඳහා පමණක් වන අතර එය නිෂ්පාදනයක් ලෙස මෘදුකාංගයට අදාළ වන" +
-                        " බව කරුණාවෙන් සලකන්න. WSO2 Inc. සහ එහි සංවර්ධකයින්ට WSO2 IS තුළ ඇති තොරතුරු වෙත " +
+                        " බව කරුණාවෙන් සලකන්න. WSO2 LLC. සහ එහි සංවර්ධකයින්ට WSO2 IS තුළ ඇති තොරතුරු වෙත " +
                         "ප්‍රවේශයක් නොමැත. වැඩි විස්තර සඳහා කරුණාකර <1>වියාචනය</1> කොටස බලන්න.",
                     para3: "WSO2 IS හි භාවිතය සහ පරිපාලනය පාලනය කරන ආයතන, සංවිධාන හෝ පුද්ගලයින් අදාළ ආයතනය, " +
                         "සංවිධානය හෝ පුද්ගලයා විසින් දත්ත පාලනය කරන හෝ සකසන ආකාරය සැකසෙන තමන්ගේම" +
@@ -845,8 +1117,9 @@ export const myAccount: MyAccountNS = {
                     requestRemoval: {
                         description: {
                             para1:
-                                "ඔබගේ ගිණුම මකා දැමීමට ඔබට පරිපාලකගෙන් ඉල්ලා සිටිය හැකිය. පරිපාලකයා යනු ඔබ යටතේ " +
-                                "ලියාපදිංචි වී ඇති tenant හෝ ඔබ tenant ලක්ෂණය භාවිතා නොකරන්නේ නම් super admin ය.",
+                                "ඔබගේ ගිණුම මකා දැමීමට ඔබට පරිපාලකගෙන් ඉල්ලා සිටිය හැකිය. පරිපාලක යනු ඔබ යටතේ" +
+                                " ලියාපදිංචි වී ඇති සංවිධානයේ පරිපාලකයා හෝ ඔබ සංවිධානාත්මක අංගය භාවිතා නොකරන්නේ නම්" +
+                                " සුපිරි පරිපාලකයා ය.",
                             para2:
                                 "මීට අමතරව, WSO2 IS ලඝු සටහන්, දත්ත සමුදායන් හෝ විශ්ලේෂණ ආචයනය තුළ රඳවාගෙන " +
                                 "ඇති ඔබගේ ක්‍රියාකාරකම්වල සියලු අංශ නිර්නාමික කිරීමට ඔබට ඉල්ලිය හැකිය."
@@ -933,37 +1206,121 @@ export const myAccount: MyAccountNS = {
         },
         profile: {
             fields: {
-                addressesHome: "නිවසේ ලිපිනය",
-                addressesWork: "වැඩ ලිපිනය",
+                "Account Confirmed Time": "ගිණුම තහවුරු කරන කාලය",
+                "Account Disabled": "ගිණුම අක්රීයයි",
+                "Account Locked": "ගිණුම අගුළු දමා ඇත",
+                "Account State": "ගිණුම් තත්වය",
+                "Active": "සක්රීයයි",
+                "Address - Street": "ලිපිනය - වීදිය",
+                "Ask Password": "මුරපදය අහන්න",
+                "Backup Code Enabled": "උපස්ථ කේතය සක්රීය කර ඇත",
+                "Backup Codes": "උපස්ථ කේත",
+                "Birth Date": "උපන් දිනය",
+                "Country": "රට",
+                "Created Time": "නිර්මාණය කරන ලදි",
+                "Disable EmailOTP": "එමාලෝට්ප් අක්රීය කරන්න",
+                "Disable SMSOTP": "SMSSTP අක්රීය කරන්න",
+                "Display Name": "ප්රදර්ශන නාමය",
+                "Email": "විද්යුත් තැපෑල",
+                "Email Verified": "විද්යුත් තැපෑල සත්යාපනය",
+                "Enabled Authenticators": "සක්රීය සත්යාපනය",
+                "Existing Lite User": "පවතින ලයිට් පරිශීලක",
+                "External ID": "බාහිර හැඳුනුම්පත",
+                "Failed Attempts Before Success": "සාර්ථක වීමට පෙර අසමත් උත්සාහයන් අසාර්ථක විය",
+                "Failed Backup Code Attempts": "උපස්ථ කේත උත්සාහයන් අසාර්ථක විය",
+                "Failed Email OTP Attempts": "අසමත් වූ ඊමේල් OTP උත්සාහයන්",
+                "Failed Lockout Count": "අගුළු දැමූ ගණන අසමත් විය",
+                "Failed Login Attempts": "පුරනය වීමේ උත්සාහයන් අසාර්ථක විය",
+                "Failed Password Recovery Attempts": "මුරපද ප්රතිසාධන උත්සාහයන් අසාර්ථක විය",
+                "Failed SMS OTP Attempts": "OTP උත්සාහයන් අසාර්ථක විය",
+                "Failed TOTP Attempts": "TOTP උත්සාහයන් අසාර්ථක විය",
+                "First Name": "මුල් නම",
+                "Force Password Reset": "මුරපද යළි පිහිටුවීමේ බල කරන්න",
+                "Full Name": "Fඅනිෂ්ට නාම",
+                "Gender": "ස්ත්රී පුරුෂ භාවය",
+                "Groups": "කණ්ඩායම්",
+                "Identity Provider Type": "හැඳුනුම් සැපයුම්කරු වර්ගය",
+                "Last Logon": "අවසාන පිවිසුම",
+                "Last Modified Time": "අවසන් වෙනස් කළ කාලය",
+                "Last Name": "අවසන් නම",
+                "Last Password Update": "අවසාන මුරපද යාවත්කාලීන කිරීම",
+                "Lite User": "ලයිට් පරිශීලක",
+                "Lite User ID": "ලයිට් පරිශීලක හැඳුනුම්පත",
+                "Local": "දේශීය",
+                "Local Credential Exists": "දේශීය අක්තපත්ර පවතී",
+                "Locality": "ප්රදේශය",
+                "Location": "ස්ථානය",
+                "Locked Reason": "අගුලු දැමූ හේතුව",
+                "Manager - Name": "කළමනාකරු - නම",
+                "Middle Name": "මැද නම",
+                "Mobile": "ජංගම",
+                "Nick Name": "නික් නම",
+                "Phone Verified": "දුරකථන සත්යාපනය",
+                "Photo - Thumbnail": "ඡායාරූපය - සිඟිති රූ",
+                "Photo URL": "ඡායාරූප URL",
+                "Postal Code": "තැපැල් කේතය",
+                "Preferred Channel": "කැමති නාලිකාව",
+                "Read Only User": "පරිශීලකයා පමණක් කියවන්න",
+                "Region": "කලාපයේ",
+                "Resource Type": "සම්පත් වර්ගය",
+                "Roles": "භූමිකාවන්",
+                "Secret Key": "රහස් යතුර",
+                "TOTP Enabled": "TOTP සක්රීය කර ඇත",
+                "Time Zone": "වේලා කලාපය",
+                "URL": "url",
+                "Unlock Time": "අගුළු ඇරීමේ කාලය",
+                "User Account Type": "පරිශීලක ගිණුම් වර්ගය",
+                "User ID": "පරිශීලක ID",
+                "User Metadata - Version": "පරිශීලක පාර-දත්ත - අනුවාදය",
+                "User Source": "පරිශීලක ප්රභවය",
+                "User Source ID": "පරිශීලක ප්රභව හැඳුනුම්පත",
+                "Username": "පරිශීලක නාමය",
+                "Verification Pending Email": "සත්යාපනය සඳහා විද්යුත් තැපෑල",
+                "Verification Pending Mobile Number": "සත්යාපනය අපේක්ෂිත ජංගම දුරකථන අංකය",
+                "Verify Email": "විද්යුත් තැපෑල සත්යාපනය කරන්න",
+                "Verify Mobile": "ජංගම දුරකථනය සත්යාපනය කරන්න",
+                "Verify Secret Key": "රහස් යතුර සත්යාපනය කරන්න",
+                "Website URL": "වෙබ් අඩවි URL",
                 emails: "විද්යුත් තැපෑල",
-                emailsHome: "නිවසේ විද්‍යුත් තැපෑල",
-                emailsOther: "වෙනත් විද්‍යුත් තැපෑල",
-                emailsWork: "වැඩ ඊමේල්",
                 generic: {
                     default: "එකතු කරන්න {{fieldName}}"
                 },
                 nameFamilyName: "අවසන් නම",
                 nameGivenName: "මුල් නම",
                 phoneNumbers: "දුරකතන අංකය",
-                phoneNumbersHome: "නිවසේ දුරකථන අංකය",
-                phoneNumbersMobile: "ජංගම දූරකථන අංකය",
-                phoneNumbersOther: "වෙනත් දුරකථන අංකය",
-                phoneNumbersWork: "රැකියා දුරකථන අංකය",
                 profileImage: "පැතිකඩ රූපය",
                 profileUrl: "URL",
                 userName: "පරිශීලක නාමය"
             },
             forms: {
+                countryChangeForm: {
+                    inputs: {
+                        country: {
+                            placeholder: "ඔබගේ රට තෝරන්න"
+                        }
+                    }
+                },
+                dateChangeForm: {
+                    inputs: {
+                        date: {
+                            validations: {
+                                futureDateError: "ඔබ {{field}} ක්ෂේත්‍රය සඳහා ඇතුළත් කළ දිනය වලංගු නැත.",
+                                invalidFormat: "කරුණාකර වලංගු {{fieldName}} YYYY-MM-DD ආකෘතියෙන් ඇතුළත් කරන්න."
+                            }
+                        }
+                    }
+                },
                 emailChangeForm: {
                     inputs: {
                         email: {
                             label: "විද්‍යුත් තැපෑල",
-                            note: "සටහන: මෙය සංස්කරණය කිරීමෙන් මෙම ගිණුම හා සම්බන්ධ ඊමේල් ලිපිනය වෙනස් වේ. ගිණුම් ප්‍රතිසාධනය " +
-                                "සඳහා මෙම විද්‍යුත් තැපැල් ලිපිනය ද භාවිතා කරයි.",
+                            note: "සටහන: මෙය සංස්කරණය කිරීමෙන් මෙම ගිණුම හා සම්බන්ධ ඊමේල් ලිපිනය වෙනස් වේ." +
+                                "ගිණුම් ප්‍රතිසාධනය සඳහා මෙම විද්‍යුත් තැපැල් ලිපිනය ද භාවිතා කරයි.",
                             placeholder: "විද්‍යුත් තැපෑල ඇතුල් කරන්න",
                             validations: {
                                 empty: "විද්‍යුත් තැපෑල අත්\u200Dයවශ්\u200Dය ක්ෂේත්\u200Dරයකි",
-                                invalidFormat: "ඊමේල් ලිපිනය නිවැරදි ආකෘතියෙන් නොවේ"
+                                invalidFormat: "විද්‍යුත් තැපැල් ආකෘතිය නිවැරදි නොවේ. ඔබට අක්ෂරාංක, යුනිකෝඩ් අක්ෂර, " +
+                                    "ඉරි (-), යටි ඉරි (_), නැවතුම් ලකුණු (.), සහ at ලකුණක් (@) භාවිතා කළ හැකිය."
                             }
                         }
                     }
@@ -977,7 +1334,7 @@ export const myAccount: MyAccountNS = {
                         },
                         validations: {
                             empty: "{{fieldName}} අත්\u200Dයවශ්\u200Dය ක්ෂේත්\u200Dරයකි",
-                            invalidFormat: "{{fieldName}} නිවැරදි ආකෘතියෙන් නොවේ"
+                            invalidFormat: "ඇතුළත් කළ {{fieldName}} ආකෘතිය වැරදිය"
                         }
                     }
                 },
@@ -989,7 +1346,8 @@ export const myAccount: MyAccountNS = {
                             placeholder: "ජංගම දුරකථන අංකය ඇතුල් කරන්න",
                             validations: {
                                 empty: "ජංගම දුරකථන අංකය අත්\u200Dයවශ්\u200Dය ක්ෂේත්\u200Dරයකි",
-                                invalidFormat: "ජංගම දුරකථන අංකය නිවැරදි ආකෘතියෙන් නොවේ"
+                                invalidFormat: "කරුණාකර වලංගු ජංගම අංකයක් [+][රට කේතය][ප්‍රදේශ කේතය]" +
+                                    "[දේශීය දුරකථන අංකය] ආකෘතියෙන් ඇතුළත් කරන්න."
                             }
                         }
                     }
@@ -1026,14 +1384,16 @@ export const myAccount: MyAccountNS = {
             },
             messages: {
                 emailConfirmation: {
-                    content: "ඔබගේ පැතිකඩට නව විද්‍යුත් තැපෑල එක් කිරීම සඳහා කරුණාකර විද්‍යුත් තැපැල් ලිපින යාවත්කාලීන කිරීම තහවුරු කරන්න.",
+                    content: "ඔබගේ පැතිකඩට නව විද්‍යුත් තැපෑල එක් කිරීම සඳහා කරුණාකර විද්‍යුත් තැපැල් ලිපින " +
+                        "යාවත්කාලීන කිරීම තහවුරු කරන්න.",
                     header: "තහවුරු කිරීම අපේක්ෂිතයි!"
                 },
                 mobileVerification: {
                     content: "දෙවන සාධකය සත්‍\u200Dයාපනය සක්‍රිය කර ඇති විට කෙටි පණිවුඩ OTP යැවීමට සහ පරිශීලක " +
                         "නාමයක් / මුරපද ප්\u200D‍රතිසාධනයකදී ප්\u200D‍රතිසාධන කේත යැවීමට මෙම ජංගම දුරකථන අංකය භාවිතා " +
-                        "කරයි. මෙම අංකය යාවත්කාලීන කිරීම සඳහා, ඔබගේ නව අංකයට යවන ලද සත්\u200D‍යාපන කේතය ඇතුළත් කිරීමෙන් " +
-                        "ඔබ නව අංකය සත්\u200D‍යාපනය කළ යුතුය. ඔබට ඉදිරියට යාමට අවශ්\u200D‍ය නම් යාවත්කාලීන ක්ලික් කරන්න.",
+                        "කරයි. මෙම අංකය යාවත්කාලීන කිරීම සඳහා, ඔබගේ නව අංකයට යවන ලද සත්\u200D‍යාපන කේතය " +
+                        "ඇතුළත් කිරීමෙන් ඔබ නව අංකය සත්\u200D‍යාපනය කළ යුතුය. ඔබට ඉදිරියට යාමට අවශ්\u200D‍ය නම් " +
+                        "යාවත්කාලීන ක්ලික් කරන්න."
                 }
             },
             notifications: {
@@ -1125,10 +1485,19 @@ export const myAccount: MyAccountNS = {
             },
             lastAccessed: "අවසන් ප්‍රවේශය {{date}}",
             modals: {
+                terminateActiveUserSessionModal: {
+                    heading: "වත්මන් ක්‍රියාකාරී සැසි අවසන් කරන්න",
+                    message:
+                        "දෙවන-සාධක සත්‍යාපනය (2FA) විකල්ප වෙනස් කිරීම් ඔබගේ සක්‍රිය සැසි සඳහා යොදනු නොලැබේ. ඔබ ඒවා " +
+                        "අවසන් කරන ලෙස අපි නිර්දේශ කරමු.",
+                    primaryAction: "සියල්ල අවසන් කරන්න",
+                    secondaryAction: "සමාලෝචනය කර අවසන් කරන්න"
+
+                },
                 terminateAllUserSessionsModal: {
                     heading: "තහවුරු කිරීම",
                     message:
-                        "මෙම ක්‍රියාව මඟින් සෑම උපාංගයකම සියලුම සැසි වලින් ඔබව ඉවත් කරනු ඇත. " +
+                        "ක්‍රියාව මඟින් මෙම සැසියෙන් සහ සෑම උපාංගයකම අනෙක් සියලුම සැසි වලින් ඔබව ඉවත් කරනු ඇත. " +
                         "ඉදිරියට යාමට ඔබ කැමතිද?"
                 },
                 terminateUserSessionModal: {
@@ -1178,35 +1547,6 @@ export const myAccount: MyAccountNS = {
                     success: {
                         description: "සක්‍රීය සැසිය සාර්ථකව අවසන් කරන ලදි",
                         message: "සාර්ථකයි"
-                    }
-                }
-            }
-        },
-        mobileUpdateWizard: {
-            done: "සාර්ථකත්වය! ඔබගේ ජංගම දුරකථන අංකය සාර්ථකව සත්‍යාපනය කර ඇත.",
-            submitMobile: {
-                heading: "ඔබගේ නව ජංගම දුරකථන අංකය ඇතුළත් කරන්න",
-            },
-            verifySmsOtp: {
-                generate: "නව සත්‍යාපන කේතයක් යවන්න",
-                heading: "ඔබගේ ජංගම දුරකථන අංකයට යවන ලද සත්‍යාපන කේතය ඇතුළත් කරන්න",
-                error: "සත්‍යාපනය අසාර්ථක විය. කරුණාකර නැවත උත්සාහ කරන්න.",
-                label: "සත්යාපන කේතය",
-                placeholder: "ඔබගේ සත්‍යාපන කේතය ඇතුළත් කරන්න",
-                requiredError: "සත්‍යාපන කේතය ඇතුළත් කරන්න",
-            },
-            notifications: {
-                resendSuccess: {
-                    message: "කේත නැවත යැවීමේ ඉල්ලීම සාර්ථකව යවන ලදි",
-                },
-                resendError: {
-                    error: {
-                        description: "{{error}}",
-                        message: "මොකක්හරි වැරැද්දක් වෙලා"
-                    },
-                    genericError: {
-                        description: "නව සත්‍යාපන කේතයක් ලබා ගැනීමට උත්සාහ කිරීමේදී දෝෂයක් ඇතිවිය",
-                        message: "මොකක්හරි වැරැද්දක් වෙලා"
                     }
                 }
             }
@@ -1263,20 +1603,20 @@ export const myAccount: MyAccountNS = {
             secondaryButton: "අවලංගු කරන්න"
         },
         sessionTimeoutModal: {
-            description: "අක්‍රියතාවය හේතුවෙන් ඔබ වත්මන් සැසියෙන් ඉවත් වනු ඇත. ඔබ සැසිය දිගටම කරගෙන යාමට කැමති " +
-                "නම් කරුණාකර රැඳී සිටින්න තෝරන්න.",
-            heading: "තත්පර <1>{{ time }}</1> කින් ඔබ ඉවත් වනු ඇත.",
-            primaryButton: "පුරනය වී සිටින්න",
-            secondaryButton: "වරන්න",
+            description: "ඔබ <1>ආපසු යන්න</1> මත ක්ලික් කළ විට, සැසිය පවතින්නේ නම් එය නැවත ලබා ගැනීමට අපි " +
+                "උත්සාහ කරන්නෙමු. ඔබට සක්‍රීය සැසියක් නොමැති නම්, ඔබ පිවිසුම් පිටුවට හරවා යවනු ලැබේ.",
+            heading: "ඔබ දිගු කලක් අක්‍රිය වී ඇති බව පෙනේ.",
             loginAgainButton: "නැවත පුරනය වන්න",
-            sessionTimedOutHeading: "අක්‍රියතාවය හේතුවෙන් පරිශීලක සැසිය කල් ඉකුත්වී ඇත.",
-            sessionTimedOutDescription: "ඔබ නතර කළ ස්ථානයෙන් ඉදිරියට යාමට කරුණාකර නැවත ලොග් වන්න."
+            primaryButton: "ආපසු යන්න",
+            secondaryButton: "ඉවත් වන්න",
+            sessionTimedOutDescription: "ඔබ නතර කළ ස්ථානයෙන් ඉදිරියට යාමට කරුණාකර නැවත ලොග් වන්න.",
+            sessionTimedOutHeading: "අක්‍රියතාවය හේතුවෙන් පරිශීලක සැසිය කල් ඉකුත්වී ඇත."
         }
     },
     pages: {
         applications: {
-            subTitle: "Manage and maintain your applications",
-            title: "Applications"
+            subTitle: "ඔබගේ යෙදුම් සොයාගෙන ප්‍රවේශ වන්න",
+            title: "අයදුම්පත්"
         },
         overview: {
             subTitle: "ඔබගේ පුද්ගලික තොරතුරු, ගිණුම් ආරක්ෂාව සහ රහස්‍යතා සැකසුම් කළමනාකරණය කරන්න",
@@ -1287,18 +1627,20 @@ export const myAccount: MyAccountNS = {
                 "ඔබගේ පුද්ගලික පැතිකඩ සංස්කරණය කරන්න හෝ අපනයනය කරන්න සහ සම්බන්ධිත ගිණුම් කළමනාකරණය කරන්න",
             title: "පෞද්ගලික තොරතුරු"
         },
-        personalInfoWithoutLinkedAccounts: {
-            subTitle: "ඔබගේ පුද්ගලික පැතිකඩ සංස්කරණය කරන්න හෝ අපනයනය කරන්න",
-            title: "පෞද්ගලික තොරතුරු"
-        },
         personalInfoWithoutExportProfile: {
             subTitle: "ඔබගේ පුද්ගලික පැතිකඩ සංස්කරණය කරන්න",
+            title: "පෞද්ගලික තොරතුරු"
+        },
+        personalInfoWithoutLinkedAccounts: {
+            subTitle: "ඔබගේ පුද්ගලික පැතිකඩ සංස්කරණය කරන්න හෝ අපනයනය කරන්න",
             title: "පෞද්ගලික තොරතුරු"
         },
         privacy: {
             subTitle: "",
             title: "WSO2 හැඳුනුම් සේවාදායක රහස්‍යතා ප්‍රතිපත්තිය"
         },
+        readOnlyProfileBanner: "ඔබගේ පැතිකඩ මෙම ද්වාරයෙන් වෙනස් කළ නොහැක. වැඩි විස්තර සඳහා " +
+            "කරුණාකර ඔබේ පරිපාලක අමතන්න.",
         security: {
             subTitle: "සියලුම ආරක්ෂක සැකසුම් සහ නිර්දේශ සමඟ යාවත්කාලීනව සිටීමෙන් ඔබගේ ගිණුම සුරක්ෂිත කිරීම",
             title: "ආරක්ෂාව"
@@ -1381,6 +1723,14 @@ export const myAccount: MyAccountNS = {
                     heading: "ඔබ කිසිදු යෙදුමක් අනුමත කර නැත"
                 }
             }
+        },
+        createPassword: {
+            actionTitles: {
+                create: "මුරපදය සාදන්න"
+            },
+            description: "අස්ගාර්ඩියෝ හි මුරපදයක් සාදන්න. ඔබට මෙම මුරපදය භාවිතා කර සමාජ මාධ්ය ප්‍රවේශයට " +
+                "අමතරව අස්ගාර්ඩියෝ වෙත පුරනය විය හැකිය.",
+            heading: "මුරපදය සාදන්න"
         },
         federatedAssociations: {
             description: "මෙම ගිණුම හා සම්බන්ධ වෙනත් අනන්‍යතා සපයන්නන්ගෙන් ඔබගේ ගිණුම් බලන්න",

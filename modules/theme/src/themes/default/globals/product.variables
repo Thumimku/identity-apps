@@ -38,6 +38,7 @@
 @genericIconCircularHoverPadding: 10px;
 @genericIconCircularHoverWidth: fit-content;
 @genericIconCircularHoverMargin: 0 auto;
+@genericIconInvertedBackgroundColor: @black;
 
 /*-------------------
    Advanced search
@@ -149,7 +150,9 @@
 @productVersionLabelPadding: 3px 6px;
 @productVersionLabelFontSize: 0.6em;
 @productVersionLabelFontWeight: 600;
-
+@productVersionLabelAbsoluteTop: -5px;
+@productVersionLabelAbsoluteRight: 15px;
+            
 /*-----------------------------
       Empty Placeholder
 ------------------------------*/
@@ -201,7 +204,12 @@
 @codeEditorOneLinerPadding: 1em;
 @codeEditorActionWidth: 25px;
 @codeEditorActionHeight: 25px;
-@codeEditorActionsPaddingTop: 4px;
+@codeEditorActionMarginBottom: 8px;
+
+@codeEditorActionsPaddingRight: 15px;
+@codeEditorActionsPaddingTop: 10px;
+
+@codeEditorFullScreenWrapperHeight: 90vh;
 
 /*-------------------------------
         Inline Code Block

@@ -18,16 +18,27 @@
 
 import { TestableComponentInterface } from "@wso2is/core/models";
 import React, { FunctionComponent, ReactElement } from "react";
-import { OutboundProvisioningConnectorInterface, OutboundProvisioningConnectorMetaInterface } from "../../../models";
+import {
+    AuthenticatorSettingsFormModes,
+    OutboundProvisioningConnectorInterface,
+    OutboundProvisioningConnectorMetaInterface
+} from "../../../models";
 import { CommonOutboundProvisioningConnectorForm } from "../outbound-provisioning-connectors";
 
 interface OutboundProvisioningConnectorFormFactoryInterface extends TestableComponentInterface {
+    /**
+     * The intended mode of the authenticator form.
+     * If the mode is "EDIT", the form will be used in the edit view and will rely on metadata for readonly states, etc.
+     * If the mode is "CREATE", the form will be used in the add wizards and will all the fields will be editable.
+     */
+    mode: AuthenticatorSettingsFormModes;
     metadata?: OutboundProvisioningConnectorMetaInterface;
     initialValues: OutboundProvisioningConnectorInterface;
     onSubmit: (values: OutboundProvisioningConnectorInterface) => void;
     type?: string;
     triggerSubmit?: boolean;
     enableSubmitButton?: boolean;
+    isReadOnly?: boolean;
 }
 
 /**
@@ -37,30 +48,38 @@ interface OutboundProvisioningConnectorFormFactoryInterface extends TestableComp
  * @return {ReactElement}
  */
 export const OutboundProvisioningConnectorFormFactory: FunctionComponent<
-    OutboundProvisioningConnectorFormFactoryInterface> = (props: OutboundProvisioningConnectorFormFactoryInterface):
-    ReactElement => {
+    OutboundProvisioningConnectorFormFactoryInterface
+> = (
+    props: OutboundProvisioningConnectorFormFactoryInterface
+): ReactElement => {
 
     const {
         metadata,
+        mode,
         initialValues,
         onSubmit,
         type,
         triggerSubmit,
         enableSubmitButton,
+        isReadOnly,
         [ "data-testid" ]: testId
     } = props;
 
     const generateConnector = (): ReactElement => {
         switch (type) {
             default:
-                return <CommonOutboundProvisioningConnectorForm
-                    initialValues={ initialValues }
-                    metadata={ metadata }
-                    onSubmit={ onSubmit }
-                    triggerSubmit={ triggerSubmit }
-                    enableSubmitButton={ enableSubmitButton }
-                    data-testid={ testId }
-                />;
+                return (
+                    <CommonOutboundProvisioningConnectorForm
+                        mode={ mode }
+                        initialValues={ initialValues }
+                        metadata={ metadata }
+                        onSubmit={ onSubmit }
+                        triggerSubmit={ triggerSubmit }
+                        enableSubmitButton={ enableSubmitButton }
+                        data-testid={ testId }
+                        readOnly={ isReadOnly }
+                    />
+                );
         }
     };
 

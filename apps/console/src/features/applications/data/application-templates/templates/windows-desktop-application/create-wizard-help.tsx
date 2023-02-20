@@ -19,6 +19,7 @@
 import { TestableComponentInterface } from "@wso2is/core/models";
 import { Heading } from "@wso2is/react-components";
 import React, { FunctionComponent, ReactElement } from "react";
+import { useTranslation } from "react-i18next";
 import { Divider } from "semantic-ui-react";
 
 /**
@@ -36,31 +37,54 @@ const WindowsDesktopApplicationCreateWizardHelp: FunctionComponent<
     WindowsDesktopApplicationCreateWizardHelpPropsInterface
     > = (
         props: WindowsDesktopApplicationCreateWizardHelpPropsInterface
-): ReactElement => {
+    ): ReactElement => {
 
-    const {
-        [ "data-testid" ]: testId
-    } = props;
+        const {
+            [ "data-testid" ]: testId
+        } = props;
 
-    return (
-        <div data-testid={ testId }>
-            <Heading as="h5">Name</Heading>
-            <p>A unique name to identify your application.</p>
-            <p>E.g., My App</p>
+        const { t } = useTranslation();
 
-            <Divider />
-
-            <React.Fragment>
-                <Heading as="h5">Authorized redirect URIs</Heading>
+        return (
+            <div data-testid={ testId }>
+                <Heading as="h5">
+                    { t("console:develop.features.applications.wizards.minimalAppCreationWizard.help.template.common" +
+                    ".heading.title") }
+                </Heading>
                 <p>
-                    The URL to which the authorization code is sent to upon authentication and where the user
-                    is redirected to upon logout.
+                    { t("console:develop.features.applications.wizards.minimalAppCreationWizard.help.template.common" +
+                    ".heading.subTitle") }
                 </p>
-                <p>E.g., https://myapp.io/login</p>
-            </React.Fragment>
-        </div>
-    );
-};
+                <p>
+                    { t("console:develop.features.applications.wizards.minimalAppCreationWizard.help.template.common" +
+                ".heading.example") }
+                </p>
+
+                <Divider />
+
+                <React.Fragment>
+                    <Heading as="h5">
+                        {
+                            t("console:develop.features.applications.wizards.minimalAppCreationWizard" +
+                                ".help.template.common.authorizedRedirectURLs.title")
+                        }
+                    </Heading>
+                    <p>
+                        {
+                            t("console:develop.features.applications.wizards.minimalAppCreationWizard" +
+                                ".help.template.common.authorizedRedirectURLs.subTitle")
+                        }
+                    </p>
+                    <p>
+                        {
+                            t("console:develop.features.applications.wizards.minimalAppCreationWizard" +
+                                ".help.template.common.authorizedRedirectURLs.example")
+                        }
+                    </p>
+                </React.Fragment>
+            </div>
+        );
+    };
 
 /**
  * Default props for the component

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2022, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,19 +16,24 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
 import { IdentityAppsApiException } from "@wso2is/core/exceptions";
 import { HttpMethods } from "@wso2is/core/models";
 import { AxiosResponse } from "axios";
+import { LocalAuthenticatorInterface } from "../../../features/identity-providers";
 import { store } from "../../core";
 import { ServerConfigurationsConstants } from "../constants";
-import { GovernanceConnectorInterface } from "../models";
+import {
+    GovernanceConnectorInterface,
+    RealmConfigInterface,
+    UpdateGovernanceConnectorConfigInterface
+} from "../models";
 
 /**
  * Initialize an axios Http client.
  *
  */
-const httpClient = IdentityClient.getInstance().httpRequest.bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance().httpRequest.bind(AsgardeoSPAClient.getInstance());
 
 export const getData = (url: string): Promise<any> => {
     const requestConfig = {
@@ -51,6 +56,7 @@ export const getData = (url: string): Promise<any> => {
                     response,
                     response.config);
             }
+
             return Promise.resolve(response.data);
         })
         .catch((error) => {
@@ -64,7 +70,7 @@ export const getData = (url: string): Promise<any> => {
         });
 };
 
-export const updateConfigurations = (data: object, url: string): Promise<any> => {
+export const updateConfigurations = (data: UpdateGovernanceConnectorConfigInterface, url: string): Promise<any> => {
     const requestConfig = {
         data,
         headers: {
@@ -103,7 +109,7 @@ export const updateConfigurations = (data: object, url: string): Promise<any> =>
 /**
  * Retrieve governance connector categories.
  *
- * @returns {Promise<any>} a promise containing the data.
+ * @returns a promise containing the data.
  */
 export const getConnectorCategories = (): Promise<any> => {
     return getData(store.getState().config.endpoints.governanceConnectorCategories);
@@ -112,7 +118,7 @@ export const getConnectorCategories = (): Promise<any> => {
 /**
  * Retrieve governance connector category.
  *
- * @returns {Promise<any>} a promise containing the data.
+ * @returns a promise containing the data.
  */
 export const getConnectorCategory = (categoryId: string): Promise<any> => {
     return getData(store.getState().config.endpoints.governanceConnectorCategories + "/" + categoryId);
@@ -121,33 +127,36 @@ export const getConnectorCategory = (categoryId: string): Promise<any> => {
 /**
  * Update governance connector configurations.
  *
- * @param data request payload
- * @param categoryId ID of the connector category
- * @param connectorId ID of the connector
- * @returns {Promise<any>} a promise containing the response.
+ * @param data - request payload
+ * @param categoryId - ID of the connector category
+ * @param connectorId - ID of the connector
+ * @returns a promise containing the response.
  */
-export const updateGovernanceConnector = (data: object, categoryId: string, connectorId: string): Promise<any> => {
+export const updateGovernanceConnector = (data: UpdateGovernanceConnectorConfigInterface, categoryId: string,
+    connectorId: string): Promise<any> => {
     const url = store.getState().config.endpoints.governanceConnectorCategories +
         "/" + categoryId + "/connectors/" + connectorId;
+
     return updateConfigurations(data, url);
 };
 
 /**
  * Get governance connector configurations.
  *
- * @param categoryId ID of the connector category
- * @returns {Promise<any>} a promise containing the response.
+ * @param categoryId - ID of the connector category
+ * @returns a promise containing the response.
  */
 export const getGovernanceConnectors = (categoryId: string): Promise<GovernanceConnectorInterface[]> => {
     const url = store.getState().config.endpoints.governanceConnectorCategories +
         "/" + categoryId + "/connectors/";
+
     return getData(url);
 };
 
 /**
  * Retrieve server configurations.
  *
- * @returns {Promise<any>} a promise containing the response.
+ * @returns a promise containing the response.
  */
 export const getServerConfigurations = (): Promise<any> => {
     return getData(store.getState().config.endpoints.serverConfigurations);
@@ -156,10 +165,42 @@ export const getServerConfigurations = (): Promise<any> => {
 /**
  * Update server configurations.
  *
- * @param data request payload
+ * @param data - request payload
  *
- * @returns {Promise<any>} a promise containing the response.
+ * @returns a promise containing the response.
  */
-export const updateServerConfigurations = (data: object): Promise<any> => {
+export const updateServerConfigurations = (data: UpdateGovernanceConnectorConfigInterface): Promise<any> => {
     return updateConfigurations(data, store.getState().config.endpoints.serverConfigurations);
 };
+
+/**
+ * Retrieve governance connector details.
+ *
+ * @returns a promise containing the data.
+ */
+export const getConnectorDetails = (categoryId: string, connectorId: string): Promise<any> => {
+    return getData(store.getState().config.endpoints.governanceConnectorCategories + "/" + categoryId +
+        "/connectors/" + connectorId);
+};
+
+interface ServerConfigurationCorsInterface {
+    allowAnyOrigin: boolean;
+    allowGenericHttpRequests: boolean;
+    allowSubdomains: boolean;
+    exposedHeaders: string[];
+    maxAge: number;
+    supportAnyHeader: boolean;
+    supportedHeaders: {[key: string]: string}[];
+    supportedMethods: string[];
+    supportsCredentials: boolean;
+}
+
+export interface ServerConfigurationsInterface {
+    authenticators: LocalAuthenticatorInterface;
+    cors: ServerConfigurationCorsInterface;
+    realmConfig: RealmConfigInterface;
+    homeRealmIdentifiers: string[];
+    idleSessionTimeoutPeriod: string[];
+    provisioning: any;
+    rememberMePeriod: string;
+}

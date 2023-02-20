@@ -24,6 +24,7 @@
 <%@ page import="org.wso2.carbon.identity.application.authentication.endpoint.util.client.SelfUserRegistrationResource" %>
 <%@ page import="org.wso2.carbon.identity.application.authentication.endpoint.util.AuthenticationEndpointUtil" %>
 <%@ page import="org.wso2.carbon.identity.application.authentication.endpoint.util.bean.ResendCodeRequestDTO" %>
+<%@ page import="org.wso2.carbon.identity.application.authentication.endpoint.util.bean.PropertyDTO" %>
 <%@ page import="org.wso2.carbon.identity.application.authentication.endpoint.util.bean.UserDTO" %>
 <%@ page import="java.net.URLEncoder" %>
 <%@ page import="java.net.URLDecoder" %>
@@ -48,9 +49,22 @@
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.client.PreferenceRetrievalClientException" %>
 
 <jsp:directive.include file="includes/init-loginform-action-url.jsp"/>
+<jsp:directive.include file="plugins/basicauth-extensions.jsp"/>
+
+<%
+    String proxyContextPath = ServerConfiguration.getInstance().getFirstProperty(IdentityCoreConstants
+            .PROXY_CONTEXT_PATH);
+    if (proxyContextPath == null) {
+        proxyContextPath = "";
+    }
+%>
 <script>
     function goBack() {
         document.getElementById("restartFlowForm").submit();
+    }
+
+    function onCompleted() {
+        $('#loginForm').submit();
     }
 
     // Handle form submission preventing double submission.
@@ -64,18 +78,30 @@
                     console.warn("Prevented a possible double submit event");
                 } else {
                     e.preventDefault();
-
-                    var userName = document.getElementById("username");
-                    var usernameUserInput = document.getElementById("usernameUserInput");
-
-                    if (usernameUserInput) {
-                        userName.value = usernameUserInput.value.trim();
+                    <%
+                        if (reCaptchaEnabled) {
+                    %>
+                    if (!grecaptcha.getResponse()) {
+                        grecaptcha.execute();
+                        return;
                     }
+                    <%
+                        }
+                    %>
+                    var userName = document.getElementById("username");
+                    userName.value = userName.value.trim();
 
                     if (userName.value) {
+                        let contextPath = "<%=proxyContextPath%>"
+                        if (contextPath !== "") {
+                            contextPath = contextPath.startsWith('/') ? contextPath : "/" + contextPath
+                            contextPath = contextPath.endsWith('/') ?
+                                contextPath.substring(0, contextPath.length - 1) : contextPath
+                        }
                         $.ajax({
                             type: "GET",
-                            url: "<%=loginContextRequestUrl%>",
+                            url: contextPath + "<%=loginContextRequestUrl%>",
+                            xhrFields: { withCredentials: true },
                             success: function (data) {
                                 if (data && data.status == 'redirect' && data.redirectUrl && data.redirectUrl.length > 0) {
                                     window.location.href = data.redirectUrl;
@@ -97,13 +123,6 @@
         $('#loginForm').preventDoubleSubmission();
     });
 
-    function showResendReCaptcha() {
-        <% if (reCaptchaResendEnabled) { %>
-            window.location.href="resend-confirmation-captcha.jsp?<%=AuthenticationEndpointUtil.cleanErrorMessages(Encode.forJava(request.getQueryString()))%>";
-        <% } else { %>
-            window.location.href="login.do?resend_username=<%=Encode.forHtml(request.getParameter("failedUsername"))%>&<%=AuthenticationEndpointUtil.cleanErrorMessages(Encode.forJava(request.getQueryString()))%>";
-        <% } %>
-    }
 </script>
 
 <%!
@@ -120,14 +139,36 @@
     Boolean isEmailUsernameEnabled = false;
     String usernameLabel = "username";
 
+    Boolean isSelfSignUpEnabledInTenant;
+    Boolean isUsernameRecoveryEnabledInTenant;
+    Boolean isPasswordRecoveryEnabledInTenant;
+    Boolean isMultiAttributeLoginEnabledInTenant;
+
     if (StringUtils.isNotBlank(emailUsernameEnable)) {
         isEmailUsernameEnabled = Boolean.valueOf(emailUsernameEnable);
     } else {
         isEmailUsernameEnabled = isEmailUsernameEnabled();
     }
 
+    try {
+        PreferenceRetrievalClient preferenceRetrievalClient = new PreferenceRetrievalClient();
+        isSelfSignUpEnabledInTenant = preferenceRetrievalClient.checkSelfRegistration(tenantDomain);
+        isUsernameRecoveryEnabledInTenant = preferenceRetrievalClient.checkUsernameRecovery(tenantDomain);
+        isPasswordRecoveryEnabledInTenant = preferenceRetrievalClient.checkPasswordRecovery(tenantDomain);
+        isMultiAttributeLoginEnabledInTenant = preferenceRetrievalClient.checkMultiAttributeLogin(tenantDomain);
+    } catch (PreferenceRetrievalClientException e) {
+        request.setAttribute("error", true);
+        request.setAttribute("errorMsg", AuthenticationEndpointUtil
+                .i18n(resourceBundle, "something.went.wrong.contact.admin"));
+        IdentityManagementEndpointUtil.addErrorInformation(request, e);
+        request.getRequestDispatcher("error.jsp").forward(request, response);
+        return;
+    }
+
     if (isEmailUsernameEnabled == true) {
         usernameLabel = "email.username";
+    } else if (isMultiAttributeLoginEnabledInTenant) {
+        usernameLabel = "user.identifier";
     }
 
     String resendUsername = request.getParameter("resend_username");
@@ -138,15 +179,21 @@
         UserDTO userDTO = AuthenticationEndpointUtil.getUser(resendUsername);
         selfRegistrationRequest.setUser(userDTO);
 
+        PropertyDTO propertyDTO = new PropertyDTO();
+        propertyDTO.setKey("RecoveryScenario");
+        propertyDTO.setValue("SELF_SIGN_UP");
+        selfRegistrationRequest.getProperties().add(propertyDTO);
+
+        // We have to send an empty property for the client to work properly.
+        PropertyDTO dummyPropertyDTO = new PropertyDTO();
+        dummyPropertyDTO.setKey("");
+        dummyPropertyDTO.setValue("");
+        selfRegistrationRequest.getProperties().add(dummyPropertyDTO);
+
         String path = config.getServletContext().getInitParameter(Constants.ACCOUNT_RECOVERY_REST_ENDPOINT_URL);
-        String proxyContextPath = ServerConfiguration.getInstance().getFirstProperty(IdentityCoreConstants
-                .PROXY_CONTEXT_PATH);
-        if (proxyContextPath == null) {
-            proxyContextPath = "";
-        }
         String url;
         if (StringUtils.isNotBlank(EndpointConfigManager.getServerOrigin())) {
-            url = EndpointConfigManager.getServerOrigin() + proxyContextPath + path;
+            url = IdentityManagementEndpointUtil.getBasePath(tenantDomain, path, false);
         } else {
             url = IdentityUtil.getServerURL(path, true, false);
         }
@@ -188,7 +235,19 @@
     }
 %>
 
-<% if (Boolean.parseBoolean(loginFailed) && !errorCode.equals(IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE)) { %>
+<% if (StringUtils.equals(request.getParameter("errorCode"), IdentityCoreConstants.USER_ACCOUNT_LOCKED_ERROR_CODE) &&
+        StringUtils.equals(request.getParameter("remainingAttempts"), "0") ) {
+    if (StringUtils.equals(request.getParameter("lockedReason"), "AdminInitiated")) { %>
+        <div class="ui visible negative message" lockedReasonid="error-msg" data-testid="login-page-error-message">
+            <%=AuthenticationEndpointUtil.i18n(resourceBundle, "error.user.account.locked.admin.initiated")%>
+        </div>
+    <% } else { %>
+        <div class="ui visible negative message" lockedReasonid="error-msg" data-testid="login-page-error-message">
+            <%=AuthenticationEndpointUtil.i18n(resourceBundle, "error.user.account.locked.incorrect.login.attempts")%>
+        </div>
+    <% }
+} else if (Boolean.parseBoolean(loginFailed) &&
+        !(IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE).equals(errorCode)) { %>
 <div class="ui visible negative message" id="error-msg" data-testid="login-page-error-message">
     <%= AuthenticationEndpointUtil.i18n(resourceBundle, errorMessage) %>
 </div>
@@ -202,18 +261,29 @@
 
 <% if (Boolean.parseBoolean(loginFailed) && errorCode.equals(IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE) && request.getParameter("resend_username") == null) { %>
     <div class="ui visible warning message" id="error-msg" data-testid="login-page-error-message">
-        <%= AuthenticationEndpointUtil.i18n(resourceBundle, errorMessage) %>
+        <form action="login.do?resend_username=<%=Encode.forHtml(URLEncoder.encode(request.getParameter("failedUsername"), UTF_8))%>&<%=AuthenticationEndpointUtil.cleanErrorMessages(Encode.forJava(request.getQueryString()))%>" method="post" id="resendForm">
+            <%= AuthenticationEndpointUtil.i18n(resourceBundle, errorMessage) %>
 
-        <div class="ui divider hidden"></div>
+            <div class="ui divider hidden"></div>
 
-        <%=AuthenticationEndpointUtil.i18n(resourceBundle, "no.confirmation.mail")%>
+            <%=AuthenticationEndpointUtil.i18n(resourceBundle, "no.confirmation.mail")%>
 
-        <a id="registerLink"
-            href="javascript:showResendReCaptcha();"
-            data-testid="login-page-resend-confirmation-email-link"
-        >
-            <%=StringEscapeUtils.escapeHtml4(AuthenticationEndpointUtil.i18n(resourceBundle, "resend.mail"))%>
-        </a>
+            <button id="registerLink"
+                class="resend-button g-recaptcha"
+                <%
+                    if (reCaptchaResendEnabled) {
+                %>
+                data-sitekey="<%=Encode.forHtmlContent(reCaptchaKey)%>"
+                <%
+                    }
+                %>
+                data-callback="onSubmitResend"
+                data-action="resendConfirmation"
+                data-testid="login-page-resend-confirmation-email-link"
+            >
+                <%=StringEscapeUtils.escapeHtml4(AuthenticationEndpointUtil.i18n(resourceBundle, "resend.mail"))%>
+            </button>
+        </form>
     </div>
     <div class="ui divider hidden"></div>
 <% } %>
@@ -238,29 +308,27 @@
             <div class="ui fluid left icon input">
                 <input
                     type="text"
-                    id="usernameUserInput"
+                    id="username"
                     value=""
-                    name="usernameUserInput"
-                    tabindex="1"
+                    name="username"
                     placeholder="<%=AuthenticationEndpointUtil.i18n(resourceBundle, usernameLabel)%>"
                     data-testid="login-page-username-input"
                     required>
                 <i aria-hidden="true" class="user icon"></i>
-                <input id="username" name="username" type="hidden" value="<%=username%>">
             </div>
         </div>
     <% } else { %>
         <input id="username" name="username" type="hidden" data-testid="login-page-username-input" value="<%=username%>">
     <% } %>
         <div class="field">
-            <div class="ui fluid left icon input">
+            <div class="ui fluid left icon input addon-wrapper">
                 <input
                     type="password"
                     id="password"
                     name="password"
                     value=""
                     autocomplete="off"
-                    tabindex="2"
+                    required
                     placeholder="<%=AuthenticationEndpointUtil.i18n(resourceBundle, "password")%>"
                     data-testid="login-page-password-input"
                     style="padding-right: 2.3em !important;"
@@ -271,15 +339,16 @@
                    style="margin: 0 auto; right: 0; pointer-events: auto; cursor: pointer;"></i>
             </div>
         </div>
+
     <%
-        if (reCaptchaEnabled) {
+    if (reCaptchaEnabled) {
     %>
-        <div class="field">
-            <div class="g-recaptcha"
-                data-sitekey="<%=Encode.forHtmlContent(request.getParameter("reCaptchaKey"))%>"
-                data-testid="login-page-g-recaptcha"
-            >
-            </div>
+        <div class="g-recaptcha"
+                data-size="invisible"
+                data-callback="onCompleted"
+                data-action="login"
+                data-sitekey=
+                        "<%=Encode.forHtmlContent(reCaptchaKey)%>">
         </div>
     <%
         }
@@ -350,24 +419,6 @@
                 accountRegistrationEndpointURL = identityMgtEndpointContext + ACCOUNT_RECOVERY_ENDPOINT_REGISTER;
             }
         }
-
-        Boolean isSelfSignUpEnabledInTenant = false;
-        Boolean isUsernameRecoveryEnabledInTenant = false;
-        Boolean isPasswordRecoveryEnabledInTenant = false;
-
-        try {
-            PreferenceRetrievalClient preferenceRetrievalClient = new PreferenceRetrievalClient();
-            isSelfSignUpEnabledInTenant = preferenceRetrievalClient.checkSelfRegistration(tenantDomain);
-            isUsernameRecoveryEnabledInTenant = preferenceRetrievalClient.checkUsernameRecovery(tenantDomain);
-            isPasswordRecoveryEnabledInTenant = preferenceRetrievalClient.checkPasswordRecovery(tenantDomain);
-        } catch (PreferenceRetrievalClientException e) {
-            request.setAttribute("error", true);
-            request.setAttribute("errorMsg", AuthenticationEndpointUtil
-                            .i18n(resourceBundle, "something.went.wrong.contact.admin"));
-            IdentityManagementEndpointUtil.addErrorInformation(request, e);
-            request.getRequestDispatcher("error.jsp").forward(request, response);
-            return;
-        }
     %>
 
     <div class="buttons">
@@ -377,7 +428,6 @@
             <% if (!isIdentifierFirstLogin(inputType) && isUsernameRecoveryEnabledInTenant) { %>
             <a
                 id="usernameRecoverLink"
-                tabindex="5"
                 href="<%=StringEscapeUtils.escapeHtml4(getRecoverAccountUrl(identityMgtEndpointContext, urlEncodedURL, true, urlParameters))%>"
                 data-testid="login-page-username-recovery-button"
             >
@@ -390,7 +440,6 @@
               if (isPasswordRecoveryEnabledInTenant) { %>
             <a
                 id="passwordRecoverLink"
-                tabindex="6"
                 href="<%=StringEscapeUtils.escapeHtml4(getRecoverAccountUrlWithUsername(identityMgtEndpointContext, urlEncodedURL, false, urlParameters, usernameIdentifier))%>"
                 data-testid="login-page-password-recovery-button"
             >
@@ -403,7 +452,13 @@
 
         <% if (isIdentifierFirstLogin(inputType)) { %>
         <div class="field">
-            <a id="backLink" tabindex="7" onclick="goBack()" data-testid="login-page-back-button">
+            <a 
+                id="backLink" 
+                class="clickable-link" 
+                tabindex="0" 
+                onclick="goBack()" 
+                onkeypress="javascript: if (window.event.keyCode === 13) goBack()"
+                data-testid="login-page-back-button">
                 <%=AuthenticationEndpointUtil.i18n(resourceBundle, "sign.in.different.account")%>
             </a>
         </div>
@@ -415,13 +470,12 @@
     <div class="field">
         <div class="ui checkbox">
             <input
-                tabindex="3"
                 type="checkbox"
                 id="chkRemember"
                 name="chkRemember"
                 data-testid="login-page-remember-me-checkbox"
             >
-            <label><%=AuthenticationEndpointUtil.i18n(resourceBundle, "remember.me")%></label>
+            <label for="chkRemember"><%=AuthenticationEndpointUtil.i18n(resourceBundle, "remember.me")%></label>
         </div>
     </div>
     <input type="hidden" name="sessionDataKey" value='<%=Encode.forHtmlAttribute
@@ -443,32 +497,28 @@
     </div>
     <div class="ui divider hidden"></div>
 
-    <div class="ui two column stackable grid">
-        <div class="column mobile center aligned tablet left aligned computer left aligned buttons tablet no-padding-left-first-child computer no-padding-left-first-child">
+    <div class="mt-0">
+        <div class="column buttons">
+            <button
+                class="ui primary fluid large button"
+                type="submit"
+            >
+                <%=StringEscapeUtils.escapeHtml4(AuthenticationEndpointUtil.i18n(resourceBundle, "continue"))%>
+            </button>
+        </div>
+        <div class="column buttons">
             <% if (isSelfSignUpEPAvailable && !isIdentifierFirstLogin(inputType) && isSelfSignUpEnabledInTenant) { %>
             <button
                 type="button"
                 onclick="window.location.href='<%=StringEscapeUtils.escapeHtml4(getRegistrationUrl(accountRegistrationEndpointURL, urlEncodedURL, urlParameters))%>';"
-                class="ui large button link-button"
+                class="ui secondary fluid large button"
                 id="registerLink"
-                tabindex="8"
                 role="button"
                 data-testid="login-page-create-account-button"
             >
                 <%=StringEscapeUtils.escapeHtml4(AuthenticationEndpointUtil.i18n(resourceBundle, "create.account"))%>
             </button>
             <% } %>
-        </div>
-        <div class="column mobile center aligned tablet right aligned computer right aligned buttons tablet no-margin-right-last-child computer no-margin-right-last-child">
-            <button
-                type="submit"
-                class="ui primary large button"
-                tabindex="4"
-                role="button"
-                data-testid="login-page-continue-login-button"
-            >
-                <%=StringEscapeUtils.escapeHtml4(AuthenticationEndpointUtil.i18n(resourceBundle, "continue"))%>
-            </button>
         </div>
     </div>
 
@@ -522,6 +572,24 @@
             }
         });
 
+        function onSubmitResend(token) {
+           $("#resendForm").submit();
+        }
+
+        // Removing the recaptcha UI from the keyboard tab order
+        Array.prototype.forEach.call(document.getElementsByClassName('g-recaptcha'), function (element) {
+            //Add a load event listener to each wrapper, using capture.
+            element.addEventListener('load', function (e) {
+                //Get the data-tabindex attribute value from the wrapper.
+                var tabindex = e.currentTarget.getAttribute('data-tabindex');
+                //Check if the attribute is set.
+                if (tabindex) {
+                    //Set the tabIndex on the iframe.
+                    e.target.tabIndex = "-1";
+                }
+            }, true);
+        });
+
     </script>
 
 </form>
@@ -529,4 +597,5 @@
 <form action="<%=loginFormActionURL%>" method="post" id="restartFlowForm">
     <input type="hidden" name="sessionDataKey" value='<%=Encode.forHtmlAttribute(request.getParameter("sessionDataKey"))%>'/>
     <input type="hidden" name="restart_flow" value='true'/>
+    <input id="tocommonauth" name="tocommonauth" type="hidden" value="true">
 </form>

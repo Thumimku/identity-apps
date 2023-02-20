@@ -1,26 +1,27 @@
 /**
-* Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-*
-* WSO2 Inc. licenses this file to you under the Apache License,
-* Version 2.0 (the 'License'); you may not use this file except
-* in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing,
-* software distributed under the License is distributed on an
-* 'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-* KIND, either express or implied. See the License for the
-* specific language governing permissions and limitations
-* under the License.
-*/
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
-import { CodeEditor, Heading, LinkButton, PrimaryButton } from "@wso2is/react-components";
+import { CodeEditor, GenericIcon, Heading, LinkButton, Popup, PrimaryButton, Tooltip } from "@wso2is/react-components";
 import React, { FunctionComponent, ReactElement, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Accordion, Checkbox, Icon, Menu, Popup, Segment, Sidebar } from "semantic-ui-react";
+import { Accordion, Icon, Menu, Segment, Sidebar } from "semantic-ui-react";
+import { getOperationIcons } from "../../core/configs";
 import { RequiredBinary } from "../models";
 
 interface SqlEditorPropsInterface extends TestableComponentInterface {
@@ -32,9 +33,9 @@ interface SqlEditorPropsInterface extends TestableComponentInterface {
 /**
  * SQL Editor component.
  *
- * @param {SqlEditorPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns
  */
 export const SqlEditor: FunctionComponent<SqlEditorPropsInterface> = (
     props: SqlEditorPropsInterface
@@ -53,6 +54,7 @@ export const SqlEditor: FunctionComponent<SqlEditorPropsInterface> = (
     const [ propertyDefaultValue, setPropertyDefaultValue ] = useState("");
     const [ propertyValue, setPropertyValue ] = useState("");
     const [ isEditorDarkMode, setIsEditorDarkMode ] = useState(true);
+    const [ isResetButtonEnabled, setIsResetButtonEnabled ] = useState(false);
 
     const sidebar = useRef(null);
     const editor = useRef(null);
@@ -282,81 +284,107 @@ export const SqlEditor: FunctionComponent<SqlEditorPropsInterface> = (
     );
 
     return (
-        <div className="sign-on-methods-tab-content">
-            <div className="adaptive-scripts-section">
-                <Sidebar.Pushable className="script-editor-section" >
-                    { editorSideBar() }
-                    <Sidebar.Pusher>
-                        <div className="script-editor-container" ref={ editor }>
-                            <Menu attached="top" className="action-panel" secondary>
-                                <Menu.Menu position="left">
-                                    <Menu.Item
-                                        onClick={
-                                            () => setSideBarVisible(!sideBarVisible)
-                                        }
-                                        className="action"
-                                        data-testid={ `${ testId }-sidebar-toggle` }
-                                    >
-                                        <Icon name="bars" />
-                                    </Menu.Item>
-                                </Menu.Menu>
-                                <Menu.Item position="right">
-                                    <Checkbox
-                                        label={ t("console:manage.features.userstores.sqlEditor.darkMode") }
-                                        checked={ isEditorDarkMode }
-                                        onChange={ () => { setIsEditorDarkMode(!isEditorDarkMode); } }
-                                        slider
-                                        data-testid={ `${ testId }-code-editor-theme-toggle` }
-                                    />
+        <div className="script-editor-with-template-panel">
+            <Sidebar.Pushable className="script-editor-section">
+                { editorSideBar() }
+                <Sidebar.Pusher>
+                    <div className="script-editor-container" ref={ editor }>
+                        <Menu attached="top" className="action-panel" secondary>
+                            <Menu.Menu position="left">
+                                <Menu.Item
+                                    onClick={
+                                        () => setSideBarVisible(!sideBarVisible)
+                                    }
+                                    className="action hamburger ml-3"
+                                    data-testid={ `${ testId }-sidebar-toggle` }
+                                >
+                                    <Icon name="bars"/>
                                 </Menu.Item>
-                            </Menu>
-                            <div className="code-editor-wrapper">
-                                <CodeEditor
-                                    lint
-                                    sourceCode={ propertyDefaultValue }
-                                    options={ {
-                                        lineWrapping: true,
-                                        mode: "text/x-sql"
-                                    } }
-                                    showLineNumbers={ false }
-                                    onChange={ (editor, data, value) => {
-                                        setPropertyValue(value);
-                                    } }
-                                    theme={ isEditorDarkMode ? "dark" : "light" }
-                                    data-testid={ `${ testId }-code-editor` }
+                            </Menu.Menu>
+                            <Menu.Item className="action mr-3" position="right">
+                                <Tooltip
+                                    compact
+                                    trigger={ (
+                                        <div>
+                                            <GenericIcon
+                                                hoverable
+                                                defaultIcon
+                                                transparent
+                                                size="micro"
+                                                hoverType="rounded"
+                                                icon={
+                                                    isEditorDarkMode
+                                                        ? getOperationIcons().lightMode
+                                                        : getOperationIcons().darkMode
+                                                }
+                                                onClick={ () => setIsEditorDarkMode(!isEditorDarkMode) }
+                                                data-testid={ `${ testId }-code-editor-theme-toggle` }
+                                            />
+                                        </div>
+                                    ) }
+                                    content={
+                                        isEditorDarkMode
+                                            ? t("common:lightMode")
+                                            : t("common:darkMode")
+                                    }
+                                    size="mini"
                                 />
-                            </div>
-                            <Menu attached="bottom" className="action-panel" secondary>
-                                <Menu.Item position="right">
-                                    <LinkButton
-                                        type="button"
-                                        onClick={ () => {
-                                            setPropertyValue(propertyDefaultValue);
-                                            const defaultValue = propertyDefaultValue;
-                                            setPropertyDefaultValue("");
-                                            setTimeout(() => {
-                                                setPropertyDefaultValue(defaultValue);
-                                            }, 1);
-                                        } }
-                                        data-testid={ `${ testId }-reset-button` }
-                                    >
-                                        { t("console:manage.features.userstores.sqlEditor.reset") }
-                                    </LinkButton>
-                                    <PrimaryButton
-                                        type="button"
-                                        onClick={ () => {
-                                            onChange(propertyName, propertyValue);
-                                        } }
-                                        data-testid={ `${ testId }-save-button` }
-                                    >
-                                        { t("common:save") }
-                                    </PrimaryButton>
-                                </Menu.Item>
-                            </Menu>
+                            </Menu.Item>
+                        </Menu>
+                        <div className="code-editor-wrapper">
+                            <CodeEditor
+                                lint
+                                sourceCode={ propertyDefaultValue }
+                                options={ {
+                                    lineWrapping: true,
+                                    mode: "text/x-sql"
+                                } }
+                                showLineNumbers={ false }
+                                onChange={ (editor, data, value) => {
+                                    setPropertyValue(value);
+                                    if (value !== propertyDefaultValue) {
+                                        setIsResetButtonEnabled(true);
+                                    } else {
+                                        setIsResetButtonEnabled(false);
+                                    }
+                                } }
+                                theme={ isEditorDarkMode ? "dark" : "light" }
+                                data-testid={ `${ testId }-code-editor` }
+                            />
                         </div>
-                    </Sidebar.Pusher>
-                </Sidebar.Pushable >
-            </div>
+                        <Menu attached="bottom" className="action-panel" secondary>
+                            <Menu.Item position="right">
+                                <LinkButton
+                                    type="button"
+                                    disabled={ !isResetButtonEnabled }
+                                    onClick={ () => {
+                                        setPropertyValue(propertyDefaultValue);
+                                        const defaultValue = propertyDefaultValue;
+
+                                        setPropertyDefaultValue("");
+                                        setTimeout(() => {
+                                            setPropertyDefaultValue(defaultValue);
+                                            setIsResetButtonEnabled(false);
+                                        }, 1);
+                                    } }
+                                    data-testid={ `${ testId }-reset-button` }
+                                >
+                                    { t("console:manage.features.userstores.sqlEditor.reset") }
+                                </LinkButton>
+                                <PrimaryButton
+                                    type="button"
+                                    onClick={ () => {
+                                        onChange(propertyName, propertyValue);
+                                    } }
+                                    data-testid={ `${ testId }-save-button` }
+                                >
+                                    { t("common:save") }
+                                </PrimaryButton>
+                            </Menu.Item>
+                        </Menu>
+                    </div>
+                </Sidebar.Pusher>
+            </Sidebar.Pushable>
         </div>
     );
 };

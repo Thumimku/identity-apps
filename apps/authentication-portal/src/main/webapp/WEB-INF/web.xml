@@ -123,7 +123,7 @@
     </filter-mapping>
 
     <filter>
-        <filter-name>ContentTypeBasedCachePreventionFilter</filter-name>    
+        <filter-name>ContentTypeBasedCachePreventionFilter</filter-name>
         <filter-class>
            org.wso2.carbon.ui.filters.cache.ContentTypeBasedCachePreventionFilter
         </filter-class>
@@ -313,6 +313,16 @@
     </servlet>
 
     <servlet>
+        <servlet-name>backup_code.do</servlet-name>
+        <jsp-file>/backup-code.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
+        <servlet-name>backup_code_error.do</servlet-name>
+        <jsp-file>/backup-code-error.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
         <servlet-name>email_capture.do</servlet-name>
         <jsp-file>/emailAddressCapture.jsp</jsp-file>
     </servlet>
@@ -325,6 +335,41 @@
     <servlet>
         <servlet-name>email_otp_error.do</servlet-name>
         <jsp-file>/emailOtpError.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
+        <servlet-name>mobile.do</servlet-name>
+        <jsp-file>/mobile.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
+        <servlet-name>sms_otp.do</servlet-name>
+        <jsp-file>/smsOtp.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
+        <servlet-name>sms_otp_error.do</servlet-name>
+        <jsp-file>/smsOtpError.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
+        <servlet-name>magic_link_notification.do</servlet-name>
+        <jsp-file>/magic_link_notification.jsp</jsp-file>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>magic_link_notification.do</servlet-name>
+        <url-pattern>/magic_link_notification.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>org_name.do</servlet-name>
+        <jsp-file>/org_name.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
+        <servlet-name>select_org.do</servlet-name>
+        <jsp-file>/select_org.jsp</jsp-file>
     </servlet>
 
     <servlet-mapping>
@@ -343,6 +388,16 @@
     </servlet-mapping>
 
     <servlet-mapping>
+        <servlet-name>backup_code.do</servlet-name>
+        <url-pattern>/backup_code.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>backup_code_error.do</servlet-name>
+        <url-pattern>/backup_code_error.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
         <servlet-name>email_capture.do</servlet-name>
         <url-pattern>/email_capture.do</url-pattern>
     </servlet-mapping>
@@ -355,6 +410,31 @@
     <servlet-mapping>
         <servlet-name>email_otp_error.do</servlet-name>
         <url-pattern>/email_otp_error.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>mobile.do</servlet-name>
+        <url-pattern>/mobile.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>sms_otp.do</servlet-name>
+        <url-pattern>/sms_otp.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>sms_otp_error.do</servlet-name>
+        <url-pattern>/sms_otp_error.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org_name.do</servlet-name>
+        <url-pattern>/org_name.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>select_org.do</servlet-name>
+        <url-pattern>/select_org.do</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
@@ -505,50 +585,50 @@
     <!-- custom error pages -->
     <error-page>
         <error-code>400</error-code>
-        <location>/errors/error_400.html</location>
+        <location>/errors/error_400.jsp</location>
     </error-page>
     <error-page>
         <error-code>401</error-code>
-        <location>/errors/error_401.html</location>
+        <location>/errors/error_401.jsp</location>
     </error-page>
     <error-page>
         <error-code>403</error-code>
-        <location>/errors/error_403.html</location>
+        <location>/errors/error_403.jsp</location>
     </error-page>
     <error-page>
         <error-code>404</error-code>
-        <location>/errors/error_404.html</location>
+        <location>/errors/error_404.jsp</location>
     </error-page>
     <error-page>
         <error-code>405</error-code>
-        <location>/errors/error_405.html</location>
+        <location>/errors/error_405.jsp</location>
     </error-page>
     <error-page>
         <error-code>408</error-code>
-        <location>/errors/error_408.html</location>
+        <location>/errors/error_408.jsp</location>
     </error-page>
     <error-page>
         <error-code>410</error-code>
-        <location>/errors/error_410.html</location>
+        <location>/errors/error_410.jsp</location>
     </error-page>
     <error-page>
         <error-code>500</error-code>
-        <location>/errors/error_500.html</location>
+        <location>/errors/error_500.jsp</location>
     </error-page>
     <error-page>
         <error-code>502</error-code>
-        <location>/errors/error_502.html</location>
+        <location>/errors/error_502.jsp</location>
     </error-page>
     <error-page>
         <error-code>503</error-code>
-        <location>/errors/error_503.html</location>
+        <location>/errors/error_503.jsp</location>
     </error-page>
     <error-page>
         <error-code>504</error-code>
-        <location>/errors/error_504.html</location>
+        <location>/errors/error_504.jsp</location>
     </error-page>
     <error-page>
-        <location>/errors/error.html</location>
+        <location>/errors/error.jsp</location>
     </error-page>
 
     <session-config>

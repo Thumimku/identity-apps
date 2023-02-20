@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import kebabCase from "lodash-es/kebabCase";
 import React, { FunctionComponent, ReactElement } from "react";
 import { Card, Divider, HeaderProps } from "semantic-ui-react";
@@ -26,7 +26,7 @@ import { Heading } from "../typography";
 /**
  * Proptypes for the statistics quick links widget.
  */
-interface StatsQuickLinksWidgetPropsInterface extends TestableComponentInterface {
+interface StatsQuickLinksWidgetPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Heading for the widget
      */
@@ -52,9 +52,9 @@ interface StatsQuickLinksWidgetPropsInterface extends TestableComponentInterface
 /**
  * Statistics quick links widget.
  *
- * @param {StatsQuickLinksWidgetPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns the StatsQuickLinks Widget
  */
 export const StatsQuickLinksWidget: FunctionComponent<StatsQuickLinksWidgetPropsInterface> = (
     props: StatsQuickLinksWidgetPropsInterface
@@ -66,6 +66,7 @@ export const StatsQuickLinksWidget: FunctionComponent<StatsQuickLinksWidgetProps
         subHeading,
         subHeadingAs,
         links,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -75,6 +76,7 @@ export const StatsQuickLinksWidget: FunctionComponent<StatsQuickLinksWidgetProps
                 <Heading
                     className="stats-quick-links-widget-heading inline ellipsis"
                     as={ headingAs }
+                    data-componentid={ `${ componentId }-heading` }
                     data-testid={ `${ testId }-heading` }
                     compact
                 >
@@ -84,6 +86,7 @@ export const StatsQuickLinksWidget: FunctionComponent<StatsQuickLinksWidgetProps
             { subHeading && (
                 <Heading
                     className="stats-quick-links-widget-sub-heading"
+                    data-componentid={ `${ componentId }-sub-heading` }
                     data-testid={ `${ testId }-sub-heading` }
                     as={ subHeadingAs }
                     subHeading
@@ -112,19 +115,20 @@ export const StatsQuickLinksWidget: FunctionComponent<StatsQuickLinksWidgetProps
                                             key={ index }
                                             image={ image }
                                             imageOptions={ {
-                                              fill: "default"  
+                                                fill: "default"  
                                             } }
                                             size="auto"
                                             header={ header }
                                             imageSize="mini"
                                             contentTopBorder={ false }
                                             description={ description }
+                                            data-componentid={ `${ componentId }-${ kebabCase(header) }-card` }
                                             data-testid={ `${ testId }-${ kebabCase(header) }-card` }
                                             multilineDescription
                                             showTooltips
                                             { ...linksRest }
                                         />
-                                    )
+                                    );
                                 })
                             }
                         </Card.Group>
@@ -139,6 +143,7 @@ export const StatsQuickLinksWidget: FunctionComponent<StatsQuickLinksWidgetProps
  * Default props for the component.
  */
 StatsQuickLinksWidget.defaultProps = {
+    "data-componentid": "stats-quick-links-widget",
     "data-testid": "stats-quick-links-widget",
     headingAs: "h3",
     subHeadingAs: "h5"

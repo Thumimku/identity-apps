@@ -16,16 +16,17 @@
  * under the License.
  */
 
-import { getAllLocalClaims } from "@wso2is/core/api";
 import { hasRequiredScopes } from "@wso2is/core/helpers";
 import { AlertLevels, Claim, ClaimsGetParams, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import { useTrigger } from "@wso2is/forms";
-import { ListLayout, PageLayout, PrimaryButton } from "@wso2is/react-components";
+import { DocumentationLink, ListLayout, PageLayout, PrimaryButton, useDocumentation } from "@wso2is/react-components";
 import React, { FunctionComponent, ReactElement, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { DropdownItemProps, DropdownProps, Icon, PaginationProps } from "semantic-ui-react";
+import { attributeConfig } from "../../../extensions";
+import { getAllLocalClaims } from "../../claims/api";
 import {
     AdvancedSearchWithBasicFilters,
     AppConstants,
@@ -42,7 +43,7 @@ import { AddLocalClaims, ClaimsList, ListType } from "../components";
 /**
  * Props for the Local Claims page.
  */
-type LocalClaimsPageInterface = TestableComponentInterface
+type LocalClaimsPageInterface = TestableComponentInterface;
 
 /**
  * This returns the list of local claims.
@@ -60,6 +61,7 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
     } = props;
 
     const { t } = useTranslation();
+    const { getLink } = useDocumentation();
 
     /**
      * Sets the attributes by which the list can be sorted
@@ -78,7 +80,7 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
     ];
 
     const featureConfig: FeatureConfigInterface = useSelector((state: AppState) => state.config.ui.features);
-    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.scope);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
 
     const [ claims, setClaims ] = useState<Claim[]>(null);
     const [ offset, setOffset ] = useState(0);
@@ -100,24 +102,27 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
 
 
     /**
-    * Fetches all the local claims.
-    *
-    * @param {number} limit.
-    * @param {number} offset.
-    * @param {string} sort.
-    * @param {string} filter.
-    */
-    const getLocalClaims = (limit?: number, sort?: string, offset?: number, filter?: string) => {
+ * Fetches all the local claims.
+ *
+ * @param {number} limit.
+ * @param {number} offset.
+ * @param {string} sort.
+ * @param {string} filter.
+ */
+    const getLocalClaims = (limit?: number, sort?: string, offset?: number, filter?: string,
+        excludeIdentity?: boolean) => {
         setIsLoading(true);
         const params: ClaimsGetParams = {
+            "exclude-identity-claims": excludeIdentity,
             filter: filter || null,
             limit: limit || null,
             offset: offset || null,
             sort: sort || null
         };
+
         getAllLocalClaims(params).then(response => {
             setClaims(response);
-            setFilteredClaims(response);
+            setFilteredClaims(sortList(response, sortBy.value as string, sortOrder));
         }).catch(error => {
             dispatch(addAlert(
                 {
@@ -142,7 +147,7 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
     }, [ sortBy, sortOrder ]);
 
     useEffect(() => {
-        getLocalClaims(null, null, null, null);
+        getLocalClaims(null, null, null, null, attributeConfig.attributes.excludeIdentityClaims);
         getADialect("local").then((response) => {
             setClaimURIBase(response.dialectURI);
         }).catch(error => {
@@ -159,53 +164,53 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
     }, []);
 
     /**
-    * This slices a portion of the list to display.
+ * This slices a portion of the list to display.
      *
-    * @param {ClaimDialect[]} list.
-    * @param {number} limit.
-    * @param {number} offset.
+ * @param {ClaimDialect[]} list.
+ * @param {number} limit.
+ * @param {number} offset.
      *
-    * @return {ClaimDialect[]} Paginated List.
-    */
+ * @return {ClaimDialect[]} Paginated List.
+ */
     const paginate = (list: Claim[], limit: number, offset: number): Claim[] => {
         return list?.slice(offset, offset + limit);
     };
 
     /**
-    * Handles change in the number of items to show.
+ * Handles change in the number of items to show.
      *
-    * @param {React.MouseEvent<HTMLAnchorElement>} event.
-    * @param {data} data.
-    */
+ * @param {React.MouseEvent<HTMLAnchorElement>} event.
+ * @param {data} data.
+ */
     const handleItemsPerPageDropdownChange = (event: React.MouseEvent<HTMLAnchorElement>, data: DropdownProps) => {
         setListItemLimit(data.value as number);
     };
 
     /**
-    * Paginates.
-    *
-    * @param {React.MouseEvent<HTMLAnchorElement>} event.
-    * @param {PaginationProps} data.
-    */
+ * Paginates.
+ *
+ * @param {React.MouseEvent<HTMLAnchorElement>} event.
+ * @param {PaginationProps} data.
+ */
     const handlePaginationChange = (event: React.MouseEvent<HTMLAnchorElement>, data: PaginationProps) => {
         setOffset((data.activePage as number - 1) * listItemLimit);
     };
 
     /**
-    * Handle sort strategy change.
+ * Handle sort strategy change.
      *
-    * @param {React.SyntheticEvent<HTMLElement>} event.
-    * @param {DropdownProps} data.
-    */
+ * @param {React.SyntheticEvent<HTMLElement>} event.
+ * @param {DropdownProps} data.
+ */
     const handleSortStrategyChange = (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
         setSortBy(SORT_BY.filter(option => option.value === data.value)[ 0 ]);
     };
 
     /**
-    * Handles sort order change.
-    *
-    * @param {boolean} isAscending.
-    */
+ * Handles sort order change.
+ *
+ * @param {boolean} isAscending.
+ */
     const handleSortOrderChange = (isAscending: boolean) => {
         setSortOrder(isAscending);
     };
@@ -218,10 +223,49 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
      */
     const handleLocalClaimsFilter = (query: string): void => {
         const filteredClaims = filterList(claims, query, sortBy.value as string, sortOrder);
+
         setFilteredClaims(filteredClaims);
-        setSearchQuery(query);
+        setSearchQuery(buildSearchQuery(query));
         setOffset(0);
         setResetPagination();
+    };
+
+    /**
+     * A util function to build a user friendly seach query
+     * for display purpose.
+     *
+     * @param defaultQuery - generated
+     * @returns
+     */
+    const buildSearchQuery = (defaultQuery: string): string => {
+        const queryElements: string[] = defaultQuery?.split(" ");
+        let UserFriendlyQuery: string = "";
+
+        if (queryElements) {
+            switch (queryElements[ 1 ]) {
+                case "eq":
+                    UserFriendlyQuery = `${ queryElements[ 0 ] } equals to ${ queryElements[ 2 ] }`;
+
+                    break;
+                case "co":
+                    UserFriendlyQuery = `${ queryElements[ 0 ] } containing ${ queryElements[ 2 ] }`;
+
+                    break;
+                case "sw":
+                    UserFriendlyQuery = `${ queryElements[ 0 ] } starting with ${ queryElements[ 2 ] }`;
+
+                    break;
+                case "ew":
+                    UserFriendlyQuery = `${ queryElements[ 0 ] } ending with ${ queryElements[ 2 ] }`;
+
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        return UserFriendlyQuery;
     };
 
     /**
@@ -237,35 +281,46 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
         <>
             {
                 openModal
-                    ? <AddLocalClaims
-                        open={ openModal }
-                        onClose={ () => { setOpenModal(false); } }
-                        update={ getLocalClaims }
-                        claimURIBase={ claimURIBase }
-                        data-testid={ `${ testId }-add-local-claims-wizard` }
-                    />
-                    : null
+                    ? (
+                        <AddLocalClaims
+                            open={ openModal }
+                            onClose={ () => { setOpenModal(false); } }
+                            update={ getLocalClaims }
+                            claimURIBase={ claimURIBase }
+                            data-testid={ `${ testId }-add-local-claims-wizard` }
+                        />
+                    ) : null
             }
             <PageLayout
                 action={
                     (isLoading || !(!searchQuery && filteredClaims?.length <= 0))
                     && hasRequiredScopes(featureConfig?.attributeDialects,
                         featureConfig?.attributeDialects?.scopes?.create, allowedScopes)
-                    && (
+                    && attributeConfig.attributes.addAttribute && (
                         <PrimaryButton
                             onClick={ () => {
                                 setOpenModal(true);
                             } }
                             data-testid={ `${ testId }-list-layout-add-button` }
                         >
-                            <Icon name="add"/>
+                            <Icon name="add" />
                             { t("console:manage.features.claims.local.pageLayout.local.action") }
                         </PrimaryButton>
                     )
                 }
                 isLoading={ isLoading }
                 title={ t("console:manage.features.claims.local.pageLayout.local.title") }
-                description={ t("console:manage.features.claims.local.pageLayout.local.description") }
+                pageTitle={ t("console:manage.features.claims.local.pageLayout.local.title") }
+                description={ (
+                    <>
+                        { t(attributeConfig.attributes.description) }
+                        <DocumentationLink
+                            link={ getLink("manage.attributes.attributes.learnMore") }
+                        >
+                            { t("common:learnMore") }
+                        </DocumentationLink>
+                    </>
+                ) }
                 backButton={ {
                     onClick: () => { history.push(AppConstants.getPaths().get("CLAIM_DIALECTS")); },
                     text: t("console:manage.features.claims.local.pageLayout.local.back")
@@ -274,7 +329,7 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
             >
                 <ListLayout
                     resetPagination={ resetPagination }
-                    advancedSearch={
+                    advancedSearch={ (
                         <AdvancedSearchWithBasicFilters
                             onFilter={ handleLocalClaimsFilter }
                             filterAttributeOptions={ [
@@ -307,7 +362,7 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
                             triggerClearQuery={ triggerClearQuery }
                             data-testid={ `${ testId }-list-advanced-search` }
                         />
-                    }
+                    ) }
                     currentListSize={ listItemLimit }
                     listItemLimit={ listItemLimit }
                     onItemsPerPageDropdownChange={ handleItemsPerPageDropdownChange }
@@ -324,7 +379,7 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
                     data-testid={ `${ testId }-list-layout` }
                 >
                     <ClaimsList
-                        advancedSearch={
+                        advancedSearch={ (
                             <AdvancedSearchWithBasicFilters
                                 onFilter={ handleLocalClaimsFilter }
                                 filterAttributeOptions={ [
@@ -357,7 +412,8 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
                                 triggerClearQuery={ triggerClearQuery }
                                 data-testid={ `${ testId }-list-advanced-search` }
                             />
-                        }
+                        ) }
+                        showTableHeaders={ true }
                         isLoading={ isLoading }
                         list={ paginate(filteredClaims, listItemLimit, offset) }
                         localClaim={ ListType.LOCAL }
@@ -366,6 +422,7 @@ const LocalClaimsPage: FunctionComponent<LocalClaimsPageInterface> = (
                         onSearchQueryClear={ handleSearchQueryClear }
                         searchQuery={ searchQuery }
                         data-testid={ `${ testId }-list` }
+                        featureConfig={ featureConfig }
                     />
                 </ListLayout>
             </PageLayout>

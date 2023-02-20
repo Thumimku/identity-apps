@@ -19,6 +19,7 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.apache.cxf.jaxrs.impl.ResponseImpl" %>
 <%@ page import="org.owasp.encoder.Encode" %>
+<%@ page import="org.wso2.carbon.identity.captcha.util.CaptchaUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointConstants" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.serviceclient.UserRegistrationClient" %>
@@ -60,15 +61,17 @@
     boolean reCaptchaEnabled = false;
     if (request.getAttribute("reCaptcha") != null && "TRUE".equalsIgnoreCase((String) request.getAttribute("reCaptcha"))) {
         reCaptchaEnabled = true;
+    } else if (request.getParameter("reCaptcha") != null && Boolean.parseBoolean(request.getParameter("reCaptcha"))) {
+        reCaptchaEnabled = true;
     }
 %>
 
-    <html>
+    <html lang="en-US">
     <head>
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <!-- title -->
+        <%-- title --%>
         <%
             File titleFile = new File(getServletContext().getRealPath("extensions/title.jsp"));
             if (titleFile.exists()) {
@@ -90,8 +93,9 @@
 
         <%
             if (reCaptchaEnabled) {
+                String reCaptchaAPI = CaptchaUtil.reCaptchaAPIURL();
         %>
-        <script src='<%=(request.getAttribute("reCaptchaAPI"))%>'></script>
+        <script src='<%=(reCaptchaAPI)%>'></script>
         <%
             }
         %>
@@ -100,7 +104,7 @@
 
     <body>
 
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -110,11 +114,11 @@
             <jsp:include page="includes/header.jsp"/>
     <% } %>
 
-    <!-- page content -->
+    <%-- page content --%>
     <div class="container-fluid body-wrapper">
 
         <div class="row">
-            <!-- content -->
+            <%-- content --%>
             <div class="col-xs-12 col-sm-10 col-md-8 col-lg-5 col-centered wr-login">
                 <form action="processregistration.do" method="post" id="register">
                     <h2 class="wr-title uppercase blue-bg padding-double white boarder-bottom-blue margin-none">
@@ -136,7 +140,7 @@
                         <div class="padding-double font-large"><%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
                                 "Enter.required.fields.to.complete.registration")%>
                         </div>
-                        <!-- validation -->
+                        <%-- validation --%>
                         <div class="padding-double">
                             <div id="regFormError" class="alert alert-danger" style="display:none"></div>
                             <div id="regFormSuc" class="alert alert-success" style="display:none"></div>
@@ -220,10 +224,15 @@
                             %>
                             <%
                                 if (reCaptchaEnabled) {
+                                    String reCaptchaKey = CaptchaUtil.reCaptchaSiteKey();
                             %>
-                            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 form-group">
+                            <div class="field">
                                 <div class="g-recaptcha"
-                                     data-sitekey="<%=Encode.forHtmlContent((String)request.getAttribute("reCaptchaKey"))%>">
+                                        data-size="invisible"
+                                        data-callback="onCompleted"
+                                        data-action="register"
+                                        data-sitekey=
+                                                "<%=Encode.forHtmlContent(reCaptchaKey)%>">
                                 </div>
                             </div>
                             <%
@@ -259,11 +268,11 @@
                 </form>
             </div>
         </div>
-        <!-- /content/body -->
+        <%-- /content/body --%>
 
     </div>
 
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {
@@ -273,13 +282,34 @@
             <jsp:include page="includes/footer.jsp"/>
     <% } %>
 
-    <script src="libs/jquery_3.4.1/jquery-3.4.1.js"></script>
+    <script src="libs/jquery_3.6.0/jquery-3.6.0.min.js"></script>
     <script src="libs/bootstrap_3.4.1/js/bootstrap.min.js"></script>
     <script type="text/javascript">
+
+        function onSubmit(token) {
+           $("#register").submit();
+        }
+
+        function onCompleted() {
+            $('#register').submit();
+        }
 
         $(document).ready(function () {
 
             $("#register").submit(function (e) {
+
+                <%
+                    if (reCaptchaEnabled) {
+                %>
+                if (!grecaptcha.getResponse()) {
+                    e.preventDefault();
+                    grecaptcha.execute();
+
+                    return true;
+                }
+                <%
+                    }
+                %>
 
                 var unsafeCharPattern = /[<>`\"]/;
                 var elements = document.getElementsByTagName("input");
@@ -310,21 +340,6 @@
                     $("html, body").animate({scrollTop: error_msg.offset().top}, 'slow');
                     return false;
                 }
-
-                <%
-                if(reCaptchaEnabled) {
-                %>
-                var resp = $("[name='g-recaptcha-response']")[0].value;
-                if (resp.trim() == '') {
-                    error_msg.text("<%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
-                    "Please.select.reCaptcha")%>");
-                    error_msg.show();
-                    $("html, body").animate({scrollTop: error_msg.offset().top}, 'slow');
-                    return false;
-                }
-                <%
-                }
-                %>
 
                 return true;
             });

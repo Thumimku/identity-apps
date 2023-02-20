@@ -1,7 +1,7 @@
 <%--
-  ~ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~ Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
   ~
-  ~  WSO2 Inc. licenses this file to you under the Apache License,
+  ~  WSO2 LLC. licenses this file to you under the Apache License,
   ~  Version 2.0 (the "License"); you may not use this file except
   ~  in compliance with the License.
   ~  You may obtain a copy of the License at
@@ -21,6 +21,7 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.owasp.encoder.Encode" %>
 <%@ page import="org.wso2.carbon.identity.base.IdentityRuntimeException" %>
+<%@ page import="org.wso2.carbon.identity.captcha.util.CaptchaUtil" %>
 <%@ page import="org.wso2.carbon.identity.core.util.IdentityTenantUtil" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointConstants" %>
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointUtil" %>
@@ -34,9 +35,11 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <jsp:directive.include file="includes/localize.jsp"/>
 <jsp:directive.include file="tenant-resolve.jsp"/>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
 
 <%
     if (!Boolean.parseBoolean(application.getInitParameter(
@@ -45,18 +48,9 @@
         return;
     }
 
-    ReCaptchaApi reCaptchaApi = new ReCaptchaApi();
+    String username = request.getParameter("username");
 
-    if (StringUtils.isNotEmpty(tenantDomain)) {
-        try {
-            IdentityTenantUtil.getTenantId(tenantDomain);
-        } catch (IdentityRuntimeException e) {
-            request.setAttribute("error", true);
-            request.setAttribute("errorMsg", e.getMessage());
-            request.getRequestDispatcher("username-recovery-tenant-request.jsp").forward(request, response);
-            return;
-        }
-    }
+    ReCaptchaApi reCaptchaApi = new ReCaptchaApi();
 
     try {
         ReCaptchaProperties reCaptchaProperties = reCaptchaApi.getReCaptcha(tenantDomain, true, "ReCaptcha",
@@ -72,6 +66,9 @@
     } catch (ApiException e) {
         request.setAttribute("error", true);
         request.setAttribute("errorMsg", e.getMessage());
+        if (!StringUtils.isBlank(username)) {
+            request.setAttribute("username", username);
+        }
         request.getRequestDispatcher("error.jsp").forward(request, response);
         return;
     }
@@ -89,6 +86,9 @@
     } catch (ApiException e) {
         request.setAttribute("error", true);
         request.setAttribute("errorMsg", e.getMessage());
+        if (!StringUtils.isBlank(username)) {
+            request.setAttribute("username", username);
+        }
         request.getRequestDispatcher("error.jsp").forward(request, response);
         return;
     }
@@ -124,10 +124,15 @@
     }
 %>
 
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "large");
+%>
+
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -139,16 +144,17 @@
 
     <%
         if (reCaptchaEnabled) {
+            String reCaptchaAPI = CaptchaUtil.reCaptchaAPIURL();
     %>
-    <script src='<%=(request.getAttribute("reCaptchaAPI"))%>'></script>
+    <script src='<%=(reCaptchaAPI)%>'></script>
     <%
         }
     %>
 </head>
 <body class="login-portal layout recovery-layout">
-    <main class="center-segment">
-        <div class="ui container large center aligned middle aligned">
-            <!-- product-title -->
+    <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+        <layout:component componentName="ProductHeader" >
+            <%-- product-title --%>
             <%
                 File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
                 if (productTitleFile.exists()) {
@@ -157,6 +163,8 @@
             <% } else { %>
             <jsp:include page="includes/product-title.jsp"/>
             <% } %>
+        </layout:component>
+        <layout:component componentName="MainSection" >
             <div class="ui segment">
                 <h2><%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Recover.username")%></h2>
                 <% if (error) { %>
@@ -177,10 +185,10 @@
                             <label><%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "name")%></label>
                             <div class="two fields">
                                 <% if (isFirstNameInClaims) { %>
-                                <div class="field">
-                                    <input id="first-name" type="text" name="http://wso2.org/claims/givenname"
+                                <div class="required field">
+                                    <input id="first-name" type="text" required name="http://wso2.org/claims/givenname"
                                         placeholder="<%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
-                                            "First.name")%>" />
+                                            "First.name")%>*" />
                                 </div>
                                 <% } %>
                                 <% if (isLastNameInClaims) { %>
@@ -212,7 +220,7 @@
 
                             if (isEmailInClaims) { %>
                         <div class="field">
-                            <label class="control-label"><%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
+                            <label for="email" class="control-label"><%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
                                     "Email")%></label>
                             <input id="email" type="email" name="http://wso2.org/claims/emailaddress"
                                     class="form-control"
@@ -225,11 +233,11 @@
                             <input id="tenant-domain" type="hidden" name="tenantDomain" value="<%=Encode.forHtmlAttribute(tenantDomain)%>"/>
                         </div>
                         <% } else { %>
-                        <div class="field">
-                            <label class="control-label">
+                        <div class="required field">
+                            <label for="tenant-domain" class="control-label">
                                 <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Tenant.domain")%>
                             </label>
-                            <input id="tenant-domain" type="text" name="tenantDomain" class="form-control">
+                            <input id="tenant-domain" type="text" required name="tenantDomain" class="form-control">
                         </div>
                         <% } %>
 
@@ -256,14 +264,17 @@
                                 }
                             }
                         %>
-
                         <%
                             if (reCaptchaEnabled) {
+                                String reCaptchaKey = CaptchaUtil.reCaptchaSiteKey();
                         %>
                         <div class="field">
                             <div class="g-recaptcha"
+                                    data-size="invisible"
+                                    data-callback="onCompleted"
+                                    data-action="usernameRecovery"
                                     data-sitekey=
-                                            "<%=Encode.forHtmlContent((String)request.getAttribute("reCaptchaKey"))%>">
+                                            "<%=Encode.forHtmlContent(reCaptchaKey)%>">
                             </div>
                         </div>
                         <%
@@ -273,32 +284,33 @@
                         <div class="ui divider hidden"></div>
 
                         <div class="align-right buttons">
-                            <a href="javascript:goBack()" class="ui button link-button">
+                            <a href="javascript:goBack()" class="ui button secondary">
                                 <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Cancel")%>
                             </a>
                             <button id="recoverySubmit"
-                                    class="ui primary large button"
-                                    type="submit"><%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
-                                    "Submit")%>
+                                    class="ui primary button"
+                                    type="submit">
+                                    <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Submit")%>
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
-        </div>
-    </main>
+        </layout:component>
+        <layout:component componentName="ProductFooter" >
+            <%-- product-footer --%>
+            <%
+                File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                if (productFooterFile.exists()) {
+            %>
+                <jsp:include page="extensions/product-footer.jsp"/>
+            <% } else { %>
+                <jsp:include page="includes/product-footer.jsp"/>
+            <% } %>
+        </layout:component>
+    </layout:main>
 
-    <!-- product-footer -->
-    <%
-        File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-        if (productFooterFile.exists()) {
-    %>
-        <jsp:include page="extensions/product-footer.jsp"/>
-    <% } else { %>
-        <jsp:include page="includes/product-footer.jsp"/>
-    <% } %>
-
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {
@@ -313,9 +325,25 @@
             window.history.back();
         }
 
+        function onCompleted() {
+            $("#recoverDetailsForm").submit();
+        }
+
         $(document).ready(function () {
 
             $("#recoverDetailsForm").submit(function (e) {
+                <%
+                    if (reCaptchaEnabled) {
+                %>
+                if (!grecaptcha.getResponse()) {
+                    e.preventDefault();
+                    grecaptcha.execute();
+
+                    return true;
+                }
+                <%
+                    }
+                %>
 
                 // Prevent clicking multiple times, and notify the user something
                 // is happening in the background.
@@ -329,19 +357,7 @@
                     const firstName = $("#first-name").val();
 
                     if (firstName === "") {
-                        errorMessage.text("Please fill the first name.");
-                        errorMessage.show();
-                        $("html, body").animate({scrollTop: errorMessage.offset().top}, "slow");
-                        submitButton.removeClass("loading").attr("disabled", false);
-                        return false;
-                    }
-                <% } %>
-
-                <% if (reCaptchaEnabled) { %>
-                    const reCaptchaResponse = $("[name='g-recaptcha-response']")[0].value;
-
-                    if (reCaptchaResponse.trim() === "") {
-                        errorMessage.text("Please select reCaptcha.");
+                        errorMessage.text("<%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "fill.the.first.name")%>");
                         errorMessage.show();
                         $("html, body").animate({scrollTop: errorMessage.offset().top}, "slow");
                         submitButton.removeClass("loading").attr("disabled", false);

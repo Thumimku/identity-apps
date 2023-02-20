@@ -7,19 +7,21 @@
         "enablePKCE": true,
         "clockTolerance": 300,
         "responseMode": "query",
-        "scope": [ "SYSTEM" ],
+        "scope": ["SYSTEM"],
         "serverOrigin": "https://localhost:9443",
-        "storage": "webWorker"
+        "storage": "webWorker",
+        "authorizeEndpointURL": "${serverOrigin}/${tenantPrefix}/${superTenantDomain}/oauth2/authorize?ut=${userTenantDomain}",
+        "logoutEndpointURL": "${serverOrigin}/${tenantPrefix}/${superTenantDomain}/oidc/logout",
+        "oidcSessionIFrameEndpointURL": "${serverOrigin}/${tenantPrefix}/${superTenantDomain}/oidc/checksession"
     },
     "i18nResourcePath": "",
     "isSaas": true,
-    "loginCallbackPath": "/login",
-    "logoutCallbackPath": "/login",
-    "productVersion": "",
+    "loginCallbackPath": "",
+    "logoutCallbackPath": "",
     "serverOrigin": "https://localhost:9443",
     "routePaths": {
         "home": "/overview",
-        "login": "/login",
+        "login": "",
         "logout": "/logout"
     },
     "session": {
@@ -33,9 +35,12 @@
         "appCopyright": "WSO2 Identity Server ${copyright} ${year}",
         "appTitle": "My Account | WSO2 Identity Server",
         "appName": "My Account",
-        "appLogoPath": "/assets/images/logo.svg",
+        "appLogoPath": "/assets/images/branding/logo.svg",
         "authenticatorApp": [],
         "disableMFAforSuperTenantUser": false,
+        "enableMFAUserWise": false,
+        "disableMFAForFederatedUsers": false,
+        "forceBackupCode": false,
         "features": {
             "applications": {
                 "disabledFeatures": [],
@@ -68,7 +73,7 @@
                 }
             },
             "security": {
-                "disabledFeatures": [],
+                "disabledFeatures": ["security.loginVerifyData.typingDNA"],
                 "enabled": true,
                 "scopes": {
                     "create": [],
@@ -79,8 +84,11 @@
             }
         },
         "i18nConfigs": {
-            "showLanguageSwitcher": true
+            "showLanguageSwitcher": true,
+            "langAutoDetectEnabled": false
         },
+        "isCookieConsentBannerEnabled": true,
+        "isHeaderAvatarLabelAllowed": true,
         "privacyPolicyConfigs": {
             "visibleOnFooter": true
         },

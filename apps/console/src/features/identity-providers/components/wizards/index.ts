@@ -16,7 +16,12 @@
  * under the License.
  */
 
+export * from "./facebook";
+export * from "./github";
+export * from "./authenticator-create-wizard-factory";
 export * from "./identity-provider-create-wizard";
 export * from "./steps";
 export * from "./outbound-provisioning-connector-create-wizard";
 export * from "./add-certificate-wizard";
+export * from "./google";
+export * from "./oidc-authentication-provider-create-wizard";

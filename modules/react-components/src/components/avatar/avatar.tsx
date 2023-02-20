@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,10 +16,18 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { ImageUtils } from "@wso2is/core/utils";
 import classNames from "classnames";
-import React, { FunctionComponent, PropsWithChildren, ReactElement, SyntheticEvent, useEffect, useState } from "react";
+import React, {
+    CSSProperties,
+    FunctionComponent,
+    PropsWithChildren,
+    ReactElement,
+    SyntheticEvent,
+    useEffect,
+    useState
+} from "react";
 import { Image, ImageProps, Placeholder, SemanticSIZES } from "semantic-ui-react";
 import { ReactComponent as CameraIcon } from "../../assets/images/icons/camera-icon.svg";
 import { GenericIcon, GenericIconProps } from "../icon";
@@ -27,7 +35,9 @@ import { GenericIcon, GenericIconProps } from "../icon";
 /**
  * Prop types for the Avatar component.
  */
-export interface AvatarPropsInterface extends TestableComponentInterface, Omit<ImageProps, "size"> {
+export interface AvatarPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface,
+    Omit<ImageProps, "size"> {
+
     /**
      * To determine if avatar with initials should be displayed.
      */
@@ -53,9 +63,13 @@ export interface AvatarPropsInterface extends TestableComponentInterface, Omit<I
      */
     editIconSize?: GenericIconProps["size"];
     /**
+     * Show hovering effect.
+     */
+    hoverable?: boolean;
+    /**
      * Image to be displayed as an avatar.
      */
-    image?: React.ReactNode;
+    image?: React.ReactNode | Promise<string>;
     /**
      * If the avatar should be displayed inline.
      */
@@ -78,22 +92,22 @@ export interface AvatarPropsInterface extends TestableComponentInterface, Omit<I
     name?: string;
     /**
      * On Edit Icon click callback.
-     * @param {React.SyntheticEvent} e - Click event.
+     * @param e - Click event.
      */
     onEditIconClick?: (e: SyntheticEvent) => void;
     /**
      * On click callback.
-     * @param {React.SyntheticEvent} e - Click event.
+     * @param e - Click event.
      */
     onClick?: (e: SyntheticEvent) => void;
     /**
      * Fired on mouse out.
-     * @param {MouseEvent} e - Mouse event.
+     * @param e - Mouse event.
      */
     onMouseOut?: (e: MouseEvent) => void;
     /**
      * Fired on mouse over.
-     * @param {MouseEvent} e - Mouse event.
+     * @param e - Mouse event.
      */
     onMouseOver?: (e: MouseEvent) => void;
     /**
@@ -119,7 +133,7 @@ export interface AvatarPropsInterface extends TestableComponentInterface, Omit<I
     /**
      * Custom CSS styles.
      */
-    style?: object;
+    style?: CSSProperties | undefined;
     /**
      * Makes the avatar transparent.
      */
@@ -137,16 +151,15 @@ export interface AvatarPropsInterface extends TestableComponentInterface, Omit<I
 /**
  * Type to handle Avatar sizes.
  */
-export type AvatarSizes = SemanticSIZES | "x60" | "little";
+export type AvatarSizes = SemanticSIZES | "x30" | "x50" | "x60" | "little";
 
 const AVATAR_MODULE_CSS_CLASS = "ui-avatar";
 
 /**
  * Avatar component.
  *
- * @param {AvatarPropsInterface} props - Props passed in to the Avatar component.
- *
- * @return {React.ReactElement}
+ * @param props - Props passed in to the Avatar component.
+ * @returns Avatar component.
  */
 export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> = (
     props: PropsWithChildren<AvatarPropsInterface>
@@ -161,6 +174,7 @@ export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> 
         editable,
         editIcon,
         editIconSize,
+        hoverable,
         image,
         initialsColor,
         inline,
@@ -180,6 +194,7 @@ export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> 
         transparent,
         width,
         withBackgroundImage,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         ...rest
     } = props;
@@ -203,7 +218,7 @@ export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> 
 
     const imgElementClasses = classNames(AVATAR_MODULE_CSS_CLASS,
         {
-            "hoverable": onClick,
+            "hoverable": hoverable !== false && onClick !== undefined,
             [ `initials-color-${ initialsColor }` ]: initialsColor,
             relaxed,
             rounded,
@@ -244,9 +259,13 @@ export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> 
             <Image
                 className={ imgElementClasses }
                 circular={ shape === "circular" }
+                data-componentid={ `${ componentId }-loading` }
                 data-testid={ `${ testId }-loading` }
             >
-                <Placeholder data-testid={ `${ testId }-loading-placeholder` }>
+                <Placeholder
+                    data-componentid={ `${ componentId }-loading-placeholder` }
+                    data-testid={ `${ testId }-loading-placeholder` }
+                >
                     <Placeholder.Image square/>
                 </Placeholder>
             </Image>
@@ -261,7 +280,7 @@ export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> 
      * If the name only has one word, then only a single initial
      * will be generated. i.e For "Brion", "B" will be generated.
      *
-     * @return {string}
+     * @returns Initials based on the name.
      */
     const generateInitials = (): string => {
 
@@ -276,7 +295,8 @@ export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> 
 
     /**
      * Renders a floating edit icon.
-     * @return {ReactElement}
+     *
+     * @returns Edit bubble component.
      */
     const renderEditBubble = (): ReactElement => (
         editable && (
@@ -297,7 +317,8 @@ export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> 
 
     /**
      * Renders a floating custom label.
-     * @return {React.ReactElement}
+     *
+     * @returns Custom label.
      */
     const renderCustomLabel = (): ReactElement => (
         label && (
@@ -322,17 +343,22 @@ export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> 
                         onClick={ onClick }
                         onMouseOver={ onMouseOver }
                         onMouseOut={ onMouseOut }
+                        data-componentid={ componentId }
                         data-testid={ testId }
                         { ...rest }
                     >
-                        <div className="inner-content" data-testid={ `${ testId }-inner-content` }>
+                        <div
+                            className="inner-content"
+                            data-componentid={ `${ componentId }-inner-content` }
+                            data-testid={ `${ testId }-inner-content` }
+                        >
                             { image }
                         </div>
                     </Image>
                     { renderEditBubble() }
                 </div>
             </div>
-        )
+        );
     }
 
     if (image && isImageValidUrl) {
@@ -346,10 +372,15 @@ export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> 
                         onClick={ onClick }
                         onMouseOver={ onMouseOver }
                         onMouseOut={ onMouseOut }
+                        data-componentid={ componentId }
                         data-testid={ testId }
                         { ...rest }
                     >
-                        <div className="inner-content" data-testid={ `${ testId }-inner-content` }>
+                        <div
+                            className="inner-content"
+                            data-componentid={ `${ componentId }-inner-content` }
+                            data-testid={ `${ testId }-inner-content` }
+                        >
                             { children }
                             <img className={ innerImageClasses } alt="avatar" src={ image as string }/>
                         </div>
@@ -372,11 +403,18 @@ export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> 
                         onClick={ onClick }
                         onMouseOver={ onMouseOver }
                         onMouseOut={ onMouseOut }
+                        data-componentid={ componentId }
                         data-testid={ testId }
                         { ...rest }
                     >
                         { children }
-                        <span className="initials" data-testid={ `${ testId }-initials` }>{ generateInitials() }</span>
+                        <span
+                            className="initials"
+                            data-componentid={ `${ componentId }-initials` }
+                            data-testid={ `${ testId }-initials` }
+                        >
+                            { generateInitials() }
+                        </span>
                     </Image>
                     { renderEditBubble() }
                 </div>
@@ -395,15 +433,21 @@ export const Avatar: FunctionComponent<PropsWithChildren<AvatarPropsInterface>> 
                     onClick={ onClick }
                     onMouseOver={ onMouseOver }
                     onMouseOut={ onMouseOut }
+                    data-componentid={ componentId }
                     data-testid={ testId }
                     { ...rest }
                 >
-                    <div className="content-wrapper" data-testid={ `${ testId }-image-content-wrapper` }>
+                    <div
+                        className="content-wrapper"
+                        data-componentid={ `${ componentId }-image-content-wrapper` }
+                        data-testid={ `${ testId }-image-content-wrapper` }
+                    >
                         { children }
                         <img
                             className={ innerImageClasses }
                             alt="avatar"
                             src={ defaultIcon }
+                            data-componentid={ `${ componentId }-image` }
                             data-testid={ `${ testId }-image` }
                         />
                     </div>
@@ -422,6 +466,7 @@ Avatar.defaultProps = {
     avatarInitialsLimit: 1,
     bordered: true,
     className: "",
+    "data-componentid": "avatar",
     "data-testid": "avatar",
     editIconSize: "micro",
     initialsColor: "white",

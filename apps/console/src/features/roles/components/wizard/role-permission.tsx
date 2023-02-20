@@ -22,8 +22,9 @@ import { ContentLoader, EmphasizedSegment } from "@wso2is/react-components";
 import Tree from "rc-tree";
 import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { Button, Divider, Grid } from "semantic-ui-react";
-import { store } from "../../../core";
+import { AppState, store } from "../../../core";
 import { getServerConfigs } from "../../../server-configurations";
 import { RoleConstants } from "../../constants";
 import { TreeNode } from "../../models";
@@ -48,6 +49,10 @@ interface PermissionListProp extends  TestableComponentInterface {
      * Permissions to hide.
      */
     permissionsToHide?: string[];
+    /**
+     * Specifies if the form is submitting
+     */
+    isSubmitting?: boolean;
 }
 
 /**
@@ -66,6 +71,7 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
         isEdit,
         initialValues,
         isRole,
+        isSubmitting,
         permissionsToHide,
         [ "data-testid" ]: testId
     } = props;
@@ -78,11 +84,12 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
     const [ defaultExpandedKeys, setDefaultExpandKeys ] = useState<string[]>([]);
     const [ isPermissionsLoading, setIsPermissionsLoading ] = useState<boolean>(true);
     const [ isSuperAdmin, setIsSuperAdmin ] = useState<boolean>(false);
+    const tenantDomain: string = useSelector<AppState, string>((state: AppState) => state.config.deployment.tenant);
 
     useEffect(() => {
         const checkedNodes: TreeNode[] = [];
 
-        RoleManagementUtils.getAllPermissions(permissionsToHide)
+        RoleManagementUtils.getAllPermissions(permissionsToHide, tenantDomain)
             .then((permissionTree: TreeNode[]) => {
                 disableSuperAdminTreeNode(isSuperAdmin, permissionTree);
                 setPermissions(permissionTree);
@@ -93,6 +100,7 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
 
         if ( initialValues && initialValues.length > 0 ) {
             const previousFormCheckedKeys: string[] = [];
+
             initialValues.forEach(initialKey => {
                 previousFormCheckedKeys.push(initialKey.key.toString());
             });
@@ -101,7 +109,7 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
                 checkedNodes.push(getNodeByKey(key, permissions));
             });
             setCheckedPermission(checkedNodes);
-        } 
+        }
 
         if (isRole && roleObject) {
             setPreviouslyCheckedKeys(roleObject.permissions);
@@ -128,7 +136,7 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
 
     /**
      * Utill method to disable super admin permissions when `isSuperAdmin` is false.
-     * 
+     *
      * @param isSuperAdmin is super admin check
      * @param permissionTree permission tree to change
      */
@@ -145,7 +153,7 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
 
     /**
      * Util function to disable checking of a node and it's children.
-     * 
+     *
      * @param permissionNodes - array of permission nodes
      * @param state - disable state
      */
@@ -160,17 +168,18 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
 
     /**
      * Event handler when a node is checked on the permission tree.
-     * 
+     *
      * @param checked - checked states of the node
-     * @param info - checked information 
+     * @param info - checked information
      */
     const onCheck = (checked: { checked: React.ReactText[]; halfChecked: React.ReactText[] }, info) => {
         if (info.checked) {
             if (!checkedPermission.find(permission => permission.key === info.node.key)) {
                 const parentNode: TreeNode = getNodeByKey(info.node.key, permissions, true);
                 let checkedChildren: number = 1;
+
                 parentNode?.children?.forEach((childPermission: TreeNode) => {
-                    if ( checkedPermission.filter((checkedPermission: TreeNode) => 
+                    if ( checkedPermission.filter((checkedPermission: TreeNode) =>
                         checkedPermission.key === childPermission.key).length > 0 ) {
                         ++checkedChildren;
                     }
@@ -180,9 +189,10 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
                         permission.key.toString().replace(/^\/|\/$/g, "").split("/") === parentNode.key.toString()
                             .replace(/^\/|\/$/g, "").split("/");
                     });
-                    setCheckedPermission([...filteredCheckedPermissions, parentNode]);
+
+                    setCheckedPermission([ ...filteredCheckedPermissions, parentNode ]);
                 } else {
-                    setCheckedPermission([...checkedPermission, info.node]);
+                    setCheckedPermission([ ...checkedPermission, info.node ]);
                 }
             }
         } else {
@@ -192,15 +202,17 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
 
     /**
      * Util method to find a node from a given key.
-     * 
+     *
      * @param key - key to be found
      * @param permissionTree - permission tree to traverse
      * @param isParent - condition to find the parent of the key node
      */
     const getNodeByKey = (key: string, permissionTree: TreeNode[], isParent: boolean = false): TreeNode => {
         const flattenedTree = [ permissionTree[0] ];
+
         while ( flattenedTree.length ) {
             const node = flattenedTree.shift();
+
             if (isParent) {
                 if ( node.key === key.slice(0,key.lastIndexOf("/")) ) {
                     return node;
@@ -215,11 +227,12 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
                 flattenedTree.push(...node.children);
             }
         }
+
         return null;
     };
 
     /**
-     * Util method to get a custom expander icon for 
+     * Util method to get a custom expander icon for
      * the tree nodes.
      * @param eventObject - event object
      */
@@ -227,6 +240,7 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
         if (eventObject.isLeaf) {
             return null;
         }
+
         return (
             <div className="tree-arrow-wrap">
                 <span className={ `tree-arrow ${ !eventObject.expanded ? "active" : "" }` }>
@@ -246,22 +260,22 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
                 {
                     !isPermissionsLoading
                         ? (
-                        <div className="treeview-container">
-                            <Tree
-                                className={ "customIcon" }
-                                data-testid={ `${ testId }-tree` }
-                                disabled={ isReadOnly }
-                                checkedKeys={ checkedPermission.map( permission => permission.key ) }
-                                defaultExpandedKeys={ defaultExpandedKeys }
-                                showLine
-                                showIcon={ false }
-                                checkable
-                                selectable={ false }
-                                onCheck={ onCheck }
-                                treeData={ permissions }
-                                switcherIcon={ switcherIcon }
-                            />
-                        </div>
+                            <div className="treeview-container">
+                                <Tree
+                                    className={ "customIcon" }
+                                    data-testid={ `${ testId }-tree` }
+                                    disabled={ isReadOnly }
+                                    checkedKeys={ checkedPermission.map( permission => permission.key ) }
+                                    defaultExpandedKeys={ defaultExpandedKeys }
+                                    showLine
+                                    showIcon={ false }
+                                    checkable
+                                    selectable={ false }
+                                    onCheck={ onCheck }
+                                    treeData={ permissions }
+                                    switcherIcon={ switcherIcon }
+                                />
+                            </div>
                         )
                         : <ContentLoader className="p-3" active />
                 }
@@ -274,6 +288,8 @@ export const PermissionList: FunctionComponent<PermissionListProp> = (props: Per
                                     data-testid={ `${ testId }-update-button` }
                                     primary
                                     type="submit"
+                                    loading={ isSubmitting }
+                                    disabled={ isSubmitting }
                                     size="small"
                                     className="form-button"
                                 >

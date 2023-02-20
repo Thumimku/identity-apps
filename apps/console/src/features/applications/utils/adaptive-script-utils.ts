@@ -54,7 +54,9 @@ export class AdaptiveScriptUtils {
         }
 
         const script = [ ...ApplicationManagementConstants.DEFAULT_ADAPTIVE_AUTH_SCRIPT ];
+
         script.splice(1, 0, ...steps);
+
         return script;
     }
 
@@ -67,9 +69,9 @@ export class AdaptiveScriptUtils {
      */
     public static isDefaultScript(script: string | string[], steps: number): boolean {
 
-        let scriptBody: string = "";
+        let scriptBody: string = ApplicationManagementConstants.EMPTY_STRING;
         const moderatedScript = Array.isArray(script)
-            ? script.join("")
+            ? script.join(ApplicationManagementConstants.EMPTY_STRING)
             : script;
         const scriptStringContent: string[] = [];
 
@@ -82,21 +84,28 @@ export class AdaptiveScriptUtils {
             + scriptBody
             + ApplicationManagementConstants.DEFAULT_ADAPTIVE_AUTH_SCRIPT_FOOTER;
 
-        return AdaptiveScriptUtils.minifyScript(moderatedScript) === AdaptiveScriptUtils.minifyScript(scriptComposed);
+        const userDefined: string = AdaptiveScriptUtils.minifyScript(moderatedScript, false);
+        const defaultScript: string = AdaptiveScriptUtils.minifyScript(scriptComposed, false);
+
+        return userDefined === defaultScript;
     }
 
     /**
      * Strips spaces and new lines in the script.
      *
      * @param {string | string[]} originalScript - Original script.
-     * @return {string}
+     * @param {boolean} ignoreComments Whether to ignore code comments.
+     * @return {string} Minified string.
      */
-    public static minifyScript(originalScript: string | string[]): string {
+    public static minifyScript(
+        originalScript: string | string[],
+        ignoreComments: boolean = true
+    ): string {
 
-        if (!originalScript) return "";
+        if (!originalScript) return ApplicationManagementConstants.EMPTY_STRING;
 
         const script = Array.isArray(originalScript)
-            ? originalScript.join("")
+            ? originalScript.join(ApplicationManagementConstants.EMPTY_STRING)
             : String(originalScript);
 
         /**
@@ -120,18 +129,42 @@ export class AdaptiveScriptUtils {
          */
         const comments = /\/\*[\s\S]*?\*\/|\/\/.*/gm;
 
-        return script
-            .replace(comments, "")
-            .replace(/(?:\r\n|\r|\n)/g, "")
-            .replace(/\s/g, "")
+        let minimized = script;
+
+        if (ignoreComments)
+            minimized = minimized.replace(
+                comments,
+                ApplicationManagementConstants.EMPTY_STRING
+            );
+
+        minimized = minimized
+            .replace(/(?:\r\n|\r|\n)/g, ApplicationManagementConstants.EMPTY_STRING)
+            .replace(/\s/g, ApplicationManagementConstants.EMPTY_STRING)
             .trim();
+
+        return minimized;
+
     }
 
     public static isEmptyScript(script: string | string[]): boolean {
         return !script ||
-            (Array.isArray(script) && (script.length === 0 || script.join("").trim().length == 0)) ||
+            (Array.isArray(script) && (script.length === 0 ||
+                script.join(ApplicationManagementConstants.EMPTY_STRING).trim().length == 0)) ||
             (script instanceof String && script.trim().length === 0) ||
             !AdaptiveScriptUtils.minifyScript(script);
+    }
+
+    /**
+     * Flat outs a given string source array.
+     * @param code {string | string[]}
+     */
+    public static sourceToString(code: string | string[]): string {
+        if (Array.isArray(code)) {
+            return code.join(ApplicationManagementConstants.LINE_BREAK);
+        } else {
+            // In this case we can guarantee it's a string.
+            return code ?? ApplicationManagementConstants.EMPTY_STRING;
+        }
     }
 
 }

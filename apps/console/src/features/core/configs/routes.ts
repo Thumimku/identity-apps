@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2022, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,9 +20,9 @@ import { RouteInterface } from "@wso2is/core/models";
 import keyBy from "lodash-es/keyBy";
 import merge from "lodash-es/merge";
 import values from "lodash-es/values";
-import { lazy } from "react";
+import { FunctionComponent, lazy } from "react";
 import { getSidePanelIcons } from "./ui";
-import { EXTENSION_ROUTES } from "../../../extensions";
+import { EXTENSION_ROUTES, identityProviderConfig } from "../../../extensions";
 import { AppLayout, AuthLayout, DefaultLayout, ErrorLayout } from "../../../layouts";
 import { AdminView, DeveloperView, FullScreenView } from "../../../views";
 import { AppConstants } from "../constants";
@@ -39,11 +39,11 @@ import { AppConstants } from "../constants";
  * A route can have children and still be clickable.
  * If so, define a path. If no path is defined, the
  * child routes section will be extended in the UI.
- *  {
+ *  \{
  *      children: [ ... ],
  *     ...
  *     path: "/applications"
- *  }
+ *  \}
  */
 export const getDeveloperViewRoutes = (): RouteInterface[] => {
 
@@ -123,12 +123,40 @@ export const getDeveloperViewRoutes = (): RouteInterface[] => {
                         component: lazy(() => import("../../identity-providers/pages/identity-providers")),
                         exact: true,
                         icon: {
-                            icon: getSidePanelIcons().identityProviders
+                            icon: identityProviderConfig?.useNewConnectionsView
+                                ? getSidePanelIcons().connections
+                                : getSidePanelIcons().identityProviders
                         },
                         id: "identityProviders",
-                        name: "common:identityProviders",
+                        name: identityProviderConfig?.useNewConnectionsView
+                            ? "console:develop.features.sidePanel.authenticationProviders"
+                            : "console:develop.features.sidePanel.identityProviders",
                         order: 2,
                         path: AppConstants.getPaths().get("IDP"),
+                        protected: true,
+                        showOnSidePanel: true
+                    },
+                    {
+                        category: "console:develop.features.secrets.routes.category",
+                        children: [
+                            {
+                                component: lazy(() => import("../../secrets/pages/secret-edit")),
+                                exact: false,
+                                icon: { icon: getSidePanelIcons().childIcon },
+                                id: "secretManagementEdit",
+                                name: "console:develop.features.secrets.routes.sidePanelChildrenNames.0",
+                                path: AppConstants.getPaths().get("SECRET_EDIT"),
+                                protected: true,
+                                showOnSidePanel: false
+                            }
+                        ],
+                        component: lazy(() => import("../../secrets/pages/secrets")),
+                        exact: true,
+                        icon: { icon: getSidePanelIcons().secrets },
+                        id: "secretsManagement",
+                        name: "console:develop.features.secrets.routes.name",
+                        order: 3,
+                        path: AppConstants.getPaths().get("SECRETS"),
                         protected: true,
                         showOnSidePanel: true
                     }
@@ -155,7 +183,7 @@ export const getDeveloperViewRoutes = (): RouteInterface[] => {
 /**
  * Get all the Admin View Routes.
  *
- * @return {RouteInterface[]}
+ * @returns
  */
 export const getAdminViewRoutes = (): RouteInterface[] => {
 
@@ -354,17 +382,6 @@ export const getAdminViewRoutes = (): RouteInterface[] => {
                         showOnSidePanel: true
                     },
                     {
-                        component: lazy(() => import("../pages/customize")),
-                        icon: {
-                            icon: getSidePanelIcons().overview
-                        },
-                        id: "customize",
-                        name: "Customize",
-                        path: AppConstants.getPaths().get("CUSTOMIZE"),
-                        protected: true,
-                        showOnSidePanel: false
-                    },
-                    {
                         category: "console:manage.features.sidePanel.categories.userstores",
                         children: [
                             {
@@ -476,7 +493,7 @@ export const getAdminViewRoutes = (): RouteInterface[] => {
                             icon: getSidePanelIcons().remoteFetch
                         },
                         id: "remoteFetchConfig",
-                        name: "Remote Configurations",
+                        name: "console:manage.features.sidePanel.remoteFetchConfig",
                         order: 10,
                         path: AppConstants.getPaths().get("REMOTE_REPO_CONFIG"),
                         protected: true,
@@ -492,6 +509,62 @@ export const getAdminViewRoutes = (): RouteInterface[] => {
                         path: AppConstants.getPaths().get("GOVERNANCE_CONNECTORS"),
                         protected: true,
                         showOnSidePanel: false
+                    },
+                    {
+                        category: "console:manage.features.sidePanel.categories.organizations",
+                        children: [
+                            {
+                                component: lazy(() => import("../../organizations/pages/organization-edit")),
+                                exact: true,
+                                icon: {
+                                    icon: getSidePanelIcons().organization
+                                },
+                                id: "organization-edit",
+                                name: "organization Edit",
+                                path: AppConstants.getPaths().get("ORGANIZATION_UPDATE"),
+                                protected: true,
+                                showOnSidePanel: false
+                            }
+                        ],
+                        component: lazy(() => import("../../organizations/pages/organizations")),
+                        exact: true,
+                        icon: {
+                            icon: getSidePanelIcons().organization
+                        },
+                        id: "organizations",
+                        name: "console:manage.features.sidePanel.organizations",
+                        order: 12,
+                        path: AppConstants.getPaths().get("ORGANIZATIONS"),
+                        protected: true,
+                        showOnSidePanel: true
+                    },
+                    {
+                        category: "console:manage.features.sidePanel.categories.users",
+                        children: [
+                            {
+                                component: lazy(() => import("../../organizations/pages/organization-roles-edit")),
+                                exact: true,
+                                icon: {
+                                    icon: getSidePanelIcons().roles
+                                },
+                                id: "organization-roles-edit",
+                                name: "organization Roles Edit",
+                                path: AppConstants.getPaths().get("ORGANIZATION_ROLE_UPDATE"),
+                                protected: true,
+                                showOnSidePanel: false
+                            }
+                        ],
+                        component: lazy(() => import("../../organizations/pages/organization-roles")),
+                        exact: true,
+                        icon: {
+                            icon: getSidePanelIcons().roles
+                        },
+                        id: "organization-roles",
+                        name: "Organization Roles",
+                        order: 13,
+                        path: AppConstants.getPaths().get("ORGANIZATION_ROLES"),
+                        protected: true,
+                        showOnSidePanel: true
                     }
                 ],
                 "id"
@@ -517,7 +590,7 @@ export const getAdminViewRoutes = (): RouteInterface[] => {
 /**
  * Get full screen layout routes.
  *
- * @return {RouteInterface[]}
+ * @returns
  */
 export const getFullScreenViewRoutes = (): RouteInterface[] => {
 
@@ -544,33 +617,40 @@ export const getFullScreenViewRoutes = (): RouteInterface[] => {
 /**
  * Get default page layout routes.
  *
- * @return {RouteInterface[]}
+ * @returns
  */
 export const getDefaultLayoutRoutes = (): RouteInterface[] => {
 
-    return [
-        {
-            component: lazy(() => import("../pages/privacy")),
-            icon: null,
-            id: "privacy",
-            name: "console:common.sidePanel.privacy",
-            path: AppConstants.getPaths().get("PRIVACY"),
-            protected: true,
-            showOnSidePanel: false
-        }
-    ];
+    const routes: RouteInterface[] = values(
+        merge(
+            keyBy(EXTENSION_ROUTES().default, "id")
+        )
+    );
+
+    routes.push({
+        component: lazy(() => import("../pages/privacy")),
+        icon: null,
+        id: "privacy",
+        name: "console:common.sidePanel.privacy",
+        path: AppConstants.getPaths().get("PRIVACY"),
+        protected: true,
+        showOnSidePanel: false
+    });
+
+    return routes;
 };
 
 /**
  * Get error page layout routes.
  *
- * @return {RouteInterface[]}
+ * @returns
  */
 export const getErrorLayoutRoutes = (): RouteInterface[] => {
 
     return [
         {
             component: lazy(() => import("../pages/errors/unauthorized")),
+            exact: true,
             icon: null,
             id: "unauthorized",
             name: "Unauthorized",
@@ -580,6 +660,7 @@ export const getErrorLayoutRoutes = (): RouteInterface[] => {
         },
         {
             component: lazy(() => import("../pages/errors/404")),
+            exact: true,
             icon: null,
             id: "pageNotFound",
             name: "404",
@@ -589,6 +670,7 @@ export const getErrorLayoutRoutes = (): RouteInterface[] => {
         },
         {
             component: lazy(() => import("../pages/errors/storage-disabled")),
+            exact: true,
             icon: null,
             id: "storingDataDisabled",
             name: "storingDataDisabled",
@@ -602,20 +684,17 @@ export const getErrorLayoutRoutes = (): RouteInterface[] => {
 /**
  * Get auth page layout routes.
  *
- * @return {RouteInterface[]}
+ * @returns
  */
 export const getAuthLayoutRoutes = (): RouteInterface[] => {
 
-    return [
-        {
-            component: lazy(() => import("../../authentication/pages/sign-in")),
-            icon: null,
-            id: "authLayoutLogin",
-            name: "Login",
-            path: AppConstants.getPaths().get("LOGIN"),
-            protected: false,
-            showOnSidePanel: false
-        },
+    const routes: RouteInterface[] = values(
+        merge(
+            keyBy(EXTENSION_ROUTES().auth, "id")
+        )
+    );
+
+    routes.push(
         {
             component: lazy(() => import("../../authentication/pages/sign-out")),
             icon: null,
@@ -625,74 +704,59 @@ export const getAuthLayoutRoutes = (): RouteInterface[] => {
             protected: false,
             showOnSidePanel: false
         }
-    ];
+    );
+
+    return routes;
+};
+
+/**
+ * If a layout doesn't use a sub base path i.e `console`, `manage`, then all the routes in that layout
+ * has to be registered in the root layout path (`getAppLayoutRoutes`). This function will help inject the
+ * proper layout by reusing the defined routes rather than duplicating.
+ *
+ * @example
+ *     Without this, we'll have to manually let the app know to use the `AuthLayout` if someone hits `/login`.
+ *
+ *    @example \{
+ *          component: AuthLayout,
+ *          icon: null,
+ *          id: "appRouteLogin",
+ *          name: "Login",
+ *          path: AppConstants.getPaths().get("LOGIN"),
+ *          protected: false,
+ *          showOnSidePanel: false
+ *    \},
+ *
+ * @param routes - Set of routes in the layout.
+ * @param layout - Layout to be used.
+ *
+ * @returns
+ */
+const getLayoutAssignedToRoutes = (routes: RouteInterface[], layout: FunctionComponent) => {
+
+    let modifiedRoutes: RouteInterface[] = [ ...routes ];
+
+    modifiedRoutes = modifiedRoutes.map((route: RouteInterface) => {
+        return {
+            ...route,
+            component: layout
+        };
+    });
+
+    return modifiedRoutes;
 };
 
 /**
  * Get all the app layout routes.
  *
- * @return {RouteInterface[]}
+ * @returns
  */
 export const getAppLayoutRoutes = (): RouteInterface[] => {
 
     return [
-        {
-            component: AuthLayout,
-            icon: null,
-            id: "appRouteLogin",
-            name: "Login",
-            path: AppConstants.getPaths().get("LOGIN"),
-            protected: false,
-            showOnSidePanel: false
-        },
-        {
-            component: AuthLayout,
-            icon: null,
-            id: "appRouteLogout",
-            name: "Logout",
-            path: AppConstants.getPaths().get("LOGOUT"),
-            protected: false,
-            showOnSidePanel: false
-        },
-        {
-            component: DefaultLayout,
-            icon: null,
-            id: "appRoutePrivacy",
-            name: "Privacy",
-            path: AppConstants.getPaths().get("PRIVACY"),
-            protected: true,
-            showOnSidePanel: false
-        },
-        {
-            component: ErrorLayout,
-            exact: true,
-            icon: null,
-            id: "unauthorized",
-            name: "Unauthorized",
-            path: AppConstants.getPaths().get("UNAUTHORIZED"),
-            protected: true,
-            showOnSidePanel: false
-        },
-        {
-            component: ErrorLayout,
-            exact: true,
-            icon: null,
-            id: "appRoute404",
-            name: "Error",
-            path: AppConstants.getPaths().get("PAGE_NOT_FOUND"),
-            protected: true,
-            showOnSidePanel: false
-        },
-        {
-            component: ErrorLayout,
-            exact: true,
-            icon: null,
-            id: "storageDisabled",
-            name: "storageDisabled",
-            path: AppConstants.getPaths().get("STORING_DATA_DISABLED"),
-            protected: false,
-            showOnSidePanel: false
-        },
+        ...getLayoutAssignedToRoutes(getAuthLayoutRoutes(), AuthLayout),
+        ...getLayoutAssignedToRoutes(getDefaultLayoutRoutes(), DefaultLayout),
+        ...getLayoutAssignedToRoutes(getErrorLayoutRoutes(), ErrorLayout),
         {
             component: FullScreenView,
             icon: null,
@@ -719,6 +783,16 @@ export const getAppLayoutRoutes = (): RouteInterface[] => {
             path: AppConstants.getDeveloperViewBasePath(),
             protected: false,
             showOnSidePanel: false
+        },
+        {
+            component: null,
+            icon: null,
+            id: "404",
+            name: "404",
+            path: "*",
+            protected: true,
+            redirectTo: AppConstants.getPaths().get("PAGE_NOT_FOUND"),
+            showOnSidePanel: false
         }
     ];
 };
@@ -726,7 +800,7 @@ export const getAppLayoutRoutes = (): RouteInterface[] => {
 /**
  * Get base layout routes.
  *
- * @return {RouteInterface[]}
+ * @returns
  */
 export const getBaseRoutes = (): RouteInterface[] => {
 

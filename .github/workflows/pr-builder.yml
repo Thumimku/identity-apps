@@ -5,47 +5,255 @@ name: PR Builder
 on:
   pull_request:
     branches: [ master ]
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
   workflow_dispatch:
 
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
-  build:
-
+  lint:
+    name: ⬣ ESLint (STATIC ANALYSIS)
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        node-version: [12.x]
-
+        node-version: [ lts/* ]
     steps:
-    - name: Checkout
-      id: checkout
-      uses: actions/checkout@v2.3.3
-    - name: Use Node.js ${{ matrix.node-version }}
-      id: node-setup
-      uses: actions/setup-node@v2.1.2
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: Set up JDK 1.8
-      id: jdk-setup
-      uses: actions/setup-java@v1
-      with:
-        java-version: 1.8
-    - name: Get npm cache directory
-      id: cache-npm-modules
-      uses: actions/cache@v2
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    - name: Cache local Maven repository
-      id: cache-maven-m2
-      uses: actions/cache@v2
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
-    - name: Build
-      id: build-with-maven
-      run: mvn clean install -U -Dlint.exec.skip=false
+      - name: ⬇️ Checkout
+        id: checkout
+        uses: actions/checkout@v2.3.3
+        with:
+          # We need to fetch all branches and commits so that Nx affected has a base to compare against.
+          fetch-depth: 0
+
+      - name: 🟢 Setup node
+        id: setup-node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: 🐳 Set SHAs for Nx
+        id: set-shas
+        uses: nrwl/nx-set-shas@v3
+        with:
+          main-branch-name: "master"
+
+      - name: 🥡 Setup pnpm
+        id: setup-pnpm
+        uses: pnpm/action-setup@v2.1.0
+        with:
+          version: latest
+          run_install: false
+
+      - name: 🎈 Get pnpm store directory
+        id: get-pnpm-cache-dir
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - name: 🔆 Cache pnpm modules
+        uses: actions/cache@v3
+        id: pnpm-cache
+        with:
+          path: ${{ steps.get-pnpm-cache-dir.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: 🧩 Install Dependencies
+        id: install-dependencies
+        run: pnpm install
+
+      - name: 🦄 Lint Changed Files
+        id: lint-changed-with-eslint
+        working-directory: .github/workflows
+        run: |
+            bash ./scripts/lint-changed.sh ${{ github.event.pull_request.number }}
+
+      - name: ⏳ Lint All Files
+        id: lint-with-eslint
+        run: pnpm nx affected --base=${{ env.NX_BASE }} --head=${{ env.NX_HEAD }} --plain --target=lint --parallel=3
+
+  typecheck:
+    name: ʦ Typecheck (STATIC ANALYSIS)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [ lts/* ]
+    steps:
+      - name: ⬇️ Checkout
+        id: checkout
+        uses: actions/checkout@v2.3.3
+        with:
+          # We need to fetch all branches and commits so that Nx affected has a base to compare against.
+          fetch-depth: 0
+
+      - name: 🟢 Setup node
+        id: setup-node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: 🐳 Set SHAs for Nx
+        id: set-shas
+        uses: nrwl/nx-set-shas@v3
+        with:
+          main-branch-name: "master"
+
+      - name: 🥡 Setup pnpm
+        uses: pnpm/action-setup@v2.1.0
+        with:
+          version: latest
+          run_install: false
+
+      - name: 🎈 Get pnpm store directory
+        id: get-pnpm-cache-dir
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - name: 🔆 Cache pnpm modules
+        uses: actions/cache@v3
+        id: pnpm-cache
+        with:
+          path: ${{ steps.get-pnpm-cache-dir.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: 🧩 Install Dependencies
+        id: install-dependencies
+        run: pnpm install
+
+      - name: 👷 Build Re-usable Modules
+        id: build-reusable-modules
+        run: pnpm build:modules
+
+      - name: ☄️ Check Type Errors
+        run: pnpm nx affected --base=${{ env.NX_BASE }} --head=${{ env.NX_HEAD }} --plain --target=typecheck --parallel=3
+
+  test:
+    name: 👾 Unit Test (TESTING)
+    needs: [ lint, typecheck ]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [ lts/* ]
+    steps:
+      - name: ⬇️ Checkout
+        id: checkout
+        uses: actions/checkout@v2.3.3
+
+      - name: 🟢 Setup node
+        id: setup-node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: 🥡 Setup pnpm
+        uses: pnpm/action-setup@v2.1.0
+        with:
+          version: latest
+          run_install: false
+
+      - name: 🎈 Get pnpm store directory
+        id: get-pnpm-cache-dir
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - name: 🔆 Cache pnpm modules
+        uses: actions/cache@v3
+        id: pnpm-cache
+        with:
+          path: ${{ steps.get-pnpm-cache-dir.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: 🧩 Install Dependencies
+        id: install-dependencies
+        run: pnpm install
+
+      - name: 👷 Build Re-usable Modules
+        id: build-reusable-modules
+        run:  pnpm build:modules
+
+      - name: 🃏 Run Jest & Collect Coverage
+        id: run-jest-test-and-coverage
+        run: pnpm test:unit:coverage
+
+      - name: 🤖 Aggregate Test Coverage
+        id: aggregate-coverage-reports
+        run: |
+          pnpm test:unit:coverage:aggregate
+          pnpm nyc:text-summary-report
+          pnpm nyc:text-report
+
+  build:
+    name: 🚧 Build
+    needs: [ lint, typecheck, test ]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [ lts/* ]
+        maven-version: [ 3.8.6 ]
+        java-version: [ 1.8 ]
+    steps:
+      - name: ⬇️ Checkout
+        id: checkout
+        uses: actions/checkout@v2.3.3
+
+      - name: 🟢 Setup node
+        id: setup-node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: ☕ Set up JDK 1.8
+        id: jdk-setup
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java-version }}
+
+      - name: 🦩 Set up Maven
+        uses: stCarolas/setup-maven@v4
+        id: mvn-setup
+        with:
+          maven-version: ${{ matrix.maven-version }}
+
+      - name: 🥡 Setup pnpm
+        uses: pnpm/action-setup@v2.1.0
+        with:
+          version: latest
+          run_install: false
+
+      - name: 🎈 Get pnpm store directory
+        id: get-pnpm-cache-dir
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - name: 🔆 Cache pnpm modules
+        uses: actions/cache@v3
+        id: pnpm-cache
+        with:
+          path: ${{ steps.get-pnpm-cache-dir.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: 🧩 Install Dependencies
+        id: install-dependencies
+        run: pnpm install
+
+      - name: 🏗️ Maven Build
+        id: build-with-maven
+        run: mvn clean install -U -Dlint.exec.skip=true -Dbootstrap.exec.skip=true
+
+      - name: 💾 Cache local Maven repository
+        id: cache-maven-m2
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-

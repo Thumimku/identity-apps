@@ -1,7 +1,7 @@
-/*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+/**
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,14 +16,14 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, PropsWithChildren, ReactElement } from "react";
 
 /**
  * Help side panel action bar Prop types.
  */
-export interface HelpPanelActionBarInterface extends TestableComponentInterface {
+export interface HelpPanelActionBarInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Additional CSS classes.
      */
@@ -41,9 +41,9 @@ export interface HelpPanelActionBarInterface extends TestableComponentInterface 
 /**
  * Help side panel action bar.
  *
- * @param {PropsWithChildren<HelpPanelActionBarInterface>} props
+ * @param props - props injected to component
  *
- * @return {React.ReactElement}
+ * @returns the help panel action bar
  */
 export const HelpPanelActionBar: FunctionComponent<PropsWithChildren<HelpPanelActionBarInterface>> = (
     props: PropsWithChildren<HelpPanelActionBarInterface>
@@ -54,6 +54,7 @@ export const HelpPanelActionBar: FunctionComponent<PropsWithChildren<HelpPanelAc
         clearing,
         className,
         floated,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -63,12 +64,25 @@ export const HelpPanelActionBar: FunctionComponent<PropsWithChildren<HelpPanelAc
     }, className);
 
     return (
-        <div className={ classes } data-testid={ testId }>
-            <div className="actions-group" data-testid={ `${ testId }-action-group` }>
+        <div
+            className={ classes }
+            data-componentid={ componentId }
+            data-testid={ testId }
+        >
+            <div
+                className="actions-group"
+                data-componentid={ `${ componentId }-action-group` }
+                data-testid={ `${ testId }-action-group` }
+            >
                 {
                     React.Children.map((children),
                         (action: ReactElement<any>, index: number) => (
-                            <div key={ index } className="action" data-testid={ `${ testId }-action-${ index }` }>
+                            <div
+                                key={ index }
+                                className="action"
+                                data-componentid={ `${ componentId }-action-${ index }` }
+                                data-testid={ `${ testId }-action-${ index }` }
+                            >
                                 { action }
                             </div>
                         ))
@@ -83,6 +97,7 @@ export const HelpPanelActionBar: FunctionComponent<PropsWithChildren<HelpPanelAc
  */
 HelpPanelActionBar.defaultProps = {
     clearing: true,
+    "data-componentid": "help-panel-action-bar",
     "data-testid": "help-panel-action-bar",
     floated: "right"
 };

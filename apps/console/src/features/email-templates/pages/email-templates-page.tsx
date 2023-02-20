@@ -143,6 +143,7 @@ const EmailTemplatesPage: FunctionComponent<EmailTemplatesPagePropsInterface> = 
      */
     const handlePaginationChange = (event: MouseEvent<HTMLAnchorElement>, data: PaginationProps): void => {
         const offsetValue = (data.activePage as number - 1) * listItemLimit;
+
         setListOffset(offsetValue);
         paginate(emailTemplates, offsetValue, listItemLimit);
     };
@@ -258,7 +259,13 @@ const EmailTemplatesPage: FunctionComponent<EmailTemplatesPagePropsInterface> = 
             title={
                 (emailTemplateTypeDetails && emailTemplateTypeDetails.displayName)
                     ? t("console:manage.pages.emailTemplatesWithDisplayName.title",
-                    { displayName: emailTemplateTypeDetails.displayName })
+                        { displayName: emailTemplateTypeDetails.displayName })
+                    : t("console:manage.pages.emailTemplates.title")
+            }
+            pageTitle={
+                (emailTemplateTypeDetails && emailTemplateTypeDetails.displayName)
+                    ? t("console:manage.pages.emailTemplatesWithDisplayName.title",
+                        { displayName: emailTemplateTypeDetails.displayName })
                     : t("console:manage.pages.emailTemplates.title")
             }
             backButton={ {

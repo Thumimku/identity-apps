@@ -1,7 +1,7 @@
 <%--
-  ~ Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~ Copyright (c) 2018, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
   ~
-  ~  WSO2 Inc. licenses this file to you under the Apache License,
+  ~  WSO2 LLC. licenses this file to you under the Apache License,
   ~  Version 2.0 (the "License"); you may not use this file except
   ~  in compliance with the License.
   ~  You may obtain a copy of the License at
@@ -27,9 +27,11 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Enumeration" %>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <jsp:directive.include file="includes/localize.jsp"/>
 <jsp:directive.include file="tenant-resolve.jsp"/>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
 
 <%
     boolean error = IdentityManagementEndpointUtil.getBooleanValue(request.getAttribute("error"));
@@ -47,29 +49,38 @@
         errorCode = errorCodeObj.toString();
     }
     if (SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT.equalsIgnoreCase(errorCode)) {
-        errorMsg = "Invalid tenant domain - " + user.getTenantDomain();
+        errorMsg = IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "invalid.tenant.domain") + " - " + user.getTenantDomain();
     } else if (SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS.equalsIgnoreCase(errorCode)) {
-        errorMsg = "Username '" + username + "' is already taken. Please pick a different username";
+        errorMsg = IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Username")
+            + " '" + username + "' " + IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "already.taken.username");
     } else if (SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED.equalsIgnoreCase(errorCode)) {
-        errorMsg = "Self registration is disabled for tenant - " + user.getTenantDomain();
+        errorMsg = IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "self.registration.disabled.for.tenant")
+            + " - " + user.getTenantDomain();
     } else if (SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID.equalsIgnoreCase(errorCode)) {
         if (request.getAttribute("errorMessage") != null) {
             errorMsg = (String) request.getAttribute("errorMessage");
         } else {
-            errorMsg = user.getUsername() + " is an invalid user name. Please pick a valid username.";
+            errorMsg = user.getUsername() + " " + IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "invalid.user.name.pick.valid.username");
         }
     } else if (StringUtils.equalsIgnoreCase(SelfRegistrationStatusCodes.ERROR_CODE_INVALID_EMAIL_USERNAME,
             errorCode)) {
-        errorMsg = "Username is invalid. Username should be in email format.";
+        errorMsg = IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "invalid.username.should.be.in.email.format");
+    } else if (SelfRegistrationStatusCodes.ERROR_CODE_INVALID_USERSTORE.equalsIgnoreCase(errorCode)) {
+        errorMsg = IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "invalid.userstore.domain") + " - " + user.getRealm();
     } else if (errorMsgObj != null) {
         errorMsg = errorMsgObj.toString();
     }
 %>
 
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "medium");
+%>
+
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -80,9 +91,9 @@
     <% } %>
 </head>
 <body class="login-portal layout recovery-layout">
-    <main class="center-segment">
-        <div class="ui container medium center aligned middle aligned">
-            <!-- product-title -->
+    <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+        <layout:component componentName="ProductHeader" >
+            <%-- product-title --%>
             <%
                 File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
                 if (productTitleFile.exists()) {
@@ -91,9 +102,11 @@
             <% } else { %>
             <jsp:include page="includes/product-title.jsp"/>
             <% } %>
+        </layout:component>
+        <layout:component componentName="MainSection" >
             <div class="ui segment">
                 <h3 class="ui header">
-                    <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Start.signing.up")%>
+                    <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Initiate.sign.up")%>
                 </h3>
 
                 <div class="ui negative message" id="error-msg" hidden="hidden"></div>
@@ -102,7 +115,7 @@
                     <%= IdentityManagementEndpointUtil.i18nBase64(recoveryResourceBundle, errorMsg) %>
                 </div>
                 <% } %>
-                <!-- validation -->
+                <%-- validation --%>
 
                 <div class="ui divider hidden"></div>
                 <div class="segment-form">
@@ -113,8 +126,7 @@
                                 <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
                                     "Enter.your.username.here")%>
                             </label>
-                            <input id="usernameUserInput" name="usernameUserInput" type="text" required>
-                            <input id="username" name="username" type="hidden"
+                            <input id="username" name="username" type="text" required
                                 <% if(skipSignUpEnableCheck) {%> value="<%=Encode.forHtmlAttribute(username)%>" <%}%>>
                         </div>
 
@@ -132,7 +144,10 @@
                         <% Map<String, String[]> requestMap = request.getParameterMap();
                             for (Map.Entry<String, String[]> entry : requestMap.entrySet()) {
                                 String key = Encode.forHtmlAttribute(entry.getKey());
-                                String value = Encode.forHtmlAttribute(entry.getValue()[0]); %>
+                                String value = Encode.forHtmlAttribute(entry.getValue()[0]);
+                                if (StringUtils.equalsIgnoreCase("reCaptcha", key)) {
+                                    continue;
+                                } %>
                         <div class="field">
                             <input id="<%= key%>" name="<%= key%>" type="hidden"
                                    value="<%=value%>" class="form-control">
@@ -142,7 +157,7 @@
                         <div class="ui divider hidden"></div>
 
                         <div class="align-right buttons">
-                            <a href="javascript:goBack()" class="ui button link-button">
+                            <a href="javascript:goBack()" class="ui button secondary">
                                 <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Cancel")%>
                             </a>
                             <button id="registrationSubmit" class="ui primary button" type="submit">
@@ -153,19 +168,21 @@
                     </form>
                 </div>
             </div>
-        </div>
-    </main>
-    <!-- product-footer -->
-    <%
-        File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-        if (productFooterFile.exists()) {
-    %>
-    <jsp:include page="extensions/product-footer.jsp"/>
-    <% } else { %>
-    <jsp:include page="includes/product-footer.jsp"/>
-    <% } %>
+        </layout:component>
+        <layout:component componentName="ProductFooter" >
+            <%-- product-footer --%>
+            <%
+                File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                if (productFooterFile.exists()) {
+            %>
+            <jsp:include page="extensions/product-footer.jsp"/>
+            <% } else { %>
+            <jsp:include page="includes/product-footer.jsp"/>
+            <% } %>
+        </layout:component>
+    </layout:main>
 
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {
@@ -201,6 +218,9 @@
             $.fn.preventDoubleSubmission = function() {
                 $(this).on("submit", function(e){
                     var $form = $(this);
+                    $("#error-msg").hide();
+                    $("#server-error-msg").hide();
+                    $("#error-msg").text("");
 
                     if ($form.data("submitted") === true) {
                         // Previously submitted - don't submit again.
@@ -210,10 +230,16 @@
                         e.preventDefault();
 
                         var userName = document.getElementById("username");
-                        var usernameUserInput = document.getElementById("usernameUserInput");
+                        var normalizedUsername = userName.value.trim();
+                        userName.value = normalizedUsername;
 
-                        if (usernameUserInput) {
-                            userName.value = usernameUserInput.value.trim();
+                        if (normalizedUsername) {
+                            if (!/^[^/].*[^@]$/g.test(normalizedUsername)) {
+                                $("#error-msg").text("<%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "username.pattern.violated")%>");
+                                $("#error-msg").show();
+                                $("#username").val("");
+                                return;
+                            }
                         }
 
                         // Mark it so that the next submit can be ignored.

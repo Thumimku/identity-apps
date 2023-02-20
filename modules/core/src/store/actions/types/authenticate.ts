@@ -46,7 +46,20 @@ export enum CommonAuthenticateActionTypes {
      *
      * @type {string}
      */
-    SET_INITIALIZED = "SET_INITIALIZED"
+    SET_INITIALIZED = "SET_INITIALIZED",
+    /**
+     * Redux action type to set default tenant.
+     *
+     * @type {string}
+     */
+    SET_DEFAULT_TENANT = "SET_DEFAULT_TENANT",
+    /**
+     * Redux action type to set tenants.
+     *
+     * @type {string}
+     */
+     SET_TENANTS = "SET_TENANTS"
+
 }
 
 /**
@@ -80,10 +93,26 @@ export interface SetInitializedActionInterface extends CommonAuthenticateBaseAct
 }
 
 /**
+ * Set default tenant action interface.
+ */
+export interface SetDefaultTenantActionInterface extends CommonAuthenticateBaseActionInterface {
+    type: CommonAuthenticateActionTypes.SET_DEFAULT_TENANT;
+    payload: string;
+}
+
+/**
  * Reset authentication action interface.
  */
 export interface ResetAuthenticationActionInterface extends CommonAuthenticateBaseActionInterface {
     type: CommonAuthenticateActionTypes.RESET_AUTHENTICATION;
+}
+
+/**
+ * Set tenants action interface.
+ */
+ export interface SetTenantsActionInterface extends CommonAuthenticateBaseActionInterface {
+    type: CommonAuthenticateActionTypes.SET_TENANTS;
+    payload: any[];
 }
 
 /**
@@ -92,4 +121,6 @@ export interface ResetAuthenticationActionInterface extends CommonAuthenticateBa
 export type CommonAuthenticateActions<T> = ResetAuthenticationActionInterface
     | SetSignInActionInterface<T>
     | SetSignOutActionInterface
-    | SetInitializedActionInterface;
+    | SetInitializedActionInterface
+    | SetDefaultTenantActionInterface
+    | SetTenantsActionInterface;

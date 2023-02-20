@@ -1,31 +1,32 @@
 /**
-* Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-*
-* WSO2 Inc. licenses this file to you under the Apache License,
-* Version 2.0 (the 'License'); you may not use this file except
-* in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing,
-* software distributed under the License is distributed on an
-* 'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-* KIND, either express or implied. See the License for the
-* specific language governing permissions and limitations
-* under the License.
-*/
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
+import { CommonUtils } from "@wso2is/core/utils";
 import classNames from "classnames";
 import React, { FunctionComponent, MouseEvent, ReactElement, useEffect, useRef, useState } from "react";
-import { Button, Icon, Input, Popup } from "semantic-ui-react";
-import { CommonUtils } from "@wso2is/core/utils";
+import { Button, Icon, Input } from "semantic-ui-react";
+import { Popup } from "../popup";
 
 /**
  * Copy to clipboard input field props.
  */
-export interface CopyInputFieldPropsInterface extends TestableComponentInterface {
+export interface CopyInputFieldPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Input value.
      */
@@ -46,14 +47,17 @@ export interface CopyInputFieldPropsInterface extends TestableComponentInterface
      * Should the content appear as a secret.
      */
     secret?: boolean;
+    /**
+     * Label of the input field.
+     */
+    label?: string;
 }
 
 /**
  * Copy to clipboard input field component.
  *
- * @param {CopyInputFieldPropsInterface} props - Props injected to the component.
- *
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns Copy Input Field Component.
  */
 export const CopyInputField: FunctionComponent<CopyInputFieldPropsInterface> = (
     props: CopyInputFieldPropsInterface
@@ -65,6 +69,8 @@ export const CopyInputField: FunctionComponent<CopyInputFieldPropsInterface> = (
         hideSecretLabel,
         secret,
         showSecretLabel,
+        label,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -85,7 +91,7 @@ export const CopyInputField: FunctionComponent<CopyInputFieldPropsInterface> = (
     /**
      * Copies the value to the users clipboard.
      *
-     * @param event {MouseEvent<HTMLButtonElement>)}
+     * @param event - MouseEvent<HTMLButtonElement>
      */
     const copyValueToClipboard = async (event: MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
@@ -94,39 +100,32 @@ export const CopyInputField: FunctionComponent<CopyInputFieldPropsInterface> = (
          * directly get the current value from props itself.
          */
         const _selection = inputRef.current?.props[ "value" ] ?? "";
+
         await CommonUtils.copyTextToClipboard(_selection);
         setCopied(true);
     };
 
     return (
         <Input
+            label={ label }
             ref={ inputRef }
             value={ value }
             labelPosition="right"
             readOnly
-            action={
-                <Popup
-                    trigger={
-                        (
-                            <Button
-                                className="copy-input-action"
-                                icon="copy"
-                                type="button"
-                                onMouseEnter={ () => {
-                                    setCopied(false);
-                                } }
-                                ref={ copyButtonRef as React.RefObject<Button> }
-                                onClick={ copyValueToClipboard }
-                            />
-                        )
-                    }
-                    openOnTriggerFocus
-                    closeOnTriggerBlur
-                    position="top center"
-                    content={ copied ? "Copied!" : "Copy to clipboard" }
-                    inverted
+            action={ (
+                <Button
+                    data-tooltip={ copied ? "Copied!" : "Copy to clipboard" }
+                    data-inverted=""
+                    className="copy-input-action"
+                    icon="copy"
+                    type="button"
+                    onMouseEnter={ () => {
+                        setCopied(false);
+                    } }
+                    ref={ copyButtonRef as React.RefObject<Button> }
+                    onClick={ copyValueToClipboard }
                 />
-            }
+            ) }
             fluid
             className={ classes }
             type={
@@ -161,9 +160,11 @@ export const CopyInputField: FunctionComponent<CopyInputFieldPropsInterface> = (
                                 : hideSecretLabel
                         }
                         inverted
+                        popper={ <div style={ { filter: "none" } }/> }
                     />
                 )
             }
+            data-componentid={ `${ componentId }-wrapper` }
             data-testid={ `${ testId }-wrapper` }
         />
     );
@@ -173,6 +174,7 @@ export const CopyInputField: FunctionComponent<CopyInputFieldPropsInterface> = (
  * Default proptypes for the copy input component.
  */
 CopyInputField.defaultProps = {
+    "data-componentid": "copy-input",
     "data-testid": "copy-input",
     hideSecretLabel: "Show",
     secret: false,

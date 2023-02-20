@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,6 +24,8 @@ export interface DangerZone {
     header: string;
     subheader: string;
     subheader2?: string;
+    buttonHint?: string;
+    buttonDisableHint?: string;
 }
 
 /**
@@ -32,6 +34,7 @@ export interface DangerZone {
 export interface Page {
     title: string;
     subTitle: string;
+    alternateSubTitle?: string;
 }
 
 /**
@@ -56,6 +59,7 @@ export interface Notification {
 export interface NotificationItem {
     message: string;
     description: string;
+    genericMessage?: string;
 }
 
 /**
@@ -89,6 +93,11 @@ export interface FormAttributes extends StrictFormAttributes {
      * explain the purpose of each each group.
      */
     description?: string;
+    /**
+     * This property holds an `alternate` error message for a form field
+     * attribute if there are multiple validations.
+     */
+    errorMessage?: string;
 }
 
 /**
@@ -98,14 +107,17 @@ export interface StrictFormAttributes {
     actions?: FormAttributeActions;
     children?: FormAttributeChildren;
     hint?: string;
-    label: string;
+    label: string | Record<string, unknown>;
     placeholder?: string;
+    ariaLabel?: string;
     validations?: {
         empty?: string;
         duplicate?: string;
         invalid?: string;
         required?: string;
         maxLengthReached?: string;
+        range?: string;
+        reserved?: string;
     };
 }
 
@@ -169,7 +181,7 @@ interface TransferListSearchPlaceholders {
 export interface ModalInterface {
     description: string;
     heading: string;
-    content?: object;
+    content?: Record<string, unknown>;
     primaryButton: string;
     secondaryButton: string;
 }
@@ -197,4 +209,12 @@ export interface Popup {
     content: string;
     header: string;
     subHeader: string;
+}
+
+/**
+ * Interface for App Switch item.
+ */
+export interface AppSwitchItemInterface {
+    name: string;
+    description: string;
 }

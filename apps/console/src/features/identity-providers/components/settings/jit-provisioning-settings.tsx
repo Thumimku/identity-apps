@@ -16,14 +16,16 @@
  * under the License.
  */
 
-import { getUserStoreList } from "@wso2is/core/api";
 import { AlertLevels, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
-import { ContentLoader, EmphasizedSegment } from "@wso2is/react-components";
+import { EmphasizedSegment } from "@wso2is/react-components";
 import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { SimpleUserStoreListItemInterface } from "../../../applications";
+import { SimpleUserStoreListItemInterface } from "../../../applications/models";
+import { store } from "../../../core";
+import { OrganizationUtils } from "../../../organizations/utils";
+import { getUserStoreList } from "../../../userstores/api";
 import { updateJITProvisioningConfigs } from "../../api";
 import { JITProvisioningResponseInterface } from "../../models";
 import { JITProvisioningConfigurationsForm } from "../forms";
@@ -48,6 +50,14 @@ interface JITProvisioningSettingsInterface extends TestableComponentInterface {
      * Callback to update the idp details.
      */
     onUpdate: (id: string) => void;
+    /**
+     * Specifies if the component should only be read-only.
+     */
+    isReadOnly: boolean;
+    /**
+     * Loading Component.
+     */
+    loader: () => ReactElement;
 }
 
 /**
@@ -64,6 +74,8 @@ export const JITProvisioningSettings: FunctionComponent<JITProvisioningSettingsI
         isLoading,
         jitProvisioningConfigurations,
         onUpdate,
+        isReadOnly,
+        loader: Loader,
         [ "data-testid" ]: testId
     } = props;
 
@@ -71,7 +83,8 @@ export const JITProvisioningSettings: FunctionComponent<JITProvisioningSettingsI
 
     const { t } = useTranslation();
 
-    const [userStore, setUserStore] = useState<SimpleUserStoreListItemInterface[]>([]);
+    const [ userStore, setUserStore ] = useState<SimpleUserStoreListItemInterface[]>([]);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
 
     /**
@@ -83,35 +96,44 @@ export const JITProvisioningSettings: FunctionComponent<JITProvisioningSettingsI
         updateJITProvisioningConfigs(idpId, values)
             .then(() => {
                 dispatch(addAlert({
-                    description: t("console:develop.features.idp.notifications.updateJITProvisioning." + 
+                    description: t("console:develop.features.authenticationProvider." +
+                        "notifications.updateJITProvisioning." +
                         "success.description"),
                     level: AlertLevels.SUCCESS,
-                    message: t("console:develop.features.idp.notifications.updateJITProvisioning.success.message")
+                    message: t("console:develop.features.authenticationProvider." +
+                        "notifications.updateJITProvisioning.success.message")
                 }));
                 onUpdate(idpId);
             })
             .catch(() => {
                 dispatch(addAlert({
-                    description: t("console:develop.features.idp.notifications.updateJITProvisioning." +
-                        "genericError.description"),
+                    description: t("console:develop.features.authenticationProvider.notifications." +
+                        "updateJITProvisioning.genericError.description"),
                     level: AlertLevels.ERROR,
-                    message: t("console:develop.features.idp.notifications.updateJITProvisioning.genericError.message")
+                    message: t("console:develop.features.authenticationProvider.notifications." +
+                        "updateJITProvisioning.genericError.message")
                 }));
             });
     };
 
     useEffect(() => {
         const userstore: SimpleUserStoreListItemInterface[] = [];
+
         userstore.push({
             id: "PRIMARY",
             name: "PRIMARY"
         });
-        getUserStoreList().then((response) => {
-            userstore.push(...response.data);
+
+        if (OrganizationUtils.isCurrentOrganizationRoot()) {
+            getUserStoreList().then((response) => {
+                userstore.push(...response.data);
+                setUserStore(userstore);
+            }).catch(() => {
+                setUserStore(userstore);
+            });
+        } else {
             setUserStore(userstore);
-        }).catch(() => {
-            setUserStore(userstore);
-        });
+        }
     }, []);
 
     return (
@@ -119,14 +141,17 @@ export const JITProvisioningSettings: FunctionComponent<JITProvisioningSettingsI
             ? (
                 <EmphasizedSegment padded="very">
                     <JITProvisioningConfigurationsForm
+                        idpId={ idpId }
                         initialValues={ jitProvisioningConfigurations }
                         onSubmit={ handleJITProvisioningConfigFormSubmit }
                         useStoreList={ userStore }
                         data-testid={ testId }
+                        isReadOnly={ isReadOnly }
+                        isSubmitting={ isSubmitting }
                     />
                 </EmphasizedSegment>
             )
-            : <ContentLoader/>
+            : <Loader />
     );
 };
 

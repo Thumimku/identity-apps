@@ -16,16 +16,16 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
 import { AxiosRequestConfig, AxiosResponse } from "axios";
 import { HttpMethods } from "../models";
 import { store } from "../store";
 
 /**
- * @see IdentityClient
+ * @see AsgardeoSPAClient
  */
-const httpClient = IdentityClient.getInstance().httpRequest.bind(
-    IdentityClient.getInstance()
+const httpClient = AsgardeoSPAClient.getInstance().httpRequest.bind(
+    AsgardeoSPAClient.getInstance()
 );
 
 /**
@@ -44,6 +44,7 @@ export const fetchHomeRealmIdentifiers = async (): Promise<string[]> => {
 
     try {
         const response: AxiosResponse = await httpClient(requestConfig);
+
         return Promise.resolve<string[]>(response.data);
     } catch (error) {
         return Promise.reject(error);

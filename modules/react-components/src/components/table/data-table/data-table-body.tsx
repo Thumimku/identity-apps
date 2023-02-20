@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, PropsWithChildren, ReactElement } from "react";
 import { Table, TableBodyProps } from "semantic-ui-react";
@@ -24,14 +24,15 @@ import { Table, TableBodyProps } from "semantic-ui-react";
 /**
  * Proptypes for the Data Table Body component.
  */
-export interface DataTableBodyPropsInterface extends TableBodyProps, TestableComponentInterface { }
+export interface DataTableBodyPropsInterface extends TableBodyProps, IdentifiableComponentInterface,
+    TestableComponentInterface { }
 
 /**
  * Data Table Body component.
  *
- * @param {DataTableBodyPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns Data Table Body component
  */
 export const DataTableBody: FunctionComponent<PropsWithChildren<DataTableBodyPropsInterface>> = (
     props: PropsWithChildren<DataTableBodyPropsInterface>
@@ -40,13 +41,18 @@ export const DataTableBody: FunctionComponent<PropsWithChildren<DataTableBodyPro
     const {
         children,
         className,
+        [ "data-componentid" ]: componentId,
         ...rest
     } = props;
 
     const classes = classNames("data-table-body", className);
 
     return (
-        <Table.Body className={ classes } { ...rest }>
+        <Table.Body
+            className={ classes }
+            data-componentid={ componentId }
+            { ...rest }
+        >
             { children }
         </Table.Body>
     );
@@ -56,5 +62,6 @@ export const DataTableBody: FunctionComponent<PropsWithChildren<DataTableBodyPro
  * Default props for the component.
  */
 DataTableBody.defaultProps = {
+    "data-componentid": "data-table-body",
     "data-testid": "data-table-body"
 };

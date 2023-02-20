@@ -16,11 +16,16 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
 import { IdentityAppsApiException } from "@wso2is/core/exceptions";
 import { HttpMethods, ProfileInfoInterface } from "@wso2is/core/models";
 import { AxiosError, AxiosResponse } from "axios";
-import { store } from "../../core";
+import useRequest, {
+    RequestConfigInterface,
+    RequestErrorInterface,
+    RequestResultInterface
+} from "../../core/hooks/use-request";
+import { store } from "../../core/store";
 import { UserManagementConstants } from "../constants";
 import { UserListInterface, UserSessionsInterface } from "../models";
 
@@ -28,14 +33,21 @@ import { UserListInterface, UserSessionsInterface } from "../models";
  * Initialize an axios Http client.
  *
  */
-const httpClient = IdentityClient.getInstance().httpRequest.bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance().httpRequest.bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Retrieve the list of users that are currently in the system.
  *
  * @returns {Promise<UserListInterface>} a promise containing the user list.
  */
-export const getUsersList = (count: number, startIndex: number, filter: string, attributes: string, domain: string):
+export const getUsersList = (
+    count: number, 
+    startIndex: number, 
+    filter: string, 
+    attributes: string, 
+    domain: string,
+    excludedAttributes?: string
+):
     Promise<UserListInterface> => {
     const requestConfig = {
         headers: {
@@ -47,6 +59,7 @@ export const getUsersList = (count: number, startIndex: number, filter: string, 
             attributes,
             count,
             domain,
+            excludedAttributes,
             filter,
             startIndex
         },
@@ -60,6 +73,60 @@ export const getUsersList = (count: number, startIndex: number, filter: string, 
         .catch((error) => {
             return Promise.reject(error);
         });
+};
+
+/**
+ * Hook to get the users list with limit and offset.
+ *
+ * @param {number} count - The number of users to be returned. 
+ * @param {number} startIndex - The index of the first user to be returned.
+ * @param {string} filter - The filter to be applied to the users.
+ * @param {string} attributes - The attributes to be returned. 
+ * @param {string} domain - The domain of the users.
+ * @param {string} excludedAttributes - The attributes to be excluded. 
+ * @returns {RequestResultInterface<Data, Error>}
+ */
+export const useUsersList = (
+    count: number, 
+    startIndex: number, 
+    filter: string, 
+    attributes: string, 
+    domain: string,
+    excludedAttributes?: string,
+    shouldFetch: boolean = true
+): RequestResultInterface<UserListInterface, RequestErrorInterface> => {
+
+    const requestConfig: RequestConfigInterface = {
+        headers: {
+            "Access-Control-Allow-Origin": store.getState().config.deployment.clientHost,
+            "Content-Type": "application/json"
+        },
+        method: HttpMethods.GET,
+        params: {
+            attributes,
+            count,
+            domain,
+            excludedAttributes,
+            filter,
+            startIndex
+        },
+        url: store.getState().config.endpoints.users
+    };
+
+    const {
+        data,
+        error,
+        isValidating,
+        mutate
+    } = useRequest<UserListInterface, RequestErrorInterface>(shouldFetch ? requestConfig : null);
+
+    return {
+        data,
+        error,
+        isLoading: !error && !data,
+        isValidating,
+        mutate: mutate
+    };
 };
 
 /**

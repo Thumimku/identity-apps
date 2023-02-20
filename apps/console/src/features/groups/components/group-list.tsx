@@ -16,9 +16,9 @@
  * under the License.
  */
 
+import { AccessControlConstants, Show } from "@wso2is/access-control";
 import { hasRequiredScopes, isFeatureEnabled } from "@wso2is/core/helpers";
 import { LoadableComponentInterface, SBACInterface, TestableComponentInterface } from "@wso2is/core/models";
-import { CommonUtils } from "@wso2is/core/utils";
 import {
     AnimatedAvatar,
     AppAvatar,
@@ -30,16 +30,17 @@ import {
     TableActionsInterface,
     TableColumnInterface
 } from "@wso2is/react-components";
+import moment from "moment";
 import React, { ReactElement, ReactNode, SyntheticEvent, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Header, Icon, Label, SemanticICONS } from "semantic-ui-react";
 import {
     AppConstants,
     AppState,
-    getEmptyPlaceholderIllustrations,
     FeatureConfigInterface,
     UIConstants,
+    getEmptyPlaceholderIllustrations,
     history
 } from "../../core";
 import { GroupConstants } from "../constants";
@@ -126,7 +127,7 @@ export const GroupList: React.FunctionComponent<GroupListProps> = (props: GroupL
 
     const { t } = useTranslation();
 
-    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.scope);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
 
     const [ showGroupDeleteConfirmation, setShowDeleteConfirmationModal ] = useState<boolean>(false);
     const [ currentDeletedGroup, setCurrentDeletedGroup ] = useState<GroupsInterface>();
@@ -208,14 +209,16 @@ export const GroupList: React.FunctionComponent<GroupListProps> = (props: GroupL
                 <EmptyPlaceholder
                     data-testid={ `${ testId }-empty-list-empty-placeholder` }
                     action={ (
-                        <PrimaryButton
-                            data-testid={ `${ testId }-empty-list-empty-placeholder-add-button` }
-                            onClick={ onEmptyListPlaceholderActionClick }
-                        >
-                            <Icon name="add"/>
-                            { t("console:manage.features.roles.list.emptyPlaceholders.emptyRoleList.action",
-                                { type: "Group" })}
-                        </PrimaryButton>
+                        <Show when={ AccessControlConstants.GROUP_WRITE }>
+                            <PrimaryButton
+                                data-testid={ `${ testId }-empty-list-empty-placeholder-add-button` }
+                                onClick={ onEmptyListPlaceholderActionClick }
+                            >
+                                <Icon name="add"/>
+                                { t("console:manage.features.roles.list.emptyPlaceholders.emptyRoleList.action",
+                                    { type: "Group" }) }
+                            </PrimaryButton>
+                        </Show>
                     ) }
                     image={ getEmptyPlaceholderIllustrations().newList }
                     imageSize="tiny"
@@ -280,7 +283,14 @@ export const GroupList: React.FunctionComponent<GroupListProps> = (props: GroupL
                 hidden: !showMetaContent,
                 id: "lastModified",
                 key: "lastModified",
-                render: (group: GroupsInterface): ReactNode => CommonUtils.humanizeDateDifference(group.meta.created),
+                render: (group: GroupsInterface): ReactNode => {
+                    const now = moment(new Date());
+                    const receivedDate = moment(group.meta.created);
+
+                    return t("console:common.dateTime.humanizedDateString", {
+                        date: moment.duration(now.diff(receivedDate)).humanize()
+                    });
+                },
                 title: t("console:manage.features.groups.list.columns.lastModified")
             },
             {
@@ -313,8 +323,9 @@ export const GroupList: React.FunctionComponent<GroupListProps> = (props: GroupL
                         ? group?.displayName?.split("/")[0]
                         : "PRIMARY";
 
-                    return !isFeatureEnabled(featureConfig?.groups,
+                    return !isFeatureEnabled(featureConfig?.groups, 
                         GroupConstants.FEATURE_DICTIONARY.get("GROUP_UPDATE"))
+                    || !hasRequiredScopes(featureConfig?.groups, featureConfig?.groups?.scopes?.update, allowedScopes)
                     || readOnlyUserStores?.includes(userStore.toString())
                         ? "eye"
                         : "pencil alternate";
@@ -328,6 +339,7 @@ export const GroupList: React.FunctionComponent<GroupListProps> = (props: GroupL
 
                     return !isFeatureEnabled(featureConfig?.groups,
                         GroupConstants.FEATURE_DICTIONARY.get("GROUP_UPDATE"))
+                    || !hasRequiredScopes(featureConfig?.groups, featureConfig?.groups?.scopes?.update, allowedScopes)
                     || readOnlyUserStores?.includes(userStore.toString())
                         ? t("common:view")
                         : t("common:edit");
@@ -384,47 +396,34 @@ export const GroupList: React.FunctionComponent<GroupListProps> = (props: GroupL
             />
             {
                 showGroupDeleteConfirmation &&
-                <ConfirmationModal
-                    data-testid={ `${ testId }-delete-item-confirmation-modal` }
-                    onClose={ (): void => setShowDeleteConfirmationModal(false) }
-                    type="warning"
-                    open={ showGroupDeleteConfirmation }
-                    assertion={ currentDeletedGroup.displayName }
-                    assertionHint={
-                        (
-                            <p>
-                                <Trans
-                                    i18nKey={ "console:manage.features.roles.list.confirmations.deleteItem." +
-                                    "assertionHint" }
-                                    tOptions={ { roleName: currentDeletedGroup.displayName } }
-                                >
-                                    Please type <strong>{ currentDeletedGroup.displayName }</strong> to confirm.
-                                </Trans>
-                            </p>
-                        )
-                    }
-                    assertionType="input"
-                    primaryAction="Confirm"
-                    secondaryAction="Cancel"
-                    onSecondaryActionClick={ (): void => setShowDeleteConfirmationModal(false) }
-                    onPrimaryActionClick={ (): void => {
-                        handleGroupDelete(currentDeletedGroup);
-                        setShowDeleteConfirmationModal(false);
-                    } }
-                    closeOnDimmerClick={ false }
-                >
-                    <ConfirmationModal.Header>
-                        { t("console:manage.features.roles.list.confirmations.deleteItem.header") }
-                    </ConfirmationModal.Header>
-                    <ConfirmationModal.Message attached warning>
-                        { t("console:manage.features.roles.list.confirmations.deleteItem.message",
-                            { type: "group" }) }
-                    </ConfirmationModal.Message>
-                    <ConfirmationModal.Content>
-                        { t("console:manage.features.roles.list.confirmations.deleteItem.content",
-                            { type: "group" }) }
-                    </ConfirmationModal.Content>
-                </ConfirmationModal>
+                    (<ConfirmationModal
+                        data-testid={ `${ testId }-delete-item-confirmation-modal` }
+                        onClose={ (): void => setShowDeleteConfirmationModal(false) }
+                        type="negative"
+                        open={ showGroupDeleteConfirmation }
+                        assertionHint={ t("console:manage.features.roles.list.confirmations.deleteItem.assertionHint") }
+                        assertionType="checkbox"
+                        primaryAction="Confirm"
+                        secondaryAction="Cancel"
+                        onSecondaryActionClick={ (): void => setShowDeleteConfirmationModal(false) }
+                        onPrimaryActionClick={ (): void => {
+                            handleGroupDelete(currentDeletedGroup);
+                            setShowDeleteConfirmationModal(false);
+                        } }
+                        closeOnDimmerClick={ false }
+                    >
+                        <ConfirmationModal.Header>
+                            { t("console:manage.features.roles.list.confirmations.deleteItem.header") }
+                        </ConfirmationModal.Header>
+                        <ConfirmationModal.Message attached negative>
+                            { t("console:manage.features.roles.list.confirmations.deleteItem.message",
+                                { type: "group" }) }
+                        </ConfirmationModal.Message>
+                        <ConfirmationModal.Content>
+                            { t("console:manage.features.roles.list.confirmations.deleteItem.content",
+                                { type: "group" }) }
+                        </ConfirmationModal.Content>
+                    </ConfirmationModal>)
             }
         </>
     );

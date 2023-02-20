@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { ResponseMode, Storage } from "@wso2/identity-oidc-js";
+import { ResponseMode, Storage } from "@asgardeo/auth-react";
 import {
     CommonConfigInterface,
     CommonDeploymentConfigInterface,
@@ -65,6 +65,7 @@ export interface ServiceResourceEndpointsInterface {
     applications: string;
     associations: string;
     authorize: string;
+    backupCode: string;
     challenges: string;
     challengeAnswers: string;
     federatedAssociations: string;
@@ -77,6 +78,7 @@ export interface ServiceResourceEndpointsInterface {
     jwks: string;
     logout: string;
     me: string;
+    mfaEnabledAuthenticators: string
     preference: string;
     profileSchemas: string;
     sessions: string;
@@ -85,9 +87,12 @@ export interface ServiceResourceEndpointsInterface {
     token: string;
     totp: string;
     totpSecret: string;
+    typingDNAMe: string;
+    typingDNAServer: string;
     user: string;
     revoke: string;
     wellKnown: string;
+    validationMgt: string;
 
     /**
      * Swagger Documentation {@link https://docs.wso2.com/display/IS511/apidocs/Consent-management-apis/}
@@ -111,7 +116,7 @@ export interface ServiceResourceEndpointsInterface {
     /**
      * Documentation {@link https://is.docs.wso2.com/en/5.11.0/develop/configs-rest-api/#/Server%20Configs}
      *
-     * Below {@code homeRealmIdentifiers} is the route that we use to fetch the home realm identifiers
+     * Below homeRealmIdentifiers is the route that we use to fetch the home realm identifiers.
      * from server configurations.
      * @see fetchHomeRealmIdentifiers to see the usages.
      */
@@ -137,14 +142,9 @@ export interface UIConfigInterface extends CommonUIConfigInterface {
     /**
      * Implies whether the profile username attribute
      * dialect is readonly or not. By default the value
-     * is {@code false}.
+     * of code false.
      */
     isProfileUsernameReadonly: boolean;
-    /**
-     * Title text.
-     * ex: `WSO2 Identity Server`
-     */
-    titleText?: string;
     /**
      * TOTP authenticator apps.
      */
@@ -153,9 +153,49 @@ export interface UIConfigInterface extends CommonUIConfigInterface {
      * Config for Remove MFA for Super Tenant User.
      */
     disableMFAforSuperTenantUser?: boolean;
+    /**
+     * Config for enable MFA user wise.
+     */
+    enableMFAUserWise?: boolean;
+     /**
+     * Config for disable MFA for federated users.
+     */
+    disableMFAForFederatedUsers?: boolean;
+    /**
+     * Config for force backup code authentication.
+     */
+    forceBackupCode?: boolean;
+    /**
+     * Show App Switch button in the Header for Super Tenant User.
+     */
+     showAppSwitchButton?: boolean;
+    }
+
+/**
+ * Interface for defining settings and configs of an external app.
+ */
+ interface ExternalAppConfigInterface {
+    /**
+     * App base path. ex: `/account`, `/admin` etc.
+     */
+    basePath: string;
+    /**
+     * Display name for the app.
+     */
+    displayName: string;
+    /**
+     * Access path/URL for the app.
+     */
+    path: string;
 }
 
 /**
  * Portal Deployment config interface inheriting the common configs from core module.
  */
-export type DeploymentConfigInterface = CommonDeploymentConfigInterface<ResponseMode, Storage>;
+export interface DeploymentConfigInterface extends CommonDeploymentConfigInterface<ResponseMode, Storage> {
+
+    /**
+     * Configs of the Console app.
+     */
+    consoleApp: ExternalAppConfigInterface;
+}

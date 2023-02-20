@@ -171,6 +171,7 @@ export class AppConstants {
         .set("PROFILEINFO_EXPORT_PROFILE", "profileInfo.exportProfile")
         .set("PROFILEINFO_MOBILE_VERIFICATION", "profileInfo.mobileVerification")
         .set("SECURITY_CHANGE_PASSWORD", "security.changePassword")
+        .set("SECURITY_CREATE_PASSWORD", "security.createPassword")
         .set("SECURITY_ACCOUNT_RECOVERY", "security.accountRecovery")
         .set("SECURITY_ACCOUNT_RECOVERY_CHALLENGE_QUESTIONS", "security.accountRecovery.challengeQuestions")
         .set("SECURITY_ACCOUNT_RECOVERY_EMAIL_RECOVERY", "security.accountRecovery.emailRecovery")
@@ -178,8 +179,11 @@ export class AppConstants {
         .set("SECURITY_MFA_SMS", "security.mfa.sms")
         .set("SECURITY_MFA_FIDO", "security.mfa.fido")
         .set("SECURITY_MFA_TOTP", "security.mfa.totp")
+        .set("SECURITY_MFA_BACKUP_CODE", "security.mfa.backupCode")
         .set("SECURITY_ACTIVE_SESSIONS", "security.activeSessions")
-        .set("SECURITY_CONSENTS", "security.manageConsents");
+        .set("SECURITY_CONSENTS", "security.manageConsents")
+        .set("SECURITY_LOGIN_VERIFY_DATA", "security.loginVerifyData")
+        .set("SECURITY_LOGIN_VERIFY_DATA_TYPINGDNA", "security.loginVerifyData.typingDNA");
 
     /**
      * Get all the app paths as a map.

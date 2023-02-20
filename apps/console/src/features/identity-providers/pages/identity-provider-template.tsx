@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,505 +16,516 @@
  * under the License.
  */
 
-import { getRawDocumentation } from "@wso2is/core/api";
 import { TestableComponentInterface } from "@wso2is/core/models";
 import {
     ContentLoader,
+    DocumentationLink,
     EmptyPlaceholder,
-    Heading,
-    HelpPanelLayout,
-    HelpPanelTabInterface,
-    Hint,
-    Markdown,
-    PageHeader,
+    GridLayout,
     PageLayout,
-    SelectionCard,
-    TemplateGrid
+    ResourceGrid,
+    SearchWithFilterLabels,
+    useDocumentation
 } from "@wso2is/react-components";
-import get from "lodash-es/get";
+import cloneDeep from "lodash-es/cloneDeep";
+import isEmpty from "lodash-es/isEmpty";
+import orderBy from "lodash-es/orderBy";
+import startCase from "lodash-es/startCase";
+import union from "lodash-es/union";
 import React, { FunctionComponent, ReactElement, SyntheticEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Divider, Grid } from "semantic-ui-react";
+import { RouteComponentProps } from "react-router";
+import { Dispatch } from "redux";
+import { identityProviderConfig } from "../../../extensions/configs";
 import {
     AppConstants,
     AppState,
     ConfigReducerStateInterface,
-    DocPanelUICardInterface,
-    HelpPanelUtils,
-    PortalDocumentationStructureInterface,
+    EventPublisher,
     getEmptyPlaceholderIllustrations,
-    getHelpPanelActionIcons,
     history
 } from "../../core";
-import {
-    getIdentityProviderList,
-    getIdentityProviderTemplate
-} from "../api";
-import {
-    ExpertModeTemplate,
-    IdentityProviderCreateWizard,
-    handleGetIDPTemplateAPICallError
-} from "../components";
-import {
-    getHelpPanelIcons,
-    getIdPIcons,
-    getIdPTemplateDocsIcons
-} from "../configs";
+import { OrganizationType } from "../../organizations/constants";
+import { AuthenticatorCreateWizardFactory } from "../components/wizards";
+import { getIdPIcons } from "../configs";
 import { IdentityProviderManagementConstants } from "../constants";
 import {
-    IdentityProviderListResponseInterface,
+    FederatedAuthenticatorListItemInterface,
     IdentityProviderTemplateCategoryInterface,
     IdentityProviderTemplateInterface,
-    IdentityProviderTemplateItemInterface, IdentityProviderTemplateLoadingStrategies,
+    IdentityProviderTemplateItemInterface,
+    IdentityProviderTemplateLoadingStrategies
 } from "../models";
 import { setAvailableAuthenticatorsMeta } from "../store";
-import { IdentityProviderManagementUtils } from "../utils";
-import { IdentityProviderTemplateManagementUtils } from "../utils/identity-provider-template-management-utils";
+import { IdentityProviderManagementUtils, IdentityProviderTemplateManagementUtils } from "../utils";
 
 /**
  * Proptypes for the IDP template selection page component.
  */
-type IdentityProviderTemplateSelectPagePropsInterface = TestableComponentInterface
+type IdentityProviderTemplateSelectPagePropsInterface = TestableComponentInterface & RouteComponentProps;
 
 /**
  * Choose the application template from this page.
  *
- * @param {IdentityProviderTemplateSelectPagePropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns React.Element
  */
 const IdentityProviderTemplateSelectPage: FunctionComponent<IdentityProviderTemplateSelectPagePropsInterface> = (
     props: IdentityProviderTemplateSelectPagePropsInterface
 ): ReactElement => {
 
     const {
+        location,
         [ "data-testid" ]: testId
     } = props;
 
-    const dispatch = useDispatch();
+    const urlSearchParams: URLSearchParams = new URLSearchParams(location.search);
+
+    const dispatch: Dispatch = useDispatch();
+
     const { t } = useTranslation();
+    const { getLink } = useDocumentation();
 
     const config: ConfigReducerStateInterface = useSelector((state: AppState) => state.config);
-    const availableAuthenticators = useSelector((state: AppState) => state.identityProvider.meta.authenticators);
-    const helpPanelDocStructure: PortalDocumentationStructureInterface = useSelector(
-        (state: AppState) => state.helpPanel.docStructure);
+    const availableAuthenticators: FederatedAuthenticatorListItemInterface[] = useSelector(
+        (state: AppState) => state.identityProvider.meta.authenticators);
+    const identityProviderTemplates: IdentityProviderTemplateItemInterface[] = useSelector(
+        (state: AppState) => state.identityProvider?.groupedTemplates);
+    const orgType: OrganizationType = useSelector((state: AppState) =>
+        state?.organization?.organizationType);
 
     const [ showWizard, setShowWizard ] = useState<boolean>(false);
-    const [ selectedTemplate, setSelectedTemplate ] = useState<IdentityProviderTemplateInterface>(undefined);
-    const [ selectedTemplateWithUniqueName, setSelectedTemplateWithUniqueName ] =
-        useState<IdentityProviderTemplateInterface>(undefined);
-    const [ categorizedTemplates, setCategorizedTemplates ] = useState<IdentityProviderTemplateCategoryInterface[]>([]);
-    const identityProviderTemplates: IdentityProviderTemplateItemInterface[] = useSelector(
-        (state: AppState) => state?.identityProvider?.templates);
-    const [ possibleListOfDuplicateIdps, setPossibleListOfDuplicateIdps ] = useState<string[]>(undefined);
+    const [ templateType, setTemplateType ] = useState<string>(undefined);
+    const [
+        originalCategorizedTemplates,
+        setOriginalCategorizedTemplates
+    ] = useState<IdentityProviderTemplateCategoryInterface[]>([]);
+    const [
+        filteredCategorizedTemplates,
+        setFilteredCategorizedTemplates
+    ] = useState<IdentityProviderTemplateCategoryInterface[]>([]);
     const [
         isIDPTemplateRequestLoading,
         setIDPTemplateRequestLoadingStatus
     ] = useState<boolean>(false);
-    const [ helpPanelDocContent, setHelpPanelDocContent ] = useState<string>(undefined);
-    const [ helpPanelSelectedTemplateDoc, setHelpPanelSelectedTemplateDoc ] = useState<any>(undefined);
-    const [ docsTabBackButtonEnabled, setDocsTabBackButtonEnabled ] = useState<boolean>(true);
-    const [ templateDocs, setTemplateDocs ] = useState<DocPanelUICardInterface[]>(undefined);
-    const [
-        isHelpPanelDocContentRequestLoading,
-        setHelpPanelDocContentRequestLoadingStatus
-    ] = useState<boolean>(false);
+    const [ selectedTemplate, setSelectedTemplate ] = useState<IdentityProviderTemplateInterface>(undefined);
+    const [ filterTags, setFilterTags ] = useState<string[]>([]);
+    const [ searchQuery, setSearchQuery ] = useState<string>("");
+    const [ useNewConnectionsView, setUseNewConnectionsView ] = useState<boolean>(undefined);
+
+    const eventPublisher: EventPublisher = EventPublisher.getInstance();
 
     /**
-     * Called when the template doc is changed in the template section.
+     * Checks if the listing view defined in the config is the new connections view.
      */
     useEffect(() => {
-        if (!helpPanelSelectedTemplateDoc?.docs) {
+
+        if (useNewConnectionsView !== undefined) {
             return;
         }
 
-        setHelpPanelDocContentRequestLoadingStatus(true);
-
-        getRawDocumentation<string>(
-            config.endpoints.documentationContent,
-            helpPanelSelectedTemplateDoc.docs,
-            config.deployment.documentation.provider,
-            config.deployment.documentation.githubOptions.branch)
-            .then((response) => {
-                setHelpPanelDocContent(response);
-            })
-            .finally(() => {
-                setHelpPanelDocContentRequestLoadingStatus(false);
-            });
-    }, [
-        helpPanelSelectedTemplateDoc,
-        config.endpoints.documentationContent,
-        config.deployment.documentation.provider,
-        config.deployment.documentation.githubOptions.branch
-    ]);
+        setUseNewConnectionsView(identityProviderConfig.useNewConnectionsView);
+    }, [ identityProviderConfig ]);
 
     /**
-     * Filter documents based on the template type.
+     * Update the internal filtered templates state when the original changes.
      */
     useEffect(() => {
-        const templateDocs = get(helpPanelDocStructure,
-            IdentityProviderManagementConstants.IDP_TEMPLATES_CREATE_DOCS_KEY);
 
-        if (!templateDocs) {
+        if (!originalCategorizedTemplates) {
             return;
         }
-
-        const templates: DocPanelUICardInterface[] =
-            IdentityProviderManagementUtils.generateIDPTemplateDocs(templateDocs)
-                .filter((doc) => doc.name !== "overview");
-
-        if (templates instanceof Array && templates.length === 1) {
-            setHelpPanelSelectedTemplateDoc(templateDocs[ 0 ]);
-            setDocsTabBackButtonEnabled(false);
-        }
-
-        setTemplateDocs(templates);
-    }, [ helpPanelDocStructure ]);
+        setFilteredCategorizedTemplates(originalCategorizedTemplates);
+    }, [ originalCategorizedTemplates ]);
 
     /**
      *  Get IDP templates.
      */
     useEffect(() => {
+
         if (identityProviderTemplates !== undefined) {
             return;
         }
 
         setIDPTemplateRequestLoadingStatus(true);
 
-        const useAPI: boolean = config.ui.identityProviderTemplateLoadingStrategy ?
-            config.ui.identityProviderTemplateLoadingStrategy === IdentityProviderTemplateLoadingStrategies.REMOTE :
-            IdentityProviderManagementConstants.
-                DEFAULT_IDP_TEMPLATE_LOADING_STRATEGY === IdentityProviderTemplateLoadingStrategies.REMOTE;
-        IdentityProviderTemplateManagementUtils.getIdentityProviderTemplates(useAPI)
-            .finally(() => {
-                setIDPTemplateRequestLoadingStatus(false);
-            });
+        const useAPI: boolean = config.ui.identityProviderTemplateLoadingStrategy
+            ? config.ui.identityProviderTemplateLoadingStrategy === IdentityProviderTemplateLoadingStrategies.REMOTE
+            : (IdentityProviderManagementConstants.DEFAULT_IDP_TEMPLATE_LOADING_STRATEGY ===
+            IdentityProviderTemplateLoadingStrategies.REMOTE);
+
+        /**
+         * With {@link skipGrouping} being false we say
+         * we need to group the existing templates based on their
+         * template-group.
+         */
+        const skipGrouping: boolean = false, sortTemplates: boolean = true;
+
+        IdentityProviderTemplateManagementUtils
+            .getIdentityProviderTemplates(useAPI, skipGrouping, sortTemplates)
+            .finally(() => setIDPTemplateRequestLoadingStatus(false));
+
     }, [ identityProviderTemplates ]);
 
     /**
      * Categorize the IDP templates.
      */
     useEffect(() => {
-        if (!identityProviderTemplates || !Array.isArray(identityProviderTemplates) || !(identityProviderTemplates.length > 0)) {
+
+        if (!identityProviderTemplates || !Array.isArray(identityProviderTemplates)
+            || !(identityProviderTemplates.length > 0)) {
             return;
         }
 
         IdentityProviderTemplateManagementUtils.categorizeTemplates(identityProviderTemplates)
             .then((response: IdentityProviderTemplateCategoryInterface[]) => {
-                setCategorizedTemplates(response);
+
+                let tags: string[] = [];
+
+                response.filter((category: IdentityProviderTemplateCategoryInterface) => {
+                    // Order the templates by pushing coming soon items to the end.
+                    category.templates = orderBy(category.templates, [ "comingSoon" ], [ "desc" ]);
+
+                    category.templates.filter((template: IdentityProviderTemplateInterface) => {
+                        if (!(template?.tags && Array.isArray(template.tags) && template.tags.length > 0)) {
+                            return;
+                        }
+
+                        if (template?.id === "organization-enterprise-idp" && !isOrganizationManagementEnabled) {
+                            return;
+                        }
+
+                        tags = union(tags, template.tags);
+                    });
+                });
+
+                setFilterTags(tags);
+                setOriginalCategorizedTemplates(response);
             })
             .catch(() => {
-                setCategorizedTemplates([]);
+                setOriginalCategorizedTemplates([]);
             });
     }, [ identityProviderTemplates ]);
 
     /**
-     * Retrieve Identity Provider template.
+     * Subscribe to the URS search params to check for IDP create wizard triggers.
+     * ex: If the URL contains a search param `?open=8ea23303-49c0-4253-b81f-82c0fe6fb4a0`,
+     * it'll open up the IDP create template with ID `8ea23303-49c0-4253-b81f-82c0fe6fb4a0`.
      */
-    const getTemplate = (templateId: string): void => {
+    useEffect(() => {
 
-        getIdentityProviderTemplate(templateId)
-            .then((response) => {
-                setSelectedTemplate(response as IdentityProviderTemplateInterface);
-            })
-            .catch((error) => {
-                handleGetIDPTemplateAPICallError(error);
-            });
-    };
+        if (!urlSearchParams.get(IdentityProviderManagementConstants.IDP_CREATE_WIZARD_TRIGGER_URL_SEARCH_PARAM_KEY)) {
+            return;
+        }
+
+        if (urlSearchParams.get(IdentityProviderManagementConstants.IDP_CREATE_WIZARD_TRIGGER_URL_SEARCH_PARAM_KEY)
+            === IdentityProviderManagementConstants.IDP_TEMPLATE_IDS.GOOGLE) {
+
+            handleTemplateSelection(null, IdentityProviderManagementConstants.IDP_TEMPLATE_IDS.GOOGLE);
+
+            return;
+        }
+    }, [ urlSearchParams.get(IdentityProviderManagementConstants.IDP_CREATE_WIZARD_TRIGGER_URL_SEARCH_PARAM_KEY) ]);
 
     /**
      * Handles back button click.
      */
     const handleBackButtonClick = (): void => {
+
         if (availableAuthenticators) {
             dispatch(setAvailableAuthenticatorsMeta(undefined));
         }
+
         history.push(AppConstants.getPaths().get("IDP"));
     };
 
     /**
      * Handles template selection.
      *
-     * @param {React.SyntheticEvent} e - Click event.
-     * @param {string} id - Id of the template.
+     * @param e - Click event of type React.SyntheticEvent.
+     * @param id - Id of the template.
      */
-    const handleTemplateSelection = (e: SyntheticEvent, { id }: { id: string }): void => {
-        if (id === "expert-mode") {
-            setSelectedTemplate(ExpertModeTemplate);
-            setSelectedTemplateWithUniqueName({
-                ...ExpertModeTemplate,
-                idp: {
-                    ...selectedTemplate?.idp,
-                    name: ""
-                }
+    const handleTemplateSelection = (e: SyntheticEvent, id: string): void => {
+
+        /**
+         * Find the matching template for the selected card.
+         * if found then set the template to state.
+         */
+        const selectedTemplate: IdentityProviderTemplateItemInterface = identityProviderTemplates.find(
+            ({ id: templateId }: { id: string }) => (templateId === id));
+
+        if (selectedTemplate) {
+            setSelectedTemplate(selectedTemplate);
+            eventPublisher.publish("connections-select-template", {
+                type: selectedTemplate.templateId
+            });
+        }
+
+        setTemplateType(id);
+    };
+
+    /**
+     * On successful IDP creation, navigates to the IDP views.
+     *
+     * @param id - ID of the created IDP.
+     */
+    const handleSuccessfulIDPCreation = (id: string): void => {
+
+        // If ID is present, navigate to the edit page of the created IDP.
+        if (id) {
+            history.push({
+                pathname: AppConstants.getPaths().get("IDP_EDIT").replace(":id", id),
+                search: IdentityProviderManagementConstants.NEW_IDP_URL_SEARCH_PARAM
             });
 
-            setShowWizard(true);
-        } else {
-            getTemplate(id);
-        }
-    };
-
-    const getPossibleListOfDuplicateIdps = (idpName: string) => {
-        getIdentityProviderList(null, null, "name eq " + idpName).then(
-            (response: IdentityProviderListResponseInterface) => {
-            setPossibleListOfDuplicateIdps( response?.totalResults ? response?.identityProviders?.map(
-                eachIdp => eachIdp.name) : []);
-        });
-    };
-
-    /**
-     * Called when template is selected.
-     */
-    useEffect(() => {
-        if (!selectedTemplate || !selectedTemplate?.idp?.name) {
-            return;
-        }
-        getPossibleListOfDuplicateIdps(selectedTemplate?.idp?.name);
-    }, [selectedTemplate]);
-
-    /**
-     * Generate the next unique name by appending 1-based index number to the provided initial value.
-     *
-     * @param initialIdpName Initial value for the IdP name.
-     * @param idpList The list of available IdPs names.
-     * @return A unique name from the provided list of names.
-     */
-    const generateUniqueIdpName = (initialIdpName: string, idpList: string[]): string => {
-        let idpName = initialIdpName;
-        for (let i = 2; ; i++) {
-            if (!idpList?.includes(idpName)) {
-                break;
-            }
-            idpName = initialIdpName + i;
-        }
-        return idpName;
-    };
-
-    /**
-     * Called when possibleListOfDuplicateIdps is changed.
-     */
-    useEffect(() => {
-        if (!possibleListOfDuplicateIdps) {
             return;
         }
 
-        setSelectedTemplateWithUniqueName({
-            ...selectedTemplate,
-            idp: {
-                ...selectedTemplate?.idp,
-                name: generateUniqueIdpName(selectedTemplate?.idp?.name, possibleListOfDuplicateIdps)
-            }
-        });
-
-        setShowWizard(true);
-    }, [possibleListOfDuplicateIdps]);
-
-    /**
-     * Handles help panel template doc change event.
-     *
-     * @param template - Selected template.
-     */
-    const handleHelpPanelSelectedTemplate = (template: any) => {
-        setHelpPanelSelectedTemplateDoc(template);
+        // Fallback to identity providers page, if id is not present.
+        history.push(AppConstants.getPaths().get("IDP"));
     };
 
-    const helpPanelTabs: HelpPanelTabInterface[] = [
-        {
-            content: (
-                helpPanelSelectedTemplateDoc
-                    ? (
-                        <>
-                            <PageHeader
-                                title={ helpPanelSelectedTemplateDoc.displayName }
-                                titleAs="h4"
-                                backButton={ docsTabBackButtonEnabled && {
-                                    onClick: () => setHelpPanelSelectedTemplateDoc(undefined),
-                                    text: t("console:develop.features.idp.helpPanel.tabs.samples.content.docs.goBack")
-                                } }
-                                bottomMargin={ false }
-                                data-testid={ `${ testId }-help-panel-docs-tab-page-header` }
-                            />
-                            <Divider hidden/>
-                            {
-                                helpPanelSelectedTemplateDoc.docs && (
-                                    isHelpPanelDocContentRequestLoading
-                                        ? <ContentLoader dimmer/>
-                                        : (
-                                            <Markdown
-                                                source={ helpPanelDocContent }
-                                                data-testid={ `${ testId }-help-panel-docs-tab-markdown-renderer` }
-                                            />
-                                        )
-                                )
-                            }
-                        </>
-                    )
-                    : (
-                        <>
-                            <Heading as="h4">
-                                { t("console:develop.features.idp.helpPanel.tabs.samples.content.docs.title") }
-                            </Heading>
-                            <Hint>
-                                { t("console:develop.features.idp.helpPanel.tabs.samples.content.docs.hint") }
-                            </Hint>
-                            <Divider hidden/>
-
-                            <Grid>
-                                <Grid.Row columns={ 4 }>
-                                    {
-                                        templateDocs && templateDocs.map((sample, index) => (
-                                            <Grid.Column key={ index }>
-                                                <SelectionCard
-                                                    size="auto"
-                                                    header={ sample.displayName }
-                                                    image={ getIdPTemplateDocsIcons()[ sample.image ] }
-                                                    imageSize="mini"
-                                                    spaced="bottom"
-                                                    onClick={ () => handleHelpPanelSelectedTemplate(sample) }
-                                                    data-testid={ `${ testId }-help-panel-docs-tab-selection-card` }
-                                                />
-                                            </Grid.Column>
-                                        ))
-                                    }
-                                </Grid.Row>
-                            </Grid>
-                        </>
-                    )
-            ),
-            heading: t("common:docs"),
-            hidden: !templateDocs || (templateDocs instanceof Array && templateDocs.length < 1),
-            icon: {
-                icon: getHelpPanelIcons().tabs.docs
-            }
-        }
-    ];
-
     /**
-     * Generic function to render the template grid.
+     * Get search results.
      *
-     * @param {IdentityProviderTemplateInterface[]} templates - Set of templates to be displayed.
-     * @param {object} additionalProps - Additional props for the `TemplateGrid` component.
-     * @param {React.ReactElement} placeholder - Empty placeholder for the grid.
-     * @param {IdentityProviderTemplateInterface[]} templatesOverrides - Template array which will get precedence.
-     * @return {React.ReactElement}
+     * @param query - Search query.
+     * @param filterLabels - Array of filter labels.
+     *
+     * @returns IdentityProviderTemplateCategoryInterface[]
      */
-    const renderTemplateGrid = (templates: IdentityProviderTemplateInterface[],
-                                additionalProps: object,
-                                placeholder?: ReactElement,
-                                templatesOverrides?: IdentityProviderTemplateInterface[]): ReactElement => {
+    const getSearchResults = (query: string, filterLabels: string[]): IdentityProviderTemplateCategoryInterface[] => {
 
-        return (
-            <TemplateGrid<IdentityProviderTemplateItemInterface>
-                type="idp"
-                templates={
-                    templatesOverrides
-                        ? templatesOverrides
-                        : templates
+        /**
+         * Checks if any of the filters are matching.
+         * @param template - Template object.
+         * @returns boolean
+         */
+        const isFiltersMatched = (template: IdentityProviderTemplateInterface): boolean => {
+
+            if (isEmpty(filterLabels)) {
+                return true;
+            }
+
+            return template.tags
+                .some((selectedLabel: string) => filterLabels.includes(selectedLabel));
+        };
+        
+        const templatesClone: IdentityProviderTemplateCategoryInterface[] = cloneDeep(originalCategorizedTemplates);
+
+        templatesClone.map((category: IdentityProviderTemplateCategoryInterface) => {
+
+            category.templates = category.templates.filter((template: IdentityProviderTemplateInterface) => {
+                if (!query) {
+                    return isFiltersMatched(template);
                 }
-                templateIcons={ getIdPIcons() }
-                templateIconOptions={ {
-                    fill: "primary"
-                } }
-                templateIconSize="tiny"
-                onTemplateSelect={ handleTemplateSelection }
-                paginate={ true }
-                paginationLimit={ 5 }
-                paginationOptions={ {
-                    showLessButtonLabel: t("common:showLess"),
-                    showMoreButtonLabel: t("common:showMore")
-                } }
-                emptyPlaceholder={ placeholder }
-                { ...additionalProps }
-            />
-        );
+
+                const name: string = template.name.toLocaleLowerCase();
+
+                if (name.includes(query)
+                    || template.tags.some((tag: string) => tag.toLocaleLowerCase().includes(query)
+                        || startCase(tag).toLocaleLowerCase().includes(query))) {
+
+                    return isFiltersMatched(template);
+                }
+            });
+        });
+
+        return templatesClone;
+    };
+
+    /**
+     * Handles the Connection Type Search input onchange.
+     *
+     * @param query - Search query.
+     * @param selectedFilters - Array of selected filters.
+     */
+    const handleConnectionTypeSearch = (query: string, selectedFilters: string[]): void => {
+
+        // Update the internal state to manage placeholders etc.
+        setSearchQuery(query);
+        // Filter out the templates.
+        setFilteredCategorizedTemplates(getSearchResults(query.toLocaleLowerCase(), selectedFilters));
+    };
+
+    /**
+     * Handles Connection Type filter.
+     *
+     * @param query - Search query.
+     * @param selectedFilters - Array of the selected filters.
+     */
+    const handleConnectionTypeFilter = (query: string, selectedFilters: string[]): void => {
+
+        // Update the internal state to manage placeholders etc.
+        setSearchQuery(query);
+        // Filter out the templates.
+        setFilteredCategorizedTemplates(getSearchResults(query, selectedFilters));
+    };
+
+    /**
+     * Resolve the relevant placeholder.
+     *
+     * @returns React.ReactElement
+     */
+    const showPlaceholders = (list: any[]): ReactElement => {
+
+        // When the search returns empty.
+        if (searchQuery) {
+            return (
+                <EmptyPlaceholder
+                    image={ getEmptyPlaceholderIllustrations().emptySearch }
+                    imageSize="tiny"
+                    title={ t("console:develop.placeholders.emptySearchResult.title") }
+                    subtitle={ [
+                        t("console:develop.placeholders.emptySearchResult.subtitles.0", { query: searchQuery }),
+                        t("console:develop.placeholders.emptySearchResult.subtitles.1")
+                    ] }
+                    data-testid={ `${ testId }-empty-search-placeholder` }
+                />
+            );
+        }
+
+        // Edge case, templates will never be empty.
+        if (list.length === 0) {
+            return (
+                <EmptyPlaceholder
+                    image={ getEmptyPlaceholderIllustrations().newList }
+                    imageSize="tiny"
+                    title={
+                        t("console:develop.features.authenticationProvider.placeHolders.emptyConnectionTypeList.title")
+                    }
+                    subtitle={ [
+                        t("console:develop.features.authenticationProvider.placeHolders.emptyConnectionTypeList" +
+                            ".subtitles.0"),
+                        t("console:develop.features.authenticationProvider.placeHolders.emptyConnectionTypeList" +
+                            ".subtitles.1")
+                    ] }
+                    data-testid={ `${ testId }-empty-placeholder` }
+                />
+            );
+        }
+
+        return null;
     };
 
     return (
-        <HelpPanelLayout
-            enabled={ false }
-            visible={ false }
-            sidebarDirection="right"
-            sidebarMiniEnabled={ false }
-            tabs={ helpPanelTabs }
-            onHelpPanelPinToggle={ () => HelpPanelUtils.togglePanelPin() }
-            isPinned={ HelpPanelUtils.isPanelPinned() }
-            icons={ {
-                close: getHelpPanelActionIcons().close,
-                pin: getHelpPanelActionIcons().pin,
-                unpin: getHelpPanelActionIcons().unpin
+        <PageLayout
+            pageTitle={ "Create New Connection" }
+            isLoading={ useNewConnectionsView === undefined }
+            title={
+                useNewConnectionsView
+                    ? t("console:develop.pages.authenticationProviderTemplate.title")
+                    : t("console:develop.pages.idpTemplate.title")
+            }
+            contentTopMargin={ true }
+            description={
+                useNewConnectionsView
+                    ?   (<>
+                        { t("console:develop.pages.authenticationProviderTemplate.subTitle") }
+                        <DocumentationLink
+                            link={ getLink("develop.connections.newConnection.learnMore") }
+                        >
+                            { t("common:learnMore") }
+                        </DocumentationLink>
+                    </>)
+                    :   t("console:develop.pages.idpTemplate.subTitle")
+            }
+            backButton={ {
+                "data-testid": `${ testId }-page-back-button`,
+                onClick: handleBackButtonClick,
+                text: useNewConnectionsView
+                    ? t("console:develop.pages.authenticationProviderTemplate.backButton")
+                    : t("console:develop.pages.idpTemplate.backButton")
             } }
-            sidebarToggleTooltip={ t("console:develop.features.helpPanel.actions.open") }
-            pinButtonTooltip={ t("console:develop.features.helpPanel.actions.pin") }
-            unpinButtonTooltip={ t("console:develop.features.helpPanel.actions.unPin") }
+            titleTextAlign="left"
+            bottomMargin={ false }
+            data-testid={ `${ testId }-page-layout` }
+            showBottomDivider
         >
-            <PageLayout
-                title={ t("console:develop.pages.idpTemplate.title") }
-                contentTopMargin={ true }
-                description={ t("console:develop.pages.idpTemplate.subTitle") }
-                backButton={ {
-                    "data-testid": `${ testId }-page-back-button`,
-                    onClick: handleBackButtonClick,
-                    text: t("console:develop.pages.idpTemplate.backButton")
-                } }
-                titleTextAlign="left"
-                bottomMargin={ false }
-                data-testid={ `${ testId }-page-layout` }
-                showBottomDivider
+            <GridLayout
+                search={ (
+                    <SearchWithFilterLabels
+                        placeholder={ t("console:develop.pages.authenticationProviderTemplate.search.placeholder") }
+                        onSearch={ handleConnectionTypeSearch }
+                        onFilter={ handleConnectionTypeFilter }
+                        filterLabels={ filterTags }
+                    />
+                ) }
+                isLoading={ useNewConnectionsView === undefined || isIDPTemplateRequestLoading }
             >
                 {
-                    (categorizedTemplates && !isIDPTemplateRequestLoading)
+                    (filteredCategorizedTemplates && !isIDPTemplateRequestLoading)
                         ? (
-                            categorizedTemplates.map((category: IdentityProviderTemplateCategoryInterface, index: number) => (
-                                <div key={ index } className="templates quick-start-templates">
-                                    {
-                                        renderTemplateGrid(
-                                            category.templates,
-                                            {
-                                                "data-testid": `${ category.id }-template-grid`,
-                                                heading: category.displayName,
-                                                showTagIcon: category.viewConfigs?.tags?.showTagIcon,
-                                                showTags:  category.viewConfigs?.tags?.showTags,
-                                                subHeading: category.description,
-                                                tagsAs: category.viewConfigs?.tags?.as,
-                                                tagsKey: category.viewConfigs?.tags?.tagsKey,
-                                                tagsSectionTitle: category.viewConfigs?.tags?.sectionTitle
-                                            },
-                                            <EmptyPlaceholder
-                                                image={ getEmptyPlaceholderIllustrations().newList }
-                                                imageSize="tiny"
-                                                title={ t("console:develop.features.templates.emptyPlaceholder.title") }
-                                                subtitle={
-                                                    [ t("console:develop.features.templates.emptyPlaceholder.subtitles") ]
+                            filteredCategorizedTemplates
+                                .map((category: IdentityProviderTemplateCategoryInterface, index: number) => (
+                                    <ResourceGrid
+                                        key={ index }
+                                        isEmpty={
+                                            !(category?.templates
+                                                && Array.isArray(category.templates)
+                                                && category.templates.length > 0)
+                                        }
+                                        emptyPlaceholder={ showPlaceholders(category.templates) }
+                                    >
+                                        {
+                                            category.templates.map((
+                                                template: IdentityProviderTemplateInterface,
+                                                templateIndex: number
+                                            ) => {
+                                                const isOrgIdp: boolean = template.templateId === "organi" +
+                                                    "zation-enterprise-idp";
+
+                                                if (isOrgIdp && !isOrganizationManagementEnabled) {
+                                                    return null;
                                                 }
-                                                data-testid={
-                                                    `${ testId }-quick-start-template-grid-empty-placeholder`
+
+                                                if (isOrgIdp && orgType === OrganizationType.SUBORGANIZATION) {
+                                                    return null;
                                                 }
-                                            />
-                                        )
-                                    }
-                                    <Divider hidden />
-                                </div>
-                            ))
+
+                                                return (
+                                                    <ResourceGrid.Card
+                                                        key={ templateIndex }
+                                                        resourceName={
+                                                            template.name === "Enterprise" ? "Standard-Based IdP" 
+                                                                : template.name
+                                                        }
+                                                        isResourceComingSoon={ template.comingSoon }
+                                                        disabled={ template.disabled }
+                                                        comingSoonRibbonLabel={ t("common:comingSoon") }
+                                                        resourceDescription={ template.description }
+                                                        resourceImage={
+                                                            IdentityProviderManagementUtils
+                                                                .resolveTemplateImage(template.image, getIdPIcons())
+                                                        }
+                                                        tags={ template.tags }
+                                                        onClick={ (e: SyntheticEvent) => {
+                                                            handleTemplateSelection(e, template.id);
+                                                        } }
+                                                        showTooltips={ { description: true, header: false } }
+                                                        data-testid={ `${ testId }-${ template.name }` }
+                                                    />
+                                                );
+                                            })
+                                        }
+                                    </ResourceGrid>
+                                ))
                         )
                         : <ContentLoader dimmer/>
                 }
-                <Divider hidden/>
-                { showWizard && (
-                    <IdentityProviderCreateWizard
-                        title={ selectedTemplateWithUniqueName?.name }
-                        subTitle={ selectedTemplateWithUniqueName?.description }
-                        closeWizard={ () => {
-                            setSelectedTemplateWithUniqueName(undefined);
-                            setSelectedTemplate(undefined);
-                            setShowWizard(false);
-                        } }
-                        template={ selectedTemplateWithUniqueName?.idp }
-                    />
-                ) }
-            </PageLayout>
-        </HelpPanelLayout>
+            </GridLayout>
+            <AuthenticatorCreateWizardFactory
+                open={ showWizard }
+                type={ templateType }
+                selectedTemplate={ selectedTemplate }
+                onIDPCreate={ handleSuccessfulIDPCreation }
+                onWizardClose={ () => {
+                    setTemplateType(undefined);
+                    setShowWizard(false);
+                } }
+            />
+        </PageLayout>
     );
 };
 

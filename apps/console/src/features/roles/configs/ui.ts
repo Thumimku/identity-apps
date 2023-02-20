@@ -16,16 +16,23 @@
  * under the License.
  */
 
-import { AppConstants } from "../../core/constants";
+import { FunctionComponent, SVGProps } from "react";
+import { ReactComponent as DocumentIcon } from "../../../themes/default/assets/images/icons/document-icon.svg";
+import { ReactComponent as KeyIcon } from "../../../themes/default/assets/images/icons/key-icon.svg";
+import { ReactComponent as ReportIcon } from "../../../themes/default/assets/images/icons/report-icon.svg";
+import { ReactComponent as UserIcon } from "../../../themes/default/assets/images/icons/user-icon.svg";
 
-export const getRolesWizardStepIcons= () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getRolesWizardStepIcons= (): {
+    assignUser: FunctionComponent<SVGProps<SVGSVGElement>>;
+    general: FunctionComponent<SVGProps<SVGSVGElement>>;
+    permissions: FunctionComponent<SVGProps<SVGSVGElement>>;
+    summary: FunctionComponent<SVGProps<SVGSVGElement>>;
+} => {
 
     return {
-        assignUser: import(`../../../themes/${ theme }/assets/images/icons/user-icon.svg`),
-        general: import(`../../../themes/${ theme }/assets/images/icons/document-icon.svg`),
-        permissions: import(`../../../themes/${ theme }/assets/images/icons/key-icon.svg`),
-        summary: import(`../../../themes/${ theme }/assets/images/icons/report-icon.svg`)
+        assignUser: UserIcon,
+        general: DocumentIcon,
+        permissions: KeyIcon,
+        summary: ReportIcon
     };
-};
+}; 

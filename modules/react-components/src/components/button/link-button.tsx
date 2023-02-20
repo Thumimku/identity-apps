@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, ReactElement } from "react";
 import { ButtonProps, Loader, LoaderProps, Button as SemanticButton } from "semantic-ui-react";
@@ -24,11 +24,17 @@ import { ButtonProps, Loader, LoaderProps, Button as SemanticButton } from "sema
 /**
  * Link button component Prop types.
  */
-export interface LinkButtonPropsInterface extends ButtonProps, TestableComponentInterface {
+export interface LinkButtonPropsInterface extends ButtonProps, IdentifiableComponentInterface,
+    TestableComponentInterface {
+
     /**
      * Compact mode with no padding.
      */
     compact?: boolean;
+    /**
+     * Hover type.
+     */
+    hoverType?: "underline";
     /**
      * To represent info state.
      */
@@ -50,9 +56,9 @@ export interface LinkButtonPropsInterface extends ButtonProps, TestableComponent
 /**
  * Link button component.
  *
- * @param {LinkButtonPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns a React component
  */
 export const LinkButton: FunctionComponent<LinkButtonPropsInterface> = (
     props: LinkButtonPropsInterface
@@ -62,11 +68,13 @@ export const LinkButton: FunctionComponent<LinkButtonPropsInterface> = (
         children,
         className,
         compact,
+        hoverType,
         info,
         loading,
         loaderPosition,
         loaderSize,
         warning,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         ...rest
     } = props;
@@ -75,6 +83,7 @@ export const LinkButton: FunctionComponent<LinkButtonPropsInterface> = (
         "link-button",
         {
             compact,
+            [ `hover-${ hoverType }` ]: hoverType,
             info,
             [ `loader-${ loaderPosition }` ]: loading && loaderPosition,
             warning
@@ -86,18 +95,31 @@ export const LinkButton: FunctionComponent<LinkButtonPropsInterface> = (
         <SemanticButton
             className={ classes }
             loading={ loading && !loaderPosition }
+            data-componentid={ componentId }
             data-testid={ testId }
             { ...rest }
         >
             {
                 loading && loaderPosition === "left" && (
-                    <Loader active inline size={ loaderSize } data-testid={ `${ testId }-loader` } />
+                    <Loader
+                        active
+                        inline
+                        size={ loaderSize }
+                        data-componentid={ `${ componentId }-loader` }
+                        data-testid={ `${ testId }-loader` }
+                    />
                 )
             }
             { children }
             {
                 loading && loaderPosition === "right" && (
-                    <Loader active inline size={ loaderSize } data-testid={ `${ testId }-loader` } />
+                    <Loader
+                        active
+                        inline
+                        size={ loaderSize }
+                        data-componentid={ `${ componentId }-loader` }
+                        data-testid={ `${ testId }-loader` }
+                    />
                 )
             }
         </SemanticButton>
@@ -108,6 +130,9 @@ export const LinkButton: FunctionComponent<LinkButtonPropsInterface> = (
  * Prop types for the link button component.
  */
 LinkButton.defaultProps = {
+    basic: true,
+    "data-componentid": "link-button",
     "data-testid": "link-button",
-    loaderSize: "mini"
+    loaderSize: "mini",
+    primary: true
 };

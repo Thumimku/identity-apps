@@ -16,24 +16,26 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
 import { IdentityAppsApiException } from "@wso2is/core/exceptions";
 import { HttpMethods } from "@wso2is/core/models";
+import { ServerConfigurationsInterface } from "./governance-connectors";
 import { store } from "../../core";
+import useRequest, { RequestErrorInterface, RequestResultInterface } from "../../core/hooks/use-request";
 import { ServerConfigurationsConstants } from "../constants";
 
 /**
  * Initialize an axios Http client.
  *
  */
-const httpClient = IdentityClient.getInstance().httpRequest.bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance().httpRequest.bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Retrieve server configurations.
  *
- * @returns {Promise<any>} a promise containing the server configurations.
+ * @returns {Promise<ServerConfigurationsInterface>} a promise containing the server configurations.
  */
-export const getServerConfigs = () => {
+export const getServerConfigs = () : Promise<ServerConfigurationsInterface> => {
 
     const requestConfig = {
         headers: {
@@ -55,6 +57,7 @@ export const getServerConfigs = () => {
                     response,
                     response.config);
             }
+
             return Promise.resolve(response.data);
         })
         .catch((error) => {
@@ -67,4 +70,31 @@ export const getServerConfigs = () => {
                 error.config);
         });
 
+};
+
+/**
+ * Hook to get the server configurations.
+ * 
+ * @returns {RequestResultInterface<Data, Error>}
+ */
+export const useServerConfigs = <Data = ServerConfigurationsInterface,
+    Error = RequestErrorInterface>(): RequestResultInterface<Data, Error> => {
+
+    const requestConfig = {
+        headers: {
+            "Content-Type": "application/json"
+        },
+        method: HttpMethods.GET,
+        url: store.getState().config.endpoints.serverConfigurations
+    };
+
+    const { data, error, isValidating, mutate } = useRequest<Data, Error>(requestConfig);
+
+    return {
+        data,
+        error: error,
+        isLoading: !error && !data,
+        isValidating,
+        mutate: mutate
+    };
 };

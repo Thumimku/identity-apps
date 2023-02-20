@@ -52,10 +52,12 @@
     <!-- *************** End of Global configurations ********************** -->
 
     <!-- *************** Account Recovery Endpoint Context URL Configuration ********************** -->
-    <!--context-param>
+    {% if authenticationendpoint.account_recovery_endpoint_url is defined %}
+    <context-param>
        <param-name>IdentityManagementEndpointContextURL</param-name>
-       <param-value>https://localhost:9443/accountrecoveryendpoint</param-value>
-   </context-param-->
+       <param-value>{{ authenticationendpoint.account_recovery_endpoint_url }}</param-value>
+   </context-param>
+   {% endif %}
     <context-param>
        <param-name>AccountRecoveryRESTEndpointURL</param-name>
        <param-value>/t/tenant-domain/api/identity/user/v1.0/</param-value>
@@ -76,17 +78,36 @@
     </context-param>
     {% endif %}
 
+    <!-- *************** My Account URL ********************** -->
+    {% if authenticationendpoint.my_account_url is defined %}
+        <context-param>
+            <param-name>MyAccountURL</param-name>
+            <param-value>{{ authenticationendpoint.my_account_url }}</param-value>
+        </context-param>
+    {% endif %}
+
+    {% if authenticationendpoint.console_url is defined %}
+     <!-- *************** Console URL ********************** -->
+        <context-param>
+            <param-name>ConsoleURL</param-name>
+            <param-value>{{ authenticationendpoint.console_url }}</param-value>
+        </context-param>
+    {% endif %}
+
     <!-- *************** End of Account Recovery Endpoint Context URL Configuration ********************** -->
     <!-- *************** Identity Server Endpoint URL Configuration ********************** -->
-    <!--context-param>
+    {% if authenticationendpoint.identity_server_endpoint_url is defined %}
+    <context-param>
         <param-name>IdentityServerEndpointContextURL</param-name>
-        <param-value>https://localhost:9443</param-value>
-    </context-param-->
+        <param-value>{{ authenticationendpoint.identity_server_endpoint_url }}</param-value>
+    </context-param>
+    {% endif %}
     <!-- *************** End of Identity Server Endpoint URL Configuration ********************** -->
     <!--context-param>
         <param-name>EnableAuthenticationWithAuthenticationRESTAPI</param-name>
         <param-value>true</param-value>
     </context-param-->
+
     <!-- *************** Authentication REST API URL Configuration ********************** -->
     {% if authenticationendpoint.auth_rest_endpoint_url is defined %}
     <context-param>
@@ -96,11 +117,49 @@
     {% endif %}
     <!-- *************** End of Authentication REST API URL Configuration ********************** -->
 
+    <!-- *************** ToS URL Configuration ********************** -->
+    {% if authenticationendpoint.terms_of_service_url is defined %}
+    <context-param>
+        <param-name>TermsOfServiceURL</param-name>
+        <param-value>{{ authenticationendpoint.terms_of_service_url }}</param-value>
+    </context-param>
+    {% endif %}
+    <!-- *************** End of ToS URL Configuration ********************** -->
+
+    <!-- *************** Privacy Policy URL Configuration ********************** -->
+    {% if authenticationendpoint.privacy_policy_url is defined %}
+    <context-param>
+        <param-name>PrivacyPolicyURL</param-name>
+        <param-value>{{ authenticationendpoint.privacy_policy_url }}</param-value>
+    </context-param>
+    {% endif %}
+    <!-- *************** End of Privacy Policy URL Configuration ********************** -->
+
     <!--Display scopes in the consent page.-->
     <context-param>
         <param-name>displayScopes</param-name>
         <param-value>true</param-value>
     </context-param>
+
+    <!-- *************** Authentication Portal Context Parameters ********************** -->
+    {% if authenticationendpoint.context_params is defined %}
+    {% for key, value in authenticationendpoint.context_params.items() %}
+    <context-param>
+        <param-name>{{ key }}</param-name>
+        <param-value>{{ value }}</param-value>
+    </context-param>
+    {% endfor %}
+    {% endif %}
+    <!-- *************** End of Authentication Portal Context Parameters ********************** -->
+
+    <!-- *************** Layout Store URL Configuration ********************** -->
+    {% if webappscommon.layout_store_url is defined %}
+    <context-param>
+        <param-name>LayoutStoreURL</param-name>
+        <param-value>{{ webappscommon.layout_store_url }}</param-value>
+    </context-param>
+    {% endif %}
+    <!-- *************** End of Layout Store URL Configuration ********************** -->
 
     <filter>
         <filter-name>HttpHeaderSecurityFilter</filter-name>
@@ -114,6 +173,20 @@
     <filter-mapping>
         <filter-name>HttpHeaderSecurityFilter</filter-name>
         <url-pattern>*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>AuthenticationParameterFilter</filter-name>
+        <filter-class>
+            org.wso2.carbon.identity.application.authentication.endpoint.util.filter.AuthParameterFilter
+        </filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>AuthenticationParameterFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>FORWARD</dispatcher>
+        <dispatcher>REQUEST</dispatcher>
     </filter-mapping>
 
     <filter>
@@ -131,13 +204,13 @@
     </filter-mapping>
 
     <filter>
-        <filter-name>ContentTypeBasedCachePreventionFilter</filter-name>    
+        <filter-name>ContentTypeBasedCachePreventionFilter</filter-name>
         <filter-class>
            org.wso2.carbon.ui.filters.cache.ContentTypeBasedCachePreventionFilter
         </filter-class>
         <init-param>
            <param-name>patterns</param-name>
-           <param-value>"text/html" ,"application/json" ,"plain/text"</param-value>
+           <param-value>"text/html.*" ,"application/json" ,"plain/text"</param-value>
         </init-param>
         <init-param>
            <param-name>filterAction</param-name>
@@ -153,7 +226,9 @@
 
     <filter-mapping>
         <filter-name>ContentTypeBasedCachePreventionFilter</filter-name>
-        <url-pattern>*</url-pattern>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>FORWARD</dispatcher>
+        <dispatcher>REQUEST</dispatcher>
     </filter-mapping>
 
     <listener>
@@ -321,6 +396,16 @@
     </servlet>
 
     <servlet>
+        <servlet-name>backup_code.do</servlet-name>
+        <jsp-file>/backup-code.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
+        <servlet-name>backup_code_error.do</servlet-name>
+        <jsp-file>/backup-code-error.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
         <servlet-name>email_capture.do</servlet-name>
         <jsp-file>/emailAddressCapture.jsp</jsp-file>
     </servlet>
@@ -335,6 +420,52 @@
         <jsp-file>/emailOtpError.jsp</jsp-file>
     </servlet>
 
+    <servlet>
+        <servlet-name>mobile.do</servlet-name>
+        <jsp-file>/mobile.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
+        <servlet-name>sms_otp.do</servlet-name>
+        <jsp-file>/smsOtp.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
+        <servlet-name>sms_otp_error.do</servlet-name>
+        <jsp-file>/smsOtpError.jsp</jsp-file>
+    </servlet>
+
+    {% for custom_servlet in servlet %}
+    <servlet>
+        <servlet-name>{{custom_servlet.name}}</servlet-name>
+        <jsp-file>{{custom_servlet.jsp}}</jsp-file>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>{{custom_servlet.name}}</servlet-name>
+        <url-pattern>{{custom_servlet.url}}</url-pattern>
+    </servlet-mapping>
+    {% endfor %}
+
+    <servlet>
+        <servlet-name>magic_link_notification.do</servlet-name>
+        <jsp-file>/magic_link_notification.jsp</jsp-file>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>magic_link_notification.do</servlet-name>
+        <url-pattern>/magic_link_notification.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>org_name.do</servlet-name>
+        <jsp-file>/org_name.jsp</jsp-file>
+    </servlet>
+
+    <servlet>
+        <servlet-name>select_org.do</servlet-name>
+        <jsp-file>/select_org.jsp</jsp-file>
+    </servlet>
+    
     <servlet-mapping>
         <servlet-name>totp_enroll.do</servlet-name>
         <url-pattern>/totp_enroll.do</url-pattern>
@@ -351,6 +482,16 @@
     </servlet-mapping>
 
     <servlet-mapping>
+        <servlet-name>backup_code.do</servlet-name>
+        <url-pattern>/backup_code.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>backup_code_error.do</servlet-name>
+        <url-pattern>/backup_code_error.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
         <servlet-name>email_capture.do</servlet-name>
         <url-pattern>/email_capture.do</url-pattern>
     </servlet-mapping>
@@ -363,6 +504,31 @@
     <servlet-mapping>
         <servlet-name>email_otp_error.do</servlet-name>
         <url-pattern>/email_otp_error.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>mobile.do</servlet-name>
+        <url-pattern>/mobile.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>sms_otp.do</servlet-name>
+        <url-pattern>/sms_otp.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>sms_otp_error.do</servlet-name>
+        <url-pattern>/sms_otp_error.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org_name.do</servlet-name>
+        <url-pattern>/org_name.do</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>select_org.do</servlet-name>
+        <url-pattern>/select_org.do</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
@@ -513,50 +679,50 @@
     <!-- custom error pages -->
     <error-page>
         <error-code>400</error-code>
-        <location>/errors/error_400.html</location>
+        <location>/errors/error_400.jsp</location>
     </error-page>
     <error-page>
         <error-code>401</error-code>
-        <location>/errors/error_401.html</location>
+        <location>/errors/error_401.jsp</location>
     </error-page>
     <error-page>
         <error-code>403</error-code>
-        <location>/errors/error_403.html</location>
+        <location>/errors/error_403.jsp</location>
     </error-page>
     <error-page>
         <error-code>404</error-code>
-        <location>/errors/error_404.html</location>
+        <location>/errors/error_404.jsp</location>
     </error-page>
     <error-page>
         <error-code>405</error-code>
-        <location>/errors/error_405.html</location>
+        <location>/errors/error_405.jsp</location>
     </error-page>
     <error-page>
         <error-code>408</error-code>
-        <location>/errors/error_408.html</location>
+        <location>/errors/error_408.jsp</location>
     </error-page>
     <error-page>
         <error-code>410</error-code>
-        <location>/errors/error_410.html</location>
+        <location>/errors/error_410.jsp</location>
     </error-page>
     <error-page>
         <error-code>500</error-code>
-        <location>/errors/error_500.html</location>
+        <location>/errors/error_500.jsp</location>
     </error-page>
     <error-page>
         <error-code>502</error-code>
-        <location>/errors/error_502.html</location>
+        <location>/errors/error_502.jsp</location>
     </error-page>
     <error-page>
         <error-code>503</error-code>
-        <location>/errors/error_503.html</location>
+        <location>/errors/error_503.jsp</location>
     </error-page>
     <error-page>
         <error-code>504</error-code>
-        <location>/errors/error_504.html</location>
+        <location>/errors/error_504.jsp</location>
     </error-page>
     <error-page>
-        <location>/errors/error.html</location>
+        <location>/errors/error.jsp</location>
     </error-page>
 
     <session-config>

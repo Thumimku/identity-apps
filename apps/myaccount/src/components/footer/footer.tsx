@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,9 +17,15 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
+import { CookieStorageUtils } from "@wso2is/core/utils";
 import { I18n, LanguageChangeException, SupportedLanguagesMeta } from "@wso2is/i18n";
-import { Footer, FooterLinkInterface, ThemeContext } from "@wso2is/react-components";
-import React, { ReactElement, useContext } from "react";
+import {
+    FooterLinkInterface,
+    Footer as ReusableFooter,
+    FooterPropsInterface as ReusableFooterPropsInterface
+} from "@wso2is/react-components";
+import * as moment from "moment";
+import React, { FunctionComponent, ReactElement, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { AppConstants } from "../../constants";
@@ -28,43 +34,94 @@ import { AppState } from "../../store";
 
 /**
  * Footer component prop types.
- * Also see {@link AppFooter.defaultProps}
+ * Also see {@link Footer.defaultProps}
  */
-interface AppFooterProps extends TestableComponentInterface {
+interface FooterProps extends ReusableFooterPropsInterface, TestableComponentInterface {
+    /**
+     * Is layout fluid.
+     */
     fluid?: boolean;
 }
 
 /**
  * Footer component.
  *
- * @param {AppFooterProps} props - Props supplied to the footer component.
- * @return {ReactElement}
+ * @param props - Props supplied to the footer component.
+ * @returns App Footer.
  */
-export const AppFooter: React.FunctionComponent<AppFooterProps> = (props: AppFooterProps): ReactElement => {
+export const Footer: FunctionComponent<FooterProps> = (props: FooterProps): ReactElement => {
 
-    const { ["data-testid"]: testId } = props;
+    const {
+        ["data-testid"]: testId,
+        ...rest
+    } = props;
+
     const { t } = useTranslation();
 
-    const { state } = useContext(ThemeContext);
     const supportedI18nLanguages: SupportedLanguagesMeta = useSelector(
         (state: AppState) => state.global.supportedI18nLanguages);
     const config: ConfigReducerStateInterface = useSelector((state: AppState) => state.config);
 
+    useEffect(() => {
+        const localeCookie: string = CookieStorageUtils.getItem("ui_lang");
+
+        if (localeCookie) {
+            handleLanguageSwitch(localeCookie.replace("_", "-"));
+        }
+    }, []);
+
     /**
      * Handles language switch action.
-     * @param {string} language - Selected language.
+     * @param language - Selected language.
      */
     const handleLanguageSwitch = (language: string): void => {
+        moment.locale(language ?? "en");
         I18n.instance.changeLanguage(language)
-            .catch((error) => {
+            .catch((error: string | Record<string, unknown>) => {
                 throw new LanguageChangeException(language, error);
             });
+
+        const cookieSupportedLanguage: string = language.replace("-", "_");
+        const domain: string = ";domain=" + extractDomainFromHost();
+        const cookieExpiryTime: number = 30;
+        const expires: string = "; expires=" + new Date().setTime(cookieExpiryTime * 24 * 60 * 60 * 1000);
+        const cookieString: string = "ui_lang=" + (cookieSupportedLanguage || "")  + expires + domain + "; path=/";
+
+        CookieStorageUtils.setItem(cookieString);
+    };
+
+    /**
+     * Extracts the domain from the hostname.
+     * If parsing fails, undefined will be returned.
+     *
+     * @returns current domain
+     */
+    const extractDomainFromHost = (): string => {
+
+        let domain: string = undefined;
+
+        /**
+         * Extract the domain from the hostname.
+         * Ex: If console.wso2-is.com is parsed, `wso2-is.com` will be set as the domain.
+         */
+        try {
+            const hostnameTokens: string[] = window.location.hostname.split(".");
+
+            if (hostnameTokens.length > 1) {
+                domain = hostnameTokens.slice((hostnameTokens.length - 2), hostnameTokens.length).join(".");
+            }
+        } catch (e) {
+            // Couldn't parse the hostname. Log the error in debug mode.
+            // Tracked here https://github.com/wso2/product-is/issues/11650.
+        }
+
+        return domain;
     };
 
     /**
      * Generates the links to be displayed on the footer.
      *
-     * @return {FooterLinkInterface[]}
+     * @returns Footer links.
      */
     const generateFooterLinks = (): FooterLinkInterface[] => {
 
@@ -81,30 +138,29 @@ export const AppFooter: React.FunctionComponent<AppFooterProps> = (props: AppFoo
     };
 
     return (
-        <Footer
+        <ReusableFooter
             data-testid={ testId }
             showLanguageSwitcher={ config.ui.i18nConfigs?.showLanguageSwitcher ?? true }
             currentLanguage={ I18n.instance?.language }
             supportedLanguages={ supportedI18nLanguages }
             onLanguageChange={ handleLanguageSwitch }
-            copyright={ state.copyrightText && state.copyrightText !== "" ?
-                state.copyrightText
-                :
+            copyright={
                 config.ui.copyrightText
                     ? config.ui.copyrightText
                     : null
             }
             fixed="bottom"
             links={ generateFooterLinks() }
+            { ...rest }
         />
     );
 };
 
 /**
- * Default proptypes for the {@link AppFooter} component.
- * See type definitions in {@link AppFooterProps}
+ * Default prop-types for the {@link Footer} component.
+ * See type definitions in {@link FooterProps}
  */
-AppFooter.defaultProps = {
+Footer.defaultProps = {
     "data-testid": "app-footer",
     fluid: true
 };

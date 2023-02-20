@@ -1,4 +1,21 @@
 {
+    "consoleApp": {
+        {% if myaccount.applications.console_app.configs is defined %}
+        {% for key, value in myaccount.applications.console_app.configs.items() %}
+            {% if value is string %}
+                "{{ key }}": "{{ value }}"{{ "," if not loop.last }}
+            {% elif value is iterable %}
+                "{{ key }}": [
+                    {% for item in value %}
+                        "{{ item }}"{{ "," if not loop.last }}
+                    {% endfor %}
+                ]{{ "," if not loop.last }}
+            {% else %}
+                "{{ key }}": {{ value }}{{ "," if not loop.last }}
+            {% endif %}
+        {% endfor %}
+        {% endif %}
+    },
     "appBaseName": "{{ myaccount.app_base_name }}",
     {% if myaccount.app_base_name_for_history_api is defined %}
         "appBaseNameForHistoryAPI": "{{ myaccount.app_base_name_for_history_api }}",
@@ -6,7 +23,6 @@
     "clientID": "{{ myaccount.client_id }}",
     "loginCallbackPath": "{{ myaccount.login_callback_path }}",
     "logoutCallbackPath": "{{ myaccount.logout_callback_path }}",
-    "productVersion": "{{ product.version }}",
     {% if myaccount.server_origin is defined %}
     "serverOrigin": "{{ myaccount.server_origin }}",
     {% endif %}
@@ -22,6 +38,48 @@
         {% for key, value in myaccount.extensions.items() %}
         {% if value is number %}
             "{{ key }}": {{ value }}{{ "," if not loop.last }}
+        {% elif value is mapping %}
+            "{{ key }}": {
+                {% for level_1_key, level_1_value in value.items() %}
+                    {% if level_1_value is mapping %}
+                        "{{ level_1_key }}": {
+                            {% for level_2_key, level_2_value in level_1_value.items() %}
+                                {% if level_2_value is iterable %}
+                                    "{{ level_2_key }}": [
+                                        {% for level_2_value_item in level_2_value %}
+                                            "{{ level_2_value_item }}"{{ "," if not loop.last }}
+                                        {% endfor %}
+                                    ]{{ "," if not loop.last }}
+                                {% else %}
+                                    "{{ level_2_key }}": "{{ level_2_value }}"{{ "," if not loop.last }}
+                                {% endif %}
+                            {% endfor %}
+                        }{{ "," if not loop.last }}
+                    {% else %}
+                        "{{ level_1_key }}": "{{ level_1_value }}"{{ "," if not loop.last }}
+                    {% endif %}
+                {% endfor %}
+            }{{ "," if not loop.last }}
+        {% elif value is iterable %}
+            "{{ key }}": [
+                {% for item in value %}
+                    {% if item is mapping %}
+                        {
+                            {% for array_obj_key, array_obj_value in item.items() %}
+                                {% if array_obj_value is number %}
+                                    "{{ array_obj_key }}": {{ array_obj_value }}{{ "," if not loop.last }}
+                                {% elif array_obj_value is boolean %}
+                                    "{{ array_obj_key }}": {{ array_obj_value }}{{ "," if not loop.last }}
+                                {% else %}
+                                    "{{ array_obj_key }}": "{{ array_obj_value }}"{{ "," if not loop.last }}
+                                {% endif %}
+                            {% endfor %}
+                        }{{ "," if not loop.last }}
+                    {% else %}
+                        "{{ level_1_key }}": "{{ level_1_value }}"{{ "," if not loop.last }}
+                    {% endif %}
+                {% endfor %}
+            ]{{ "," if not loop.last }}
         {% else %}
             "{{ key }}": "{{ value }}"{{ "," if not loop.last }}
         {% endif %}
@@ -83,6 +141,18 @@
         {% if myaccount.disable_mfa_for_super_tenant_user is defined %}
         "disableMFAforSuperTenantUser": "{{ myaccount.disable_mfa_for_super_tenant_user }}",
         {% endif %}
+        {% if myaccount.enable_mfa_user_wise is defined %}
+        "enableMFAUserWise": {{ myaccount.enable_mfa_user_wise }},
+        {% endif %}
+        {% if myaccount.disable_mfa_for_federated_users is defined %}
+        "disableMFAForFederatedUsers": {{ myaccount.disable_mfa_for_federated_users }},
+        {% endif %}
+        {% if myaccount.force_backup_code is defined %}
+        "forceBackupCode": {{ myaccount.force_backup_code }},
+        {% endif %}
+        {% if myaccount.ui.show_app_switch_button is defined %}
+        "showAppSwitchButton": "{{ myaccount.ui.show_app_switch_button }}",
+        {% endif %}
         "authenticatorApp": {
                 {% if myaccount.authenticator_app_configs is defined %}
                 {% for key, value in myaccount.authenticator_app_configs.items() %}
@@ -91,6 +161,36 @@
                 {% endif %}
         },
         "features": {
+            {% if myaccount.extensions.features is defined %}
+            {% for name, feature in myaccount.extensions.features.items() %}
+            "{{ name }}": {
+                "disabledFeatures": [
+                    {% if feature.disabled_features is defined %}
+                    {% for disabled_feature in feature.disabled_features %}
+                    "{{ disabled_feature }}"{{ "," if not loop.last }}
+                    {% endfor %}
+                    {% endif %}
+                ],
+                "enabled": {{ feature.enabled }},
+                "scopes": {
+                    {% if feature.scopes is defined %}
+                    {% for operation, scopes in feature.scopes.items() %}
+                    "{{ operation }}": [
+                        {% for scope in scopes %}
+                            "{{ scope }}"{{ "," if not loop.last }}
+                        {% endfor %}
+                    ]{{ "," if not loop.last }}
+                    {% endfor %}
+                    {% else %}
+                        "create": [],
+                        "read": [],
+                        "update": [],
+                        "delete": []
+                    {% endif %}
+                }
+            },
+            {% endfor %}
+            {% endif %}
             "applications": {
                 "disabledFeatures": [
                     {% if myaccount.applications.disabled_features is defined %}
@@ -199,7 +299,13 @@
                 "disabledFeatures": [
                     {% if myaccount.security.disabled_features is defined %}
                     {% for feature in myaccount.security.disabled_features %}
+                    {% if myaccount.security.enabled_features is defined %}
+                    {% if not (feature in myaccount.security.enabled_features) %}
                     "{{ feature }}"{{ "," if not loop.last }}
+                    {% endif %}
+                    {% else %}
+                    "{{ feature }}"{{ "," if not loop.last }}
+                    {% endif %}
                     {% endfor %}
                     {% endif %}
                 ],
@@ -222,6 +328,12 @@
                 }
             }
         },
+        {% if myaccount.ui.is_cookie_consent_banner_enabled is defined %}
+        "isCookieConsentBannerEnabled": {{ myaccount.ui.is_cookie_consent_banner_enabled }},
+        {% endif %}
+        {% if myaccount.ui.is_header_avatar_label_allowed is defined %}
+        "isHeaderAvatarLabelAllowed": {{ myaccount.ui.is_header_avatar_label_allowed }},
+        {% endif %}
         "i18nConfigs": {
             {% if myaccount.i18n_configs.items() is defined %}
             {% for key, value in myaccount.i18n_configs.items() %}
@@ -234,8 +346,8 @@
             {% endif %}
         },
         "privacyPolicyConfigs": {
-            {% if console.privacy_policy_configs.items() is defined %}
-            {% for key, value in console.privacy_policy_configs.items() %}
+            {% if myaccount.privacy_policy_configs.items() is defined %}
+            {% for key, value in myaccount.privacy_policy_configs.items() %}
             {% if value is string %}
                 "{{ key }}": "{{ value }}"{{ "," if not loop.last }}
             {% else %}

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,15 @@
  * under the License.
  */
 
-import { DangerZone, ModalInterface, Notification, NotificationItem, Page, Placeholder } from "../common";
+import {
+    AppSwitchItemInterface,
+    DangerZone,
+    ModalInterface,
+    Notification,
+    NotificationItem,
+    Page,
+    Placeholder
+} from "../common";
 
 /**
  * Model for the user portal portal namespace
@@ -79,6 +87,7 @@ export interface MyAccountNS {
                 descriptions: {
                     add: string;
                     update: string;
+                    view: string;
                 };
                 forms: {
                     emailResetForm: {
@@ -200,6 +209,28 @@ export interface MyAccountNS {
                             description: string;
                             message: string;
                         };
+                        invalidNewPassword: {
+                            description: string;
+                            message: string;
+                        };
+                        validationConfig: {
+                            error: {
+                                description: string;
+                                message: string;
+                            },
+                            genericError: {
+                                description: string;
+                                message: string;
+                            }
+                        },
+                        passwordCaseRequirement: string;
+                        passwordCharRequirement: string;
+                        passwordLowerCaseRequirement: string;
+                        passwordUpperCaseRequirement: string;
+                        passwordLengthRequirement: string,
+                        passwordNumRequirement: string,
+                        passwordUniqueChrRequirement: string;
+                        passwordRepeatedChrRequirement: string;
                         submitError: {
                             description: string;
                             message: string;
@@ -246,6 +277,14 @@ export interface MyAccountNS {
         footer: {
             copyright: string;
         };
+        header: {
+            appSwitch: {
+                console: AppSwitchItemInterface;
+                myAccount: AppSwitchItemInterface;
+                tooltip: string;
+            };
+            organizationLabel: string;
+        },
         linkedAccounts: {
             accountTypes: {
                 local: {
@@ -281,6 +320,10 @@ export interface MyAccountNS {
                 switchAccount: Notification;
             };
         };
+        cookieConsent: {
+            content: string;
+            confirmButton: string;
+        };
         federatedAssociations: {
             deleteConfirmation: string;
             notifications: {
@@ -296,8 +339,15 @@ export interface MyAccountNS {
                 modals: {
                     deviceRegistrationErrorModal: {
                         description: string;
+                        tryWithOlderDevice: string;
                         heading: string;
                     };
+                    deleteConfirmation: {
+                        description: string;
+                        heading: string;
+                        content: string;
+                        assertionHint: string;
+                    }
                 };
                 notifications: {
                     removeDevice: Notification;
@@ -323,16 +373,27 @@ export interface MyAccountNS {
             };
             authenticatorApp: {
                 description: string;
+                configuredDescription:string;
                 heading: string;
                 hint: string;
+                enableHint: string;
+                addHint: string;
+                deleteHint: string;
+                regenerate: string;
                 modals: {
                     heading: string;
                     scan: {
                         heading: string;
                         generate: string;
+                        additionNote:string;
                         messageHeading: string;
                         messageBody: string;
                         authenticatorApps: string;
+                        regenerateWarning: {
+                            extended: string;
+                            generic: string;
+                        };
+                        regenerateConfirmLabel: string;
                     };
                     verify: {
                         heading: string;
@@ -342,6 +403,10 @@ export interface MyAccountNS {
                         requiredError: string;
                         reScanQuestion: string;
                         reScan: string;
+                    };
+                    delete: {
+                        heading: string;
+                        message: string;
                     };
                     done: string;
                     toolTip: string;
@@ -354,6 +419,108 @@ export interface MyAccountNS {
                     refreshError: {
                         genericError: NotificationItem;
                         error: NotificationItem;
+                    };
+                    deleteError: {
+                        genericError: NotificationItem;
+                        error: NotificationItem;
+                    };
+                    updateAuthenticatorError: {
+                        error: NotificationItem;
+                        genericError: NotificationItem;
+                    };
+                    deleteSuccess: {
+                        genericMessage: string;
+                        message: string;
+                    };
+                };
+            };
+            backupCode: {
+                description: string;
+                download: {
+                    heading: string;
+                    info1: string;
+                    info2: string;
+                    subHeading: string;
+                };
+                heading: string;
+                modals: {
+                    actions: {
+                        download: string;
+                        regenerate: string;
+                        copy: string;
+                        copied: string;
+                    };
+                    description: string;
+                    generate: {
+                        description: string;
+                        heading: string;
+                    };
+                    heading: string;
+                    info: string;
+                    regenerate: {
+                        heading: string;
+                        description: string;
+                    };
+                    subHeading: string;
+                    warn: string;
+                },
+                mutedHeader: string;
+                notifications: {
+                    deleteError: {
+                        error: NotificationItem;
+                        genericError: NotificationItem;
+                    };
+                    downloadError: {
+                        error: NotificationItem;
+                        genericError: NotificationItem;
+                    };
+                    downloadSuccess: {
+                        message: NotificationItem;
+                        genericMessage: NotificationItem;
+                    };
+                    refreshError: {
+                        error: NotificationItem;
+                        genericError: NotificationItem;
+                    };
+                    retrieveAuthenticatorError: {
+                        error: NotificationItem;
+                        genericError: NotificationItem;
+                    };
+                    retrieveError: {
+                        error: NotificationItem;
+                        genericError: NotificationItem;
+                    };
+                    updateAuthenticatorError: {
+                        error: NotificationItem;
+                        genericError: NotificationItem;
+                    };
+
+                },
+                remaining: string;
+            }
+        };
+        loginVerifyData: {
+            heading: string;
+            description: string;
+            typingdna: {
+                heading: string;
+                description: string;
+            };
+            modals: {
+                clearTypingPatternsModal: {
+                    heading: string;
+                    message: string;
+                };
+            };
+            notifications: {
+                clearTypingPatterns: {
+                    success: {
+                        description: string;
+                        message: string;
+                    };
+                    error: {
+                        description: string;
+                        message: string;
                     };
                 };
             };
@@ -373,6 +540,14 @@ export interface MyAccountNS {
                     };
                     description: string;
                     header: string;
+                };
+                profileStatus: {
+                    completionPercentage: string;
+                    userSourceText: string;
+                    header: string;
+                    description: string;
+                    readOnlyDescription: string;
+                    profileText:string
                 };
                 accountStatus: {
                     complete: string;
@@ -550,20 +725,87 @@ export interface MyAccountNS {
                 };
                 emails: string;
                 profileUrl: string;
-                addressesWork: string;
-                addressesHome: string;
-                emailsHome: string;
-                emailsOther: string;
-                emailsWork: string;
                 nameFamilyName: string;
                 nameGivenName: string;
                 profileImage: string;
                 phoneNumbers: string;
-                phoneNumbersHome: string;
-                phoneNumbersMobile: string;
-                phoneNumbersWork: string;
-                phoneNumbersOther: string;
                 userName: string;
+                // Below is to allow all set of SCIM attributes.
+                "Account Confirmed Time": string,
+                "Account Disabled": string,
+                "Account Locked": string,
+                "Account State": string,
+                "Active": string,
+                "Address - Street": string,
+                "Ask Password": string,
+                "Backup Code Enabled": string,
+                "Backup Codes": string,
+                "Birth Date": string,
+                "Country": string,
+                "Created Time": string,
+                "Disable EmailOTP": string,
+                "Disable SMSOTP": string,
+                "Display Name": string,
+                "Email": string,
+                "Email Verified": string,
+                "Enabled Authenticators": string,
+                "Existing Lite User": string,
+                "External ID": string,
+                "Failed Attempts Before Success": string,
+                "Failed Backup Code Attempts": string,
+                "Failed Email OTP Attempts": string,
+                "Failed Lockout Count": string,
+                "Failed Login Attempts": string,
+                "Failed Password Recovery Attempts": string,
+                "Failed SMS OTP Attempts": string,
+                "Failed TOTP Attempts": string,
+                "First Name": string,
+                "Force Password Reset": string,
+                "Full Name": string,
+                "Gender": string,
+                "Groups": string,
+                "Identity Provider Type": string,
+                "Last Logon": string,
+                "Last Modified Time": string,
+                "Last Name": string,
+                "Last Password Update": string,
+                "Lite User": string,
+                "Lite User ID": string,
+                "Local": string,
+                "Local Credential Exists":string,
+                "Locality": string,
+                "Location": string,
+                "Locked Reason": string,
+                "Manager - Name": string,
+                "Middle Name": string,
+                "Mobile": string,
+                "Nick Name": string,
+                "Phone Verified": string,
+                "Photo - Thumbnail": string,
+                "Photo URL": string,
+                "Postal Code": string,
+                "Preferred Channel": string,
+                "Read Only User": string,
+                "Region": string,
+                "Resource Type": string,
+                "Roles": string,
+                "Secret Key": string,
+                "TOTP Enabled": string,
+                "Time Zone": string,
+                "URL": string,
+                "Unlock Time": string,
+                "User Account Type": string,
+                "User ID": string,
+                "User Metadata - Version": string,
+                "User Source": string,
+                "User Source ID": string,
+                "Username": string,
+                "Verification Pending Email": string,
+                "Verification Pending Mobile Number": string,
+                "Verify Email": string,
+                "Verify Mobile": string,
+                "Verify Secret Key": string,
+                "Website URL": string,
             };
             forms: {
                 generic: {
@@ -634,6 +876,23 @@ export interface MyAccountNS {
                         };
                     };
                 };
+                countryChangeForm: {
+                    inputs: {
+                        country: {
+                            placeholder: string;
+                        };
+                    };
+                },
+                dateChangeForm: {
+                    inputs: {
+                        date: {
+                            validations: {
+                                futureDateError : string;
+                                invalidFormat: string;
+                            };
+                        };
+                    };
+                };
             };
             messages: {
                 emailConfirmation: {
@@ -672,6 +931,12 @@ export interface MyAccountNS {
             };
             lastAccessed: string;
             modals: {
+                terminateActiveUserSessionModal: {
+                    heading: string;
+                    message: string;
+                    primaryAction: string;
+                    secondaryAction: string;
+                }
                 terminateAllUserSessionsModal: {
                     heading: string;
                     message: string;
@@ -716,7 +981,7 @@ export interface MyAccountNS {
         sessionTimeoutModal: {
             description: string;
             heading: string;
-            content?: object;
+            content?: Record<string, unknown>;
             primaryButton: string;
             secondaryButton: string;
             loginAgainButton: string;
@@ -731,6 +996,7 @@ export interface MyAccountNS {
         personalInfoWithoutLinkedAccounts: Page;
         personalInfoWithoutExportProfile: Page;
         privacy: Page;
+        readOnlyProfileBanner: string;
         security: Page;
     };
     placeholders: {
@@ -749,6 +1015,13 @@ export interface MyAccountNS {
         changePassword: {
             actionTitles: {
                 change: string;
+            };
+            description: string;
+            heading: string;
+        };
+        createPassword: {
+            actionTitles: {
+                create: string;
             };
             description: string;
             heading: string;

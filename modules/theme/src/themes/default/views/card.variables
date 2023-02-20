@@ -92,10 +92,17 @@ Recent Application Card
 @selectionCardWithRadioSelectedSubheaderColor: #4d4d4d;
 
 /*-------------------------------
+         Resource Card
+--------------------------------*/
+
+@resourceCardDefaultWidth: 220px;
+@resourceCardDisabledOpacity: 0.6;
+
+/*-------------------------------
           Template Card
 --------------------------------*/
 
-@templateCardDefaultWidth: 220px;
+@templateCardDefaultWidth: 250px;
 @templateCardRightSpacing: 30px;
 @templateCardHoverBoxShadow: @defaultCardHoverBoxShadow;
 @templateCardTransition: @defaultCardTransition;
@@ -127,6 +134,7 @@ Recent Application Card
 @labeledCardHoverBoxShadow: @defaultCardHoverBoxShadow;
 @labeledCardTransition: @defaultCardTransition;
 @labeledCardBorder: @defaultCardBorder;
+@labeledCardSelectedBorder: @primaryColor;
 @labeledCardMarginBottom: 5px;
 @labeledCardLabelFontColor: 1em;
 @labeledCardWrapperMarginBottom: 8px;
@@ -139,6 +147,8 @@ Recent Application Card
 @infoCardTransition: @defaultCardTransition;
 @infoCardBorder: @defaultCardBorder;
 @infoCardHoverBoxShadow: @defaultCardHoverBoxShadow;
+@infoCardSubHeaderFontSize: 0.8em;
+@infoCardSelectedBorder: @primaryColor;
 
 /*-------------------------------
          Stat Count Card

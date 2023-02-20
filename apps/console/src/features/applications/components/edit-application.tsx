@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,13 +19,21 @@
 import { isFeatureEnabled } from "@wso2is/core/helpers";
 import { AlertLevels, SBACInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
-import { ConfirmationModal, ContentLoader, CopyInputField, ResourceTab } from "@wso2is/react-components";
-import Axios from "axios";
+import {
+    ConfirmationModal,
+    ContentLoader,
+    CopyInputField,
+    ResourceTab,
+    ResourceTabPaneInterface
+} from "@wso2is/react-components";
+import Axios, { AxiosError, AxiosResponse } from "axios";
+import inRange from "lodash-es/inRange";
 import isEmpty from "lodash-es/isEmpty";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import React, { FunctionComponent, ReactElement, SyntheticEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Form, Grid } from "semantic-ui-react";
+import { Dispatch } from "redux";
+import { Form, Grid, Menu, TabProps } from "semantic-ui-react";
 import { InboundProtocolsMeta } from "./meta";
 import {
     AccessConfiguration,
@@ -35,16 +43,32 @@ import {
     ProvisioningSettings,
     SignOnMethods
 } from "./settings";
-import { ComponentExtensionPlaceholder } from "../../../extensions";
-import { AppState, CORSOriginsListInterface, FeatureConfigInterface, getCORSOrigins } from "../../core";
+import { Info } from "./settings/info";
+import { applicationConfig } from "../../../extensions";
+import {
+    AppState,
+    CORSOriginsListInterface,
+    EventPublisher,
+    FeatureConfigInterface,
+    getCORSOrigins,
+    history
+} from "../../core";
+import { OrganizationUtils } from "../../organizations/utils";
 import { getInboundProtocolConfig } from "../api";
 import { ApplicationManagementConstants } from "../constants";
+import CustomApplicationTemplate
+    from "../data/application-templates/templates/custom-application/custom-application.json";
 import {
     ApplicationInterface,
+    ApplicationTabTypes,
     ApplicationTemplateInterface,
     AuthProtocolMetaListItemInterface,
+    InboundProtocolListItemInterface,
+    OIDCApplicationConfigurationInterface,
     OIDCDataInterface,
-    SupportedAuthProtocolTypes
+    SAMLApplicationConfigurationInterface,
+    SupportedAuthProtocolTypes,
+    URLFragmentTypes
 } from "../models";
 import { ApplicationManagementUtils } from "../utils";
 
@@ -57,21 +81,21 @@ interface EditApplicationPropsInterface extends SBACInterface<FeatureConfigInter
      */
     application: ApplicationInterface;
     /**
-     * Default active tab index.
-     */
-    defaultActiveIndex?: number;
-    /**
      * Used to the configured inbound protocols list from the parent component.
      */
     getConfiguredInboundProtocolsList?: (list: string[]) => void;
     /**
      * Used to the configured inbound protocol configs from the parent component.
      */
-    getConfiguredInboundProtocolConfigs?: (configs: object) => void;
+    getConfiguredInboundProtocolConfigs?: (configs: Record<string, unknown>) => void;
     /**
      * Is the data still loading.
      */
-    isLoading?: boolean;
+    isLoading: boolean;
+    /**
+     * Set is loading.
+     */
+    setIsLoading?: any;
     /**
      * Callback to be triggered after deleting the application.
      */
@@ -85,10 +109,6 @@ interface EditApplicationPropsInterface extends SBACInterface<FeatureConfigInter
      */
     template?: ApplicationTemplateInterface;
     /**
-     * Callback to see if tab extensions are available
-     */
-    isTabExtensionsAvailable: (isAvailable: boolean) => void;
-    /**
      * Make the form read only.
      */
     readOnly?: boolean;
@@ -101,9 +121,9 @@ interface EditApplicationPropsInterface extends SBACInterface<FeatureConfigInter
 /**
  * Application edit component.
  *
- * @param {EditApplicationPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {ReactElement}
+ * @returns EditApplication component
  */
 export const EditApplication: FunctionComponent<EditApplicationPropsInterface> = (
     props: EditApplicationPropsInterface
@@ -111,15 +131,14 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
 
     const {
         application,
-        defaultActiveIndex,
         featureConfig,
         isLoading,
+        setIsLoading,
         getConfiguredInboundProtocolsList,
         getConfiguredInboundProtocolConfigs,
         onDelete,
         onUpdate,
         template,
-        isTabExtensionsAvailable,
         readOnly,
         urlSearchParams,
         [ "data-testid" ]: testId
@@ -127,98 +146,165 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
 
     const { t } = useTranslation();
 
-    const dispatch = useDispatch();
+    const dispatch: Dispatch = useDispatch();
 
     const availableInboundProtocols: AuthProtocolMetaListItemInterface[] =
         useSelector((state: AppState) => state.application.meta.inboundProtocols);
+    const oidcConfigurations: OIDCApplicationConfigurationInterface = useSelector(
+        (state: AppState) => state.application.oidcConfigurations);
+    const samlConfigurations: SAMLApplicationConfigurationInterface = useSelector(
+        (state: AppState) => state.application.samlConfigurations);
     const isClientSecretHashEnabled: boolean = useSelector((state: AppState) =>
         state.config.ui.isClientSecretHashEnabled);
+    const tenantDomain: string = useSelector((state: AppState) => state.auth.tenantDomain);
 
     const [ isInboundProtocolConfigRequestLoading, setIsInboundProtocolConfigRequestLoading ] = useState<boolean>(true);
-    const [ inboundProtocolList, setInboundProtocolList ] = useState<string[]>([]);
+    const [ inboundProtocolList, setInboundProtocolList ] = useState<string[]>(undefined);
     const [ inboundProtocolConfig, setInboundProtocolConfig ] = useState<any>(undefined);
     const [ isInboundProtocolsRequestLoading, setInboundProtocolsRequestLoading ] = useState<boolean>(false);
-    const [ tabPaneExtensions, setTabPaneExtensions ] = useState<any>(undefined);
+    const [ tabPaneExtensions, setTabPaneExtensions ] = useState<ResourceTabPaneInterface[]>(undefined);
     const [ allowedOrigins, setAllowedOrigins ] = useState([]);
     const [ isAllowedOriginsUpdated, setIsAllowedOriginsUpdated ] = useState<boolean>(false);
+    const [ isApplicationUpdated, setIsApplicationUpdated ] = useState<boolean>(false);
     const [ showClientSecretHashDisclaimerModal, setShowClientSecretHashDisclaimerModal ] = useState<boolean>(false);
     const [
         clientSecretHashDisclaimerModalInputs,
         setClientSecretHashDisclaimerModalInputs
     ] = useState<{ clientSecret: string; clientId: string }>({ clientId: "", clientSecret: "" });
+    const [ isOIDCConfigsLoading, setOIDCConfigsLoading ] = useState<boolean>(false);
+    const [ isSAMLConfigsLoading, setSAMLConfigsLoading ] = useState<boolean>(false);
+    const [ activeTabIndex, setActiveTabIndex ] = useState<number>(undefined);
+    const [ defaultActiveIndex, setDefaultActiveIndex ] = useState<number>(undefined);
+    const [ totalTabs, setTotalTabs ] = useState<number>(undefined);
+
+    const eventPublisher: EventPublisher = EventPublisher.getInstance();
+
+    const isFragmentApp: boolean = application.advancedConfigurations?.fragment || false;
+
+    /**
+     * Called when an application updates.
+     *
+     * @param id - Application id.
+     */
+    const handleApplicationUpdate = (id: string): void => {
+        setIsApplicationUpdated(true);
+        onUpdate(id);
+    };
+
+    /**
+     * Set the defaultTabIndex when the application template updates.
+     */
+    useEffect(() => {
+
+        if(!template) {
+            return;
+        }
+
+        let defaultTabIndex: number = 0;
+
+        if(applicationConfig.editApplication.extendTabs) {
+            defaultTabIndex=1;
+        }
+
+        setDefaultActiveIndex(defaultTabIndex);
+
+        if(isEmpty(window.location.hash)){
+
+            if(urlSearchParams.get(ApplicationManagementConstants.APP_STATE_STRONG_AUTH_PARAM_KEY) !==
+                ApplicationManagementConstants.APP_STATE_STRONG_AUTH_PARAM_VALUE) {
+                handleDefaultTabIndexChange(defaultTabIndex);
+
+                return;
+            }
+
+            // When application selection is done through the strong authentication flow.
+            const tabIndex: number = applicationConfig.editApplication.getStrongAuthenticationFlowTabIndex(
+                application.clientId,
+                tenantDomain,
+                template.id,
+                CustomApplicationTemplate.id
+            );
+
+            handleActiveTabIndexChange(tabIndex);
+        }
+    },[ template ]);
+
+    /**
+     * Called when the URL fragment updates.
+     */
+    useEffect( () => {
+
+        if(totalTabs === undefined || window.location.hash.includes(URLFragmentTypes.VIEW) ||
+            isEmpty(window.location.hash)) {
+
+            return;
+        }
+
+        const urlFragment: string[] = window.location.hash.split("#"+URLFragmentTypes.TAB_INDEX);
+
+        if(urlFragment.length === 2 && isEmpty(urlFragment[0]) && /^\d+$/.test(urlFragment[1])) {
+
+            const tabIndex: number = parseInt(urlFragment[1], 10);
+
+            if(inRange(tabIndex,  0, totalTabs)) {
+                if(tabIndex === activeTabIndex) {
+                    return;
+                }
+                handleActiveTabIndexChange(tabIndex);
+            } else {
+                // Change the tab index to defaultActiveIndex for invalid URL fragments.
+                handleDefaultTabIndexChange(defaultActiveIndex);
+            }
+        } else if (window.location.hash.includes(ApplicationManagementConstants.SIGN_IN_METHOD_TAB_URL_FRAG)) {
+            // Handle loading sign-in method tab when redirecting from the "Connected Apps" Tab of an IdP.
+            const renderedTabPanes: ResourceTabPaneInterface[] = resolveTabPanes();
+            const SignInMethodtabIndex: number = renderedTabPanes.indexOf(renderedTabPanes.
+                find((element: {"componentId": string}) =>
+                    element.componentId === ApplicationManagementConstants.SIGN_IN_METHOD_TAB_URL_FRAG));
+
+            handleActiveTabIndexChange(SignInMethodtabIndex);
+        } else {
+            // Change the tab index to defaultActiveIndex for invalid URL fragments.
+            handleDefaultTabIndexChange(defaultActiveIndex);
+        }
+    }, [ window.location.hash, totalTabs ]);
 
     /**
      * Fetch the allowed origins list whenever there's an update.
      */
     useEffect(() => {
-        const allowedCORSOrigins = [];
-        getCORSOrigins()
-            .then((response: CORSOriginsListInterface[]) => {
-                response.map((origin) => {
-                    allowedCORSOrigins.push(origin.url);
-                });
-                setAllowedOrigins(allowedCORSOrigins);
-            })
-            .catch((error) => {
-                if (error?.response?.data?.description) {
+        const allowedCORSOrigins: string[] = [];
+
+        if (OrganizationUtils.isCurrentOrganizationRoot()) {
+            getCORSOrigins()
+                .then((response: CORSOriginsListInterface[]) => {
+                    response.map((origin: CORSOriginsListInterface) => {
+                        allowedCORSOrigins.push(origin.url);
+                    });
+                    setAllowedOrigins(allowedCORSOrigins);
+                })
+                .catch((error: AxiosError) => {
+                    if (error?.response?.data?.description) {
+                        dispatch(addAlert({
+                            description: error.response.data.description,
+                            level: AlertLevels.ERROR,
+                            message: t("console:develop.features.applications.notifications.fetchAllowedCORSOrigins." +
+                                "error.message")
+                        }));
+
+                        return;
+                    }
+
                     dispatch(addAlert({
-                        description: error.response.data.description,
+                        description: t("console:develop.features.applications.notifications.fetchAllowedCORSOrigins" +
+                            ".genericError.description"),
                         level: AlertLevels.ERROR,
                         message: t("console:develop.features.applications.notifications.fetchAllowedCORSOrigins." +
-                            "error.message")
+                            "genericError.message")
                     }));
-
-                    return;
-                }
-
-                dispatch(addAlert({
-                    description: t("console:develop.features.applications.notifications.fetchAllowedCORSOrigins" +
-                        ".genericError.description"),
-                    level: AlertLevels.ERROR,
-                    message: t("console:develop.features.applications.notifications.fetchAllowedCORSOrigins." +
-                        "genericError.message")
-                }));
-            });
+                });
+        }
     }, [ isAllowedOriginsUpdated ]);
-
-    useEffect(() => {
-        if (tabPaneExtensions) {
-            return;
-        }
-
-        if (!template?.content?.quickStart || !application?.id || isInboundProtocolConfigRequestLoading) {
-            return;
-        }
-
-        const extensions: any[] = ComponentExtensionPlaceholder({
-            component: "application",
-            props: {
-                application: application,
-                content: template.content.quickStart,
-                inboundProtocolConfig: inboundProtocolConfig,
-                inboundProtocols: inboundProtocolList,
-                onApplicationUpdate: () => {
-                    onUpdate(application?.id);
-                },
-                template: template
-            },
-            subComponent: "edit",
-            type: "tab"
-        });
-
-        if (Array.isArray(extensions) && extensions.length > 0) {
-            isTabExtensionsAvailable(true);
-        }
-
-        setTabPaneExtensions(extensions);
-    }, [
-        tabPaneExtensions,
-        template,
-        application,
-        inboundProtocolList,
-        inboundProtocolConfig,
-        isInboundProtocolConfigRequestLoading
-    ]);
 
     /**
      * Called on `availableInboundProtocols` prop update.
@@ -245,7 +331,74 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
         }
 
         findConfiguredInboundProtocol(application.id);
-    }, [ application?.inboundProtocols ]);
+    }, [ JSON.stringify(application?.inboundProtocols) ]);
+
+    useEffect(() => {
+        if (samlConfigurations !== undefined) {
+            return;
+        }
+        setSAMLConfigsLoading(true);
+
+        ApplicationManagementUtils.getSAMLApplicationMeta()
+            .finally(() => {
+                setSAMLConfigsLoading(false);
+            });
+    }, [ samlConfigurations, inboundProtocolConfig ]);
+
+    useEffect(() => {
+        if (oidcConfigurations !== undefined) {
+            return;
+        }
+        setOIDCConfigsLoading(true);
+
+        ApplicationManagementUtils.getOIDCApplicationMeta()
+            .finally(() => {
+                setOIDCConfigsLoading(false);
+            });
+    }, [ oidcConfigurations, inboundProtocolConfig ]);
+
+    useEffect(() => {
+        if (tabPaneExtensions && !isApplicationUpdated) {
+            return;
+        }
+
+        if (!application?.id || isInboundProtocolConfigRequestLoading) {
+            return;
+        }
+
+        if (inboundProtocolConfig && samlConfigurations && samlConfigurations.certificate) {
+            inboundProtocolConfig.certificate = samlConfigurations.certificate;
+            inboundProtocolConfig.ssoUrl = samlConfigurations.ssoUrl;
+            inboundProtocolConfig.issuer = samlConfigurations.issuer;
+        }
+
+        const extensions: ResourceTabPaneInterface[] = applicationConfig.editApplication.getTabExtensions(
+            {
+                application: application,
+                content: template?.content?.quickStart,
+                inboundProtocolConfig: inboundProtocolConfig,
+                inboundProtocols: inboundProtocolList,
+                onApplicationUpdate: () => {
+                    onUpdate(application?.id);
+                },
+                onTriggerTabUpdate: (tabIndex: number) => {
+                    setActiveTabIndex(tabIndex);
+                },
+                template: template
+            },
+            featureConfig
+        );
+
+        setTabPaneExtensions(extensions);
+        setIsApplicationUpdated(false);
+    }, [
+        tabPaneExtensions,
+        template,
+        application,
+        inboundProtocolList,
+        inboundProtocolConfig,
+        isInboundProtocolConfigRequestLoading
+    ]);
 
     useEffect(() => {
 
@@ -257,10 +410,55 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
     }, [ urlSearchParams.get(ApplicationManagementConstants.CLIENT_SECRET_HASH_ENABLED_URL_SEARCH_PARAM_KEY) ]);
 
     /**
+     * Handles the defaultActiveIndex change.
+     */
+    const handleDefaultTabIndexChange = (defaultActiveIndex: number): void => {
+
+        if (template.id === CustomApplicationTemplate.id && defaultActiveIndex > 0) {
+            handleActiveTabIndexChange(defaultActiveIndex - 1);
+
+            return;
+        }
+
+        handleActiveTabIndexChange(defaultActiveIndex);
+    };
+
+    /**
+     * Handles the activeTabIndex change.
+     *
+     * @param tabIndex - Active tab index.
+     */
+    const handleActiveTabIndexChange = (tabIndex:number): void => {
+
+        history.push({
+            hash: `#${ URLFragmentTypes.TAB_INDEX }${ tabIndex }`,
+            pathname: window.location.pathname
+        });
+        setActiveTabIndex(tabIndex);
+    };
+
+    /**
+     * Handles the tab change.
+     *
+     * @param e - Click event.
+     * @param data - Tab properties.
+     */
+    const handleTabChange = (e: SyntheticEvent, data: TabProps): void => {
+        eventPublisher.compute(() => {
+            eventPublisher.publish("application-switch-edit-application-tabs", {
+                type: data.panes[data.activeIndex].componentId
+            });
+        });
+
+        handleActiveTabIndexChange(data.activeIndex as number);
+    };
+
+    /**
      * Todo Remove this mapping and fix the backend.
      */
     const mapProtocolTypeToName = ((type: string): string => {
-        let protocolName = type;
+        let protocolName: string = type;
+
         if (protocolName === "oauth2") {
             protocolName = SupportedAuthProtocolTypes.OIDC;
         } else if (protocolName === "passivests") {
@@ -278,14 +476,17 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
      * This function will normalize the SAML name ID format
      * returned by the API.
      *
-     * @param {any} protocolConfigs
+     * @param protocolConfigs - Protocol config object
      */
     const normalizeSAMLNameIDFormat = (protocolConfigs: any): void => {
-        const key = "saml";
-        if (protocolConfigs[key]) {
-            const assertion = protocolConfigs[key].singleSignOnProfile?.assertion;
+        const key: string = "saml";
+
+        if (protocolConfigs[ key ]) {
+            const assertion: any = protocolConfigs[ key ].singleSignOnProfile?.assertion;
+
             if (assertion) {
-                const ref = assertion.nameIdFormat as string;
+                const ref: string = assertion.nameIdFormat as string;
+
                 assertion.nameIdFormat = ref.replace(/\//g, ":");
             }
         }
@@ -294,29 +495,30 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
     /**
      * Finds the configured inbound protocol.
      */
-    const findConfiguredInboundProtocol = (appId): void => {
+    const findConfiguredInboundProtocol = (appId: string): void => {
         let protocolConfigs: any = {};
         const selectedProtocolList: string[] = [];
         const inboundProtocolRequests: Promise<any>[] = [];
         const protocolNames: string[] = [];
 
         if (application?.inboundProtocols?.length > 0) {
-            application.inboundProtocols.forEach((protocol) => {
+            application.inboundProtocols.forEach((protocol: InboundProtocolListItemInterface) => {
 
                 if (protocol.type === "openid") {
                     return;
                 }
 
-                const protocolName = mapProtocolTypeToName(protocol.type);
+                const protocolName: string = mapProtocolTypeToName(protocol.type);
 
-                protocolNames.push(protocolName);
-
-                inboundProtocolRequests.push(getInboundProtocolConfig(appId, protocolName));
+                if(!protocolNames.includes(protocolName)) {
+                    protocolNames.push(protocolName);
+                    inboundProtocolRequests.push(getInboundProtocolConfig(appId, protocolName));
+                }
             });
 
             setIsInboundProtocolConfigRequestLoading(true);
-            Axios.all(inboundProtocolRequests).then(Axios.spread((...responses) => {
-                responses.forEach((response, index: number) => {
+            Axios.all(inboundProtocolRequests).then(Axios.spread((...responses: AxiosResponse[]) => {
+                responses.forEach((response: AxiosResponse, index: number) => {
                     protocolConfigs = {
                         ...protocolConfigs,
                         [ protocolNames[ index ] ]: response
@@ -326,7 +528,7 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
                 });
 
             }))
-                .catch((error) => {
+                .catch((error: AxiosError) => {
                     if (error?.response?.status === 404) {
                         return;
                     }
@@ -351,10 +553,9 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
                     }));
                 })
                 .finally(() => {
-
                     // Mutate the saml: NameIDFormat property according to the specification.
                     normalizeSAMLNameIDFormat(protocolConfigs);
-
+                    setIsApplicationUpdated(true);
                     setInboundProtocolList(selectedProtocolList);
                     setInboundProtocolConfig(protocolConfigs);
                     setIsInboundProtocolConfigRequestLoading(false);
@@ -371,8 +572,19 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
     };
 
     /**
+     * Called when an application updates.
+     */
+    const handleProtocolUpdate = (): void => {
+        if (!application?.id) {
+            return;
+        }
+
+        findConfiguredInboundProtocol(application.id);
+    };
+
+    /**
      * Handles application secret regenerate.
-     * @param {OIDCDataInterface} config - Config response.
+     * @param config - Config response.
      */
     const handleApplicationSecretRegenerate = (config: OIDCDataInterface): void => {
 
@@ -396,13 +608,16 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
                 discoverability={ application.advancedConfigurations?.discoverableByEndUsers }
                 imageUrl={ application.imageUrl }
                 name={ application.name }
+                application = { application }
                 isLoading={ isLoading }
                 onDelete={ onDelete }
-                onUpdate={ onUpdate }
+                onUpdate={ handleApplicationUpdate }
                 featureConfig={ featureConfig }
                 template={ template }
-                readOnly={ readOnly }
+                readOnly={ readOnly || applicationConfig.editApplication.getTabPanelReadOnlyStatus(
+                    "APPLICATION_EDIT_GENERAL_SETTINGS", application) }
                 data-testid={ `${ testId }-general-settings` }
+                isManagementApp={ application.isManagementApp }
             />
         </ResourceTab.Pane>
     );
@@ -410,21 +625,27 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
     const ApplicationSettingsTabPane = (): ReactElement => (
         <ResourceTab.Pane controlledSegmentation>
             <AccessConfiguration
+                application={ application }
                 allowedOriginList={ allowedOrigins }
                 certificate={ application.advancedConfigurations?.certificate }
                 onAllowedOriginsUpdate={ () => setIsAllowedOriginsUpdated(!isAllowedOriginsUpdated) }
                 onApplicationSecretRegenerate={ handleApplicationSecretRegenerate }
                 appId={ application.id }
                 appName={ application.name }
+                applicationTemplateId={ application.templateId }
+                extendedAccessConfig={ tabPaneExtensions !== undefined }
                 isLoading={ isLoading }
-                onUpdate={ onUpdate }
+                setIsLoading={ setIsLoading }
+                onUpdate={ handleApplicationUpdate }
+                onProtocolUpdate = { handleProtocolUpdate }
                 isInboundProtocolConfigRequestLoading={ isInboundProtocolConfigRequestLoading }
                 inboundProtocolsLoading={ isInboundProtocolConfigRequestLoading }
                 inboundProtocolConfig={ inboundProtocolConfig }
                 inboundProtocols={ inboundProtocolList }
                 featureConfig={ featureConfig }
                 template={ template }
-                readOnly={ readOnly }
+                readOnly={ readOnly || applicationConfig.editApplication.getTabPanelReadOnlyStatus(
+                    "APPLICATION_EDIT_ACCESS_CONFIG", application) }
                 data-testid={ `${ testId }-access-settings` }
             />
         </ResourceTab.Pane>
@@ -434,12 +655,19 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
         <ResourceTab.Pane controlledSegmentation>
             <AttributeSettings
                 appId={ application.id }
+                technology={ application.inboundProtocols }
                 claimConfigurations={ application.claimConfiguration }
                 featureConfig={ featureConfig }
                 onlyOIDCConfigured={
-                    inboundProtocolList.length === 1 && (inboundProtocolList[ 0 ] === SupportedAuthProtocolTypes.OIDC)
+                    (application?.templateId === CustomApplicationTemplate.id
+                        || application?.templateId === ApplicationManagementConstants.CUSTOM_APPLICATION_OIDC)
+                    && inboundProtocolList?.length === 0
+                        ? true
+                        : inboundProtocolList?.length === 1
+                        && (inboundProtocolList[ 0 ] === SupportedAuthProtocolTypes.OIDC)
                 }
-                onUpdate={ onUpdate }
+                onUpdate={ handleApplicationUpdate }
+                applicationTemplateId={ application?.templateId }
                 readOnly={ readOnly }
                 data-testid={ `${ testId }-attribute-settings` }
             />
@@ -450,10 +678,12 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
     const SignOnMethodsTabPane = (): ReactElement => (
         <ResourceTab.Pane controlledSegmentation>
             <SignOnMethods
+                application={ application }
                 appId={ application.id }
                 authenticationSequence={ application.authenticationSequence }
+                clientId={ inboundProtocolConfig?.oidc?.clientId }
                 isLoading={ isLoading }
-                onUpdate={ onUpdate }
+                onUpdate={ handleApplicationUpdate }
                 featureConfig={ featureConfig }
                 readOnly={ readOnly }
                 data-testid={ `${ testId }-sign-on-methods` }
@@ -466,23 +696,40 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
             <AdvancedSettings
                 appId={ application.id }
                 advancedConfigurations={ application.advancedConfigurations }
-                onUpdate={ onUpdate }
+                onUpdate={ handleApplicationUpdate }
                 featureConfig={ featureConfig }
                 readOnly={ readOnly }
+                template={ template }
                 data-testid={ `${ testId }-advanced-settings` }
             />
         </ResourceTab.Pane>
     );
 
     const ProvisioningSettingsTabPane = (): ReactElement => (
+        applicationConfig.editApplication.showProvisioningSettings
+            ? (
+                < ResourceTab.Pane controlledSegmentation>
+                    <ProvisioningSettings
+                        application={ application }
+                        provisioningConfigurations={ application.provisioningConfigurations }
+                        onUpdate={ handleApplicationUpdate }
+                        featureConfig={ featureConfig }
+                        readOnly={ readOnly }
+                        data-testid={ `${ testId }-provisioning-settings` }
+                    />
+                </ResourceTab.Pane>
+            )
+            : null
+    );
+
+    const InfoTabPane = (): ReactElement => (
         <ResourceTab.Pane controlledSegmentation>
-            <ProvisioningSettings
-                application={ application }
-                provisioningConfigurations={ application.provisioningConfigurations }
-                onUpdate={ onUpdate }
-                featureConfig={ featureConfig }
-                readOnly={ readOnly }
-                data-testid={ `${ testId }-provisioning-settings` }
+            <Info
+                inboundProtocols={ application?.inboundProtocols }
+                isOIDCConfigLoading={ isOIDCConfigsLoading }
+                isSAMLConfigLoading={ isSAMLConfigsLoading }
+                templateId={ application?.templateId }
+                data-testid={ `${ testId }-server-endpoints` }
             />
         </ResourceTab.Pane>
     );
@@ -490,102 +737,213 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
     /**
      * Resolves the tab panes based on the application config.
      *
-     * @return {any[]} Resolved tab panes.
+     * @returns Resolved tab panes.
      */
-    const resolveTabPanes = (): any[] => {
-        const panes: any[] = [];
+    const resolveTabPanes = (): ResourceTabPaneInterface[] => {
+        const panes: ResourceTabPaneInterface[] = [];
+        const extensionPanes: ResourceTabPaneInterface[] = [];
+
+        if (!tabPaneExtensions && applicationConfig.editApplication.extendTabs
+            && application?.templateId !== ApplicationManagementConstants.CUSTOM_APPLICATION_OIDC
+            && application?.templateId !== ApplicationManagementConstants.CUSTOM_APPLICATION_PASSIVE_STS
+            && application?.templateId !== ApplicationManagementConstants.CUSTOM_APPLICATION_SAML) {
+            return [];
+        }
 
         if (tabPaneExtensions && tabPaneExtensions.length > 0) {
-            panes.push(...tabPaneExtensions);
+            extensionPanes.push(...tabPaneExtensions);
         }
 
         if (featureConfig) {
             if (isFeatureEnabled(featureConfig?.applications,
                 ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT_GENERAL_SETTINGS"))) {
-
-                panes.push({
-                    menuItem: t("console:develop.features.applications.edit.sections.general.tabName"),
-                    render: GeneralApplicationSettingsTabPane
-                });
+                if (applicationConfig.editApplication.
+                    isTabEnabledForApp(
+                        inboundProtocolConfig?.oidc?.clientId,
+                        ApplicationTabTypes.GENERAL,
+                        tenantDomain
+                    )) {
+                    panes.push({
+                        componentId: "general",
+                        menuItem:
+                                 <Menu.Item data-tourid="general">
+                                     { t("console:develop.features.applications.edit.sections.general.tabName") }
+                                 </Menu.Item>,
+                        render: () =>
+                            applicationConfig.editApplication.
+                                getOveriddenTab(
+                                    inboundProtocolConfig?.oidc?.clientId,
+                                    ApplicationTabTypes.GENERAL,
+                                    GeneralApplicationSettingsTabPane(),
+                                    application.name,
+                                    application.id,
+                                    tenantDomain
+                                )
+                    });
+                }
             }
             if (isFeatureEnabled(featureConfig?.applications,
-                ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT_ACCESS_CONFIG"))) {
+                ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT_ACCESS_CONFIG"))
+                && !isFragmentApp
+            ) {
 
+                applicationConfig.editApplication.isTabEnabledForApp(
+                    inboundProtocolConfig?.oidc?.clientId,
+                    ApplicationTabTypes.PROTOCOL,
+                    tenantDomain
+                ) &&
                 panes.push({
+                    componentId: "protocol",
                     menuItem: t("console:develop.features.applications.edit.sections.access.tabName"),
                     render: ApplicationSettingsTabPane
                 });
             }
             if (isFeatureEnabled(featureConfig?.applications,
-                ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT_ATTRIBUTE_MAPPING"))) {
+                ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT_ATTRIBUTE_MAPPING"))
+                && !isFragmentApp) {
 
+                applicationConfig.editApplication.isTabEnabledForApp(
+                    inboundProtocolConfig?.oidc?.clientId, ApplicationTabTypes.USER_ATTRIBUTES, tenantDomain) &&
                 panes.push({
-                    menuItem: t("console:develop.features.applications.edit.sections.attributes.tabName"),
-                    render: AttributeSettingTabPane
+                    componentId: "user-attributes",
+                    menuItem:
+                        <Menu.Item data-tourid="attributes">
+                            { t("console:develop.features.applications.edit.sections.attributes.tabName") }
+                        </Menu.Item>,
+                    render: () =>
+                        applicationConfig.editApplication.
+                            getOveriddenTab(
+                                inboundProtocolConfig?.oidc?.clientId,
+                                ApplicationTabTypes.USER_ATTRIBUTES,
+                                AttributeSettingTabPane(),
+                                application.name,
+                                application.id,
+                                tenantDomain
+                            )
                 });
             }
             if (isFeatureEnabled(featureConfig?.applications,
                 ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT_SIGN_ON_METHOD_CONFIG"))) {
 
-                panes.push({
-                    menuItem: t("console:develop.features.applications.edit.sections.signOnMethod.tabName"),
-                    render: SignOnMethodsTabPane
-                });
+                applicationConfig.editApplication.
+                    isTabEnabledForApp(
+                        inboundProtocolConfig?.oidc?.clientId, ApplicationTabTypes.SIGN_IN_METHOD, tenantDomain) &&
+                  panes.push({
+                      componentId: "sign-in-method",
+                      menuItem:
+                          <Menu.Item data-tourid="sign-in-methods">
+                              { t("console:develop.features.applications.edit.sections.signOnMethod.tabName") }
+                          </Menu.Item>,
+                      render: SignOnMethodsTabPane
+                  });
             }
-            if (isFeatureEnabled(featureConfig?.applications,
-                ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT_PROVISIONING_SETTINGS"))) {
+            if (applicationConfig.editApplication.showProvisioningSettings
+                && isFeatureEnabled(featureConfig?.applications,
+                    ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT_PROVISIONING_SETTINGS"))
+                && !isFragmentApp) {
 
+                applicationConfig.editApplication.isTabEnabledForApp(
+                    inboundProtocolConfig?.oidc?.clientId, ApplicationTabTypes.PROVISIONING, tenantDomain) &&
                 panes.push({
+                    componentId: "provisioning",
                     menuItem: t("console:develop.features.applications.edit.sections.provisioning.tabName"),
                     render: ProvisioningSettingsTabPane
                 });
             }
             if (isFeatureEnabled(featureConfig?.applications,
-                ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT_ADVANCED_SETTINGS"))) {
+                ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT_ADVANCED_SETTINGS"))
+                && !isFragmentApp) {
 
-                panes.push({
-                    menuItem: t("console:develop.features.applications.edit.sections.advanced.tabName"),
-                    render: AdvancedSettingsTabPane
-                });
+                applicationConfig.editApplication.
+                    isTabEnabledForApp(
+                        inboundProtocolConfig?.oidc?.clientId , ApplicationTabTypes.ADVANCED, tenantDomain) &&
+                  panes.push({
+                      componentId: "advanced",
+                      menuItem: (
+                          <Menu.Item data-tourid="advanced">
+                              { t("console:develop.features.applications.edit.sections.advanced.tabName") }
+                          </Menu.Item> ),
+                      render: AdvancedSettingsTabPane
+                  });
             }
+            if (isFeatureEnabled(featureConfig?.applications,
+                ApplicationManagementConstants.FEATURE_DICTIONARY.get("APPLICATION_EDIT_INFO"))
+                 && application?.templateId != ApplicationManagementConstants.CUSTOM_APPLICATION_PASSIVE_STS
+                    && !isFragmentApp) {
+
+                applicationConfig.editApplication.
+                    isTabEnabledForApp(
+                        inboundProtocolConfig?.oidc?.clientId,
+                        ApplicationTabTypes.INFO,
+                        tenantDomain
+                    ) &&
+                 panes.push({
+                     componentId: "info",
+                     menuItem: {
+                         content: t("console:develop.features.applications.edit.sections.info.tabName"),
+                         icon: "info circle grey"
+                     },
+                     render: InfoTabPane
+                 });
+            }
+            
+            extensionPanes.forEach(
+                (extensionPane: ResourceTabPaneInterface) => {
+                    panes.splice(extensionPane.index, 0, extensionPane);
+                }
+            );
 
             return panes;
         }
 
         return [
             {
+                componentId: "general",
                 menuItem: t("console:develop.features.applications.edit.sections.general.tabName"),
                 render: GeneralApplicationSettingsTabPane
             },
             {
+                componentId: "protocol",
                 menuItem: t("console:develop.features.applications.edit.sections.access.tabName"),
                 render: ApplicationSettingsTabPane
             },
             {
+                componentId: "user-attributes",
                 menuItem: t("console:develop.features.applications.edit.sections.attributes.tabName"),
                 render: AttributeSettingTabPane
             },
             {
+                componentId: "sign-in-method",
                 menuItem: t("console:develop.features.applications.edit.sections.signOnMethod.tabName"),
                 render: SignOnMethodsTabPane
             },
-            {
+            applicationConfig.editApplication.showProvisioningSettings && {
+                componentId: "provisioning",
                 menuItem: t("console:develop.features.applications.edit.sections.provisioning.tabName"),
                 render: ProvisioningSettingsTabPane
             },
             {
+                componentId: "advanced",
                 menuItem: t("console:develop.features.applications.edit.sections.advanced.tabName"),
                 render: AdvancedSettingsTabPane
+            },
+            {
+                componentId: "info",
+                menuItem: {
+                    content: t("console:develop.features.applications.edit.sections.info.tabName"),
+                    icon: "info circle grey"
+                },
+                render: InfoTabPane
             }
         ];
     };
 
     /**
      * Renders the client secret hash disclaimer modal.
-     * @return {React.ReactElement}
+     * @returns Client Secret Hash Disclaimer Modal.
      */
     const renderClientSecretHashDisclaimerModal = (): ReactElement => {
-        
+
         // If client hashing is disabled, don't show the modal.
         if (!isClientSecretHashEnabled) {
             return null;
@@ -642,51 +1000,52 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
                     data-testid={ `${ testId }-client-secret-hash-disclaimer-modal-content` }
                 >
                     <Form>
-                    <Grid.Row>
-                        <Grid.Column>
-                            <Form.Field>
-                                <label>
-                                    {
-                                        t("console:develop.features.applications.confirmations." +
-                                            "clientSecretHashDisclaimer.forms.clientIdSecretForm.clientId.label")
-                                    }
-                                </label>
-                                <CopyInputField
-                                    value={ clientId }
-                                    hideSecretLabel={
-                                        t("console:develop.features.applications.confirmations." +
-                                            "clientSecretHashDisclaimer.forms.clientIdSecretForm.clientId.hide")
-                                    }
-                                    showSecretLabel={
-                                        t("console:develop.features.applications.confirmations." +
-                                            "clientSecretHashDisclaimer.forms.clientIdSecretForm.clientId.show")
-                                    }
-                                    data-testid={ `${ testId }-client-secret-readonly-input` }
-                                />
-                            </Form.Field>
-                            <Form.Field>
-                                <label>
-                                    {
-                                        t("console:develop.features.applications.confirmations." +
-                                            "clientSecretHashDisclaimer.forms.clientIdSecretForm.clientSecret.label")
-                                    }
-                                </label>
-                                <CopyInputField
-                                    secret
-                                    value={ clientSecret }
-                                    hideSecretLabel={
-                                        t("console:develop.features.applications.confirmations." +
-                                            "clientSecretHashDisclaimer.forms.clientIdSecretForm.clientSecret.hide")
-                                    }
-                                    showSecretLabel={
-                                        t("console:develop.features.applications.confirmations." +
-                                            "clientSecretHashDisclaimer.forms.clientIdSecretForm.clientSecret.show")
-                                    }
-                                    data-testid={ `${ testId }-client-secret-readonly-input` }
-                                />
-                            </Form.Field>
-                        </Grid.Column>
-                    </Grid.Row>
+                        <Grid.Row>
+                            <Grid.Column>
+                                <Form.Field>
+                                    <label>
+                                        {
+                                            t("console:develop.features.applications.confirmations." +
+                                                "clientSecretHashDisclaimer.forms.clientIdSecretForm.clientId.label")
+                                        }
+                                    </label>
+                                    <CopyInputField
+                                        value={ clientId }
+                                        hideSecretLabel={
+                                            t("console:develop.features.applications.confirmations." +
+                                                "clientSecretHashDisclaimer.forms.clientIdSecretForm.clientId.hide")
+                                        }
+                                        showSecretLabel={
+                                            t("console:develop.features.applications.confirmations." +
+                                                "clientSecretHashDisclaimer.forms.clientIdSecretForm.clientId.show")
+                                        }
+                                        data-testid={ `${ testId }-client-secret-readonly-input` }
+                                    />
+                                </Form.Field>
+                                <Form.Field>
+                                    <label>
+                                        {
+                                            t("console:develop.features.applications.confirmations." +
+                                                "clientSecretHashDisclaimer.forms.clientIdSecretForm." +
+                                                "clientSecret.label")
+                                        }
+                                    </label>
+                                    <CopyInputField
+                                        secret
+                                        value={ clientSecret }
+                                        hideSecretLabel={
+                                            t("console:develop.features.applications.confirmations." +
+                                                "clientSecretHashDisclaimer.forms.clientIdSecretForm.clientSecret.hide")
+                                        }
+                                        showSecretLabel={
+                                            t("console:develop.features.applications.confirmations." +
+                                                "clientSecretHashDisclaimer.forms.clientIdSecretForm.clientSecret.show")
+                                        }
+                                        data-testid={ `${ testId }-client-secret-readonly-input` }
+                                    />
+                                </Form.Field>
+                            </Grid.Column>
+                        </Grid.Row>
                     </Form>
                 </ConfirmationModal.Content>
             </ConfirmationModal>
@@ -694,18 +1053,24 @@ export const EditApplication: FunctionComponent<EditApplicationPropsInterface> =
     };
 
     return (
-        application && !isInboundProtocolsRequestLoading
+        application && !isInboundProtocolsRequestLoading && inboundProtocolList != undefined
+        && (tabPaneExtensions || !applicationConfig.editApplication.extendTabs)
             ? (
                 <>
                     <ResourceTab
-                        data-testid={ `${ testId }-resource-tabs` }
-                        panes={ resolveTabPanes() }
+                        isLoading={ isLoading }
+                        activeIndex={ activeTabIndex }
+                        data-testid={ `${testId}-resource-tabs` }
                         defaultActiveIndex={ defaultActiveIndex }
+                        onTabChange={ handleTabChange }
+                        panes={ resolveTabPanes() }
+                        onInitialize={ ({ panesLength }: { panesLength: number }) => {
+                            setTotalTabs(panesLength);
+                        } }
                     />
                     { showClientSecretHashDisclaimerModal && renderClientSecretHashDisclaimerModal() }
                 </>
-            )
-            : <ContentLoader />
+            ) : <ContentLoader />
     );
 };
 

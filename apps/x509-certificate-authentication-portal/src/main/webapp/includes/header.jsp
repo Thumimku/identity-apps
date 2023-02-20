@@ -18,12 +18,38 @@
 
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointUtil" %>
 <%@ include file="localize.jsp" %>
+<%@ page import="java.io.File" %>
+
+<jsp:directive.include file="layout-resolver.jsp"/>
+
+<!-- Extract the name of the stylesheet-->
+<%
+    String themeName = "default";
+    File themeDir = new File(request.getSession().getServletContext().getRealPath("/")
+        + "/" + "libs/themes/" + themeName + "/");
+    String[] fileNames = themeDir.list();
+    String themeFileName = "";
+
+    for(String file: fileNames) {
+        if(file.endsWith("min.css")) {
+            themeFileName = file;
+        }
+    }
+%>
 
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="icon" href="libs/themes/default/assets/images/favicon.ico" type="image/x-icon"/>
-<link href="libs/themes/default/theme.min.css" rel="stylesheet">
+<link href="libs/themes/default/<%= themeFileName %>" rel="stylesheet">
+
+<!-- Layout specific style sheet -->
+<%
+    String styleFilePath = "extensions/layouts/" + layout + "/styles.css";
+    if (config.getServletContext().getResource(styleFilePath) != null) {
+%>
+    <link rel="stylesheet" href="<%= styleFilePath %>">
+<% } %>
 
 <title><%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "wso2.identity.server")%></title>

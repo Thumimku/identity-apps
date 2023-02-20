@@ -24,3 +24,12 @@ export interface ClaimResourceEndpointsInterface {
     externalClaims: string;
     localClaims: string;
 }
+
+/**
+ * Interface for the Server Supported Claims resource endpoints.
+ */
+export interface ServerSupportedClaimsInterface {
+    id: string;
+    name: string;
+    attributes: string[];
+}

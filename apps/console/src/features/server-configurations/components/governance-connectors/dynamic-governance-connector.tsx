@@ -16,24 +16,28 @@
  * under the License.
  */
 
-import { AlertLevels, SVGRLoadedInterface, TestableComponentInterface } from "@wso2is/core/models";
+import { AlertLevels, IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
+import { Message, Text } from "@wso2is/react-components";
+import camelCase from "lodash-es/camelCase";
 import get from "lodash-es/get";
 import kebabCase from "lodash-es/kebabCase";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import React, { FunctionComponent, ReactElement, ReactNode, useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { Divider, Grid, Header } from "semantic-ui-react";
+import { Icon } from "semantic-ui-react";
 import DynamicConnectorForm from "./dynamic-connector-form";
+import { serverConfigurationConfig } from "../../../../extensions";
 import { updateGovernanceConnector } from "../../api";
 import { getGovernanceConnectorIllustrations } from "../../configs";
+import { ServerConfigurationsConstants } from "../../constants";
 import { GovernanceConnectorInterface } from "../../models";
 import { GovernanceConnectorUtils } from "../../utils";
 
 /**
  * Prop types for the realm configurations component.
  */
-interface DynamicGovernanceConnectorProps extends TestableComponentInterface {
+interface DynamicGovernanceConnectorProps extends TestableComponentInterface, IdentifiableComponentInterface {
     connector: GovernanceConnectorInterface;
     onUpdate: () => void;
 }
@@ -48,13 +52,20 @@ interface DynamicGovernanceConnectorProps extends TestableComponentInterface {
 export const DynamicGovernanceConnector: FunctionComponent<DynamicGovernanceConnectorProps> = (
     props: DynamicGovernanceConnectorProps
 ): ReactElement => {
-    const { connector, [ "data-testid" ]: testId, onUpdate } = props;
+
+    const {
+        connector,
+        onUpdate,
+        [ "data-componentid" ]: componentId,
+        [ "data-testid" ]: testId
+    } = props;
 
     const dispatch = useDispatch();
 
     const { t } = useTranslation();
 
-    const [ connectorIllustration, setConnectorIllustration ]  = useState<string>(undefined);
+    const [ connectorIllustration, setConnectorIllustration ] = useState<string>(undefined);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     /**
      * Set the connector illustration.
@@ -64,15 +75,10 @@ export const DynamicGovernanceConnector: FunctionComponent<DynamicGovernanceConn
             return;
         }
 
-        const illustration: Promise<SVGRLoadedInterface>  = get(getGovernanceConnectorIllustrations(), connector.id,
+        const illustration: string = get(getGovernanceConnectorIllustrations(), connector.id,
             getGovernanceConnectorIllustrations()?.default);
-        
-        if (illustration) {
-            illustration
-                .then((image: SVGRLoadedInterface) => {
-                    setConnectorIllustration(image.default);
-                });
-        }
+
+        setConnectorIllustration(illustration);
     }, [ connector, getGovernanceConnectorIllustrations ]);
 
     const handleUpdateError = (error) => {
@@ -113,12 +119,25 @@ export const DynamicGovernanceConnector: FunctionComponent<DynamicGovernanceConn
             operation: "UPDATE",
             properties: []
         };
+
         for (const key in values) {
             data.properties.push({
                 name: GovernanceConnectorUtils.decodeConnectorPropertyName(key),
                 value: values[ key ]
             });
         }
+
+        if (serverConfigurationConfig.connectorToggleName[ connector?.name ]
+            && serverConfigurationConfig.autoEnableConnectorToggleProperty) {
+            data.properties.push({
+                name: GovernanceConnectorUtils.decodeConnectorPropertyName(
+                    serverConfigurationConfig.connectorToggleName[ connector?.name ]),
+                value: "true"
+            });
+        }
+
+        setIsSubmitting(true);
+
         updateGovernanceConnector(data, connector.categoryId, connector.id)
             .then(() => {
                 dispatch(
@@ -140,11 +159,15 @@ export const DynamicGovernanceConnector: FunctionComponent<DynamicGovernanceConn
             })
             .catch((error) => {
                 handleUpdateError(error);
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
     const getConnectorInitialValues = (connector: GovernanceConnectorInterface) => {
         const values = {};
+
         connector?.properties.map((property) => {
             if (property.value === "true") {
                 values[ GovernanceConnectorUtils.encodeConnectorPropertyName(property.name) ] = true;
@@ -154,49 +177,119 @@ export const DynamicGovernanceConnector: FunctionComponent<DynamicGovernanceConn
                 values[ GovernanceConnectorUtils.encodeConnectorPropertyName(property.name) ] = property.value;
             }
         });
+
         return values;
     };
 
     const connectorForm: ReactElement = (
         <DynamicConnectorForm
             onSubmit={ handleSubmit }
-            props={ { properties: connector.properties } }
+            connector={ connector }
+            props={ {
+                properties: connector.properties.filter(
+                    (property => serverConfigurationConfig.connectorPropertiesToShow.includes(property.name)
+                        || serverConfigurationConfig.connectorPropertiesToShow
+                            .includes(ServerConfigurationsConstants.ALL)))
+            } }
             form={ kebabCase(connector.friendlyName) + "-form" }
             initialValues={ getConnectorInitialValues(connector) }
             data-testid={ `${ testId }-${ connector.name }-form` }
+            isSubmitting={ isSubmitting }
         />
     );
 
-    return (
-        <Grid>
-            <Grid.Row columns={ 1 }>
-                <Grid.Column>
-                    <Grid padded>
-                        <Grid.Row>
-                            <Grid.Column width={ 16 }>
-                                <div
-                                    className="connector-section-with-image-bg"
-                                    style={ {
-                                        background: `url(${ connectorIllustration })`
-                                    } }
-                                >
-                                    <Header>
-                                        { connector?.friendlyName }
-                                        <Header.Subheader>
-                                            { t("console:manage.features.governanceConnectors.connectorSubHeading", {
-                                                name: connector?.friendlyName
-                                            }) }
-                                        </Header.Subheader>
-                                    </Header>
-                                </div>
-                            </Grid.Column>
-                        </Grid.Row>
-                    </Grid>
-                    <Divider />
-                    { connectorForm }
-                </Grid.Column>
-            </Grid.Row>
-        </Grid>
+    /**
+     * Resolve connector title.
+     *
+     * @param {GovernanceConnectorInterface} connector - Connector object.
+     * @returns {ReactNode}
+     */
+    const resolveConnectorTitle = (connector: GovernanceConnectorInterface): ReactNode => {
+
+        if (!connector) {
+            return null;
+        }
+
+        return t("console:manage.features.governanceConnectors.connectorCategories." +
+            camelCase(connector?.category) + ".connectors." + camelCase(connector?.name) + ".friendlyName");
+    };
+
+    /**
+     * Resolve connector description.
+     *
+     * @param {GovernanceConnectorInterface} connector - Connector object.
+     * @returns {ReactNode}
+     */
+    const resolveConnectorDescription = (connector: GovernanceConnectorInterface): ReactNode => {
+
+        if (!connector) {
+            return null;
+        }
+
+        let connectorName: string = connector.friendlyName;
+    
+        if (connectorName.includes(ServerConfigurationsConstants.DEPRECATION_MATCHER)) {
+            connectorName = connectorName.replace(ServerConfigurationsConstants.DEPRECATION_MATCHER, "");
+        }
+
+        return t("console:manage.features.governanceConnectors.connectorSubHeading", {
+            name: connectorName
+        });
+    };
+
+    /**
+     * Resolve connector message.
+     *
+     * @param {GovernanceConnectorInterface} connector - Connector object.
+     * @returns {ReactNode}
+     */
+    const resolveConnectorMessage = (connector: GovernanceConnectorInterface): ReactNode => {
+
+        if (!connector) {
+            return null;
+        }
+
+        if (connector.id === ServerConfigurationsConstants.WSO2_ANALYTICS_ENGINE_CONNECTOR_CATEGORY_ID) {
+            return (
+                <Message
+                    warning
+                    className="mb-5 connector-info"
+                    data-componentid={ `${ componentId }-${ connector.id }-deprecation-warning` }
+                >
+                    <Icon name="warning sign" />
+                    {
+                        t("console:manage.features.governanceConnectors.connectorCategories." +
+                            "otherSettings.connectors.analyticsEngine.messages.deprecation.heading")
+                    }
+                    <Text spaced="top">
+                        <Trans
+                            i18nKey={
+                                "console:manage.features.governanceConnectors.connectorCategories." +
+                                "otherSettings.connectors.analyticsEngine.messages.deprecation.description"
+                            }
+                        >
+                            WSO2 Identity Server Analytics is now deprecated. Use <Text
+                                inline
+                                weight="bold"
+                            >
+                                ELK Analytics
+                            </Text> instead.
+                        </Trans>
+                    </Text>
+                </Message>
+            );
+        }
+
+        return null;
+    };
+
+    return serverConfigurationConfig.renderConnector(
+        connector,
+        connectorForm,
+        connectorIllustration,
+        resolveConnectorTitle(connector),
+        resolveConnectorDescription(connector),
+        resolveConnectorMessage(connector)
     );
 };
 
@@ -204,5 +297,6 @@ export const DynamicGovernanceConnector: FunctionComponent<DynamicGovernanceConn
  * Default props for the component.
  */
 DynamicGovernanceConnector.defaultProps = {
+    "data-componentid": "dynamic-governance-connector",
     "data-testid": "dynamic-governance-connector"
 };

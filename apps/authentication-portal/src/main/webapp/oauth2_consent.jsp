@@ -1,7 +1,7 @@
 <%--
-  ~ Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~ Copyright (c) 2014, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
   ~
-  ~ WSO2 Inc. licenses this file to you under the Apache License,
+  ~ WSO2 LLC. licenses this file to you under the Apache License,
   ~ Version 2.0 (the "License"); you may not use this file except
   ~ in compliance with the License.
   ~ You may obtain a copy of the License at
@@ -16,6 +16,7 @@
   ~ under the License.
 --%>
 
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="org.apache.commons.collections.CollectionUtils" %>
 <%@ page import="org.apache.commons.lang.ArrayUtils" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
@@ -28,20 +29,36 @@
 <%@ page import="org.wso2.carbon.identity.oauth.IdentityOAuthAdminException" %>
 <%@ page import="org.wso2.carbon.identity.oauth.OAuthAdminServiceImpl" %>
 <%@ page import="java.io.File" %>
+<%@ page import="java.net.URLDecoder" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
 <%@ page import="java.util.Set" %>
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.util.StringTokenizer" %>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <%@ include file="includes/localize.jsp" %>
 <jsp:directive.include file="includes/init-url.jsp"/>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
 
 <%
     String app = request.getParameter("application");
     String scopeString = request.getParameter("scope");
     boolean displayScopes = Boolean.parseBoolean(getServletContext().getInitParameter("displayScopes"));
 
+    Map<String, String> queryParamMap = new HashMap<String, String>();
+    String queryString = request.getParameter("spQueryParams");
+    if (StringUtils.isNotBlank(queryString)) {
+        String[] queryParams = queryString.split("&");
+        for (String queryParam : queryParams) {
+            String[] queryParamKeyValueArray = queryParam.split("=", 2);
+                queryParamMap.put(queryParamKeyValueArray[0], queryParamKeyValueArray[1]);
+        }
+    }
+
+    String clientId = queryParamMap.get("client_id");
     String[] requestedClaimList = new String[0];
     String[] mandatoryClaimList = new String[0];
     if (request.getParameter(Constants.REQUESTED_CLAIMS) != null) {
@@ -60,18 +77,33 @@
     boolean userClaimsConsentOnly = Boolean.parseBoolean(request.getParameter(Constants.USER_CLAIMS_CONSENT_ONLY));
 
     List<String> openIdScopes = null;
+    String requestedOIDCScopeString = "";
+    if (queryParamMap.containsKey("requested_oidc_scopes")) {
+        requestedOIDCScopeString = URLDecoder.decode(queryParamMap.get("requested_oidc_scopes"), "UTF-8");
+    }
+    
     if (!userClaimsConsentOnly && displayScopes && StringUtils.isNotBlank(scopeString)) {
-            // Remove "openid" from the scope list to display.
-           openIdScopes = Stream.of(scopeString.split(" "))
-                    .filter(x -> !StringUtils.equalsIgnoreCase(x, "openid"))
-                    .collect(Collectors.toList());
+        if (StringUtils.isNotBlank(requestedOIDCScopeString)) {
+            // Remove oidc scopes from the scope list to display.
+            Set<String> requestedOIDCScopes = Set.of(requestedOIDCScopeString.split(" "));
+            openIdScopes = Stream.of(scopeString.split(" "))
+                .filter(x -> !requestedOIDCScopes.contains(x.toLowerCase()))
+                .collect(Collectors.toList());
+        } else {
+            openIdScopes = Stream.of(scopeString.split(" ")).collect(Collectors.toList());
+        }
     }
 %>
 
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "medium");
+%>
+
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
-    <!-- header -->
+    <%-- header --%>
     <%
         File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
         if (headerFile.exists()) {
@@ -82,10 +114,16 @@
     <% } %>
 </head>
 <body class="login-portal layout authentication-portal-layout">
-    <main class="center-segment">
-        <div class="ui container medium center aligned middle aligned">
 
-            <!-- product-title -->
+    <% if (new File(getServletContext().getRealPath("extensions/timeout.jsp")).exists()) { %>
+        <jsp:include page="extensions/timeout.jsp"/>
+    <% } else { %>
+        <jsp:include page="util/timeout.jsp"/>
+    <% } %>
+
+    <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+        <layout:component componentName="ProductHeader" >
+            <%-- product-title --%>
             <%
                 File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
                 if (productTitleFile.exists()) {
@@ -108,7 +146,8 @@
             <%
                 }
             %>
-
+        </layout:component>
+        <layout:component componentName="MainSection" >
             <div class="ui segment">
                 <form class="ui large form" action="<%=oauth2AuthorizeURL%>" method="post" id="profile" name="oauth2_authz">
                     <h4><%=Encode.forHtml(request.getParameter("application"))%>
@@ -122,10 +161,10 @@
 
                     <div class="segment-form">
 
-                        <!-- Prompting for consent is only needed if we have mandatory or requested claims without any consent -->
+                        <%-- Prompting for consent is only needed if we have mandatory or requested claims without any consent --%>
                         <% if (ArrayUtils.isNotEmpty(mandatoryClaimList) || ArrayUtils.isNotEmpty(requestedClaimList)) { %>
                             <input type="hidden" name="user_claims_consent" id="user_claims_consent" value="true"/>
-                            <!-- validation -->
+                            <%-- validation --%>
                             <div class="ui secondary segment" style="text-align: left;">
                                 <h5><%=AuthenticationEndpointUtil.i18n(resourceBundle, "requested.attributes")%>:</h5>
 
@@ -158,7 +197,7 @@
                                             %>
                                             <div class="field required">
                                                 <div class="ui checkbox checked read-only disabled claim-cb">
-                                                    <input type="checkbox" class="mandatory-claim hidden" name="consent_<%=Encode.forHtmlAttribute(claimId)%>" id="consent_<%=Encode.forHtmlAttribute(claimId)%>" required checked readonly />
+                                                    <input tabindex="-1" type="checkbox" class="mandatory-claim hidden" name="consent_<%=Encode.forHtmlAttribute(claimId)%>" id="consent_<%=Encode.forHtmlAttribute(claimId)%>" required checked readonly />
                                                     <label for="consent_<%=Encode.forHtmlAttribute(claimId)%>"><%=Encode.forHtml(displayName)%></label>
                                                 </div>
                                             </div>
@@ -215,7 +254,7 @@
                                             try {
                                                 String scopesAsString = String.join(" ", openIdScopes);
                                                 Set<Scope> scopes = new OAuth2ScopeService().getScopes(null, null,
-                                                        true, scopesAsString);
+                                                        true, scopesAsString, clientId);
 
                                                 for (Scope scope : scopes) {
                                                     String displayName = scope.getDisplayName();
@@ -285,7 +324,6 @@
                                 <div class="field">
                                     <div class="ui checkbox">
                                         <input
-                                            tabindex="3"
                                             type="checkbox"
                                             id="rememberApproval"
                                             name="rememberApproval"
@@ -306,7 +344,7 @@
                                     value="<%=Encode.forHtmlAttribute(request.getParameter(Constants.SESSION_DATA_KEY_CONSENT))%>"/>
                             <input type="hidden" name="consent" id="consent" value="deny"/>
 
-                            <input class="ui large button link-button" type="reset"
+                            <input class="ui large button secondary" type="reset"
                                 onclick="deny(); return false;"
                                 value="<%=AuthenticationEndpointUtil.i18n(resourceBundle,"deny")%>" />
                             <input type="button" class="ui primary large button" id="approve" name="approve"
@@ -316,20 +354,21 @@
                     </div>
                 </form>
             </div>
-        </div>
-    </main>
+        </layout:component>
+        <layout:component componentName="ProductFooter" >
+            <%-- product-footer --%>
+            <%
+                File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                if (productFooterFile.exists()) {
+            %>
+                <jsp:include page="extensions/product-footer.jsp"/>
+            <% } else { %>
+                <jsp:include page="includes/product-footer.jsp"/>
+            <% } %>
+        </layout:component>
+    </layout:main>
 
-    <!-- product-footer -->
-    <%
-        File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-        if (productFooterFile.exists()) {
-    %>
-        <jsp:include page="extensions/product-footer.jsp"/>
-    <% } else { %>
-        <jsp:include page="includes/product-footer.jsp"/>
-    <% } %>
-
-    <!-- footer -->
+    <%-- footer --%>
     <%
         File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
         if (footerFile.exists()) {

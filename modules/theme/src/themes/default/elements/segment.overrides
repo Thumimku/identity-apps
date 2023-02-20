@@ -309,8 +309,9 @@
 .ui.segment {
     &.user-role-edit-header-segment {
         &.attributes {
-            max-height: 311px;
+            max-height: 500px;
             padding: 0 0 20px 0;
+            overflow-y: scroll;
 
             .transfer-list-sub-content {
                 color: @TransferComponentSegmentApplicationAttributeSecondaryColor;
@@ -329,11 +330,6 @@
         .ui.input {
             margin-bottom: @EditRoleSegmentHeaderMarginBottom;
             width: @EditRoleSegmentHeaderWidth;
-        }
-
-        .ui.table {
-            border-left: none;
-            border-right: none;
         }
 
         i {
@@ -627,5 +623,128 @@
         .theme-icon.spaced-right {
             margin-right: 15px;
         }
+    }
+}
+
+/*-------------------------------
+      Cookie Consent Banner
+--------------------------------*/
+
+.ui.segment {
+    &.cookie-consent-banner {
+        position: @cookieConsentBannerPosition;
+        bottom: @cookieConsentBannerBottom;
+        max-width: @cookieConsentBannerMaxWidth;
+        top: @cookieConsentBannerTop;
+        background: @cookieConsentBannerBackground;
+        opacity: @cookieConsentBannerOpacity;
+        color: @cookieConsentBannerColor;
+        padding: @cookieConsentBannerPadding;
+        border: @cookieConsentBannerBorder;
+        z-index: @cookieConsentBannerZIndex;
+
+        &.aligned {
+            &-left {
+                left: @cookieConsentBannerHorizontalSpacing;
+                right: auto;
+            }
+            &-right {
+                right: @cookieConsentBannerHorizontalSpacing;
+                left: auto;
+            }
+        }
+
+        .banner-image {
+            display: flex;
+            margin: @cookieConsentBannerImageMargin;
+
+            .cookie-icon {
+                svg {
+                    path {
+                        fill: @cookieConsentBannerIconColor;
+                    }
+                }
+            }
+        }
+
+        .banner-content {
+            margin: @cookieConsentBannerContentMargin;
+        }
+
+        &.inverted {
+            color: @cookieConsentBannerInvertedColor;
+            background: @cookieConsentBannerInvertedBackground;
+            border: @cookieConsentBannerInvertedBorder;
+
+            .banner-image {
+                .cookie-icon {
+                    svg {
+                        path {
+                            fill: @cookieConsentBannerInvertedIconColor;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media only screen and (max-width: 485px) {
+    .ui.segment {
+        &.cookie-consent-banner {
+            left: auto !important;
+            right: auto !important;
+            margin: 10px;
+        }
+    }
+}
+
+/*-------------------------------
+      Basic Segment Group
+--------------------------------*/
+
+.ui.segments {
+    &.basic {
+        border: none;
+        box-shadow: none;
+
+        > .ui.segment {
+            padding: 0;
+            border: none;
+        }
+    }
+}
+
+/*-------------------------------
+         Image Preview
+--------------------------------*/
+
+.ui.segment {
+    &.image-preview {
+        outline: @imagePreviewOutline;
+        height: @imagePreviewHeight;
+        display: flex;
+        align-items: center;
+        border-radius: @imagePreviewBorderRadius;
+        justify-content: center;
+    }
+}
+
+/*-------------------------------
+        Sticky Bar
+--------------------------------*/
+
+.ui.segment {
+    &.sticky-bar {
+        border: none;
+        box-shadow: none;
+        position: fixed;
+        z-index: 1000;
+        bottom: 36px;
+        border-top: 1px solid @borderColor;
+        background-color: @white;
+        padding-left: 3rem;
+        padding-right: 3rem;
+        border-radius: 0;
     }
 }

@@ -28,26 +28,33 @@ import { CommonPluggableComponentForm } from "../components";
  * @constructor
  */
 export const CommonAuthenticatorForm: FunctionComponent<CommonPluggableComponentFormPropsInterface> = (
-    props
+    props: CommonPluggableComponentFormPropsInterface
 ): ReactElement => {
 
     const {
         metadata,
+        mode,
         initialValues,
         onSubmit,
         triggerSubmit,
         enableSubmitButton,
+        showCustomProperties,
+        readOnly,
+        isSubmitting,
         [ "data-testid" ]: testId
     } = props;
 
     return (
-        <CommonPluggableComponentForm 
-            onSubmit={ onSubmit } 
-            initialValues={ initialValues } 
+        <CommonPluggableComponentForm
+            mode={ mode }
+            onSubmit={ onSubmit }
+            initialValues={ initialValues }
             enableSubmitButton={ enableSubmitButton }
             triggerSubmit={ triggerSubmit }
             metadata={ metadata }
             data-testid={ testId }
+            showCustomProperties={ showCustomProperties }
+            readOnly={ readOnly }
         />
     );
 };

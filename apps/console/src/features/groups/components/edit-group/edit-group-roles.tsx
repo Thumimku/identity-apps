@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,6 @@
  * under the License.
  */
 
-import { getRolesList } from "@wso2is/core/api";
 import {
     AlertLevels,
     RolesMemberInterface,
@@ -28,6 +27,7 @@ import {
     EmptyPlaceholder,
     Heading,
     LinkButton,
+    Popup,
     PrimaryButton,
     TransferComponent,
     TransferList,
@@ -38,9 +38,9 @@ import escapeRegExp from "lodash-es/escapeRegExp";
 import forEach from "lodash-es/forEach";
 import forEachRight from "lodash-es/forEachRight";
 import isEmpty from "lodash-es/isEmpty";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import React, { FunctionComponent, ReactElement, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
     Button,
     Divider,
@@ -49,13 +49,14 @@ import {
     Input,
     Label,
     Modal,
-    Popup,
     Table
 } from "semantic-ui-react";
-import { getEmptyPlaceholderIllustrations, updateResources } from "../../../core";
-import { APPLICATION_DOMAIN, INTERNAL_DOMAIN } from "../../../roles/constants";
+import { AppState, getEmptyPlaceholderIllustrations, updateResources } from "../../../core";
+import { getOrganizationRoles } from "../../../organizations/api";
+import { OrganizationUtils } from "../../../organizations/utils";
+import { APPLICATION_DOMAIN, INTERNAL_DOMAIN, getRolesList } from "../../../roles";
+import { RolePermissions } from "../../../users/components";
 import { UserRolePermissions } from "../../../users/components/user-role-permissions";
-import { RolePermissions } from "../../../users/components/wizard";
 import { GroupsInterface } from "../../models";
 
 interface GroupRolesPropsInterface extends TestableComponentInterface {
@@ -92,6 +93,7 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
     const [ initialRoleList, setInitialRoleList ] = useState([]);
     const [ initialTempRoleList, setInitialTempRoleList ] = useState([]);
     const [ primaryRoles, setPrimaryRoles ] = useState(undefined);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     // The following constant holds the state of role already assigned roles.
     const [ primaryRolesList, setPrimaryRolesList ] = useState(undefined);
@@ -110,6 +112,10 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
     const [ isSelected, setSelection ] = useState(false);
 
     const [ assignedRoles, setAssignedRoles ] = useState([]);
+
+    const currentOrganization = useSelector((state: AppState) => state.organization.organization);
+    const isRootOrganization = useMemo(() =>
+        OrganizationUtils.isRootOrganization(currentOrganization), [ currentOrganization ]);
 
     const [ alert, setAlert, alertComponent ] = useWizardAlert();
 
@@ -169,10 +175,34 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
     }, [ group ]);
 
     useEffect(() => {
-        getRolesList(null)
-            .then((response) => {
-                setPrimaryRoles(response.data.Resources);
-            });
+        if (isRootOrganization) {
+            getRolesList(null)
+                .then((response) => {
+                    setPrimaryRoles(response.data.Resources);
+                })
+                .catch(() => {
+                    dispatch(addAlert({
+                        description: t("console:manage.features.roles.notifications.fetchRoles." +
+                            "genericError.description"),
+                        level: AlertLevels.ERROR,
+                        message: t("console:manage.features.roles.notifications.fetchRoles.genericError.message")
+                    }));
+                });
+        } else {
+            getOrganizationRoles(currentOrganization.id, null, 100, null)
+                .then((response) => {
+                    setPrimaryRoles(response.Resources);
+                })
+                .catch(() => {
+                    dispatch(addAlert({
+                        description: t("console:manage.features.roles.notifications." +
+                            "fetchRoles.genericError.description"),
+                        level: AlertLevels.ERROR,
+                        message: t("console:manage.features.roles.notifications." +
+                            "fetchRoles.genericError.message")
+                    }));
+                });
+        }
     }, []);
 
     /**
@@ -285,6 +315,7 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
                     method: "PATCH",
                     path: "/Roles/" + id
                 };
+
                 removeOperations.push(operation);
             });
 
@@ -304,6 +335,9 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
                 bulkData.Operations.push(operation);
             });
         }
+
+        setIsSubmitting(true);
+
         updateResources(bulkData)
             .then(() => {
                 dispatch(addAlert({
@@ -346,6 +380,9 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
                         "console:manage.featuresgroups.notifications.updateGroup.genericError.message"
                     )
                 });
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
@@ -435,6 +472,7 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
 
     const addRoles = () => {
         const addedRoles = [ ...tempRoleList ];
+
         if (checkedUnassignedListItems?.length > 0) {
             checkedUnassignedListItems.map((role) => {
                 if (!(tempRoleList?.includes(role))) {
@@ -451,6 +489,7 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
 
     const removeRoles = () => {
         const removedRoles = [ ...roleList ];
+
         if (checkedAssignedListItems?.length > 0) {
             checkedAssignedListItems.map((role) => {
                 if (!(roleList?.includes(role))) {
@@ -479,10 +518,11 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
     /**
      * The following method handles creating a label for the list item.
      *
-     * @param roleName: string
+     * @param roleName - Role Name to create item label
      */
     const createItemLabel = (roleName: string) => {
         const role = roleName.split("/");
+
         if (role.length > 0) {
             if (role[0] == "Application") {
                 return {
@@ -561,10 +601,13 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
                                     emptyPlaceholderContent={ t("console:manage.features.transferList.list." +
                                         "emptyPlaceholders.users.roles.unselected", { type: "roles" }) }
                                     data-testid="group-mgt-update-roles-modal-unselected-roles-select-all-checkbox"
+                                    emptyPlaceholderDefaultContent={ t("console:manage.features.transferList.list."
+                                        + "emptyPlaceholders.default") }
                                 >
                                     {
                                         roleList?.map((role, index) => {
                                             const roleName = role.displayName?.split("/");
+
                                             if (roleName.length >= 1) {
                                                 return (
                                                     <TransferListItem
@@ -599,10 +642,13 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
                                     emptyPlaceholderContent={ t("console:manage.features.transferList.list." +
                                         "emptyPlaceholders.users.roles.selected", { type: "roles" }) }
                                     data-testid="group-mgt-update-roles-modal-selected-roles-select-all-checkbox"
+                                    emptyPlaceholderDefaultContent={ t("console:manage.features.transferList.list."
+                                        + "emptyPlaceholders.default") }
                                 >
                                     {
                                         tempRoleList?.map((role, index) => {
                                             const roleName = role.displayName.split("/");
+
                                             if (roleName.length >= 1) {
                                                 return (
                                                     <TransferListItem
@@ -645,6 +691,8 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
                                 data-testid="group-mgt-update-roles-modal-save-button"
                                 floated="right"
                                 onClick={ () => updateUserRole(group, tempRoleList) }
+                                loading={ isSubmitting }
+                                disabled={ isSubmitting }
                             >
                                 { t("common:save") }
                             </PrimaryButton>
@@ -664,6 +712,7 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
 
             assignedRoles && assignedRoles?.map((role) => {
                 const groupName = role.display.split("/");
+
                 if (groupName.length > 1) {
                     isMatch = re.test(role.display);
                     if (isMatch) {
@@ -769,11 +818,12 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
                                             </Table.Header>
                                             <Table.Body>
                                                 {
-                                                    assignedRoles?.map((group) => {
+                                                    assignedRoles?.map((group, index: number) => {
                                                         const groupRole = group.display.split("/");
+
                                                         if (groupRole.length >= 1) {
                                                             return (
-                                                                <Table.Row>
+                                                                <Table.Row key={ index }>
                                                                     {
                                                                         groupRole[ 0 ] == APPLICATION_DOMAIN ? (
                                                                             <Table.Cell>
@@ -782,12 +832,12 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
                                                                                 </Label>
                                                                             </Table.Cell>
                                                                         ) : (
-                                                                                <Table.Cell>
-                                                                                    <Label className="internal-label">
-                                                                                        { INTERNAL_DOMAIN }
-                                                                                    </Label>
-                                                                                </Table.Cell>
-                                                                            )
+                                                                            <Table.Cell>
+                                                                                <Label className="internal-label">
+                                                                                    { INTERNAL_DOMAIN }
+                                                                                </Label>
+                                                                            </Table.Cell>
+                                                                        )
                                                                     }
                                                                     <Table.Cell width={ 8 }>
                                                                         {
@@ -799,7 +849,7 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
                                                                         <Popup
                                                                             content="View permissions"
                                                                             trigger={
-                                                                                <Icon
+                                                                                (<Icon
                                                                                     data-testid={
                                                                                         `group-mgt-roles-list-
                                                                                         ${ groupRole[ 1 ] }-
@@ -811,7 +861,7 @@ export const GroupRolesList: FunctionComponent<GroupRolesPropsInterface> = (
                                                                                             group.value
                                                                                         )
                                                                                     }
-                                                                                />
+                                                                                />)
                                                                             }
                                                                         />
                                                                     </Table.Cell>

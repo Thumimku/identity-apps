@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2022, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,30 +17,21 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
-import { Code, Heading, LabeledCard, Text } from "@wso2is/react-components";
+import { Code, Heading, InfoCard, Popup, Text } from "@wso2is/react-components";
 import classNames from "classnames";
-import React, {
-    FunctionComponent,
-    PropsWithChildren,
-    ReactElement,
-    ReactNode,
-    ReactPortal,
-    useEffect,
-    useState
-} from "react";
-import {
-    Draggable,
-    DraggableProvided,
-    DraggableStateSnapshot,
-    Droppable,
-    DroppableProvided
-} from "react-beautiful-dnd";
-import ReactDOM from "react-dom";
+import React, { Fragment, FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { Icon, Label, Popup } from "semantic-ui-react";
-import { GenericAuthenticatorInterface } from "../../../../../identity-providers";
-import { getGeneralIcons } from "../../../../configs";
-import { ApplicationManagementConstants } from "../../../../constants";
+import { Icon, Label } from "semantic-ui-react";
+import { applicationConfig } from "../../../../../../extensions";
+import {
+    AuthenticatorCategories,
+    AuthenticatorMeta,
+    FederatedAuthenticatorInterface,
+    GenericAuthenticatorInterface,
+    IdentityProviderManagementConstants
+} from "../../../../../identity-providers";
+import { AuthenticationStepInterface } from "../../../../models";
+import { SignInMethodUtils } from "../../../../utils";
 
 /**
  * Proptypes for the authenticators component.
@@ -51,299 +42,287 @@ interface AuthenticatorsPropsInterface extends TestableComponentInterface {
      */
     authenticators: GenericAuthenticatorInterface[];
     /**
+     * Configured authentication steps.
+     */
+    authenticationSteps: AuthenticationStepInterface[];
+    /**
      * Additional CSS classes.
      */
     className?: string;
+    /**
+     * Current step.
+     */
+    currentStep: number;
     /**
      * Default name for authenticators with no name.
      */
     defaultName?: string;
     /**
-     * ID for the droppable field.
-     */
-    droppableId: string;
-    /**
-     * Empty placeholder.
-     */
-    emptyPlaceholder?: ReactNode;
-    /**
      * Heading for the authenticators section.
      */
     heading?: string;
-    /**
-     * Is dropping allowed.
-     */
-    isDropDisabled?: boolean;
     /**
      * Is the application info request loading.
      */
     isLoading?: boolean;
     /**
-     * Make the form read only.
+     * Callback triggered when authenticators are selected.
      */
-    readOnly?: boolean;
+    onAuthenticatorSelect: (selectedAuthenticators: GenericAuthenticatorInterface[]) => void;
     /**
-     * Denotes whether the authenticator is a social login.
+     * Already selected set of authenticators.
      */
-    isSocialLogin?: boolean;
+    selected: GenericAuthenticatorInterface[];
     /**
-     * Handles on click of social login add.
+     * Show/Hide authenticator labels in UI.
      */
-    handleSocialLoginAdd?: any;
+    showLabels?: boolean;
+    attributeStepId: number;
+    refreshAuthenticators: () => Promise<void>;
+    subjectStepId: number;
 }
-
-const portal: HTMLElement = document.createElement("div");
-portal.classList.add("draggable-portal");
-
-if (!document.body) {
-    throw new Error("document body is not ready for portal creation!");
-}
-
-document.body.appendChild(portal);
 
 /**
  * Component to render the list of authenticators.
  *
- * @param {AuthenticatorsPropsInterface} props - Props injected to the component.
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns React element.
  */
 export const Authenticators: FunctionComponent<AuthenticatorsPropsInterface> = (
     props: AuthenticatorsPropsInterface
 ): ReactElement => {
-
     const {
         authenticators,
-        className,
+        authenticationSteps,
+        currentStep,
         defaultName,
-        droppableId,
-        emptyPlaceholder,
         heading,
-        isDropDisabled,
-        readOnly,
-        isSocialLogin,
-        handleSocialLoginAdd,
+        onAuthenticatorSelect,
+        selected,
+        showLabels,
+        // refreshAuthenticators,
         [ "data-testid" ]: testId
     } = props;
 
     const { t } = useTranslation();
 
-    const [ draggableAuthenticators, setDraggableAuthenticators ] = useState<ReactElement[]>(null);
-    const [ draggableAddSocialAuthenticatorButton, setDraggableAddSocialAuthenticatorButton ] =
-        useState<ReactElement[]>(null);
+    const [ selectedAuthenticators, setSelectedAuthenticators ] = useState<GenericAuthenticatorInterface[]>(undefined);
 
-    const classes = classNames("authenticators", className);
-
-    const isAuthenticatorDisabled = (authenticator) => {
-        if (droppableId === ApplicationManagementConstants.SECOND_FACTOR_AUTHENTICATORS_DROPPABLE_ID) {
-            return !(authenticator?.isEnabled);
-        }
-        if (droppableId === ApplicationManagementConstants.EXTERNAL_AUTHENTICATORS_DROPPABLE_ID) {
-            return !(authenticator
-                && authenticator.authenticators[ 0 ]
-                && authenticator.authenticators[ 0 ].isEnabled);
-        }
-    };
-
-    const resolvePopupContent = () => {
-        if (droppableId === ApplicationManagementConstants.SECOND_FACTOR_AUTHENTICATORS_DROPPABLE_ID) {
-            return (
-                <Text>
-                    <Trans
-                        i18nKey={
-                            "console:develop.features.applications.edit.sections.signOnMethod.sections." +
-                            "authenticationFlow.sections.stepBased.secondFactorDisabled"
-                        }
-                    >
-                        The second-factor authenticators can only be used if the <Code withBackground>basic</Code>
-                        authenticator has been added in a previous step.
-                    </Trans>
-                </Text>
-            );
-        } else if (droppableId === ApplicationManagementConstants.EXTERNAL_AUTHENTICATORS_DROPPABLE_ID) {
-            return (
-                <Text>
-                    {
-                        t("console:develop.features.applications.edit.sections.signOnMethod.sections." +
-                            "authenticationFlow.sections.stepBased.authenticatorDisabled")
-                    }
-                </Text>
-            );
-        }
-    };
+    const authenticatorCardClasses: string = classNames("authenticator", {
+        "with-labels": showLabels
+    });
 
     /**
-     * Having `PortalAwareDraggable` in return causes flickers due to `ReactDOM.createPortal`
-     * triggering every time dom nodes are updated. Having it in a state fixes the flicker.
+     * Updates the internal selected authenticators state when the prop changes.
      */
     useEffect(() => {
-
-        if (!authenticators || !Array.isArray(authenticators) || authenticators.length < 1) {
+        if (!selected) {
             return;
         }
 
-        const draggableNodes: ReactElement[] = [];
+        setSelectedAuthenticators(selected);
+    }, [ selected ]);
 
-        authenticators.map((authenticator, index) => {
+    const isFactorEnabled = (authenticator: GenericAuthenticatorInterface): boolean => {
+        if (authenticator.category === AuthenticatorCategories.SECOND_FACTOR) {
+            // If there is only one step in the flow, second factor authenticators shouldn't be allowed.
+            if (currentStep === 0) {
+                return false;
+            }
 
-            draggableNodes.push(
-                <Draggable
-                    key={ `${ authenticator.idp }-${ authenticator.id }` }
-                    draggableId={ authenticator.id }
-                    index={ index }
-                    isDragDisabled={ readOnly || isAuthenticatorDisabled(authenticator) }
-                >
-                    { (
-                        draggableProvided: DraggableProvided,
-                        draggableSnapshot: DraggableStateSnapshot
-                    ): React.ReactElement<HTMLElement> => (
-                        <PortalAwareDraggable
-                            provided={ draggableProvided }
-                            snapshot={ draggableSnapshot }
-                        >
-                            <Popup
-                                on="hover"
-                                disabled={ !isAuthenticatorDisabled(authenticator) }
-                                content={ (
-                                    <>
-                                        <Label attached="top">
-                                            <Icon name="info circle" /> Info
-                                        </Label>
-                                        { resolvePopupContent() }
-                                    </>
-                                ) }
-                                trigger={ (
-                                    <div>
-                                        <LabeledCard
-                                            size="tiny"
-                                            disabled={ isAuthenticatorDisabled(authenticator) }
-                                            image={ authenticator.image }
-                                            label={ authenticator.displayName || defaultName }
-                                            labelEllipsis={ true }
-                                            data-testid={
-                                                `${ testId }-authenticator-${ authenticator.name }`
-                                            }
-                                        />
-                                    </div>
-                                ) }
-                            />
-                        </PortalAwareDraggable>
-                    ) }
-                </Draggable>
+            return SignInMethodUtils.isSecondFactorAdditionValid(
+                authenticator.defaultAuthenticator.authenticatorId,
+                currentStep,
+                authenticationSteps
             );
-        });
-
-        setDraggableAuthenticators(draggableNodes);
-    }, [ authenticators ]);
-
-    /**
-     * Having `PortalAwareDraggable` in return causes flickers due to `ReactDOM.createPortal`
-     * triggering every time dom nodes are updated. Having it in a state fixes the flicker.
-     */
-    useEffect(() => {
-
-        if (!isSocialLogin) {
-            return;
         }
 
-        const draggableNodes: ReactElement[] = [];
+        if ([
+            IdentityProviderManagementConstants.IDENTIFIER_FIRST_AUTHENTICATOR_ID,
+            IdentityProviderManagementConstants.BASIC_AUTHENTICATOR_ID ].includes(authenticator.id)) {
+            return SignInMethodUtils.isFirstFactorValid(currentStep, authenticationSteps);
+        }
 
-        draggableNodes.push(
-            <Draggable
-                draggableId="Add"
-                isDragDisabled={ true }
-                index={ 0 }
-            >
-                { (
-                    draggableProvided: DraggableProvided,
-                    draggableSnapshot: DraggableStateSnapshot
-                ): React.ReactElement<HTMLElement> => (
-                    <PortalAwareDraggable
-                        provided={ draggableProvided }
-                        snapshot={ draggableSnapshot }
-                    >
-                        <LabeledCard
-                            size="tiny"
-                            image={ getGeneralIcons()?.addCircleOutline }
-                            label={ "Add" }
-                            labelEllipsis={ true }
-                            data-testid={
-                                `${ testId }-authenticator-add`
-                            }
-                            imageOptions={ {
-                                as: "data-url"
-                            } }
-                            onClick={ handleSocialLoginAdd }
-                        />
-                    </PortalAwareDraggable>
-                ) }
-            </Draggable>
-        );
-
-        setDraggableAddSocialAuthenticatorButton(draggableNodes);
-    }, [ isSocialLogin ]);
+        return true;
+    };
 
     /**
-     * Add a wrapper portal so that the `transform` attributes in the parent
-     * component won't affect the draggable position.
+     * Resolve popup content.
      *
-     * @see {@link https://github.com/atlassian/react-beautiful-dnd/issues/128)}
-     * @param {React.PropsWithChildren<{provided: DraggableProvided; snapshot: DraggableStateSnapshot}>} props
-     * @return {React.ReactElement | React.ReactPortal}
+     * @param authenticator - Authenticator.
+     *
+     * @returns React element.
      */
-    const PortalAwareDraggable = (
-        props: PropsWithChildren<{ provided: DraggableProvided; snapshot: DraggableStateSnapshot }>
-    ): ReactElement | ReactPortal => {
-
-        const {
-            children,
-            provided,
-            snapshot
-        } = props;
-
-        const usePortal: boolean = snapshot.isDragging;
-
-        const child: ReactElement = (
-            <div
-                ref={ provided.innerRef }
-                { ...provided.draggableProps }
-                { ...provided.dragHandleProps }
-                className="inline"
-            >
-                { children }
-            </div>
+    const resolvePopupContent = (authenticator: GenericAuthenticatorInterface): ReactElement => {
+        const InfoLabel: JSX.Element = (
+            <Label attached="top">
+                <Icon name="info circle" /> Info
+            </Label>
         );
 
-        if (!usePortal) {
-            return child;
+        if (authenticator.category === AuthenticatorCategories.SECOND_FACTOR) {
+            return (
+                <>
+                    { currentStep === 0 ? (
+                        <Fragment>
+                            { InfoLabel }
+                            <Text>
+                                { applicationConfig.signInMethod.authenticatorSelection.messages
+                                    .secondFactorDisabledInFirstStep ??
+                                    t(
+                                        "console:develop.features.applications.edit.sections" +
+                                        ".signOnMethod.sections.authenticationFlow.sections.stepBased" +
+                                        ".secondFactorDisabledInFirstStep"
+                                    ) }
+                            </Text>
+                        </Fragment>
+                    ) : (
+                        <Fragment>
+                            { InfoLabel }
+                            <Text>
+                                { applicationConfig.signInMethod.authenticatorSelection.messages
+                                    .secondFactorDisabled ?? (
+                                    <Trans
+                                        i18nKey={
+                                            "console:develop.features.applications.edit.sections" +
+                                                ".signOnMethod.sections.authenticationFlow.sections" +
+                                                ".stepBased.secondFactorDisabled"
+                                        }
+                                    >
+                                            The second-factor authenticators can only be used if{ " " }
+                                        <Code withBackground>Username & Password</Code>,{ " " }
+                                        <Code withBackground>Social Login</Code>,
+                                        <Code withBackground>Security Key/Biometrics</Code>
+                                            or any other handlers that can handle these factors are
+                                            present in a previous step.
+                                    </Trans>
+                                ) }
+                            </Text>
+                        </Fragment>
+                    ) }
+                </>
+            );
+        } else if (authenticator.category === AuthenticatorCategories.SOCIAL) {
+            return (
+                <Fragment>
+                    { InfoLabel }
+                    <Text>
+                        { t(
+                            "console:develop.features.applications.edit.sections.signOnMethod.sections." +
+                            "authenticationFlow.sections.stepBased.authenticatorDisabled"
+                        ) }
+                    </Text>
+                </Fragment>
+            );
+        } else if ([
+            IdentityProviderManagementConstants.IDENTIFIER_FIRST_AUTHENTICATOR_ID,
+            IdentityProviderManagementConstants.BASIC_AUTHENTICATOR_ID ].includes(authenticator.id)) {
+            return (
+                <Fragment>
+                    { InfoLabel }
+                    <Text>
+                        {
+                            t(
+                                "console:develop.features.applications.edit.sections" +
+                                ".signOnMethod.sections.authenticationFlow.sections.stepBased" +
+                                ".firstFactorDisabled"
+                            )
+                        }
+                    </Text>
+                </Fragment>
+            );
         }
-
-        // if dragging - put the item in a portal.
-        return ReactDOM.createPortal(child, portal);
     };
 
-    return authenticators && authenticators instanceof Array
-        ? (
-            <>
-                { heading && <Heading as="h6">{ heading }</Heading> }
-                <Droppable droppableId={ droppableId } direction="horizontal" isDropDisabled={ isDropDisabled }>
-                    { (provided: DroppableProvided): React.ReactElement<HTMLElement> => (
-                        <div
-                            ref={ provided.innerRef }
-                            { ...provided.droppableProps }
-                            className={ classes }
-                            data-testid={ testId }
-                        >
-                            { draggableAuthenticators }
-                            { draggableAddSocialAuthenticatorButton }
-                            { provided.placeholder }
-                        </div>
-                    ) }
-                </Droppable>
-            </>
-        )
-        : (
-            <>{ emptyPlaceholder }</>
-        );
+    /**
+     * Handles authenticator select.
+     *
+     * @param selectedAuthenticator - Selected Authenticator.
+     */
+    const handleAuthenticatorSelect = (selectedAuthenticator: GenericAuthenticatorInterface): void => {
+        if (!selectedAuthenticator.isEnabled) {
+            return;
+        }
+
+        if (selectedAuthenticators.some((authenticator: GenericAuthenticatorInterface) => 
+            authenticator.id === selectedAuthenticator.id)) {
+            const filtered: GenericAuthenticatorInterface[] = selectedAuthenticators
+                .filter((authenticator: GenericAuthenticatorInterface) => {
+                    return authenticator.id !== selectedAuthenticator.id;
+                });
+
+            onAuthenticatorSelect(filtered);
+            setSelectedAuthenticators(filtered);
+
+            return;
+        }
+
+        onAuthenticatorSelect([ ...selectedAuthenticators, selectedAuthenticator ]);
+        setSelectedAuthenticators([ ...selectedAuthenticators, selectedAuthenticator ]);
+    };
+
+    /**
+     * Resolve Authenticator labels.
+     *
+     * @param authenticator - Authenticator.
+     *
+     * @returns Authenticator labels.
+     */
+    const resolveAuthenticatorLabels = (authenticator: FederatedAuthenticatorInterface): string[] => {
+        if (!authenticator) {
+            return [];
+        }
+
+        return AuthenticatorMeta.getAuthenticatorLabels(authenticator.authenticatorId) ?? [];
+    };
+
+    return (
+        <Fragment data-testid={ testId }>
+            { heading && <Heading as="h6">{ heading }</Heading> }
+            { authenticators.map((authenticator: GenericAuthenticatorInterface, index: number) => (
+                <Popup
+                    hoverable
+                    hideOnScroll
+                    position="top center"
+                    key={ index }
+                    on="hover"
+                    disabled={ isFactorEnabled(authenticator) }
+                    content={ resolvePopupContent(authenticator) }
+                    trigger={
+                        (<InfoCard
+                            showTooltips
+                            imageSize="micro"
+                            className={ authenticatorCardClasses }
+                            header={
+                                authenticator.displayName ||
+                                defaultName
+                            }
+                            disabled={ !isFactorEnabled(authenticator) }
+                            selected={
+                                isFactorEnabled(authenticator) &&
+                                Array.isArray(selectedAuthenticators) &&
+                                selectedAuthenticators.some((evalAuthenticator: GenericAuthenticatorInterface) => {
+                                    return evalAuthenticator.id === authenticator.id;
+                                })
+                            }
+                            subHeader={ authenticator.categoryDisplayName }
+                            description={ authenticator.description }
+                            image={ authenticator.image }
+                            tags={ showLabels && resolveAuthenticatorLabels(authenticator?.defaultAuthenticator) }
+                            onClick={ () => {
+                                isFactorEnabled(authenticator) && handleAuthenticatorSelect(authenticator);
+                            } }
+                            imageOptions={ {
+                                floated: false,
+                                inline: true
+                            } }
+                            data-testid={ `${ testId }-authenticator-${ authenticator.name }` }
+                        />)
+                    }
+                />
+            )) }
+        </Fragment>
+    );
 };
 
 /**
@@ -352,6 +331,5 @@ export const Authenticators: FunctionComponent<AuthenticatorsPropsInterface> = (
 Authenticators.defaultProps = {
     "data-testid": "authenticators",
     defaultName: "Unknown",
-    isDropDisabled: true,
-    isSocialLogin: false
+    showLabels: true
 };

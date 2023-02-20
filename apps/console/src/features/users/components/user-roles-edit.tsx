@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,12 +16,10 @@
  * under the License.
  */
 
-import { getRolesList } from "@wso2is/core/api";
 import {
     AlertInterface,
     AlertLevels,
     ProfileInfoInterface,
-    RolesMemberInterface,
     RolesInterface
 } from "@wso2is/core/models";
 import {
@@ -30,29 +28,25 @@ import {
     EmptyPlaceholder,
     Heading,
     LinkButton,
+    Popup,
     PrimaryButton,
     TransferComponent,
-    TransferList, TransferListItem
+    TransferList,
+    TransferListItem
 } from "@wso2is/react-components";
 import escapeRegExp from "lodash-es/escapeRegExp";
 import forEachRight from "lodash-es/forEachRight";
 import isEmpty from "lodash-es/isEmpty";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import React, { FunctionComponent, ReactElement, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-    Button,
-    Divider,
-    Grid,
-    Icon,
-    Input,
-    Label,
-    Modal,
-    Popup,
-    Table
-} from "semantic-ui-react";
+import { useSelector } from "react-redux";
+import { Button, Divider, Grid, Icon, Input, Label, Modal, Table } from "semantic-ui-react";
 import { UserRolePermissions } from "./user-role-permissions";
 import { RolePermissions } from "./wizard";
-import { getEmptyPlaceholderIllustrations, updateResources } from "../../core";
+import { AppState, getEmptyPlaceholderIllustrations, updateResources } from "../../core";
+import { getOrganizationRoles } from "../../organizations/api";
+import { OrganizationUtils } from "../../organizations/utils";
+import { getRolesList } from "../../roles/api";
 import { APPLICATION_DOMAIN, INTERNAL_DOMAIN } from "../../roles/constants";
 
 interface UserRolesPropsInterface {
@@ -123,7 +117,7 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
 
     // The following constant are used to persist the state of the unassigned roles permissions.
     const [ viewRolePermissions, setViewRolePermissions ] = useState(false);
-    const [ roleId,  setRoleId ] = useState();
+    const [ roleId, setRoleId ] = useState();
     const [ isSelected, setSelection ] = useState(false);
 
     // The following constant is used to persist the state whether user's assigned roles are still loading or finished.
@@ -131,6 +125,11 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
 
     const [ assignedRoles, setAssignedRoles ] = useState([]);
     const [ displayedRoles, setDisplayedRoles ] = useState([]);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
+
+    const currentOrganization = useSelector((state: AppState) => state.organization.organization);
+    const isRootOrganization = useMemo(() =>
+        OrganizationUtils.isRootOrganization(currentOrganization), [ currentOrganization ]);
 
     useEffect(() => {
         if (!selectedRoleId) {
@@ -167,6 +166,7 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
             setDisplayedRoles(user.roles);
             mapUserRoles();
             resolveUserRoles();
+
             return;
         }
         setDisplayedRoles(user.roles.filter((role) =>
@@ -184,24 +184,51 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
 
     useEffect(() => {
         setPrimaryRolesLoading(true);
-        getRolesList(null)
-            .then((response) => {
-                const roleResources = response.data.Resources;
-                if (hideApplicationRoles) {
-                    if (roleResources && roleResources instanceof Array) {
-                        response.data.Resources = roleResources.filter((role: RolesInterface) => {
-                            if (role.displayName?.includes(APPLICATION_DOMAIN)) {
-                                return false;
-                            }
-                            return role;
-                        });
+
+        if (isRootOrganization) {
+            // Get Roles from SCIM API
+            getRolesList(null)
+                .then((response) => {
+                    const roleResources = response.data.Resources;
+
+                    if (hideApplicationRoles) {
+                        if (roleResources && roleResources instanceof Array) {
+                            response.data.Resources = roleResources.filter((role: RolesInterface) => {
+                                if (role.displayName?.includes(APPLICATION_DOMAIN)) {
+                                    return false;
+                                }
+
+                                return role;
+                            });
+                        }
                     }
-                }
-                setPrimaryRoles(response.data.Resources);
-            })
-            .finally(() => {
-                setPrimaryRolesLoading(false);
-            });
+                    setPrimaryRoles(response.data.Resources);
+                })
+                .finally(() => {
+                    setPrimaryRolesLoading(false);
+                });
+        } else {
+            // Get Roles from Organization API
+            getOrganizationRoles(currentOrganization.id, null, 100, null)
+                .then((response) => {
+                    const roleResources = response.Resources;
+
+                    if (hideApplicationRoles) {
+                        if (roleResources && roleResources instanceof Array) {
+                            response.Resources = roleResources.filter((role: RolesInterface) => {
+                                if (role.displayName?.includes(APPLICATION_DOMAIN)) {
+                                    return false;
+                                }
+
+                                return role;
+                            });
+                        }
+                    }
+                    setPrimaryRoles(response.Resources);
+                }).finally(() => {
+                    setPrimaryRolesLoading(false);
+                });
+        }
     }, []);
 
     /**
@@ -384,6 +411,8 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
             });
         }
 
+        setIsSubmitting(true);
+
         updateResources(bulkData)
             .then(() => {
                 onAlertFired({
@@ -429,6 +458,9 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
                         "genericError.message"
                     )
                 });
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
@@ -469,7 +501,7 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
             checkedRoles.push(role);
             setSelectedRoleList(checkedRoles);
         }
-        setIsSelectAllRolesChecked(checkedRoles.length === roleList.length)
+        setIsSelectAllRolesChecked(checkedRoles.length === roleList.length);
     };
 
     /**
@@ -497,10 +529,11 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
     /**
      * The following method handles creating a label for the list item.
      *
-     * @param roleName: string
+     * @param roleName - Name of the role.
      */
     const createItemLabel = (roleName: string) => {
         const role = roleName?.split("/");
+
         if (role?.length > 0) {
             if (role[0] == "Application") {
                 return {
@@ -572,16 +605,19 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
                                             t("console:manage.features.transferList.list.headers.1"), ""
                                         ] : [
                                             t("console:manage.features.transferList.list.headers.1"), ""
-                                        ]}
+                                        ] }
                                         handleHeaderCheckboxChange={ selectAllRoles }
                                         isHeaderCheckboxChecked={ isSelectAllRolesChecked }
                                         emptyPlaceholderContent={ t("console:manage.features.transferList.list." +
                                             "emptyPlaceholders.users.roles.unselected", { type: "roles" }) }
                                         data-testid="user-mgt-update-roles-modal-unselected-roles-select-all-checkbox"
+                                        emptyPlaceholderDefaultContent={ t("console:manage.features.transferList.list."
+                                            + "emptyPlaceholders.default") }
                                     >
                                         {
                                             roleList?.map((role, index) => {
                                                 const roleName = role?.displayName?.split("/");
+
                                                 if (roleName?.length >= 1) {
                                                     return (
                                                         <TransferListItem
@@ -627,6 +663,8 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
                             <PrimaryButton
                                 data-testid="user-mgt-update-roles-modal-save-button"
                                 floated="right"
+                                loading={ isSubmitting }
+                                disabled={ isSubmitting }
                                 onClick={ () => updateUserRole(user, selectedRoleList) }
                             >
                                 { t("common:save") }
@@ -647,6 +685,7 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
 
             assignedRoles && assignedRoles?.map((role) => {
                 const groupName = role?.display?.split("/");
+
                 if (groupName?.length >= 1) {
                     isMatch = re.test(role.display);
                     if (!showDomain && groupName?.length > 1) {
@@ -761,11 +800,12 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
                                             </Table.Header>
                                             <Table.Body>
                                                 {
-                                                    assignedRoles?.map((group) => {
+                                                    assignedRoles?.map((group, index: number) => {
                                                         const userRole = group?.display?.split("/");
+
                                                         if (userRole?.length >= 1 && group?.value) {
                                                             return (
-                                                                <Table.Row>
+                                                                <Table.Row key={ index }>
                                                                     { showDomain && (
                                                                         userRole[ 0 ] == "Application" ? (
                                                                             <Table.Cell>
@@ -774,12 +814,12 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
                                                                                 </Label>
                                                                             </Table.Cell>
                                                                         ) : (
-                                                                                <Table.Cell>
-                                                                                    <Label className="internal-label">
-                                                                                        { INTERNAL_DOMAIN }
-                                                                                    </Label>
-                                                                                </Table.Cell>
-                                                                            )
+                                                                            <Table.Cell>
+                                                                                <Label className="internal-label">
+                                                                                    { INTERNAL_DOMAIN }
+                                                                                </Label>
+                                                                            </Table.Cell>
+                                                                        )
                                                                     ) }
                                                                     <Table.Cell width={ 8 }>
                                                                         {
@@ -792,7 +832,7 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
                                                                             content="View permissions"
                                                                             position="top right"
                                                                             trigger={
-                                                                                <Icon
+                                                                                (<Icon
                                                                                     data-testid={
                                                                                         `user-mgt-roles-list-
                                                                                         ${ userRole[ 1 ] }-
@@ -805,7 +845,7 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
                                                                                             group.value
                                                                                         )
                                                                                     }
-                                                                                />
+                                                                                />)
                                                                             }
                                                                         />
                                                                     </Table.Cell>
@@ -862,6 +902,6 @@ export const UserRolesList: FunctionComponent<UserRolesPropsInterface> = (
  * Default props for the component.
  */
 UserRolesList.defaultProps = {
-    showDomain: true,
-    hideApplicationRoles: false
+    hideApplicationRoles: false,
+    showDomain: true
 };

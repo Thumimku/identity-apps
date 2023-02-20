@@ -30,11 +30,19 @@ public class AppPortalConstants {
 
     public static final String DISPLAY_NAME_CLAIM_URI = "http://wso2.org/claims/displayName";
 
+    public static final String USERNAME_CLAIM_URI = "http://wso2.org/claims/username";
+
+    public static final String PROFILE_CLAIM_URI = "http://wso2.org/claims/url";
+
     public static final String TOKEN_BINDING_TYPE_COOKIE = "cookie";
 
     public static final String GRANT_TYPE_ACCOUNT_SWITCH = "account_switch";
 
+    public static final String GRANT_TYPE_ORGANIZATION_SWITCH = "organization_switch";
+
     public static final String SYSTEM_PROP_SKIP_SERVER_INITIALIZATION = "skipServerInitialization";
+
+    public static final String CONSOLE_APP = "Console";
 
     private AppPortalConstants() {
 
@@ -45,9 +53,9 @@ public class AppPortalConstants {
      */
     public enum AppPortal {
 
-        MY_ACCOUNT("My Account", "This is the my account application.", "MY_ACCOUNT", "/myaccount/login",
+        MY_ACCOUNT("My Account", "This is the my account application.", "MY_ACCOUNT", "/myaccount",
                 "/myaccount/"),
-        CONSOLE("Console", "This is the console application.", "CONSOLE", "/console/login",
+        CONSOLE("Console", "This is the console application.", "CONSOLE", "/console",
                 "/console/");
 
         private final String name;

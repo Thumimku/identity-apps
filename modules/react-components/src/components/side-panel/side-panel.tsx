@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,19 +20,21 @@ import { UIConstants } from "@wso2is/core/constants";
 import {
     CategorizedRouteInterface,
     ChildRouteInterface,
+    IdentifiableComponentInterface,
     RouteInterface,
     TestableComponentInterface
 } from "@wso2is/core/models";
 import classNames from "classnames";
 import sortBy from "lodash-es/sortBy";
 import React, { PropsWithChildren, ReactElement, useEffect, useState } from "react";
-import { Container, Responsive, Sidebar } from "semantic-ui-react";
+import { Container, Sidebar } from "semantic-ui-react";
 import { SidePanelItems } from "./side-panel-items";
+import { Media } from "../media";
 
 /**
  * Common side panel base component Prop types.
  */
-export interface CommonSidePanelPropsInterface extends TestableComponentInterface {
+export interface CommonSidePanelPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Caret icon.
      */
@@ -63,7 +65,7 @@ export interface CommonSidePanelPropsInterface extends TestableComponentInterfac
     ordered?: boolean;
     /**
      * Side panel item onclick callback.
-     * @param {RouteInterface | ChildRouteInterface} route - Clicked route.
+     * @param route - Clicked route.
      */
     onSidePanelItemClick: (route: RouteInterface | ChildRouteInterface) => void;
     /**
@@ -95,6 +97,10 @@ export interface CommonSidePanelPropsInterface extends TestableComponentInterfac
      */
     sidePanelTopMargin?: number | boolean;
     /**
+     * Stop showing the category label for single item categories.
+     */
+    skipCategoryLabelForSingleItemCategories?: boolean;
+    /**
      * i18next translation hook.
      */
     translationHook?: any;
@@ -118,9 +124,9 @@ export interface SidePanelPropsInterface extends CommonSidePanelPropsInterface {
 /**
  * Side panel base component.
  *
- * @param {SidePanelPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns Side panel base component.
  */
 export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelPropsInterface>> = (
     props: PropsWithChildren<SidePanelPropsInterface>
@@ -140,6 +146,7 @@ export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelProps
         onSidePanelItemClick,
         onSidePanelPusherClick,
         routes,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -174,10 +181,9 @@ export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelProps
      * Evaluate if the child item section should be extended or not. If so, adds
      * `open` attribute to the route section.
      *
-     * @param {RouteInterface[] | ChildRouteInterface[]} routesArray - Array of routes.
-     * @param {RouteInterface | ChildRouteInterface} route - Evaluating route.
-     *
-     * @return {RouteInterface[]} Modified set of routes.
+     * @param routesArray - Array of routes.
+     * @param route - Evaluating route.
+     * @returns Modified set of routes.
      */
     const evaluateSidePanelItemExtension = (
         routesArray: RouteInterface[] | ChildRouteInterface[],
@@ -190,6 +196,7 @@ export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelProps
             if (evalRoute.children) {
                 evaluateSidePanelItemExtension(evalRoute.children, route);
             }
+
             return true;
         });
     };
@@ -197,7 +204,7 @@ export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelProps
     /**
      * Handles side panel item onclick.
      *
-     * @param {RouteInterface | ChildRouteInterface} route - Clicked on route.
+     * @param route - Clicked on route.
      */
     const handleItemOnClick = (route: RouteInterface | ChildRouteInterface): void => {
         setItems(evaluateSidePanelItemExtension(routes, route));
@@ -207,8 +214,8 @@ export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelProps
     /**
      * Categorize the routes.
      *
-     * @param {RouteInterface[]} routes - Routes array.
-     * @return {CategorizedRouteInterface} Categorized routes.
+     * @param routes - Routes array.
+     * @returns Categorized routes.
      */
     const getCategorizedItems = (routes: RouteInterface[]): CategorizedRouteInterface => {
         const categorizedRoutes: CategorizedRouteInterface = {};
@@ -217,6 +224,7 @@ export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelProps
             if (route.category) {
                 if (categorizedRoutes[route.category]) {
                     categorizedRoutes[route.category].push(route);
+
                     continue;
                 }
 
@@ -230,9 +238,9 @@ export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelProps
     /**
      * Sorted routes based on the provided criteria.
      *
-     * @param {RouteInterface[]} routes - Routes array.
-     * @param {"order"} criteria - Sorting criteria.
-     * @return {RouteInterface[]} Sorted routes.
+     * @param routes - Routes array.
+     * @param criteria - Sorting criteria.
+     * @returns Sorted routes.
      */
     const sortRoutes = (routes: RouteInterface[], criteria: "order" = "order"): RouteInterface[] => {
         return sortBy(routes, criteria);
@@ -240,11 +248,12 @@ export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelProps
 
     return (
         <div style={ mainLayoutStyles } className="layout-content">
-            <Responsive { ...Responsive.onlyMobile } className="mobile-container">
+            <Media lessThan="tablet" className="mobile-container">
                 <Sidebar.Pushable>
                     <Sidebar
                         animation="push"
                         visible={ mobileSidePanelVisibility }
+                        data-componentid={ componentId }
                         data-testid={ testId }
                     >
                         <SidePanelItems
@@ -258,6 +267,7 @@ export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelProps
                                         ? sortRoutes(items)
                                         : items
                             }
+                            data-componentid={ `${ componentId }-items` }
                             data-testid={ `${testId}-items` }
                             allowedScopes={ allowedScopes }
                         />
@@ -271,33 +281,34 @@ export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelProps
                         </div>
                     </Sidebar.Pusher>
                 </Sidebar.Pushable>
-            </Responsive>
-            <Responsive
-                as={ Container }
-                className="desktop-container"
-                fluid={ fluid }
-                style={ desktopContentStyle }
-                minWidth={ Responsive.onlyTablet.minWidth }
-            >
-                <div className={ wrapperClasses } data-testid={ testId }>
-                    <SidePanelItems
-                        { ...props }
-                        type="desktop"
-                        onSidePanelItemClick={ handleItemOnClick }
-                        routes={
-                            categorized
-                                ? getCategorizedItems(items)
-                                : ordered
-                                    ? sortRoutes(items)
-                                    : items
-                        }
-                        data-testid={ `${ testId }-items` }
-                    />
-                </div>
-                <div className="content-wrapper">
-                    { children }
-                </div>
-            </Responsive>
+            </Media>
+            <Media greaterThanOrEqual="tablet">
+                <Container
+                    className="desktop-container"
+                    fluid={ fluid }
+                    style={ desktopContentStyle }
+                >
+                    <div className={ wrapperClasses } data-testid={ testId } data-componentid={ componentId }>
+                        <SidePanelItems
+                            { ...props }
+                            type="desktop"
+                            onSidePanelItemClick={ handleItemOnClick }
+                            routes={
+                                categorized
+                                    ? getCategorizedItems(items)
+                                    : ordered
+                                        ? sortRoutes(items)
+                                        : items
+                            }
+                            data-componentid={ `${ componentId }-items` }
+                            data-testid={ `${ testId }-items` }
+                        />
+                    </div>
+                    <div className="content-wrapper">
+                        { children }
+                    </div>
+                </Container>
+            </Media>
         </div>
     );
 };
@@ -307,6 +318,7 @@ export const SidePanel: React.FunctionComponent<PropsWithChildren<SidePanelProps
  */
 SidePanel.defaultProps = {
     categorized: false,
+    "data-componentid": "side-panel",
     "data-testid": "side-panel",
     desktopContentTopSpacing: UIConstants.DEFAULT_DASHBOARD_LAYOUT_DESKTOP_CONTENT_TOP_SPACING,
     fluid: false,
@@ -316,5 +328,6 @@ SidePanel.defaultProps = {
     showEllipsis: true,
     sidePanelItemHeight: UIConstants.DEFAULT_SIDE_PANEL_ITEM_HEIGHT,
     sidePanelTopMargin: false,
+    skipCategoryLabelForSingleItemCategories: true,
     translationHook: null
 };

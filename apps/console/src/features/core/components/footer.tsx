@@ -20,10 +20,10 @@ import { I18n, LanguageChangeException, SupportedLanguagesMeta } from "@wso2is/i
 import {
     FooterLinkInterface,
     Footer as ReusableFooter,
-    FooterPropsInterface as ReusableFooterPropsInterface,
-    ThemeContext
+    FooterPropsInterface as ReusableFooterPropsInterface
 } from "@wso2is/react-components";
-import React, { FunctionComponent, ReactElement, useContext } from "react";
+import * as moment from "moment";
+import React, { FunctionComponent, ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { AppConstants } from "../constants";
@@ -51,8 +51,6 @@ export const Footer: FunctionComponent<FooterPropsInterface> = (
         ...rest
     } = props;
 
-    const { state } = useContext(ThemeContext);
-
     const { t } = useTranslation();
 
     const config: ConfigReducerStateInterface = useSelector((state: AppState) => state.config);
@@ -65,6 +63,7 @@ export const Footer: FunctionComponent<FooterPropsInterface> = (
      * @param {string} language - Selected language.
      */
     const handleLanguageSwitch = (language: string): void => {
+        moment.locale(language ?? "en");
         I18n.instance.changeLanguage(language)
             .catch((error) => {
                 throw new LanguageChangeException(language, error);
@@ -96,11 +95,9 @@ export const Footer: FunctionComponent<FooterPropsInterface> = (
             supportedLanguages={ supportedI18nLanguages }
             onLanguageChange={ handleLanguageSwitch }
             copyright={
-                (state.copyrightText && state.copyrightText !== "")
-                    ? state.copyrightText
-                    : config.ui.appCopyright
-                        ? config.ui.appCopyright
-                        : null
+                config.ui.appCopyright
+                    ? config.ui.appCopyright
+                    : null
             }
             links={ generateFooterLinks() }
             showLanguageSwitcher={ config.ui.i18nConfigs?.showLanguageSwitcher ?? showLanguageSwitcher }

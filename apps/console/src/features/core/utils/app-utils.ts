@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import { AppConstants } from "@wso2is/core/constants";
 import { StorageIdentityAppsSettingsInterface } from "@wso2is/core/models";
 import { LocalStorageUtils } from "@wso2is/core/utils";
 import cloneDeep from "lodash-es/cloneDeep";
@@ -32,7 +33,6 @@ export class AppUtils {
      * Private constructor to avoid object instantiation from outside
      * the class.
      *
-     * @hideconstructor
      */
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     private constructor() { }
@@ -40,7 +40,7 @@ export class AppUtils {
     /**
      * Get the logged in user's preferences.
      *
-     * @return {StorageIdentityAppsSettingsInterface}
+     * @returns - User preferences.
      */
     public static getUserPreferences(): StorageIdentityAppsSettingsInterface {
         const tenantName: string = store.getState().config.deployment.tenant;
@@ -50,8 +50,8 @@ export class AppUtils {
             return;
         }
 
-        let preferences = {};
-        
+        let preferences: Record<string, StorageIdentityAppsSettingsInterface> = {};
+
         try {
             preferences = JSON.parse(LocalStorageUtils.getValueFromLocalStorage(tenantName));
         } catch (e) {
@@ -63,7 +63,7 @@ export class AppUtils {
 
     /**
      * Sets the user preferences in the local storage.
-     * @param {StorageIdentityAppsSettingsInterface} preferences
+     * @param preferences - User preferences.
      */
     public static setUserPreferences(preferences: StorageIdentityAppsSettingsInterface): void {
         const tenantName: string = store.getState().config.deployment.tenant;
@@ -82,7 +82,7 @@ export class AppUtils {
     /**
      * Get the consensually hidden routes.
      *
-     * @return {string[]}
+     * @returns Hidden routes.
      */
     public static getHiddenRoutes(): string[] {
 
@@ -102,7 +102,7 @@ export class AppUtils {
     /**
      * Set a consensually hidden route.
      *
-     * @param {string} routeId - Route ID.
+     * @param routeId - Route ID.
      */
     public static setHiddenRoute(routeId: string): void {
         const userPreferences: StorageIdentityAppsSettingsInterface = AppUtils.getUserPreferences();
@@ -111,11 +111,41 @@ export class AppUtils {
             return;
         }
 
-        const hiddenRoutes = this.getHiddenRoutes();
+        const hiddenRoutes: string[] = this.getHiddenRoutes();
 
         const newPref: StorageIdentityAppsSettingsInterface = cloneDeep(userPreferences);
+
         newPref.identityAppsSettings.devPortal.hiddenRoutes = [ ...hiddenRoutes, routeId ];
 
         this.setUserPreferences(newPref);
+    }
+
+    /**
+     * Callback to be fired on every chunk load error.
+     */
+    public static onChunkLoadError(): void {
+
+        dispatchEvent(new Event(AppConstants.CHUNK_LOAD_ERROR_EVENT));
+    }
+
+    /**
+     * Check if the auth callback URL belongs to another tenant.
+     *
+     * @param authCallbackURL - The auth callback URL.
+     *
+     * @returns If the auth callback URL belongs to another tenant.
+     */
+    public static isAuthCallbackURLFromAnotherTenant(authCallbackURL: string, tenantDomain: string): boolean {
+        const tenantName: string = window["AppUtils"].getConfig().superTenant === tenantDomain ? "" : tenantDomain;
+        const tenantRegex: RegExp = new RegExp("t/([^/]+)/");
+        const matches: RegExpExecArray = tenantRegex.exec(authCallbackURL);
+
+        const tenantFromURL: string = matches?.[ 1 ] ?? "";
+
+        if (tenantFromURL === tenantName) {
+            return false;
+        }
+
+        return true;
     }
 }

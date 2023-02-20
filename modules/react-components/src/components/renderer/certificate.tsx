@@ -1,30 +1,36 @@
 /**
-* Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-*
-* WSO2 Inc. licenses this file to you under the Apache License,
-* Version 2.0 (the 'License'); you may not use this file except
-* in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing,
-* software distributed under the License is distributed on an
-* 'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-* KIND, either express or implied. See the License for the
-* specific language governing permissions and limitations
-* under the License.
-*/
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
-import { DisplayCertificate, DistinguishedName, TestableComponentInterface } from "@wso2is/core/models";
+import {
+    DisplayCertificate,
+    DistinguishedName,
+    IdentifiableComponentInterface,
+    TestableComponentInterface
+} from "@wso2is/core/models";
 import moment from "moment";
-import React, { FunctionComponent, ReactElement, Fragment } from "react";
-import { Divider, Grid, Icon, Popup, Segment, SemanticCOLORS, SemanticICONS } from "semantic-ui-react";
+import React, { Fragment, FunctionComponent, ReactElement } from "react";
+import { Divider, Grid, Icon, Segment, SemanticCOLORS, SemanticICONS } from "semantic-ui-react";
+import { Popup } from "../popup";
 
 /**
  * Prop types of the `Certificate` component.
  */
-export interface CertificatePropsInterface extends TestableComponentInterface {
+export interface CertificatePropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * The decoded certificate details
      */
@@ -49,8 +55,8 @@ export interface CertificateLablesPropsInterface {
 /**
  * This renders the certificate component that displays the details of a certificate.
  *
- * @param {CertificatePropsInterface} props - Props injected to the component.
- * @returns {ReactElement}
+ * @param props - Props injected to the component.
+ * @returns the certificate component
  */
 export const Certificate: FunctionComponent<CertificatePropsInterface> = (
     props: CertificatePropsInterface
@@ -58,13 +64,13 @@ export const Certificate: FunctionComponent<CertificatePropsInterface> = (
 
     const {
         labels,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
     const {
         version,
         issuerDN,
-        subjectDN,
         validFrom,
         validTill
     } = props.certificate;
@@ -85,16 +91,16 @@ export const Certificate: FunctionComponent<CertificatePropsInterface> = (
             if (Math.abs(moment.duration(currentDate.diff(expiryDate)).months()) > 1) {
                 icon = "check circle";
                 iconColor = "green";
-                popupText = "Certificate is valid."
+                popupText = "Certificate is valid.";
             } else {
                 icon = "exclamation circle";
                 iconColor = "yellow";
-                popupText = "Certificate is soon to be expired."
+                popupText = "Certificate is soon to be expired.";
             }
         } else {
             icon = "times circle";
             iconColor = "red";
-            popupText = "Certificate is expired."
+            popupText = "Certificate is expired.";
         }
 
         return (
@@ -125,12 +131,12 @@ export const Certificate: FunctionComponent<CertificatePropsInterface> = (
         if (isValid) {
             icon = "check circle";
             iconColor = "green";
-            popupText = "Certificate is valid."
+            popupText = "Certificate is valid.";
         } else {
             if (Math.abs(moment.duration(currentDate.diff(expiryDate)).months()) > 1) {
                 icon = "times circle";
                 iconColor = "red";
-                popupText = "Certificate is still not valid."
+                popupText = "Certificate is still not valid.";
             } else {
                 icon = "exclamation circle";
                 iconColor = "yellow";
@@ -152,7 +158,12 @@ export const Certificate: FunctionComponent<CertificatePropsInterface> = (
     };
 
     return (
-        <Segment className="certificate" compact data-testid={ testId }>
+        <Segment
+            className="certificate"
+            compact
+            data-testid={ testId }
+            data-componentid={ componentId }
+        >
             <Grid>
                 <Grid.Row>
                     <Grid.Column computer={ 16 } mobile={ 16 } tablet={ 16 }>
@@ -264,12 +275,13 @@ export const Certificate: FunctionComponent<CertificatePropsInterface> = (
                 <span>{ labels.version }</span> { version + " " }
             </p>
         </Segment>
-    )
+    );
 };
 
 /**
  * Default props for the component.
  */
 Certificate.defaultProps = {
+    "data-componentid": "certificate",
     "data-testid": "certificate"
 };

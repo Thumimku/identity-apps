@@ -16,17 +16,20 @@
  * under the License.
  */
 
-import { IdentityClient } from "@wso2/identity-oidc-js";
-import { HttpMethods } from "@wso2is/core/models";
+import { AsgardeoSPAClient } from "@asgardeo/auth-react";
+import { RoleConstants } from "@wso2is/core/constants";
+import { IdentityAppsApiException } from "@wso2is/core/exceptions";
+import { HttpMethods, RoleListInterface } from "@wso2is/core/models";
+import { AxiosError, AxiosResponse } from "axios";
 import { store } from "../../core";
 import { CreateRoleInterface, PatchRoleDataInterface, SearchRoleInterface } from "../models";
 
 /**
  * Initialize an axios Http client.
  */
-const httpClient = IdentityClient.getInstance()
-    .httpRequest.bind(IdentityClient.getInstance())
-    .bind(IdentityClient.getInstance());
+const httpClient = AsgardeoSPAClient.getInstance()
+    .httpRequest.bind(AsgardeoSPAClient.getInstance())
+    .bind(AsgardeoSPAClient.getInstance());
 
 /**
  * Retrieve Role details for a give role id.
@@ -89,7 +92,7 @@ export const searchRoleList = (searchData: SearchRoleInterface): Promise<any> =>
             "Content-Type": "application/json"
         },
         method: HttpMethods.POST,
-        url: store.getState().config.endpoints.roles + "/.search"
+        url: store.getState().config.endpoints.rolesWithoutOrgPath + "/.search"
     };
 
     return httpClient(requestConfig)
@@ -154,7 +157,7 @@ export const createRole = (data: CreateRoleInterface): Promise<any> => {
  * @param roleId - ID of the role which needs to be updated
  * @param data - Permission data of the role
  */
-export const updateRolePermissions = (roleId: string, data: any): Promise<any> => {
+export const updateRolePermissions = (roleId: string, data: unknown): Promise<any> => {
     const requestConfig = {
         data,
         headers: {
@@ -241,5 +244,51 @@ export const updateRole = (roleId: string, roleData: PatchRoleDataInterface): Pr
             return Promise.resolve(response);
         }).catch((error) => {
             return Promise.reject(error);
+        });
+};
+
+/**
+ * Retrieve the list of groups that are currently in the system.
+ * TODO: Return `response.data` rather than `response` and stop returning any.
+ *
+ * @param {string} domain - User store domain.
+ * @return {Promise<RoleListInterface | any>}
+ * @throws {IdentityAppsApiException}
+ */
+export const getRolesList = (domain: string): Promise<RoleListInterface | any> => {
+
+    const requestConfig = {
+        headers: {
+            "Content-Type": "application/json"
+        },
+        method: HttpMethods.GET,
+        params: {
+            domain
+        },
+        url: store.getState().config.endpoints.roles
+    };
+
+    return httpClient(requestConfig)
+        .then((response: AxiosResponse) => {
+            if (response.status !== 200) {
+                throw new IdentityAppsApiException(
+                    RoleConstants.ROLES_FETCH_REQUEST_INVALID_RESPONSE_CODE_ERROR,
+                    null,
+                    response.status,
+                    response.request,
+                    response,
+                    response.config);
+            }
+
+            return Promise.resolve(response);
+        })
+        .catch((error: AxiosError) => {
+            throw new IdentityAppsApiException(
+                RoleConstants.ROLES_FETCH_REQUEST_ERROR,
+                error.stack,
+                error.code,
+                error.request,
+                error.response,
+                error.config);
         });
 };

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, PropsWithChildren, ReactElement } from "react";
 import { Tab, TabPaneProps } from "semantic-ui-react";
@@ -24,7 +24,9 @@ import { Tab, TabPaneProps } from "semantic-ui-react";
 /**
  * Resource tab pane component Prop types.
  */
-export interface ResourceTabPanePropsInterface extends TabPaneProps, TestableComponentInterface {
+export interface ResourceTabPanePropsInterface extends TabPaneProps, IdentifiableComponentInterface,
+    TestableComponentInterface {
+
     /**
      * Additional CSS classes.
      */
@@ -39,9 +41,9 @@ export interface ResourceTabPanePropsInterface extends TabPaneProps, TestableCom
 /**
  * Resource tab pane component.
  *
- * @param {ResourceTabPanePropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns the React component for the resource tab pane
  */
 export const ResourceTabPane: FunctionComponent<PropsWithChildren<ResourceTabPanePropsInterface>> = (
     props: PropsWithChildren<ResourceTabPanePropsInterface>
@@ -51,6 +53,7 @@ export const ResourceTabPane: FunctionComponent<PropsWithChildren<ResourceTabPan
         children,
         className,
         controlledSegmentation,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         ...rest
     } = props;
@@ -64,7 +67,15 @@ export const ResourceTabPane: FunctionComponent<PropsWithChildren<ResourceTabPan
     );
 
     return (
-        <Tab.Pane className={ classes } attached={ false } data-testid={ testId } { ...rest }>{ children }</Tab.Pane>
+        <Tab.Pane
+            className={ classes }
+            attached={ false }
+            data-componentid={ componentId }
+            data-testid={ testId }
+            { ...rest }
+        >
+            { children }
+        </Tab.Pane>
     );
 };
 
@@ -74,5 +85,6 @@ export const ResourceTabPane: FunctionComponent<PropsWithChildren<ResourceTabPan
 ResourceTabPane.defaultProps = {
     attached: false,
     controlledSegmentation: false,
+    "data-componentid": "resource-tab-pane",
     "data-testid": "resource-tab-pane"
 };

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,14 +16,14 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
-import React, { ReactElement } from "react";
+import React, { CSSProperties, PropsWithChildren, ReactElement } from "react";
 
 /**
  * Text component prop types.
  */
-export interface TextPropsInterface extends TestableComponentInterface {
+export interface TextPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Additional CSS classes.
      */
@@ -55,7 +55,7 @@ export interface TextPropsInterface extends TestableComponentInterface {
     /**
      * Custom styles object.
      */
-    styles?: object;
+    styles?: CSSProperties | undefined;
     /**
      * De-emphasises the heading.
      */
@@ -90,16 +90,16 @@ export interface TextPropsInterface extends TestableComponentInterface {
 /**
  * Text component.
  *
- * @param {TextPropsInterface} props - Props injected to the component.
- *
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns Text typography component.
  */
-export const Text: React.FunctionComponent<TextPropsInterface> = (
-    props: TextPropsInterface
+export const Text: React.FunctionComponent<PropsWithChildren<TextPropsInterface>> = (
+    props: PropsWithChildren<TextPropsInterface>
 ): ReactElement => {
 
     const {
         className,
+        children,
         compact,
         display,
         inline,
@@ -107,6 +107,7 @@ export const Text: React.FunctionComponent<TextPropsInterface> = (
         size,
         spaced,
         styles,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         truncate,
         weight,
@@ -126,7 +127,7 @@ export const Text: React.FunctionComponent<TextPropsInterface> = (
         , className
     );
 
-    const resolveInlineStyles = (overrides?: object): object => {
+    const resolveInlineStyles = (overrides?: CSSProperties | undefined): CSSProperties | undefined => {
         let modified = {};
 
         if (weight) {
@@ -149,7 +150,7 @@ export const Text: React.FunctionComponent<TextPropsInterface> = (
                 width: width
             };
         }
-        
+
         if (size) {
             modified = {
                 ...modified,
@@ -167,9 +168,12 @@ export const Text: React.FunctionComponent<TextPropsInterface> = (
         <div
             style={ resolveInlineStyles(styles) }
             className={ classes }
+            data-componentid={ componentId }
             data-testid={ testId }
             { ...rest }
-        />
+        >
+            { children }
+        </div>
     );
 };
 
@@ -178,5 +182,6 @@ export const Text: React.FunctionComponent<TextPropsInterface> = (
  */
 Text.defaultProps = {
     compact: false,
+    "data-componentid": "text",
     "data-testid": "text"
 };

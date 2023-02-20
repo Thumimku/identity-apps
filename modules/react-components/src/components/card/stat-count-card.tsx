@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, MouseEvent, ReactElement } from "react";
 import { Card, CardProps, Statistic, StatisticProps } from "semantic-ui-react";
@@ -25,7 +25,7 @@ import { GenericIcon, GenericIconProps, GenericIconSizes } from "../icon";
 /**
  * Proptypes for the stat count card component.
  */
-export interface StatCountCardPropsInterface extends TestableComponentInterface {
+export interface StatCountCardPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Additional classes.
      */
@@ -60,8 +60,8 @@ export interface StatCountCardPropsInterface extends TestableComponentInterface 
     inline?: boolean;
     /**
      * Stat count card onclick event.
-     * @param {React.MouseEvent<HTMLAnchorElement>} e - Event,
-     * @param {CardProps} data - Card data.
+     * @param e - Event,
+     * @param data - Card data.
      */
     onClick?: (e: MouseEvent<HTMLAnchorElement>, data: CardProps) => void;
     /**
@@ -95,9 +95,9 @@ interface StatOptionsInterface extends StatisticProps {
 /**
  * Stat count card component that can be used to represent statistics.
  *
- * @param {StatCountCardPropsInterface} props - Props injected to the components.
+ * @param props - Props injected to the components.
  *
- * @return {React.ReactElement}
+ * @returns the stat count card component.
  */
 export const StatCountCard: FunctionComponent<StatCountCardPropsInterface> = (
     props: StatCountCardPropsInterface
@@ -116,6 +116,7 @@ export const StatCountCard: FunctionComponent<StatCountCardPropsInterface> = (
         statOptions,
         textAlign,
         value,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -152,6 +153,7 @@ export const StatCountCard: FunctionComponent<StatCountCardPropsInterface> = (
             link={ false }
             fluid={ fluid }
             as="div"
+            data-componentid={ componentId }
             data-testid={ testId }
         >
             <Card.Content className="stat-count-card-text-container" style={ { textAlign } }>
@@ -162,6 +164,7 @@ export const StatCountCard: FunctionComponent<StatCountCardPropsInterface> = (
                                 className="stat-count-card-icon"
                                 size={ iconSize }
                                 icon={ icon }
+                                data-componentid={ `${ componentId }-icon` }
                                 data-testid={ `${ testId }-icon` }
                                 floated="left"
                                 shape="rounded"
@@ -184,6 +187,7 @@ export const StatCountCard: FunctionComponent<StatCountCardPropsInterface> = (
  * Default props for the stat count card.
  */
 StatCountCard.defaultProps = {
+    "data-componentid": "stat-count-card",
     "data-testid": "stat-count-card",
     fluid: false,
     iconSize: "mini",

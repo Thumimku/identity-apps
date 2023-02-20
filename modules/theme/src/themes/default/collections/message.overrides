@@ -24,9 +24,22 @@
         }
     }
 
+    &.with-close-button {
+        padding: 1em 2em 1em 1.5em;
+    }
+
     &.border-less {
         border: none !important;
         box-shadow: none;
+    }
+
+    .close.icon {
+        top: 1em;
+        right: 1em;
+    }
+
+    .message-content-flex {
+        display: flex;
     }
 }
 
@@ -60,5 +73,51 @@
         >.icon:not(.close) {
             font-size: 2em;
         }
+    }
+}
+
+/*---------------------------
+    Message Box Overrides
+---------------------------*/
+
+.ui.message {
+    box-shadow: none !important;
+    color: black !important;
+
+    h5.ui.header {
+        font-weight: 550 !important;
+        color: black !important;
+    }
+}
+
+.ui.info.message {
+    background-color: @infoMessageBackgroundColor !important;
+
+    i.info.circle.icon {
+        color: @infoMessageIconColor !important;
+    }
+}
+
+.ui.error.message {
+    background-color: @errorMessageBackgroundColor !important;
+
+    i.times.circle.icon {
+        color: @errorMessageIconColor !important;
+    }
+}
+
+.ui.success.message {
+    background-color: @successMessageBackgroundColor !important;
+
+    i.check.circle.icon {
+        color: @successMessageIconColor !important;
+    }
+}
+
+.ui.warning.message {
+    background-color: @warningMessageBackgroundColor !important;
+
+    i.warning.circle.icon {
+        color: @warningMessageIconColor !important;
     }
 }

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,12 +16,16 @@
  * under the License.
  */
 
-import { ChildRouteInterface, RouteInterface, TestableComponentInterface } from "@wso2is/core/models";
-import { AuthenticateUtils } from "@wso2is/core/utils";
+import {
+    ChildRouteInterface,
+    IdentifiableComponentInterface,
+    RouteInterface,
+    TestableComponentInterface
+} from "@wso2is/core/models";
 import classNames from "classnames";
 import kebabCase from "lodash-es/kebabCase";
 import React, { ReactElement } from "react";
-import { Label, Menu, SemanticCOLORS } from "semantic-ui-react";
+import { Label, Menu } from "semantic-ui-react";
 import { CommonSidePanelPropsInterface } from "./side-panel";
 import { SidePanelItemGroup } from "./side-panel-item-group";
 import { GenericIcon, GenericIconSizes } from "../icon";
@@ -29,7 +33,9 @@ import { GenericIcon, GenericIconSizes } from "../icon";
 /**
  * Side panel item component Prop types.
  */
-export interface SidePanelItemPropsInterface extends CommonSidePanelPropsInterface, TestableComponentInterface {
+export interface SidePanelItemPropsInterface extends CommonSidePanelPropsInterface, IdentifiableComponentInterface,
+    TestableComponentInterface {
+
     /**
      * Size of the icon.
      */
@@ -47,9 +53,9 @@ export interface SidePanelItemPropsInterface extends CommonSidePanelPropsInterfa
 /**
  * Side panel item component.
  *
- * @param {SidePanelItemPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns SidePanelItem React Component
  */
 export const SidePanelItem: React.FunctionComponent<SidePanelItemPropsInterface> = (
     props: SidePanelItemPropsInterface
@@ -69,6 +75,7 @@ export const SidePanelItem: React.FunctionComponent<SidePanelItemPropsInterface>
         translationHook,
         sidePanelItemHeight,
         hoverType,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -81,13 +88,20 @@ export const SidePanelItem: React.FunctionComponent<SidePanelItemPropsInterface>
             "ellipsis": showEllipsis
         }
     );
+    
+    const featureStatusLabelClasses = classNames(
+        "feature-status-label",
+        {
+            [ kebabCase(route.featureStatus?.toLocaleLowerCase()) ]: route.featureStatus
+        }
+    );
 
     /**
      * Validates if any of the child routes is supposed to be shown
      * on the side panel.
      *
-     * @param {ChildRouteInterface[]} children - Child routes.
-     * @return {boolean} If valid or not.
+     * @param children - Child routes.
+     * @returns a boolean that indicates whether the passed child routes are valid or not.
      */
     const validateChildren = (children: ChildRouteInterface[]): boolean => {
         if (!(children && children instanceof Array && children.length > 0)) {
@@ -103,13 +117,13 @@ export const SidePanelItem: React.FunctionComponent<SidePanelItemPropsInterface>
      * Checks if the child item is the selected, if so opens
      * the child items section automatically to improve UX.
      *
-     * @param {boolean} isOpen - Passed as a prop when manually clicked.
-     * @param {RouteInterface | ChildRouteInterface}selectedRoute - The selected route.
-     * @param {ChildRouteInterface[]} children - Child routes.
-     * @return {boolean} Should the child item section be opened or not.
+     * @param isOpen - Passed as a prop when manually clicked.
+     * @param selectedRoute - The selected route.
+     * @param children - Child routes.
+     * @returns a boolean that indicates whether the child item section should be opened or not.
      */
     const validateOpenState = (isOpen: boolean, selectedRoute: RouteInterface | ChildRouteInterface,
-                               children: ChildRouteInterface[]): boolean => {
+        children: ChildRouteInterface[]): boolean => {
         if (isOpen) {
             return true;
         }
@@ -131,76 +145,65 @@ export const SidePanelItem: React.FunctionComponent<SidePanelItemPropsInterface>
         return recurse(children);
     };
 
-    /**
-     * Resolves the label color to display the status of the feature .
-     *
-     * @return {SemanticCOLORS} Resolved color.
-     */
-    const resolveFeatureStatusLabelColor = (): SemanticCOLORS => {
-        if (route.featureStatus === "new") {
-            return "red";
-        } else if (route.featureStatus === "beta") {
-            return "teal";
-        } else if (route.featureStatus === "alpha") {
-            return "orange";
-        }
-
-        return "blue";
-    };
-
     return (
         <>
             {
-                (route.showOnSidePanel && (route.scope ? AuthenticateUtils.hasScope(route.scope, allowedScopes) : true))
-                    ? (
-                        <Menu.Item
-                            name={ route.name }
-                            className={ classes }
-                            active={ selected && (selected.path === route.path) }
-                            onClick={ (): void => onSidePanelItemClick(route) }
-                            data-testid={ `${ testId }-${ kebabCase(route.id) }` }
+                route && (
+                    <Menu.Item
+                        name={ route.name }
+                        className={ classes }
+                        disabled={ route.isFeatureEnabled === false }
+                        active={ selected && (selected.path === route.path) }
+                        onClick={ (): void => onSidePanelItemClick(route) }
+                        data-componentid={ `${ componentId }-${ kebabCase(route.id) }` }
+                        data-testid={ `${ testId }-${ kebabCase(route.id) }` }
+                    >
+                        <GenericIcon
+                            transparent
+                            className="left-icon"
+                            size={ iconSize }
+                            floated="left"
+                            spaced="right"
+                            { ...route.icon }
+                            data-componentid={ `${ componentId }-icon` }
+                            data-testid={ `${ testId }-icon` }
+                        />
+                        <span
+                            className="route-name"
+                            data-componentid={ `${ componentId }-label` }
+                            data-testid={ `${ testId }-label` }
                         >
-                            <GenericIcon
-                                transparent
-                                className="left-icon"
-                                size={ iconSize }
-                                floated="left"
-                                spaced="right"
-                                { ...route.icon }
-                                data-testid={ `${ testId }-icon` }
-                            />
-                            <span className="route-name" data-testid={ `${ testId }-label` }>
-                                { translationHook ? translationHook(route.name) : route.name }
-                                { route.featureStatus && (
-                                    <Label
-                                        color={ resolveFeatureStatusLabelColor() }
-                                        className="feature-status-label"
-                                        size="mini"
-                                        data-testid={ `${ testId }-version` }
-                                    >
-                                        { route.featureStatus.toUpperCase() }
-                                    </Label>
-                                ) }
-                            </span>
-                            {
-                                // Check if any of the child items are defined to be shown on the side panel.
-                                // If not hides the caret icon.
-                                (caretIcon && validateChildren(route.children))
-                                    ? (
-                                        <GenericIcon
-                                            className={ `caret ${ route.open ? "down" : "right" }` }
-                                            icon={ caretIcon }
-                                            size="auto"
-                                            floated="right"
-                                            data-testid={ `${ testId }-caret` }
-                                            transparent
-                                        />
-                                    )
-                                    : null
-                            }
-                        </Menu.Item>
-                    )
-                    : null
+                            { translationHook ? translationHook(route.name) : route.name }
+                            { route.featureStatus && (
+                                <Label
+                                    className={ featureStatusLabelClasses }
+                                    size="mini"
+                                    data-componentid={ `${ componentId }-version` }
+                                    data-testid={ `${ testId }-version` }
+                                >
+                                    { translationHook(route.featureStatusLabel) }
+                                </Label>
+                            ) }
+                        </span>
+                        {
+                            // Check if any of the child items are defined to be shown on the side panel.
+                            // If not hides the caret icon.
+                            (caretIcon && validateChildren(route.children))
+                                ? (
+                                    <GenericIcon
+                                        className={ `caret ${ route.open ? "down" : "right" }` }
+                                        icon={ caretIcon }
+                                        size="auto"
+                                        floated="right"
+                                        data-componentid={ `${ componentId }-caret` }
+                                        data-testid={ `${ testId }-caret` }
+                                        transparent
+                                    />
+                                )
+                                : null
+                        }
+                    </Menu.Item>
+                )
             }
             {
                 (route.children && route.children.length && route.children.length > 0)
@@ -230,6 +233,7 @@ export const SidePanelItem: React.FunctionComponent<SidePanelItemPropsInterface>
  * Default props for the side panel item component.
  */
 SidePanelItem.defaultProps = {
+    "data-componentid": "side-panel-item",
     "data-testid": "side-panel-item",
     iconSize: "micro"
 };

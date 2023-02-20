@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,17 +16,17 @@
  * under the License.
  */
 
-import { useSVGPromise } from "@wso2is/core/hooks";
+import { Popup } from "@wso2is/react-components";
 import { FormValidation } from "@wso2is/validation";
 import isEmpty from "lodash-es/isEmpty";
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { Button, Dimmer, Form, Icon, Modal, Popup } from "semantic-ui-react";
+import { Button, Dimmer, Form, Icon, Modal } from "semantic-ui-react";
 import { Avatar, AvatarProps } from "./avatar";
 import { updateProfileInfo } from "../../api";
 import { getThirdPartyLogos } from "../../configs";
-import * as UIConstants from "../../constants/ui-constants";
+import { UIConstants } from "../../constants";
 import { resolveUserDisplayName } from "../../helpers";
 import { AlertInterface, AlertLevels, AuthStateInterface, ProfileSchema } from "../../models";
 import { getProfileInformation } from "../../store/actions";
@@ -56,8 +56,8 @@ enum Error {
 /**
  * User Avatar component.
  *
- * @param {UserAvatarProps} props - Props injected in to the user avatar component.
- * @return {JSX.Element}
+ * @param props - Props injected in to the user avatar component.
+ * @returns User Avatar component.
  */
 export const UserAvatar: FunctionComponent<UserAvatarProps> = (props: UserAvatarProps): JSX.Element => {
     const {
@@ -79,7 +79,6 @@ export const UserAvatar: FunctionComponent<UserAvatarProps> = (props: UserAvatar
     const [ showEditModal, setShowEditModal ] = useState(false);
     const [ url, setUrl ] = useState("");
     const [ urlError, setUrlError ] = useState(Error.NONE);
-    const [ gravatarLogoAsDataURL ] = useSVGPromise(getThirdPartyLogos().gravatar);
 
     const { t } = useTranslation();
     const dispatch = useDispatch();
@@ -97,12 +96,12 @@ export const UserAvatar: FunctionComponent<UserAvatarProps> = (props: UserAvatar
         } else if (!isEmpty(image)) {
             setUserImage(image);
         }
-    }, [image]);
+    }, [ image ]);
 
     /**
      * Checks if the image is from `Gravatar`.
      *
-     * @return {boolean}
+     * @returns If gravatar URL or not.
      */
     const isGravatarURL = (): boolean => {
         return (userImage && userImage.includes(UIConstants.GRAVATAR_URL))
@@ -116,11 +115,11 @@ export const UserAvatar: FunctionComponent<UserAvatarProps> = (props: UserAvatar
     /**
      * Resolves the top label image.
      *
-     * @return {string}
+     * @returns Gravatar label.
      */
     const resolveTopLabel = (): string => {
         if (isGravatarURL()) {
-            return gravatarLogoAsDataURL;
+            return getThirdPartyLogos().gravatar;
         }
 
         return null;
@@ -181,8 +180,9 @@ export const UserAvatar: FunctionComponent<UserAvatarProps> = (props: UserAvatar
                     }
                 }
             ],
-            schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"]
+            schemas: [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ]
         };
+
         updateProfileInfo(data).then((response) => {
             if (response.status === 200) {
                 onAlertFired({
@@ -240,7 +240,7 @@ export const UserAvatar: FunctionComponent<UserAvatarProps> = (props: UserAvatar
     const editModal = () => {
         const fieldName = t("myAccount:components.profile.fields."
             + urlSchema.name.replace(".", "_"),
-            { defaultValue: urlSchema.displayName }
+        { defaultValue: urlSchema.displayName }
         );
 
         return (

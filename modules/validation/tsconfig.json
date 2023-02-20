@@ -1,8 +1,30 @@
 {
+    "extends": "../../tsconfig.base.json",
     "compilerOptions": {
         "experimentalDecorators": true,
-        "outDir": "./dist",
-        "declaration": true
+        "declaration": true,
+        "declarationDir": "dist/types",
+        "outDir": "dist/src",
+        "rootDir": "src",
+        "types": [ "node", "jest" ]
     },
-    "extends": "../../configs/common.tsconfig.json"
+    "exclude": [
+        "coverage",
+        "dist",
+        "node_modules",
+        "scripts",
+        "test-configs",
+        "jest.config.ts",
+        "**/tests/*",
+        "**/__tests__/*",
+        "**/__mocks__/*",
+        "**/*.test.js",
+        "**/*.test.jsx",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.js",
+        "**/*.spec.jsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx"
+    ]
 }

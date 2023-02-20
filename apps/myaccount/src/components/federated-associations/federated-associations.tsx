@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,18 +16,23 @@
  * under the License.
  */
 
+import {
+    AsgardeoSPAClient
+} from "@asgardeo/auth-react";
 import { TestableComponentInterface } from "@wso2is/core/models";
+import { AppAvatar, Popup } from "@wso2is/react-components";
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Grid, Icon, List, Modal, Popup } from "semantic-ui-react";
+import { Button, Grid, Icon, List, Modal } from "semantic-ui-react";
 import { deleteFederatedAssociation, getFederatedAssociations } from "../../api/federated-associations";
 import { getSettingsSectionIcons } from "../../configs";
+import { commonConfig } from "../../extensions";
 import {
     AlertInterface,
     AlertLevels
 } from "../../models";
 import { FederatedAssociation } from "../../models/federated-associations";
-import { SettingsSection, UserAvatar } from "../shared";
+import { SettingsSection } from "../shared";
 
 /**
  * Prop types for `FederatedAssociations` component
@@ -35,22 +40,33 @@ import { SettingsSection, UserAvatar } from "../shared";
  */
 interface FederatedAssociationsPropsInterface extends TestableComponentInterface {
     onAlertFired: (alert: AlertInterface) => void;
+    disableExternalLoginsOnEmpty?: boolean;
+    isNonLocalCredentialUser?: boolean;
 }
 
 /**
  * This renders the federated associations component
- * @param props
+ * @param props - Props injected to the component
  */
 export const FederatedAssociations: FunctionComponent<FederatedAssociationsPropsInterface> = (
     props: FederatedAssociationsPropsInterface
 ): React.ReactElement => {
 
-    const { onAlertFired, ["data-testid"]: testId } = props;
+    const {
+        onAlertFired,
+        disableExternalLoginsOnEmpty,
+        isNonLocalCredentialUser,
+        ["data-testid"]: testId
+    } = props;
 
-    const [confirmDelete, setConfirmDelete] = useState(false);
-    const [id, setId] = useState(null);
+    const [ confirmDelete, setConfirmDelete ] = useState(false);
+    const [ id, setId ] = useState(null);
     const { t } = useTranslation();
-    const [federatedAssociations, setFederatedAssociations] = useState<FederatedAssociation[]>([]);
+    const [ federatedAssociations, setFederatedAssociations ] = useState<FederatedAssociation[]>([]);
+    const [ showExternalLogins, setShowExternalLogins ] = useState<boolean>(true);
+    const [ currentIDP, setCurrentIDP ] = useState<string>();
+    const [ linkedAttribute, setLinkedAttribute ] = useState<string>();
+    const auth = AsgardeoSPAClient.getInstance();
 
     /**
      * This calls the `getFederatedAssociations` api call
@@ -65,9 +81,9 @@ export const FederatedAssociations: FunctionComponent<FederatedAssociationsProps
                     description:
                         t("myAccount:components.federatedAssociations.notifications.getFederatedAssociations."
                             + "error.description",
-                            {
-                                description: error
-                            }
+                        {
+                            description: error
+                        }
                         ),
                     level: AlertLevels.ERROR,
                     message:
@@ -84,9 +100,56 @@ export const FederatedAssociations: FunctionComponent<FederatedAssociationsProps
         getFederatedAssociationsList();
     }, []);
 
+
+    /* TODO: This is intended to disable remove option for the authenticated IDP in External Login section
+       (Ideally not necessary). Hence, disable this and linked conditions after proper BE fix.
+       Issue: https://github.com/wso2/product-is/issues/12380
+    */
+    /**
+     * This temporary one checks for authenticated IDP.
+     */
+    useEffect(() => {
+        auth.getDecodedIDToken().then((response)=>{
+            for (let i = 0; i < response.amr.length; i++) {
+                if (response.amr[i].includes("Google")) {
+                    setCurrentIDP("Google");
+                }
+                if (response.amr[i].includes("Github")) {
+                    setCurrentIDP("GitHub");
+                }
+                if (response.amr[i].includes("OpenIDConnect")) {
+                    setCurrentIDP("Microsoft");
+                }
+            }
+        });
+    }, []);
+
+    //Todo : Update with relevant linked attribute
+    useEffect(() => {
+        auth.getBasicUserInfo().then((response)=> {
+            /* For the time being, lets have Gmail/Github primary Email (at the time of mapping)
+            as the linked attribute. But sooner we have to display the linking attribute. */
+            setLinkedAttribute(response.email);
+        });
+    }, []);
+
+
+    /**
+     * This sets flag to disable showing external logins section based on config.
+     */
+    useEffect(() => {
+        if (disableExternalLoginsOnEmpty) {
+            if (federatedAssociations?.length <= 0) {
+                setShowExternalLogins(false);
+            } else {
+                setShowExternalLogins(true);
+            }
+        }
+    }, [ federatedAssociations ]);
+
     /**
      * This function calls the `deleteFederatedAssociation` api call
-     * @param id
+     * @param id - ID of the association to be deleted
      */
     const removeFederatedAssociation = (id: string) => {
         deleteFederatedAssociation(id)
@@ -104,9 +167,9 @@ export const FederatedAssociations: FunctionComponent<FederatedAssociationsProps
                 onAlertFired({
                     description: t("myAccount:components.federatedAssociations.notifications"
                         + ".removeFederatedAssociation.error.description",
-                        {
-                            description: error
-                        }),
+                    {
+                        description: error
+                    }),
                     level: AlertLevels.ERROR,
                     message: t("myAccount:components.federatedAssociations.notifications"
                         + ".removeFederatedAssociation.error.message")
@@ -161,9 +224,11 @@ export const FederatedAssociations: FunctionComponent<FederatedAssociationsProps
      */
     const federatedAssociationsList = (): React.ReactElement => {
         return (
-            <List divided verticalAlign="middle"
-                  className="main-content-inner"
-                  data-testid={ `${testId}-list` }
+            <List
+                divided
+                verticalAlign="middle"
+                className="main-content-inner"
+                data-testid={ `${testId}-list` }
             >
                 {
                     federatedAssociations && federatedAssociations.map(
@@ -173,45 +238,51 @@ export const FederatedAssociations: FunctionComponent<FederatedAssociationsProps
                                     <Grid padded>
                                         <Grid.Row columns={ 2 }>
                                             <Grid.Column width={ 11 } className="first-column">
-                                                <UserAvatar
-                                                    floated="left"
-                                                    spaced="right"
-                                                    size="mini"
-                                                    image={ federatedAssociation.idp.imageUrl }
-                                                    name={ federatedAssociation.federatedUserId }
-                                                />
-                                                <List.Header>
-                                                    { federatedAssociation.federatedUserId }
-                                                </List.Header>
-                                                <List.Description>
-                                                    {
-                                                        federatedAssociation.idp.displayName
-                                                        || federatedAssociation.idp.name
-                                                    }
-                                                </List.Description>
-                                            </Grid.Column>
-                                            <Grid.Column width={ 5 } className="last-column">
-                                                <List.Content floated="right">
-                                                    <Popup
-                                                        trigger={ (
-                                                            <Icon
-                                                                link
-                                                                className="list-icon"
-                                                                size="small"
-                                                                color="red"
-                                                                name="trash alternate outline"
-                                                                onClick={ () => {
-                                                                    setId(federatedAssociation.id);
-                                                                    setConfirmDelete(true);
-                                                                } }
-                                                            />
-                                                        ) }
-                                                        inverted
-                                                        position="top center"
-                                                        content={ t("common:remove") }
+                                                <div className="associations-list-avatar-wrapper">
+                                                    <AppAvatar
+                                                        size="mini"
+                                                        image={ federatedAssociation.idp.imageUrl }
+                                                        name={ federatedAssociation.federatedUserId }
                                                     />
-                                                </List.Content>
+                                                    <List.Content>
+                                                        <List.Header>
+                                                            {
+                                                                federatedAssociation.idp.displayName
+                                                            || federatedAssociation.idp.name
+                                                            }
+                                                        </List.Header>
+                                                        <List.Description>
+                                                            { linkedAttribute }
+                                                        </List.Description>
+                                                    </List.Content>
+                                                </div>
                                             </Grid.Column>
+                                            { !isNonLocalCredentialUser &&
+                                                !(currentIDP==federatedAssociation.idp.name ||
+                                                currentIDP==federatedAssociation.idp.displayName) ?
+                                                (<Grid.Column width={ 5 } className="last-column">
+                                                    <List.Content floated="right">
+                                                        <Popup
+                                                            trigger={ (
+                                                                <Icon
+                                                                    link
+                                                                    className="list-icon padded-icon"
+                                                                    size="small"
+                                                                    color="grey"
+                                                                    name="trash alternate"
+                                                                    onClick={ () => {
+                                                                        setId(federatedAssociation.id);
+                                                                        setConfirmDelete(true);
+                                                                    } }
+                                                                />
+                                                            ) }
+                                                            inverted
+                                                            position="top center"
+                                                            content={ t("common:remove") }
+                                                        />
+                                                    </List.Content>
+                                                </Grid.Column>):null
+                                            }
                                         </Grid.Row>
                                     </Grid>
                                 </List.Item>
@@ -224,20 +295,21 @@ export const FederatedAssociations: FunctionComponent<FederatedAssociationsProps
     };
 
     return (
-        <SettingsSection
-            data-testid={ `${testId}-settings-section` }
-            description={ t("myAccount:sections.federatedAssociations.description") }
-            header={ t("myAccount:sections.federatedAssociations.heading") }
-            icon={ getSettingsSectionIcons().federatedAssociations }
-            iconMini={ getSettingsSectionIcons().federatedAssociationsMini }
-            iconSize="auto"
-            iconStyle="colored"
-            iconFloated="right"
-            showActionBar={ true }
-        >
-            { deleteConfirmation() }
-            { federatedAssociationsList() }
-        </SettingsSection>
+        showExternalLogins &&
+            (<SettingsSection
+                data-testid={ `${testId}-settings-section` }
+                description={ t("myAccount:sections.federatedAssociations.description") }
+                header={ t("myAccount:sections.federatedAssociations.heading") }
+                icon={ getSettingsSectionIcons().federatedAssociations }
+                iconMini={ getSettingsSectionIcons().federatedAssociationsMini }
+                iconSize="auto"
+                iconStyle="colored"
+                iconFloated="right"
+                showActionBar={ true }
+            >
+                { deleteConfirmation() }
+                { federatedAssociationsList() }
+            </SettingsSection>)
     );
 };
 
@@ -246,5 +318,6 @@ export const FederatedAssociations: FunctionComponent<FederatedAssociationsProps
  * See type definitions in {@link FederatedAssociationsPropsInterface}
  */
 FederatedAssociations.defaultProps = {
-    "data-testid": "federated-associations"
+    "data-testid": "federated-associations",
+    disableExternalLoginsOnEmpty: commonConfig.personalInfoPage.externalLogins.disableExternalLoginsOnEmpty
 };

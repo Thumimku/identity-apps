@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,12 @@
  * under the License.
  */
 
-import { CategorizedRouteInterface, RouteInterface, TestableComponentInterface } from "@wso2is/core/models";
+import {
+    CategorizedRouteInterface,
+    IdentifiableComponentInterface,
+    RouteInterface,
+    TestableComponentInterface
+} from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { Fragment, FunctionComponent, ReactElement } from "react";
 import { Menu } from "semantic-ui-react";
@@ -26,7 +31,9 @@ import { SidePanelItem } from "./side-panel-item";
 /**
  * Side panel items component Prop types.
  */
-export interface SidePanelItemsPropsInterface extends CommonSidePanelPropsInterface, TestableComponentInterface {
+export interface SidePanelItemsPropsInterface extends CommonSidePanelPropsInterface, IdentifiableComponentInterface,
+    TestableComponentInterface {
+
     /**
      * Set of routes.
      */
@@ -44,9 +51,9 @@ export interface SidePanelItemsPropsInterface extends CommonSidePanelPropsInterf
 /**
  * Side panel items component.
  *
- * @param {SidePanelItemsPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns a React component
  */
 export const SidePanelItems: FunctionComponent<SidePanelItemsPropsInterface> = (
     props: SidePanelItemsPropsInterface
@@ -61,8 +68,10 @@ export const SidePanelItems: FunctionComponent<SidePanelItemsPropsInterface> = (
         showCategoryDividers,
         sidePanelPosition,
         sidePanelTopMargin,
+        skipCategoryLabelForSingleItemCategories,
         type,
         translationHook,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -105,14 +114,15 @@ export const SidePanelItems: FunctionComponent<SidePanelItemsPropsInterface> = (
     /**
      * Renders a re-usable side panel item.
      *
-     * @param {RouteInterface} route - Route object.
-     * @param {number} index - Index.
-     * @return {any}
+     * @param route - Route object.
+     * @param index - Index.
+     * @returns a React component
      */
     const renderItem = (route: RouteInterface, index: number) => (
         <SidePanelItem
             key={ route.level ? `level-${ route.level }-${ index }` : `level-${ 0 }-${ index }` }
             route={ route }
+            data-componentid={ `${ componentId }-item` }
             data-testid={ `${ testId }-item` }
             allowedScopes={ allowedScopes }
             { ...props }
@@ -120,7 +130,14 @@ export const SidePanelItems: FunctionComponent<SidePanelItemsPropsInterface> = (
     );
 
     return (
-        <Menu className={ menuClasses } style={ style } data-testid={ testId } vertical fluid>
+        <Menu
+            className={ menuClasses }
+            style={ style }
+            data-componentid={ componentId }
+            data-testid={ testId }
+            vertical
+            fluid
+        >
             {
                 routes && (
                     routes instanceof Array
@@ -129,9 +146,19 @@ export const SidePanelItems: FunctionComponent<SidePanelItemsPropsInterface> = (
                         ))
                         : Object.entries(routes).map(([ key, value ]) => (
                             <Fragment key={ key }>
-                                <div className={ categoryClasses }>
-                                    { translationHook ? translationHook(key) : key }
-                                </div>
+                                {
+                                    skipCategoryLabelForSingleItemCategories
+                                        ? (value instanceof Array && value.length > 1) && (
+                                            <div className={ categoryClasses }>
+                                                { translationHook ? translationHook(key) : key }
+                                            </div>
+                                        )
+                                        : (
+                                            <div className={ categoryClasses }>
+                                                { translationHook ? translationHook(key) : key }
+                                            </div>
+                                        )
+                                }
                                 {
                                     value instanceof Array && value.map((route, index) => (
                                         renderItem(route, index)
@@ -149,5 +176,6 @@ export const SidePanelItems: FunctionComponent<SidePanelItemsPropsInterface> = (
  * Default props for the side panel items component.
  */
 SidePanelItems.defaultProps = {
+    "data-componentid": "side-panel-items",
     "data-testid": "side-panel-items"
 };

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,10 +26,13 @@ import {
     DangerZoneGroup,
     EmphasizedSegment
 } from "@wso2is/react-components";
+import { AxiosError } from "axios";
 import React, { FunctionComponent, ReactElement, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { Dispatch } from "redux";
 import { Divider } from "semantic-ui-react";
+import { applicationConfig } from "../../../../extensions";
 import { AppState, FeatureConfigInterface, UIConfigInterface } from "../../../core";
 import { deleteApplication, updateApplicationDetails } from "../../api";
 import {
@@ -92,14 +95,22 @@ interface GeneralApplicationSettingsInterface extends SBACInterface<FeatureConfi
      * Application template.
      */
     template?: ApplicationTemplateListItemInterface;
+    /**
+     * Specifies a Management Application
+     */
+    isManagementApp?: boolean;
+    /**
+     * Application.
+     */
+    application?: ApplicationInterface
 }
 
 /**
  * Component to edit general details of the application.
  *
- * @param {GeneralApplicationSettingsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {ReactElement}
+ * @returns ReactElement
  */
 export const GeneralApplicationSettings: FunctionComponent<GeneralApplicationSettingsInterface> = (
     props: GeneralApplicationSettingsInterface
@@ -118,24 +129,30 @@ export const GeneralApplicationSettings: FunctionComponent<GeneralApplicationSet
         onDelete,
         onUpdate,
         readOnly,
+        isManagementApp,
+        application,
         [ "data-testid" ]: testId
     } = props;
 
-    const dispatch = useDispatch();
+    const dispatch: Dispatch = useDispatch();
 
     const { t } = useTranslation();
 
-    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.scope);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
     const UIConfig: UIConfigInterface = useSelector((state: AppState) => state?.config?.ui);
 
     const [ showDeleteConfirmationModal, setShowDeleteConfirmationModal ] = useState<boolean>(false);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
+    const [ isDeletionInProgress, setIsDeletionInProgress ] = useState<boolean>(false);
 
     /**
      * Deletes an application.
      */
     const handleApplicationDelete = (): void => {
+        setIsDeletionInProgress(true);
         deleteApplication(appId)
             .then(() => {
+                setIsDeletionInProgress(false);
                 dispatch(addAlert({
                     description: t("console:develop.features.applications.notifications.deleteApplication.success" +
                         ".description"),
@@ -146,7 +163,8 @@ export const GeneralApplicationSettings: FunctionComponent<GeneralApplicationSet
                 setShowDeleteConfirmationModal(false);
                 onDelete();
             })
-            .catch((error) => {
+            .catch((error: AxiosError) => {
+                setIsDeletionInProgress(false);
                 if (error.response && error.response.data && error.response.data.description) {
                     dispatch(addAlert({
                         description: error.response.data.description,
@@ -171,9 +189,11 @@ export const GeneralApplicationSettings: FunctionComponent<GeneralApplicationSet
     /**
      * Handles form submit action.
      *
-     * @param {ApplicationInterface} updatedDetails - Form values.
+     * @param updatedDetails - Form values.
      */
     const handleFormSubmit = (updatedDetails: ApplicationInterface): void => {
+        setIsSubmitting(true);
+
         updateApplicationDetails(updatedDetails)
             .then(() => {
                 dispatch(addAlert({
@@ -185,7 +205,7 @@ export const GeneralApplicationSettings: FunctionComponent<GeneralApplicationSet
 
                 onUpdate(appId);
             })
-            .catch((error) => {
+            .catch((error: AxiosError) => {
                 if (error.response && error.response.data && error.response.data.description) {
                     dispatch(addAlert({
                         description: error.response.data.description,
@@ -204,13 +224,16 @@ export const GeneralApplicationSettings: FunctionComponent<GeneralApplicationSet
                     message: t("console:develop.features.applications.notifications.updateApplication.genericError" +
                         ".message")
                 }));
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
     /**
      * Resolves the danger actions.
      *
-     * @return {React.ReactElement} DangerZoneGroup element.
+     * @returns React.ReactElement DangerZoneGroup element.
      */
     const resolveDangerActions = (): ReactElement => {
         if (!hasRequiredScopes(
@@ -222,8 +245,13 @@ export const GeneralApplicationSettings: FunctionComponent<GeneralApplicationSet
             return null;
         }
 
+        if (!applicationConfig.editApplication.showDangerZone(application)) {
+            return null;
+        }
+
         if (hasRequiredScopes(
-            featureConfig?.applications, featureConfig?.applications?.scopes?.delete, allowedScopes)) {
+            featureConfig?.applications, featureConfig?.applications?.scopes?.delete, allowedScopes)
+            && !application?.advancedConfigurations?.fragment) {
             return (
                 <DangerZoneGroup sectionHeader={ t("console:develop.features.applications.dangerZoneGroup.header") }>
                     {
@@ -262,6 +290,7 @@ export const GeneralApplicationSettings: FunctionComponent<GeneralApplicationSet
                         <GeneralDetailsForm
                             name={ name }
                             appId={ appId }
+                            application={ application }
                             description={ description }
                             discoverability={ discoverability }
                             onSubmit={ handleFormSubmit }
@@ -275,40 +304,30 @@ export const GeneralApplicationSettings: FunctionComponent<GeneralApplicationSet
                                     allowedScopes
                                 )
                             }
+                            hasRequiredScope={ hasRequiredScopes(
+                                featureConfig?.applications, featureConfig?.applications?.scopes?.update,
+                                allowedScopes) }
                             data-testid={ `${ testId }-form` }
+                            isSubmitting={ isSubmitting }
+                            isManagementApp={ isManagementApp }
                         />
                     </EmphasizedSegment>
                     <Divider hidden />
                     { resolveDangerActions() }
                     <ConfirmationModal
                         onClose={ (): void => setShowDeleteConfirmationModal(false) }
-                        type="warning"
+                        type="negative"
                         open={ showDeleteConfirmationModal }
-                        assertion={ name }
-                        assertionHint={ (
-                            <p>
-                                <Trans
-                                    i18nKey={
-                                        "console:develop.features.applications.confirmations.deleteApplication" +
-                                        ".assertionHint"
-                                    }
-                                    tOptions={ { name: name } }
-                                >
-                                    Please type 
-                                    <strong data-testid="application-name-assertion">
-                                        { name }
-                                    </strong>
-                                    to confirm.
-                                </Trans>
-                            </p>
-                        ) }
-                        assertionType="input"
+                        assertionHint={ t("console:develop.features.applications.confirmations.deleteApplication." +
+                            "assertionHint") }
+                        assertionType="checkbox"
                         primaryAction={ t("common:confirm") }
                         secondaryAction={ t("common:cancel") }
                         onSecondaryActionClick={ (): void => setShowDeleteConfirmationModal(false) }
                         onPrimaryActionClick={ (): void => handleApplicationDelete() }
                         data-testid={ `${ testId }-application-delete-confirmation-modal` }
                         closeOnDimmerClick={ false }
+                        primaryActionLoading={ isDeletionInProgress }
                     >
                         <ConfirmationModal.Header
                             data-testid={ `${ testId }-application-delete-confirmation-modal-header` }
@@ -317,7 +336,7 @@ export const GeneralApplicationSettings: FunctionComponent<GeneralApplicationSet
                         </ConfirmationModal.Header>
                         <ConfirmationModal.Message
                             attached
-                            warning
+                            negative
                             data-testid={ `${ testId }-application-delete-confirmation-modal-message` }
                         >
                             { t("console:develop.features.applications.confirmations.deleteApplication.message") }
@@ -329,8 +348,12 @@ export const GeneralApplicationSettings: FunctionComponent<GeneralApplicationSet
                         </ConfirmationModal.Content>
                     </ConfirmationModal>
                 </>
+            ) :
+            (
+                <EmphasizedSegment padded="very">
+                    <ContentLoader inline="centered" active/>
+                </EmphasizedSegment>
             )
-            : <ContentLoader/>
     );
 };
 

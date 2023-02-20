@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import classNames from "classnames";
 import React, { FunctionComponent, ReactElement, useEffect, useRef, useState } from "react";
 import {
@@ -30,7 +30,9 @@ import {
 /**
  * Prop types for the pagination component.
  */
-export interface PaginationPropsInterface extends PaginationProps, TestableComponentInterface {
+export interface PaginationPropsInterface extends PaginationProps, IdentifiableComponentInterface,
+    TestableComponentInterface {
+
     /**
      * Additional CSS classes.
      */
@@ -77,8 +79,8 @@ export interface PaginationPropsInterface extends PaginationProps, TestableCompo
     nextButtonText?: string;
     /**
      * Callback for items per page change.
-     * @param {React.SyntheticEvent<HTMLElement>} event - Click event.
-     * @param {DropdownProps} data - Data.
+     * @param event - Click event.
+     * @param data - Data.
      */
     onItemsPerPageDropdownChange?: (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => void;
     /**
@@ -103,23 +105,31 @@ export interface PaginationPropsInterface extends PaginationProps, TestableCompo
     totalListSize?: number;
     /**
      * Called when the page change event occurs.
-     * 
-     * @param {React.MouseEvent<HTMLAnchorElement, MouseEvent>} event MouseEvent.
-     * @param {PaginationProps} data Pagination props data.
+     *
+     * @param event - MouseEvent.
+     * @param data - Pagination props data.
      */
     onPageChange?: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>, data: PaginationProps) => void;
     /**
      * Toggles pagination reset.
      */
     resetPagination?: boolean;
+    /**
+     * Active page number.
+     */
+    activePage?: number;
+    /**
+     * Hide the pagination bar wthout losing state.
+     */
+    hidden?: boolean;
 }
 
 /**
  * Pagination component.
  *
- * @param {PaginationPropsInterface} props - Props injected in to the component.
+ * @param props - Props injected in to the component.
  *
- * @return {React.ReactElement}
+ * @returns the pagination component
  */
 export const Pagination: FunctionComponent<PaginationPropsInterface> = (
     props: PaginationPropsInterface
@@ -128,11 +138,12 @@ export const Pagination: FunctionComponent<PaginationPropsInterface> = (
     const [ activePage, setActivePage ] = useState<number>(1);
 
     const init = useRef(true);
-    
+
     const {
         className,
         disableNextButton,
         disablePreviousButton,
+        hidden,
         itemsPerPageDropdownLabel,
         itemsPerPageDropdownLowerLimit,
         itemsPerPageDropdownMultiple,
@@ -146,14 +157,27 @@ export const Pagination: FunctionComponent<PaginationPropsInterface> = (
         showItemsPerPageDropdown,
         showPagesOnMinimalMode,
         totalPages,
+        activePage: activePageProp,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         ...rest
     } = props;
 
     const classes = classNames(
         "pagination-bar",
+        {
+            hidden
+        },
         className
     );
+
+    useEffect(() => {
+        if (activePageProp === undefined || activePageProp === null) {
+            return;
+        }
+
+        setActivePage(activePageProp);
+    }, [ activePageProp ]);
 
     useEffect(() => {
         if (init.current) {
@@ -162,12 +186,12 @@ export const Pagination: FunctionComponent<PaginationPropsInterface> = (
             setActivePage(1);
         }
     }, [ resetPagination ]);
-    
+
     const generatePageCountDropdownOptions = (): DropdownItemProps[] => {
         const options = [];
 
         for (let i = itemsPerPageDropdownLowerLimit; i <= itemsPerPageDropdownUpperLimit;
-             i += itemsPerPageDropdownMultiple) {
+            i += itemsPerPageDropdownMultiple) {
             options.push({
                 key: i,
                 text: i,
@@ -179,10 +203,18 @@ export const Pagination: FunctionComponent<PaginationPropsInterface> = (
     };
 
     /**
+     * Reset the pagination page if the page limit changes.
+     */
+    const resetAll = (): void => {
+        setActivePage(1);
+        onPageChange(null, { activePage: 1, totalPages: totalPages });
+    };
+
+    /**
      * This is called when page change occurs.
-     * 
-     * @param {React.MouseEvent<HTMLAnchorElement, MouseEvent>} event Mouse event.
-     * @param {PaginationProps} data Semantic pagination props.
+     *
+     * @param event - Mouse event.
+     * @param data - Semantic pagination props.
      */
     const pageChangeHandler = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>, data: PaginationProps): void => {
         setActivePage(parseInt(data.activePage.toString()));
@@ -191,7 +223,7 @@ export const Pagination: FunctionComponent<PaginationPropsInterface> = (
 
     /**
      * Renders the content based on the mode.
-     * @return {React.ReactElement}
+     * @returns the child content
      */
     const renderChildren = (): ReactElement => {
 
@@ -200,12 +232,16 @@ export const Pagination: FunctionComponent<PaginationPropsInterface> = (
                 <label className="page-limit-label">
                     { itemsPerPageDropdownLabel }
                     <Dropdown
+                        data-componentid={ `${ componentId }-items-per-page-dropdown` }
                         data-testid={ `${ testId }-items-per-page-dropdown` }
                         className="labeled horizontal right page-limit-dropdown"
                         compact
                         defaultValue={ itemsPerPageDropdownLowerLimit }
                         options={ generatePageCountDropdownOptions() }
-                        onChange={ onItemsPerPageDropdownChange }
+                        onChange={ (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
+                            resetAll();
+                            onItemsPerPageDropdownChange(event, data);
+                        } }
                         selection
                     />
                 </label>
@@ -220,6 +256,7 @@ export const Pagination: FunctionComponent<PaginationPropsInterface> = (
                         { ...rest }
                         totalPages={ totalPages }
                         className="list-pagination"
+                        data-componentid={ `${ componentId }-steps` }
                         data-testid={ `${ testId }-steps` }
                         activePage={ activePage }
                         onPageChange={ pageChangeHandler }
@@ -243,7 +280,7 @@ export const Pagination: FunctionComponent<PaginationPropsInterface> = (
                         } }
                     />
                 </>
-            )
+            );
         }
 
         return (
@@ -253,16 +290,21 @@ export const Pagination: FunctionComponent<PaginationPropsInterface> = (
                     { ...rest }
                     totalPages={ totalPages }
                     className="list-pagination"
+                    data-componentid={ `${ componentId }-steps` }
                     data-testid={ `${ testId }-steps` }
                     activePage={ activePage }
                     onPageChange={ pageChangeHandler }
                 />
             </>
-        )
+        );
     };
 
     return (
-        <div className={ classes } data-testid={ testId }>
+        <div
+            className={ classes }
+            data-componentid={ componentId }
+            data-testid={ testId }
+        >
             { renderChildren() }
         </div>
     );
@@ -272,6 +314,7 @@ export const Pagination: FunctionComponent<PaginationPropsInterface> = (
  * Prop types for the Pagination component.
  */
 Pagination.defaultProps =  {
+    "data-componentid": "pagination",
     "data-testid": "pagination",
     float: "right",
     itemsPerPageDropdownLabel: "Items per page",

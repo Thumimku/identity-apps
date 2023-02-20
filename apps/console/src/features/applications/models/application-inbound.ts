@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -110,7 +110,7 @@ export interface OIDCDataInterface {
     clientId?: string;
     clientSecret?: string;
     state?: State;
-    grantTypes: string[];
+    grantTypes?: string[];
     callbackURLs?: string[];
     allowedOrigins?: string[];
     publicClient?: boolean;
@@ -127,11 +127,11 @@ export interface OIDCDataInterface {
  * Enum for the supported auth protocol types.
  *
  * @readonly
- * @enum {string}
  */
 export enum SupportedAuthProtocolTypes {
     SAML = "saml",
     OIDC = "oidc",
+    OAUTH2_OIDC = "oauth2-oidc",
     WS_FEDERATION = "passive-sts",
     WS_TRUST = "ws-trust",
     CUSTOM= "custom"
@@ -141,7 +141,6 @@ export enum SupportedAuthProtocolTypes {
  * Enum for the supported auth protocol names.
  *
  * @readonly
- * @enum {string}
  */
 export enum SupportedAuthProtocolName {
     SAML = "saml",
@@ -154,7 +153,6 @@ export enum SupportedAuthProtocolName {
  * Enum for the default protocol template ids.
  *
  * @readonly
- * @enum {string}
  */
 export enum DefaultProtocolTemplate {
     SAML = "default-saml",
@@ -167,7 +165,6 @@ export enum DefaultProtocolTemplate {
  * Enum for the supported quick start template types.
  *
  * @readonly
- * @enum {string}
  */
 export enum SupportedQuickStartTemplateTypes {
     SPA = "spa",
@@ -182,7 +179,6 @@ export enum SupportedQuickStartTemplateTypes {
  * metadata for the following auth protocols.
  *
  * @readonly
- * @enum {string}
  */
 export enum SupportedAuthProtocolMetaTypes {
     SAML = "saml",
@@ -276,12 +272,21 @@ export interface SAML2ServiceProviderInterface {
 }
 
 /**
+ * SAML template configurations for an application.
+ */
+export interface SAML2TemplateServiceProviderInterface {
+    issuer: string;
+    assertionConsumerUrls?: Array<string>;
+}
+
+/**
  * SAML configuration interface.
  */
 export interface SAML2ConfigurationInterface {
     metadataFile?: string;
     metadataURL?: string;
     manualConfiguration?: SAML2ServiceProviderInterface;
+    templateConfiguration?: SAML2TemplateServiceProviderInterface;
 }
 
 /**
@@ -416,8 +421,18 @@ export interface OIDCEndpointsInterface {
  * Enum for the access token binding types.
  *
  * @readonly
- * @enum {string}
  */
 export enum SupportedAccessTokenBindingTypes {
     NONE = "None"
+}
+
+/**
+ * Enum for the SAML configuration modes.
+ *
+ * @readonly
+ */
+export enum SAMLConfigModes {
+    MANUAL = "manualConfiguration",
+    META_FILE = "metadataFile",
+    META_URL = "metadataURL"
 }

@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,9 +16,10 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import React, { FunctionComponent, ReactElement, ReactNode } from "react";
-import { Checkbox, Icon, Label, LabelProps, Popup, SemanticCOLORS, Table, TableRowProps } from "semantic-ui-react";
+import { Checkbox, Icon, Label, LabelProps, SemanticCOLORS, Table, TableRowProps } from "semantic-ui-react";
+import { Popup } from "../popup";
 
 /**
  * Proptypes for the transfer list item label.
@@ -32,8 +33,10 @@ export interface ItemTypeLabelPropsInterface extends LabelProps {
 /**
  * Proptypes for the transfer list item component.
  */
-interface TransferListItemPropsInterface extends TableRowProps, TestableComponentInterface {
-    listItem: string;
+interface TransferListItemPropsInterface extends TableRowProps, IdentifiableComponentInterface,
+    TestableComponentInterface {
+
+    listItem: string | ListItemPropsInterface;
     listItemId: string;
     listItemIndex: number | string;
     listItemTypeLabel?: ItemTypeLabelPropsInterface;
@@ -44,14 +47,24 @@ interface TransferListItemPropsInterface extends TableRowProps, TestableComponen
     handleOpenPermissionModal?: () => void;
     showListSubItem?: boolean;
     listSubItem?: ReactNode;
+    readOnly?: boolean;
+    disabled?: boolean;
+}
+
+/**
+ * Proptypes for the {@link listItem} when its type is not string.
+ */
+interface ListItemPropsInterface {
+    listItemElement : ReactNode;
+    listItemValue : string;
 }
 
 /**
  * Transfer list item component.
  *
- * @param {TransferListItemPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns
  */
 export const TransferListItem: FunctionComponent<TransferListItemPropsInterface> = (
     props: TransferListItemPropsInterface
@@ -69,20 +82,37 @@ export const TransferListItem: FunctionComponent<TransferListItemPropsInterface>
         handleOpenPermissionModal,
         showListSubItem,
         listSubItem,
+        readOnly,
+        disabled,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
+
+    const resolveDataTestID = (): string => {
+        let listItemValue: string = "";
+
+        if (typeof listItem === "string") {
+            listItemValue = listItem;
+        } else {
+            listItemValue = listItem.listItemValue;
+        }
+
+        return listItemValue?.split(" ").length > 0
+            ? listItemValue?.replace(" ", "-")
+            : listItemValue;
+    };
 
     return (
         <Table.Row key={ listItemIndex }>
             <Table.Cell id={ listItemId } collapsing>
                 <Checkbox
-                    data-testid={
-                        `${ testId }-${ listItem?.split(" ").length > 0
-                            ? listItem?.replace(" ", "-")
-                            : listItem }-checkbox` }
+                    data-componentid={ `${ componentId }-${ resolveDataTestID() }-checkbox` }
+                    data-testid={ `${ testId }-${ resolveDataTestID() }-checkbox` }
                     checked={ isItemChecked }
                     onChange={ handleItemChange }
                     onClick={ handleItemClick }
+                    readOnly={ readOnly }
+                    disabled={ disabled }
                 />
             </Table.Cell>
             {
@@ -101,33 +131,44 @@ export const TransferListItem: FunctionComponent<TransferListItemPropsInterface>
                 )
             }
             {
-                showListSubItem ?
-                    (
+                showListSubItem
+                    ? (
                         <Table.Cell id={ listItemId }>
-                            <div>{ listItem }</div>
+                            {
+                                typeof listItem === "string"
+                                    ? <div>{ listItem }</div>
+                                    : listItem.listItemElement
+                            }
                             <div className={ "transfer-list-sub-content" }>{ listSubItem }</div>
                         </Table.Cell>
-                    ) :
-                    (<Table.Cell id={ listItemId }> { listItem } </Table.Cell>)
+                    )
+                    : (
+                        <Table.Cell id={ listItemId }>
+                            {
+                                typeof listItem === "string"
+                                    ? <div>{ listItem }</div>
+                                    : listItem.listItemElement
+                            }
+                        </Table.Cell>
+                    )
             }
             {
                 showSecondaryActions && (
                     <Table.Cell collapsing>
                         <Popup
+                            disabled={ disabled }
                             inverted
                             basic
                             content="View permissions"
-                            trigger={
+                            trigger={ (
                                 <Icon
-                                    data-testid={
-                                        `${ testId }-${ listItem?.split(" ").length > 0
-                                            ? listItem?.replace(" ", "-")
-                                            : listItem }-icon` }
+                                    data-componentid={ `${ componentId }-${ resolveDataTestID() }-icon` }
+                                    data-testid={ `${ testId }-${ resolveDataTestID() }-icon` }
                                     color="grey"
                                     name="key"
                                     onClick={ handleOpenPermissionModal }
                                 />
-                            }
+                            ) }
                         />
                     </Table.Cell>
                 )
@@ -140,6 +181,8 @@ export const TransferListItem: FunctionComponent<TransferListItemPropsInterface>
  * Default props for the transfer list item component.
  */
 TransferListItem.defaultProps = {
+    "data-componentid": "transfer-list-item",
     "data-testid": "transfer-list-item",
+    disabled: false,
     showListSubItem: false
 };

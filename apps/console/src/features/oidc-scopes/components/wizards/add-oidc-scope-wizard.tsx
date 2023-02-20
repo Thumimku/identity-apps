@@ -16,7 +16,6 @@
  * under the License.
  */
 
-import { getAllExternalClaims, getAllLocalClaims } from "@wso2is/core/api";
 import { AlertLevels, Claim, ExternalClaim, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import { useTrigger } from "@wso2is/forms";
@@ -26,6 +25,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { Grid, Icon, Modal } from "semantic-ui-react";
 import { AddOIDCScopeForm } from "./add-oidc-scope-form";
+import { getAllExternalClaims, getAllLocalClaims } from "../../../claims/api";
 import { AttributeSelectList } from "../../../core";
 import { createOIDCScope } from "../../api";
 import { getOIDCScopeWizardStepIcons } from "../../configs";
@@ -84,6 +84,7 @@ export const OIDCScopeCreateWizard: FunctionComponent<OIDCScopeCreateWizardProps
     const [ selectedAttributes, setSelectedAttributes ] = useState<ExternalClaim[]>([]);
     const [ isClaimRequestLoading, setIsClaimRequestLoading ] = useState<boolean>(false);
     const [ claims, setClaims ] = useState<Claim[]>([]);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     const [ alert, setAlert, alertComponent ] = useWizardAlert();
 
@@ -180,6 +181,7 @@ export const OIDCScopeCreateWizard: FunctionComponent<OIDCScopeCreateWizardProps
         switch (currentWizardStep) {
             case 0:
                 setSubmitGeneralDetails();
+                submitScopeForm();
                 break;
             case 1:
                 setFinishSubmit();
@@ -261,12 +263,16 @@ export const OIDCScopeCreateWizard: FunctionComponent<OIDCScopeCreateWizardProps
             });
     };
 
+    let submitScopeForm: () => void;
+
     const STEPS = [
         {
             content: (
                 <AddOIDCScopeForm
                     initialValues={ wizardState && wizardState[ WizardStepsFormTypes.BASIC_DETAILS ] }
                     triggerSubmit={ submitGeneralDetails }
+                    triggerSubmission={ (submitFunction: () => void) => {
+                        submitScopeForm = submitFunction; } }
                     onSubmit={ (values) => handleWizardFormSubmit(values, WizardStepsFormTypes.BASIC_DETAILS) }
                     data-testid={ `${ testId }-form` }
                 />
@@ -282,6 +288,7 @@ export const OIDCScopeCreateWizard: FunctionComponent<OIDCScopeCreateWizardProps
                     setInitialSelectedExternalClaims={ (response: ExternalClaim[]) => {
                         const claimURIs: string[] = response?.map((claim: ExternalClaim) => claim.claimURI);
                         if (claimURIs?.length > 0) {
+                            setIsSubmitting(true);
                             handleWizardFormFinish(claimURIs);
                         } else {
                             setAlert({
@@ -366,6 +373,8 @@ export const OIDCScopeCreateWizard: FunctionComponent<OIDCScopeCreateWizardProps
                                     floated="right"
                                     onClick={ navigateToNext }
                                     data-testid={ `${ testId }-finish-button` }
+                                    loading={ isSubmitting }
+                                    disabled={ isSubmitting }
                                 >
                                     { t("common:finish") }
                                 </PrimaryButton>

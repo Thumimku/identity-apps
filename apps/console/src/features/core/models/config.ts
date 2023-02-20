@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { ResponseMode, Storage } from "@wso2/identity-oidc-js";
+import { ResponseMode, Storage } from "@asgardeo/auth-react";
 import {
     CommonConfigInterface,
     CommonDeploymentConfigInterface,
@@ -24,16 +24,22 @@ import {
     FeatureAccessConfigInterface
 } from "@wso2is/core/models";
 import { I18nModuleOptionsInterface } from "@wso2is/i18n";
-import { ApplicationTemplateLoadingStrategies, ApplicationsResourceEndpointsInterface } from "../../applications";
+import {
+    ApplicationTemplateLoadingStrategies,
+    ApplicationsResourceEndpointsInterface
+} from "../../applications/models";
 import { CertificatesResourceEndpointsInterface } from "../../certificates";
 import { ClaimResourceEndpointsInterface } from "../../claims";
 import { GroupsResourceEndpointsInterface } from "../../groups";
-import { IdentityProviderTemplateLoadingStrategies, IDPResourceEndpointsInterface } from "../../identity-providers";
+import { IDPResourceEndpointsInterface, IdentityProviderTemplateLoadingStrategies } from "../../identity-providers";
 import { ScopesResourceEndpointsInterface } from "../../oidc-scopes";
+import { OrganizationResourceEndpointsInterface } from "../../organizations/models";
 import { RolesResourceEndpointsInterface } from "../../roles";
+import { SecretsManagementEndpoints } from "../../secrets/models/endpoints";
 import { ServerConfigurationsResourceEndpointsInterface } from "../../server-configurations";
 import { UsersResourceEndpointsInterface } from "../../users";
 import { UserstoreResourceEndpointsInterface } from "../../userstores";
+import { ValidationServiceEndpointsInterface } from "../../validation/models";
 
 export type ConfigInterface = CommonConfigInterface<
     DeploymentConfigInterface,
@@ -69,11 +75,15 @@ export interface FeatureConfigInterface {
     /**
      * General Configuration settings feature.
      */
-    generalConfigurations?: FeatureAccessConfigInterface;
+    governanceConnectors?: FeatureAccessConfigInterface;
     /**
      * Groups feature.
      */
     groups?: FeatureAccessConfigInterface;
+    /**
+     * Guest User Feature
+     */
+    guestUser?: FeatureAccessConfigInterface;
     /**
      * Identity provider management feature.
      */
@@ -82,6 +92,14 @@ export interface FeatureConfigInterface {
      * OIDC Scope management feature.
      */
     oidcScopes?: FeatureAccessConfigInterface;
+    /**
+     * Organization management feature.
+     */
+    organizations?: FeatureAccessConfigInterface;
+    /**
+     * Organization role management feature.
+     */
+    organizationsRoles?: FeatureAccessConfigInterface;
     /**
      * Remote Fetch Config management feature.
      */
@@ -98,13 +116,24 @@ export interface FeatureConfigInterface {
      * User management feature.
      */
     users?: FeatureAccessConfigInterface;
+    /**
+     * Secret Management Feature UI Access Scopes.
+     */
+    secretsManagement?: FeatureAccessConfigInterface;
+    /**
+     * Try It feature
+     */
+    tryIt?: FeatureAccessConfigInterface;
+    /**
+     * Event Management feature
+     */
+    eventPublishing?: FeatureAccessConfigInterface;
 }
 
 /**
  * Portal Deployment config interface inheriting the common configs from core module.
  */
 export interface DeploymentConfigInterface extends CommonDeploymentConfigInterface<ResponseMode, Storage> {
-
     /**
      * Configs of the Admin app.
      */
@@ -118,9 +147,21 @@ export interface DeploymentConfigInterface extends CommonDeploymentConfigInterfa
      */
     developerApp: ExternalAppConfigInterface;
     /**
+     * Configs for extensions.
+     */
+    extensions: Record<string, unknown>;
+    /**
      * URL of the help center.
      */
     helpCenterURL?: string;
+    /**
+     * URL of the doc site.
+     */
+    docSiteURL?: string;
+    /**
+     * Configs of multiple application protocol.
+     */
+    allowMultipleAppProtocols?: boolean;
 }
 
 /**
@@ -139,6 +180,10 @@ interface ExternalAppConfigInterface {
      * Access path/URL for the app.
      */
     path: string;
+    /**
+     * Access path/URL for the consumer account app.
+     */
+    tenantQualifiedPath: string;
 }
 
 /**
@@ -152,9 +197,17 @@ export interface UIConfigInterface extends CommonUIConfigInterface<FeatureConfig
      */
     applicationTemplateLoadingStrategy?: ApplicationTemplateLoadingStrategies;
     /**
+     * Configuration to enable Google One Tap for specific tenants.
+     */
+    googleOneTapEnabledTenants?: string[];
+    /**
      * Set of authenticators to be hidden in application sign on methods.
      */
     hiddenAuthenticators?: string[];
+    /**
+     * Configurations for IDP templates.
+     */
+    identityProviderTemplates: IdentityProviderTemplatesConfigInterface;
     /**
      * How should the IDP templates be loaded.
      * If `LOCAL` is selected, app will resort to in-app templates.
@@ -186,6 +239,10 @@ export interface UIConfigInterface extends CommonUIConfigInterface<FeatureConfig
      */
     listAllAttributeDialects?: boolean;
     /**
+     * Should show/hide marketing consent banner.
+     */
+    isMarketingConsentBannerEnabled: boolean;
+    /**
      * Enable signature validation certificate alias.
      */
     isSignatureValidationCertificateAliasEnabled?: boolean;
@@ -197,6 +254,54 @@ export interface UIConfigInterface extends CommonUIConfigInterface<FeatureConfig
      * System apps list.
      */
     systemAppsIdentifiers: string[];
+    /**
+     * Show App Switch button in the Header.
+     */
+    showAppSwitchButton?: boolean;
+    /**
+     * Hidden userstores
+     */
+    hiddenUserStores: string[];
+}
+
+/**
+ * Interface for IDP template configurations.
+ */
+interface IdentityProviderTemplatesConfigInterface {
+    /**
+     * Enterprise OIDC template config.
+     */
+    enterpriseOIDC: IdentityProviderTemplateConfigInterface;
+    /**
+     * Enterprise SAML template config.
+     */
+    enterpriseSAML: IdentityProviderTemplateConfigInterface;
+    /**
+     * Facebook template config.
+     */
+    facebook: IdentityProviderTemplateConfigInterface;
+    /**
+     * Google template config.
+     */
+    google: IdentityProviderTemplateConfigInterface;
+    /**
+     * GitHub template config.
+     */
+    github: IdentityProviderTemplateConfigInterface;
+    /**
+     * Microsoft template config.
+     */
+    microsoft: IdentityProviderTemplateConfigInterface;
+}
+
+/**
+ * Interface for IDP template config.
+ */
+interface IdentityProviderTemplateConfigInterface {
+    /**
+     * Is the IDP enabled.
+     */
+    enabled: boolean;
 }
 
 /**
@@ -211,11 +316,12 @@ export interface ServiceResourceEndpointsInterface extends ClaimResourceEndpoint
     RolesResourceEndpointsInterface,
     ApplicationsResourceEndpointsInterface,
     IDPResourceEndpointsInterface,
-    ScopesResourceEndpointsInterface {
+    ScopesResourceEndpointsInterface,
+    SecretsManagementEndpoints,
+    OrganizationResourceEndpointsInterface,
+    ValidationServiceEndpointsInterface {
 
     CORSOrigins: string;
-    documentationContent: string;
-    documentationStructure: string;
     // TODO: Remove this endpoint and use ID token to get the details
     me: string;
     saml2Meta: string;

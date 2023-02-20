@@ -16,8 +16,12 @@
  * under the License.
  */
 
+import { HttpRequestConfig, HttpResponse } from "@asgardeo/auth-react";
+import { AppConstants as AppConstantsCore } from "@wso2is/core/constants";
 import { hideAJAXTopLoadingBar, showAJAXTopLoadingBar } from "@wso2is/core/store";
 import { AuthenticateUtils } from "@wso2is/core/utils";
+import { AxiosError } from "axios";
+import { EventPublisher } from "./event-publisher";
 import { AppConstants } from "../constants";
 import { history } from "../helpers";
 import { store } from "../store";
@@ -46,8 +50,18 @@ export class HttpUtils {
     /**
      * Callback to be fired on every Http request success.
      */
-    public static onHttpRequestSuccess(): void {
+    public static onHttpRequestSuccess(response: HttpResponse): void {
         // TODO: Handle any conditions required on request success.
+        const responseConfig: HttpRequestConfig  = response.config as HttpRequestConfig;
+        const duration: number = new Date().getTime() - responseConfig?.startTimeInMs;
+
+        EventPublisher.getInstance().record(
+            new URL(response.config.url).pathname,
+            responseConfig.startTimeInMs,
+            duration,
+            response?.status,
+            true
+        );
     }
 
     /**
@@ -62,7 +76,30 @@ export class HttpUtils {
      *
      * @param error - Http error.
      */
-    public static onHttpRequestError(error: any): void {
+    public static onHttpRequestError(error: AxiosError | any): void {
+        /**
+         * Publish an event on the http request error.
+        */
+        const errorConfig: HttpRequestConfig  = error.config as HttpRequestConfig;
+        let duration: number = null;
+        let pathName: string | null = null;
+
+        try {
+            //Whenever the resulting URL pathname and duration is undefined we explicityly assign null 
+            pathName = new URL(error?.config?.url).pathname;
+            duration = new Date().getTime() - errorConfig?.startTimeInMs;
+        } catch(e) {
+            // Add debug logs here one a logger is added.
+            // Tracked here https://github.com/wso2/product-is/issues/11650.
+        }
+
+        EventPublisher.getInstance().record(
+            pathName,
+            errorConfig?.startTimeInMs,
+            duration,
+            error?.response?.status,
+            false
+        );
         // Terminate the session if the token endpoint returns a bad request(400)
         // The token binding feature will return a 400 status code when the session
         // times out.
@@ -74,24 +111,32 @@ export class HttpUtils {
         ) {
             if (error.response.status === 400) {
                 history.push(window["AppUtils"].getConfig().routes.logout);
+
                 return;
             }
         }
 
         // If the user doesn't have login permission, redirect to login error page.
-        if (!AuthenticateUtils.hasLoginPermission(store.getState()?.auth?.scope)) {
+        if (!AuthenticateUtils.hasLoginPermission(store.getState()?.auth?.allowedScopes)) {
             history.push({
                 pathname: AppConstants.getPaths().get("UNAUTHORIZED"),
                 search: "?error=" + AppConstants.LOGIN_ERRORS.get("NO_LOGIN_PERMISSION")
             });
+
             return;
         }
 
-        // Terminate the session if the requests returns an un-authorized status code (401)
+        // Dispatch a `network_error_event` Event when the requests returns an un-authorized status code (401)
+        // or are timed out.
         // NOTE: Axios is unable to handle 401 errors. `!error.response` will usually catch
         // the `401` error. Check the link in the doc comment.
         if (!error.response || error.response.status === 401) {
-            history.push(window["AppUtils"].getConfig().routes.logout);
+            if (error?.code === "SPA-WORKER_CORE-HR-SE01") {
+                dispatchEvent(new Event(AppConstantsCore.NETWORK_ERROR_EVENT));
+            }
+            if (error?.code === "SPA-AUTH_HELPER-HR-SE01") {
+                dispatchEvent(new Event(AppConstantsCore.NETWORK_ERROR_EVENT));
+            }
         }
     }
 

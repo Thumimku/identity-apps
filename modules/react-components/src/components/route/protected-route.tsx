@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,14 +16,14 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import React, { FunctionComponent, ReactElement } from "react";
 import { Redirect, Route } from "react-router-dom";
 
 /**
  * Proptypes for the protected route component.
  */
-export interface ProtectedRouteProps extends TestableComponentInterface {
+export interface ProtectedRouteProps extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Component to render.
      */
@@ -38,7 +38,7 @@ export interface ProtectedRouteProps extends TestableComponentInterface {
     isAuthorized: boolean;
     /**
      * Auth Callback URL update callback.
-     * @param {string} url - URL.
+     * @param url - URL.
      */
     onAuthCallbackUrlUpdate: (url: string) => void;
     /**
@@ -54,9 +54,9 @@ export interface ProtectedRouteProps extends TestableComponentInterface {
 /**
  * Protected route component.
  *
- * @param {ProtectedRouteProps} props - Props injected in to the component.
+ * @param props - Props injected in to the component.
  *
- * @return {React.ReactElement}
+ * @returns protect route component
  */
 export const ProtectedRoute: FunctionComponent<ProtectedRouteProps> = (
     props: ProtectedRouteProps
@@ -69,6 +69,7 @@ export const ProtectedRoute: FunctionComponent<ProtectedRouteProps> = (
         onAuthCallbackUrlUpdate,
         loginPath,
         loginErrorPath,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId,
         ...rest
     } = props;
@@ -88,6 +89,7 @@ export const ProtectedRoute: FunctionComponent<ProtectedRouteProps> = (
                     <Component { ...props } /> :
                     <Redirect to={ loginPath } />
             }
+            data-componentid={ componentId }
             data-testid={ testId }
             { ...rest }
         />

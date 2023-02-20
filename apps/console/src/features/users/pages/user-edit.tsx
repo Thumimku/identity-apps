@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { resolveUserDisplayName, resolveUserEmails } from "@wso2is/core/helpers";
+import { hasRequiredScopes, resolveUserDisplayName, resolveUserEmails } from "@wso2is/core/helpers";
 import {
     AlertInterface,
     AlertLevels,
@@ -25,12 +25,15 @@ import {
     emptyProfileInfo
 }from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
-import { EditAvatarModal, PageLayout, UserAvatar } from "@wso2is/react-components";
+import { EditAvatarModal, Popup, TabPageLayout, UserAvatar } from "@wso2is/react-components";
 import React, { MouseEvent, ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { Dispatch } from "redux";
+import { Icon } from "semantic-ui-react";
 import { getProfileInformation } from "../../authentication/store";
 import { AppConstants, AppState, FeatureConfigInterface, SharedUserStoreUtils, history } from "../../core";
+import { OrganizationUtils } from "../../organizations/utils";
 import { getGovernanceConnectors } from "../../server-configurations/api";
 import { ServerConfigurationsConstants } from "../../server-configurations/constants";
 import { ConnectorPropertyInterface, GovernanceConnectorInterface } from "../../server-configurations/models";
@@ -41,15 +44,16 @@ import { UserManagementUtils } from "../utils";
 /**
  * User Edit page.
  *
- * @return {React.ReactElement}
+ * @returns User edit page react component.
  */
 const UserEditPage = (): ReactElement => {
 
     const { t } = useTranslation();
 
-    const dispatch = useDispatch();
+    const dispatch: Dispatch<any> = useDispatch();
 
     const featureConfig: FeatureConfigInterface = useSelector((state: AppState) => state.config.ui.features);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
     const profileInfo: ProfileInfoInterface = useSelector((state: AppState) => state.profile.profileInfo);
 
     const [ user, setUserProfile ] = useState<ProfileInfoInterface>(emptyProfileInfo);
@@ -58,16 +62,21 @@ const UserEditPage = (): ReactElement => {
     const [ showEditAvatarModal, setShowEditAvatarModal ] = useState<boolean>(false);
     const [ connectorProperties, setConnectorProperties ] = useState<ConnectorPropertyInterface[]>(undefined);
     const [ isReadOnlyUserStoresLoading, setReadOnlyUserStoresLoading ] = useState<boolean>(false);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     useEffect(() => {
+        if (!OrganizationUtils.isCurrentOrganizationRoot()) {
+            return;
+        }
+
         const properties: ConnectorPropertyInterface[] = [];
 
         getGovernanceConnectors(ServerConfigurationsConstants.ACCOUNT_MANAGEMENT_CATEGORY_ID)
             .then((response: GovernanceConnectorInterface[]) => {
-                response.map((connector) => {
+                response.map((connector: GovernanceConnectorInterface) => {
                     if (connector.id === ServerConfigurationsConstants.ACCOUNT_DISABLING_CONNECTOR_ID
                         || connector.id === ServerConfigurationsConstants.ADMIN_FORCE_PASSWORD_RESET_CONNECTOR_ID) {
-                        connector.properties.map((property) => {
+                        connector.properties.map((property: ConnectorPropertyInterface) => {
                             properties.push(property);
                         });
                     }
@@ -75,9 +84,9 @@ const UserEditPage = (): ReactElement => {
 
                 getGovernanceConnectors(ServerConfigurationsConstants.USER_ONBOARDING_CONNECTOR_ID)
                     .then((response: GovernanceConnectorInterface[]) => {
-                        response.map((connector) => {
+                        response.map((connector: GovernanceConnectorInterface) => {
                             if (connector.id === ServerConfigurationsConstants.SELF_SIGN_UP_CONNECTOR_ID) {
-                                connector.properties.map((property) => {
+                                connector.properties.map((property: ConnectorPropertyInterface) => {
                                     if (property.name === ServerConfigurationsConstants.ACCOUNT_LOCK_ON_CREATION) {
                                         properties.push(property);
                                     }
@@ -92,26 +101,32 @@ const UserEditPage = (): ReactElement => {
     }, []);
 
     useEffect(() => {
-        const path = history.location.pathname.split("/");
-        const id = path[ path.length - 1 ];
+        const path: string[] = history.location.pathname.split("/");
+        const id: string = path[ path.length - 1 ];
 
         getUser(id);
     }, []);
 
     useEffect(() => {
+        if (!OrganizationUtils.isCurrentOrganizationRoot()) {
+            return;
+        }
+
         setReadOnlyUserStoresLoading(true);
-        SharedUserStoreUtils.getReadOnlyUserStores().then((response) => {
-            setReadOnlyUserStoresList(response);
-        }).finally(() => {
-            setReadOnlyUserStoresLoading(false);
-        });
+        SharedUserStoreUtils.getReadOnlyUserStores()
+            .then((response: string[]) => {
+                setReadOnlyUserStoresList(response);
+            })
+            .finally(() => {
+                setReadOnlyUserStoresLoading(false);
+            });
     }, [ user ]);
 
     const getUser = (id: string) => {
         setIsUserDetailsRequestLoading(true);
 
         getUserDetails(id, null)
-            .then((response) => {
+            .then((response: ProfileInfoInterface) => {
                 setUserProfile(response);
             })
             .catch(() => {
@@ -125,7 +140,7 @@ const UserEditPage = (): ReactElement => {
     const handleUserUpdate = (id: string) => {
         getUser(id);
 
-        if (UserManagementUtils.isAuthenticatedUser(profileInfo, user)) {
+        if (UserManagementUtils.isAuthenticatedUser(profileInfo?.userName, user?.userName)) {
             dispatch(getProfileInformation());
         }
     };
@@ -137,11 +152,19 @@ const UserEditPage = (): ReactElement => {
     /**
      * Handles edit avatar modal submit action.
      *
-     * @param {<HTMLButtonElement>} e - Event.
-     * @param {string} url - Selected image URL.
+     * @param e - Mouse event.
+     * @param url - Selected image URL.
      */
     const handleAvatarEditModalSubmit = (e: MouseEvent<HTMLButtonElement>, url: string): void => {
-        const data = {
+        const data: {
+            Operations: {
+                op: string;
+                value: {
+                    profileUrl: string;
+                };
+            }[];
+            schemas: string[];
+        } = {
             Operations: [
                 {
                     op: "replace",
@@ -150,8 +173,10 @@ const UserEditPage = (): ReactElement => {
                     }
                 }
             ],
-            schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"]
+            schemas: [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ]
         };
+
+        setIsSubmitting(true);
 
         updateUserInfo(user?.id, data)
             .then(() => {
@@ -167,7 +192,7 @@ const UserEditPage = (): ReactElement => {
 
                 handleUserUpdate(user?.id);
             })
-            .catch((error) => {
+            .catch((error: any) => {
                 if (error.response
                     && error.response.data
                     && (error.response.data.description || error.response.data.detail)) {
@@ -195,38 +220,96 @@ const UserEditPage = (): ReactElement => {
             })
             .finally(() => {
                 setShowEditAvatarModal(false);
+                setIsSubmitting(false);
             });
     };
 
     /**
      * This function resolves the primary email of the user.
      *
-     * @param {string | MultiValueAttributeInterface)[]} emails - User emails.
+     * @param emails - User emails.
      */
     const resolvePrimaryEmail = (emails: (string | MultiValueAttributeInterface)[]): string => {
         let primaryEmail: string | MultiValueAttributeInterface = "";
+
         if (emails && Array.isArray(emails) && emails.length > 0) {
-            primaryEmail = emails.find((value) => typeof value === "string");
+            primaryEmail = emails.find((value: string | MultiValueAttributeInterface) => typeof value === "string");
         }
 
         return primaryEmail as string;
     };
 
     return (
-        <PageLayout
+        <TabPageLayout
             isLoading={ isUserDetailsRequestLoading }
-            title={ resolveUserDisplayName(user, null, "Administrator") }
+            title={ (
+                <>
+                    {
+                        user?.active !== undefined
+                            ? (
+                                <>
+                                    {
+                                        user?.active
+                                            ? (
+                                                <Popup
+                                                    trigger={ (
+                                                        <Icon
+                                                            className="mr-2 ml-0 vertical-aligned-baseline"
+                                                            size="small"
+                                                            name="circle"
+                                                            color="green"
+                                                        />
+                                                    ) }
+                                                    content={ t("common:enabled") }
+                                                    inverted
+                                                />
+                                            ) : (
+                                                <Popup
+                                                    trigger={ (
+                                                        <Icon
+                                                            className="mr-2 ml-0 vertical-aligned-baseline"
+                                                            size="small"
+                                                            name="circle"
+                                                            color="orange"
+                                                        />
+                                                    ) }
+                                                    content={ t("common:disabled") }
+                                                    inverted
+                                                />
+                                            )
+                                    }
+                                    { resolveUserDisplayName(user, null, "Administrator") }
+
+                                </>
+                            ) : (
+                                <>
+                                    { resolveUserDisplayName(user, null, "Administrator") }
+                                </>
+                            )
+                    }
+                </>
+            ) }
+            pageTitle="Edit User"
             description={ t("" + user.emails && user.emails !== undefined ? resolvePrimaryEmail(user?.emails) :
                 user.userName) }
             image={ (
                 <UserAvatar
-                    editable
+                    editable={
+                        hasRequiredScopes(featureConfig?.users, featureConfig?.users?.scopes?.update, allowedScopes)
+                    }
                     name={ resolveUserDisplayName(user) }
                     size="tiny"
                     image={ user?.profileUrl }
-                    onClick={ () => setShowEditAvatarModal(true) }
+                    onClick={ () =>
+                        hasRequiredScopes(featureConfig?.users, featureConfig?.users?.scopes?.update, allowedScopes)
+                        && setShowEditAvatarModal(true)
+                    }
                 />
             ) }
+            loadingStateOptions={ {
+                count: 5,
+                imageType: "circular"
+            } }
             backButton={ {
                 "data-testid": "user-mgt-edit-user-back-button",
                 onClick: handleBackButtonClick,
@@ -241,6 +324,7 @@ const UserEditPage = (): ReactElement => {
                 handleUserUpdate={ handleUserUpdate }
                 readOnlyUserStores={ readOnlyUserStoresList }
                 connectorProperties={ connectorProperties }
+                isLoading={ isUserDetailsRequestLoading }
                 isReadOnlyUserStoresLoading={ isReadOnlyUserStoresLoading }
             />
             {
@@ -254,6 +338,7 @@ const UserEditPage = (): ReactElement => {
                         onCancel={ () => setShowEditAvatarModal(false) }
                         onSubmit={ handleAvatarEditModalSubmit }
                         imageUrl={ profileInfo?.profileUrl }
+                        isSubmitting={ isSubmitting }
                         heading={ t("console:common.modals.editAvatarModal.heading") }
                         submitButtonText={ t("console:common.modals.editAvatarModal.primaryButton") }
                         cancelButtonText={ t("console:common.modals.editAvatarModal.secondaryButton") }
@@ -310,7 +395,7 @@ const UserEditPage = (): ReactElement => {
                     />
                 )
             }
-        </PageLayout>
+        </TabPageLayout>
     );
 };
 

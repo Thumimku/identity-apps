@@ -16,6 +16,9 @@
  * under the License.
  */
 
+// Keep statement as this to avoid cyclic dependency. Do not import from config index.
+import { SCIMConfigs } from "../../../extensions/configs/scim";
+
 /**
  * Class containing claim constants.
  */
@@ -71,6 +74,7 @@ export class ClaimManagementConstants {
     // API errors
     public static readonly ADD_DIALECT_REQUEST_INVALID_STATUS_CODE_ERROR: string = "Received an invalid " +
         "status code while adding a new dialect.";
+
     public static readonly ADD_LOCAL_CLAIM_REQUEST_INVALID_STATUS_CODE_ERROR: string = "Received an invalid " +
         "status code while adding a new dialect.";
 
@@ -109,26 +113,36 @@ export class ClaimManagementConstants {
         ClaimManagementConstants.ATTRIBUTE_DIALECT_IDS.get("SCIM_SCHEMAS_CORE")
     ]
 
-    public static readonly OIDC_MAPPING: string[] = [
-        "http://wso2.org/oidc/claim"
-    ];
+    public static readonly CUSTOM_MAPPING: string = SCIMConfigs.custom;
 
-    public static readonly SCIM_MAPPING: string[] = [
-        "urn:ietf:params:scim:schemas:core:2.0:User",
-        "urn:scim:schemas:core:1.0",
-        "urn:ietf:params:scim:schemas:core:2.0",
-        "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
-    ]
+    public static readonly OIDC_MAPPING: string[] = [
+        SCIMConfigs.oidc
+    ];
 
     public static readonly OIDC: string = "oidc";
     public static readonly SCIM: string = "scim";
     public static readonly OTHERS: string = "others";
 
     public static readonly SCIM_TABS = [
-        { name: "Enterprise Schema", uri: "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User" },
-        { name: "User Schema", uri: "urn:ietf:params:scim:schemas:core:2.0:User" },
         { name: "Core Schema", uri: "urn:ietf:params:scim:schemas:core:2.0" },
+        { name: "User Schema", uri: "urn:ietf:params:scim:schemas:core:2.0:User" },
+        { name: "Enterprise Schema", uri: "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User" },
         { name: "Core 1.0 Schema", uri: "urn:scim:schemas:core:1.0" }
-    ]
+    ];
 
+    /**
+     * Display names of User Id & Username to 
+     * identify.
+     */
+    public static readonly USER_ID_CLAIM_URI: string = "http://wso2.org/claims/userid";
+    public static readonly USER_NAME_CLAIM_URI: string = "http://wso2.org/claims/username";
+    public static readonly GROUPS_CLAIM_URI: string = "http://wso2.org/claims/groups";
+    public static readonly LOCATION_CLAIM_URI: string = "http://wso2.org/claims/location";
+
+    public static readonly EMPTY_STRING = "";
+
+    /**
+     * The error code that is returned when there is no item in the list
+     */
+     public static readonly RESOURCE_NOT_FOUND_ERROR_CODE: string = "CMT-50017";
 }

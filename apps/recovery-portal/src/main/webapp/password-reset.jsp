@@ -22,8 +22,10 @@
 <%@ page import="org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointUtil" %>
 <%@ page import="org.wso2.carbon.identity.core.util.IdentityTenantUtil" %>
 <%@ page import="java.io.File" %>
+<%@ taglib prefix="layout" uri="org.wso2.identity.apps.taglibs.layout.controller" %>
 
 <jsp:directive.include file="includes/localize.jsp"/>
+<jsp:directive.include file="includes/layout-resolver.jsp"/>
 
 <%
     boolean error = IdentityManagementEndpointUtil.getBooleanValue(request.getAttribute("error"));
@@ -31,6 +33,7 @@
     String callback = (String) request.getAttribute(IdentityManagementEndpointConstants.CALLBACK);
     String username = request.getParameter("username");
     String userStoreDomain = request.getParameter("userstoredomain");
+    String type = request.getParameter("type");
     String tenantDomain = (String) request.getAttribute(IdentityManagementEndpointConstants.TENANT_DOMAIN);
     if (tenantDomain == null) {
         tenantDomain = (String) session.getAttribute(IdentityManagementEndpointConstants.TENANT_DOMAIN);
@@ -44,8 +47,13 @@
 
 %>
 
+<%-- Data for the layout from the page --%>
+<%
+    layoutData.put("containerSize", "medium");
+%>
+
 <!doctype html>
-<html>
+<html lang="en-US">
     <head>
         <%
             File headerFile = new File(getServletContext().getRealPath("extensions/header.jsp"));
@@ -57,9 +65,9 @@
         <% } %>
     </head>
     <body class="login-portal layout recovery-layout">
-        <main class="center-segment">
-            <div class="ui container medium center aligned middle aligned">
-                <!-- product-title -->
+        <layout:main layoutName="<%= layout %>" layoutFileRelativePath="<%= layoutFileRelativePath %>" data="<%= layoutData %>" >
+            <layout:component componentName="ProductHeader" >
+                <%-- product-title --%>
                 <%
                     File productTitleFile = new File(getServletContext().getRealPath("extensions/product-title.jsp"));
                     if (productTitleFile.exists()) {
@@ -68,8 +76,10 @@
                 <% } else { %>
                 <jsp:include page="includes/product-title.jsp"/>
                 <% } %>
+            </layout:component>
+            <layout:component componentName="MainSection" >
                 <div class="ui segment">
-                    <!-- content -->
+                    <%-- content --%>
                     <h2>
                         <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Reset.Password")%>
                     </h2>
@@ -85,7 +95,7 @@
                         <form class="ui large form" method="post" action="completepasswordreset.do" id="passwordResetForm">
                             <div class="ui negative message" hidden="hidden" id="error-msg"></div>
                             <div class="field">
-                                <label>
+                                <label for="reset-password">
                                     <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle,
                                     "Enter.new.password")%>
                                 </label>
@@ -95,9 +105,9 @@
                                         name="reset-password"
                                         type="password"
                                         required=""
-                                        onpaste="return false"
                                     />
-                                    <i id="password1ShowHide" class="eye link icon" onclick="password1ShowToggle()"></i>
+                                    <i id="passwordShowHide" class="eye link icon slash"
+                                       onclick="passwordShowToggle()"></i>
                                 </div>
                             </div>
 
@@ -141,20 +151,31 @@
                             <%
                                 }
                             %>
+
+                            <%
+                                if (type != null) {
+                            %>
+                            <div>
+                                <input type="hidden" name="type" value="<%=Encode.forHtmlAttribute(type) %>"/>
+                            </div>
+                            <%
+                                }
+                            %>
+
                            <div class="field">
-                                <label>
+                                <label for="confirm-password">
                                     <%=IdentityManagementEndpointUtil.i18n(recoveryResourceBundle, "Confirm.password")%>
                                 </label>
                                 <div class="ui right icon input">
                                     <input
-                                        id="reset-password2"
-                                        name="reset-password2"
+                                        id="confirm-password"
+                                        name="confirm-password"
                                         type="password"
                                         data-match="reset-password"
                                         required=""
-                                        onpaste="return false"
                                     />
-                                    <i id="password2ShowHide" class="eye link icon" onclick="password2ShowToggle()"></i>
+                                    <i id="confirmPasswordShowHide" class="eye link icon slash"
+                                       onclick="confirmPasswordShowToggle()"></i>
                                 </div>
                             </div>
                             <div class="ui divider hidden"></div>
@@ -169,20 +190,21 @@
                         </form>
                     </div>
                 </div>
-            </div>
-        </main>
-        <!-- /content/body -->
-        <!-- product-footer -->
-        <%
-            File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
-            if (productFooterFile.exists()) {
-        %>
-        <jsp:include page="extensions/product-footer.jsp"/>
-        <% } else { %>
-        <jsp:include page="includes/product-footer.jsp"/>
-        <% } %>
+            </layout:component>
+            <layout:component componentName="ProductFooter" >
+                <%-- product-footer --%>
+                <%
+                    File productFooterFile = new File(getServletContext().getRealPath("extensions/product-footer.jsp"));
+                    if (productFooterFile.exists()) {
+                %>
+                <jsp:include page="extensions/product-footer.jsp"/>
+                <% } else { %>
+                <jsp:include page="includes/product-footer.jsp"/>
+                <% } %>
+            </layout:component>
+        </layout:main>
 
-        <!-- footer -->
+        <%-- footer --%>
         <%
             File footerFile = new File(getServletContext().getRealPath("extensions/footer.jsp"));
             if (footerFile.exists()) {
@@ -199,7 +221,7 @@
 
                     $("#server-error-msg").remove();
                     var password = $("#reset-password").val();
-                    var password2 = $("#reset-password2").val();
+                    var password2 = $("#confirm-password").val();
                     var error_msg = $("#error-msg");
 
                     if (!password || 0 === password.length) {
@@ -225,27 +247,27 @@
             var password1 = true;
             var password2 = true;
 
-            function password1ShowToggle(){
+            function passwordShowToggle(){
                 if(password1) {
                     password1 = false;
-                    document.getElementById("password1ShowHide").classList.add("slash");
+                    document.getElementById("passwordShowHide").classList.remove("slash");
                     document.getElementById("reset-password").setAttribute("type","text");
                 } else{
                     password1 = true;
-                    document.getElementById("password1ShowHide").classList.remove("slash");
+                    document.getElementById("passwordShowHide").classList.add("slash");
                     document.getElementById("reset-password").setAttribute("type","password");
                 }
             }
 
-            function password2ShowToggle(){
+            function confirmPasswordShowToggle(){
                 if(password2) {
                     password2 = false;
-                    document.getElementById("password2ShowHide").classList.add("slash");
-                    document.getElementById("reset-password2").setAttribute("type","text");
+                    document.getElementById("confirmPasswordShowHide").classList.remove("slash");
+                    document.getElementById("confirm-password").setAttribute("type","text");
                 } else{
                     password2 = true;
-                    document.getElementById("password2ShowHide").classList.remove("slash");
-                    document.getElementById("reset-password2").setAttribute("type","password");
+                    document.getElementById("confirmPasswordShowHide").classList.add("slash");
+                    document.getElementById("confirm-password").setAttribute("type","password");
                 }
             }
         </script>

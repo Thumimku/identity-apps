@@ -16,19 +16,29 @@
  * under the License.
  */
 
-import { getDialects } from "@wso2is/core/api";
-import { AlertLevels, ClaimDialect, TestableComponentInterface } from "@wso2is/core/models";
+import { AlertLevels, ClaimDialect, ExternalClaim, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
-import { AnimatedAvatar, GenericIcon, PageLayout, ResourceTab } from "@wso2is/react-components";
+import {
+    AnimatedAvatar,
+    DocumentationLink,
+    GenericIcon,
+    PageLayout,
+    ResourceTab,
+    useDocumentation
+} from "@wso2is/react-components";
+import Axios from "axios";
 import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { RouteChildrenProps } from "react-router";
 import { Image, StrictTabProps } from "semantic-ui-react";
 import ExternalDialectEditPage from "./external-dialect-edit";
+import { SCIMConfigs, attributeConfig } from "../../../extensions";
+import { getAllExternalClaims, getDialects } from "../../claims/api";
 import { AppConstants, AppState, getTechnologyLogos, history } from "../../core";
 import { } from "../components";
 import { ClaimManagementConstants } from "../constants";
+import { resolveType } from "../utils";
 
 /**
  * Props for the Edit Attribute Mappings page.
@@ -41,6 +51,7 @@ type EditAttributeMappingsPropsInterface = TestableComponentInterface;
 interface AttributeMappingsPathParams {
     type: string;
 }
+
 export const AttributeMappings: FunctionComponent<RouteChildrenProps<AttributeMappingsPathParams> &
     EditAttributeMappingsPropsInterface> = (
         props: RouteChildrenProps<AttributeMappingsPathParams> & EditAttributeMappingsPropsInterface
@@ -57,13 +68,86 @@ export const AttributeMappings: FunctionComponent<RouteChildrenProps<AttributeMa
             (state: AppState) => state.config.ui.listAllAttributeDialects
         );
         const { t } = useTranslation();
+        const { getLink } = useDocumentation();
 
         const [ isLoading, setIsLoading ] = useState(true);
         const [ dialects, setDialects ] = useState<ClaimDialect[]>(null);
+        const [ mappedLocalclaims, setMappedLocalClaims ] = useState<string[]>([]);
+        const [ triggerFetchMappedClaims, setTriggerFetchMappedClaims ] = useState<boolean>(true);
 
         useEffect(() => {
             getDialect();
         }, []);
+
+        useEffect(() => {
+            if ( dialects && dialects.length > 0 && triggerFetchMappedClaims ) {
+                generateMappedLocalClaimList(dialects.map(dialect => dialect.id));
+                setTriggerFetchMappedClaims(false);
+            }
+        }, [ dialects, triggerFetchMappedClaims ]);
+
+        /**
+         * This will fetch external claims for each dialect 
+         * and create a list of already mapped local claims 
+         * for filteration purpose.
+         * 
+         * TODO : This is not the ideal way to fetch and 
+         *        identify the already mapped claims. Need
+         *        API support for this.
+         */
+        const generateMappedLocalClaimList = (dialectIdList: string[], 
+            limit?: number, 
+            offset?: number, 
+            sort?: string, 
+            filter?: string) => {
+
+            const mappedLocalClaimPromises = [];
+
+            dialectIdList.forEach(id => {
+                mappedLocalClaimPromises.push(
+                    getAllExternalClaims(id, {
+                        filter,
+                        limit,
+                        offset,
+                        sort
+                    })
+                );
+            });
+
+            Axios.all(mappedLocalClaimPromises).then(response => {
+                const mappedClaims = [];
+
+                response.forEach(claim => {
+                    // Hide identity claims in SCIM
+                    const claims: ExternalClaim[] = attributeConfig.attributeMappings.getExternalAttributes(
+                        type,
+                        claim
+                    );
+
+                    mappedClaims.push(...claims.map(claim => claim.mappedLocalClaimURI));
+                });
+                setMappedLocalClaims(mappedClaims);
+            }).catch(error => {
+                dispatch(
+                    addAlert({
+                        description:
+                            error[0]?.response?.data?.description ||
+                            t(
+                                "console:manage.features.claims.dialects.notifications." +
+                                "fetchExternalClaims.genericError.description",
+                                { type: resolveType(type) }
+                            ),
+                        level: AlertLevels.ERROR,
+                        message:
+                            error[0]?.response?.data?.message ||
+                            t(
+                                "console:manage.features.claims.dialects.notifications." +
+                                "fetchExternalClaims.genericError.message"
+                            )
+                    })
+                );
+            }).finally(() => setIsLoading(false));
+        };
 
         /**
          * Resolves page heading based on the `type`.
@@ -90,17 +174,31 @@ export const AttributeMappings: FunctionComponent<RouteChildrenProps<AttributeMa
         /**
          * Resolves page description based on the `type`.
          *
-         * @return {string} - The page description.
+         * @return {ReactElement} - The page description.
          */
-        const resolvePageDescription = (): string => {
+        const resolvePageDescription = (): ReactElement => {
             switch (type) {
                 case ClaimManagementConstants.OIDC:
-                    return t(
-                        "console:manage.features.claims.attributeMappings.oidc.description"
+                    return (
+                        <>
+                            { t("console:manage.features.claims.attributeMappings.oidc.description") }
+                            <DocumentationLink
+                                link={ getLink("manage.attributes.oidcAttributes.learnMore") }
+                            >
+                                { t("common:learnMore") }
+                            </DocumentationLink>
+                        </>
                     );
                 case ClaimManagementConstants.SCIM:
-                    return t(
-                        "console:manage.features.claims.attributeMappings.scim.description"
+                    return (
+                        <>
+                            { t("console:manage.features.claims.attributeMappings.scim.description") }
+                            <DocumentationLink
+                                link={ getLink("manage.attributes.scimAttributes.learnMore") }
+                            >
+                                { t("common:learnMore") }
+                            </DocumentationLink>
+                        </>
                     );
                 default:
                     return t(
@@ -174,7 +272,9 @@ export const AttributeMappings: FunctionComponent<RouteChildrenProps<AttributeMa
                                 claim.id != ClaimManagementConstants.ATTRIBUTE_DIALECT_IDS.get("EIDAS_LEGAL") &&
                                 claim.id != ClaimManagementConstants.ATTRIBUTE_DIALECT_IDS.get("EIDAS_NATURAL") &&
                                 claim.id != ClaimManagementConstants.ATTRIBUTE_DIALECT_IDS.get("OPENID_NET") &&
-                                claim.id != ClaimManagementConstants.ATTRIBUTE_DIALECT_IDS.get("XML_SOAP")
+                                claim.id != ClaimManagementConstants.ATTRIBUTE_DIALECT_IDS.get("XML_SOAP") &&
+                                (attributeConfig.attributeMappings.showSCIMCore1
+                                || claim.dialectURI !== "urn:scim:schemas:core:1.0")
                             );
                         }
 
@@ -186,12 +286,22 @@ export const AttributeMappings: FunctionComponent<RouteChildrenProps<AttributeMa
                     filteredDialect.forEach((attributeMapping: ClaimDialect) => {
                         if (ClaimManagementConstants.OIDC_MAPPING.includes(attributeMapping.dialectURI)) {
                             type === ClaimManagementConstants.OIDC && attributeMappings.push(attributeMapping);
-                        } else if (ClaimManagementConstants.SCIM_MAPPING.includes(attributeMapping.dialectURI)) {
+                        } else if (Object.values(ClaimManagementConstants.SCIM_TABS).map(
+                            (tab: { name: string; uri: string }) => tab.uri).includes(attributeMapping.dialectURI)) {
                             type === ClaimManagementConstants.SCIM && attributeMappings.push(attributeMapping);
                         } else if (type === ClaimManagementConstants.OTHERS) {
                             attributeMappings.push(attributeMapping);
                         }
                     });
+
+                    if (type === ClaimManagementConstants.SCIM) {
+                        if (attributeConfig.showCustomDialectInSCIM 
+                            && filteredDialect.filter(e => e.dialectURI 
+                                === attributeConfig.localAttributes.customDialectURI).length > 0  ) {
+                            attributeMappings.push(filteredDialect.filter(e => e.dialectURI 
+                                === attributeConfig.localAttributes.customDialectURI)[0]);
+                        }
+                    }
 
                     setDialects(attributeMappings);
                 })
@@ -222,18 +332,51 @@ export const AttributeMappings: FunctionComponent<RouteChildrenProps<AttributeMa
         const generatePanes = (): StrictTabProps[ "panes" ] => {
             if (type === ClaimManagementConstants.SCIM) {
                 const panes: StrictTabProps[ "panes" ] = [];
+
                 ClaimManagementConstants.SCIM_TABS.forEach((tab: { name: string; uri: string }) => {
-                    const dialect = dialects?.find((dialect: ClaimDialect) => dialect.dialectURI === tab.uri);
-                    dialect &&
+                    if (!SCIMConfigs.hideCore1Schema || SCIMConfigs.scim.core1Schema !== tab.uri) {
+                        const dialect = dialects?.find((dialect: ClaimDialect) => dialect.dialectURI === tab.uri);
+
+                        dialect &&
+                            panes.push({
+                                menuItem: tab.name,
+                                render: () => (
+                                    <ResourceTab.Pane controlledSegmentation attached={ false }>
+                                        <ExternalDialectEditPage 
+                                            id={ dialect.id } 
+                                            attributeUri={ tab.uri } 
+                                            attributeType={ type }
+                                            mappedLocalClaims={ mappedLocalclaims }
+                                            updateMappedClaims={ setTriggerFetchMappedClaims } 
+                                        />
+                                    </ResourceTab.Pane>
+                                )
+                            });
+                    }
+                });
+
+                if (attributeConfig.showCustomDialectInSCIM) {
+                    const dialect = dialects?.find((dialect: ClaimDialect) => 
+                        dialect.dialectURI === attributeConfig.localAttributes.customDialectURI
+                    );
+
+                    if (dialect) {
                         panes.push({
-                            menuItem: tab.name,
+                            menuItem: "Custom Schema",
                             render: () => (
                                 <ResourceTab.Pane controlledSegmentation attached={ false }>
-                                    <ExternalDialectEditPage id={ dialect.id } attributeType={ type }/>
+                                    <ExternalDialectEditPage 
+                                        id={ dialect.id } 
+                                        attributeType={ type }
+                                        attributeUri={ dialect.dialectURI } 
+                                        mappedLocalClaims={ mappedLocalclaims }
+                                        updateMappedClaims={ setTriggerFetchMappedClaims } 
+                                    />
                                 </ResourceTab.Pane>
                             )
                         });
-                });
+                    }
+                }
 
                 return panes;
             }
@@ -243,7 +386,13 @@ export const AttributeMappings: FunctionComponent<RouteChildrenProps<AttributeMa
                     menuItem: dialect.dialectURI,
                     render: () => (
                         <ResourceTab.Pane controlledSegmentation attached={ false }>
-                            <ExternalDialectEditPage id={ dialect.id  }attributeType={ type } />
+                            <ExternalDialectEditPage 
+                                id={ dialect.id  }
+                                attributeType={ type } 
+                                attributeUri={ dialect.dialectURI } 
+                                mappedLocalClaims={ mappedLocalclaims }
+                                updateMappedClaims={ setTriggerFetchMappedClaims } 
+                            />
                         </ResourceTab.Pane>
                     )
                 };
@@ -254,6 +403,7 @@ export const AttributeMappings: FunctionComponent<RouteChildrenProps<AttributeMa
             <PageLayout
                 isLoading={ isLoading }
                 title={ resolvePageHeading() }
+                pageTitle={ resolvePageHeading() }
                 description={ resolvePageDescription() }
                 data-testid={ `${ testId }-page-layout` }
                 image={ resolvePageHeaderImage() }
@@ -267,8 +417,14 @@ export const AttributeMappings: FunctionComponent<RouteChildrenProps<AttributeMa
                 { dialects?.length > 1 ? (
                     <ResourceTab panes={ generatePanes() } data-testid={ `${ testId }-tabs` } />
                 ) : (
-                        <ExternalDialectEditPage id={ dialects && dialects[ 0 ]?.id } attributeType={ type } />
-                    ) }
+                    <ExternalDialectEditPage 
+                        id={ dialects && dialects[ 0 ]?.id } 
+                        attributeType={ type } 
+                        attributeUri={ dialects &&  dialects[ 0 ]?.dialectURI } 
+                        mappedLocalClaims={ mappedLocalclaims }
+                        updateMappedClaims={ setTriggerFetchMappedClaims } 
+                    />
+                ) }
             </PageLayout>
         );
     };

@@ -53,6 +53,10 @@ export interface ProfileInfoInterface {
     /**
      * Emails ex.work, mobile
      */
+     active?: boolean;
+    /**
+     * Emails ex.work, mobile
+     */
     emails: string[] | MultiValueAttributeInterface[];
     /**
      * Default email address of the user.
@@ -186,6 +190,10 @@ export interface ProfileSchemaInterface {
      * Flag to set if the attribute is extended.
      */
     extended?: boolean;
+    /**
+     * Store ID to identify schema of the attribute
+     */
+    schemaId?: string;
     /**
      * Regular expression to validate field.
      */

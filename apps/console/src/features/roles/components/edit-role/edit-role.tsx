@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +17,7 @@
  */
 
 import { RoleConstants } from "@wso2is/core/constants";
+import { hasRequiredScopes } from "@wso2is/core/helpers";
 import { RolesInterface, SBACInterface } from "@wso2is/core/models";
 import { ResourceTab } from "@wso2is/react-components";
 import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
@@ -32,6 +33,10 @@ import { AppState, FeatureConfigInterface, history } from "../../../core";
  * Captures props needed for edit role component
  */
 interface EditRoleProps extends SBACInterface<FeatureConfigInterface> {
+    /**
+     * Is the data loading.
+     */
+    isLoading?: boolean;
     roleId: string;
     roleObject: RolesInterface;
     onRoleUpdate: () => void;
@@ -41,20 +46,21 @@ interface EditRoleProps extends SBACInterface<FeatureConfigInterface> {
 /**
  * Component which will allow editing of a selected role.
  *
- * @param props contains role details to be edited.
+ * @param props - contains role details to be edited.
  */
 export const EditRole: FunctionComponent<EditRoleProps> = (props: EditRoleProps): ReactElement => {
 
     const {
+        isLoading,
+        roleId,
         roleObject,
         onRoleUpdate
     } = props;
 
     const { t } = useTranslation();
 
-    const isGroupAndRoleSeparationEnabled: boolean = useSelector(
-        (state: AppState) => state?.config?.ui?.isGroupAndRoleSeparationEnabled);
-
+    const featureConfig: FeatureConfigInterface = useSelector((state: AppState) => state.config.ui.features);
+    const allowedScopes: string = useSelector((state: AppState) => state?.auth?.allowedScopes);
     const [ isGroup, setIsGroup ] = useState<boolean>(false);
     const [ isAdminRole, setIsAdminRole ] = useState<boolean>(false);
 
@@ -90,8 +96,11 @@ export const EditRole: FunctionComponent<EditRoleProps> = (props: EditRoleProps)
                 render: () => (
                     <ResourceTab.Pane controlledSegmentation attached={ false }>
                         <BasicRoleDetails
-                            isReadOnly={ isAdminRole }
+                            isReadOnly={ isAdminRole
+                                || !hasRequiredScopes(
+                                    featureConfig?.roles, featureConfig?.roles?.scopes?.update, allowedScopes) }
                             data-testid="role-mgt-edit-role-basic"
+                            roleId={ roleId }
                             isGroup={ isGroup }
                             roleObject={ roleObject }
                             onRoleUpdate={ onRoleUpdate }
@@ -103,7 +112,9 @@ export const EditRole: FunctionComponent<EditRoleProps> = (props: EditRoleProps)
                 render: () => (
                     <ResourceTab.Pane controlledSegmentation attached={ false }>
                         <RolePermissionDetails
-                            isReadOnly={ isAdminRole }
+                            isReadOnly={ isAdminRole
+                                || !hasRequiredScopes(
+                                    featureConfig?.roles, featureConfig?.roles?.scopes?.update, allowedScopes) }
                             data-testid="role-mgt-edit-role-permissions"
                             isGroup={ false }
                             roleObject={ roleObject }
@@ -117,6 +128,8 @@ export const EditRole: FunctionComponent<EditRoleProps> = (props: EditRoleProps)
                 render: () => (
                     <ResourceTab.Pane controlledSegmentation attached={ false }>
                         <RoleGroupsList
+                            isReadOnly={ !hasRequiredScopes(
+                                featureConfig?.roles, featureConfig?.roles?.scopes?.update, allowedScopes) }
                             data-testid="role-mgt-edit-role-groups"
                             role={ roleObject }
                             onRoleUpdate={ onRoleUpdate }
@@ -129,6 +142,8 @@ export const EditRole: FunctionComponent<EditRoleProps> = (props: EditRoleProps)
                 render: () => (
                     <ResourceTab.Pane controlledSegmentation attached={ false }>
                         <RoleUserDetails
+                            isReadOnly={ !hasRequiredScopes(
+                                featureConfig?.roles, featureConfig?.roles?.scopes?.update, allowedScopes) }
                             data-testid="role-mgt-edit-role-users"
                             isGroup={ false }
                             roleObject={ roleObject }
@@ -143,6 +158,8 @@ export const EditRole: FunctionComponent<EditRoleProps> = (props: EditRoleProps)
     };
 
     return (
-        <ResourceTab panes={ resolveResourcePanes() } />
+        <ResourceTab
+            isLoading={ isLoading }
+            panes={ resolveResourcePanes() } />
     );
 };

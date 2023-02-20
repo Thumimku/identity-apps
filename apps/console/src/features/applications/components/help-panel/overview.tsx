@@ -39,6 +39,7 @@ interface HelpPanelOverviewPropsInterface extends TestableComponentInterface {
     inboundProtocols?: InboundProtocolListItemInterface[];
     handleTabChange?: (tabId: number) => void;
     applicationType?: string;
+    handleMetadataLoading?: (isMetadataLoading: boolean) => void;
 }
 
 /**
@@ -58,12 +59,11 @@ export const HelpPanelOverview: FunctionComponent<HelpPanelOverviewPropsInterfac
         (state: AppState) => state.application.samlConfigurations);
     const { t } = useTranslation();
 
-    const { inboundProtocols } = props;
+    const { inboundProtocols, handleMetadataLoading } = props;
 
     const [ isOIDC, setIsOIDC ] = useState<boolean>(false);
     const [ isSAML, setIsSAML ] = useState<boolean>(false);
     const [ isOIDCConfigsLoading, setOIDCConfigsLoading ] = useState<boolean>(false);
-    const [ isSAMLConfigsLoading, setSAMLConfigsLoading ] = useState<boolean>(false);
 
     useEffect(() => {
         if (inboundProtocols == undefined) {
@@ -84,113 +84,110 @@ export const HelpPanelOverview: FunctionComponent<HelpPanelOverviewPropsInterfac
 
     useEffect(() => {
         if (oidcConfigurations !== undefined) {
+            handleMetadataLoading(false);
+
             return;
         }
+        handleMetadataLoading(true);
+        setOIDCConfigsLoading(true);
 
         ApplicationManagementUtils.getOIDCApplicationMeta()
             .finally(() => {
                 setOIDCConfigsLoading(false);
+                handleMetadataLoading(false);
             });
     }, [ oidcConfigurations ]);
 
-    /**
-     * TODO : Revisit the saml metadata request error tracked with
-     * {@link https://github.com/wso2-enterprise/asgardeo-product/issues/2406}.
-     */
-    // useEffect(() => {
-    //     if (samlConfigurations !== undefined) {
-    //         return;
-    //     }
-    //
-    //     ApplicationManagementUtils.getSAMLApplicationMeta()
-    //         .finally(() => {
-    //             setSAMLConfigsLoading(false);
-    //         });
-    // }, [ samlConfigurations ]);
-
     return (
         <>
-            <Grid>
-                {/*  {
-                    applicationType && applicationType == ApplicationManagementConstants.SPA
-                        ? (
-                            <Grid.Row textAlign="center">
-                                <Grid.Column width={ 16 }>
-                                    <Heading as="h5">
-                                        <strong>
-                                            { t("console:develop.features.applications.helpPanel.tabs.start." +
-                                                "content.trySample.title") }
-                                        </strong>
-                                    </Heading>
-                                    <Header.Subheader>
-                                        { t("console:develop.features.applications.helpPanel.tabs.start." +
-                                            "content.trySample.subTitle") }
-                                    </Header.Subheader>
-                                    <Divider hidden/>
-                                    <PrimaryButton onClick={ () => { handleTabChange(2) } }>
-                                        { t("console:develop.features.applications.helpPanel.tabs.start." +
-                                            "content.trySample.btn") }
-                                    </PrimaryButton>
-                                    <Divider hidden/>
-                                    <Divider horizontal>Or</Divider>
-                                    <Heading ellipsis as="h5">
-                                        <strong>
-                                            { t("console:develop.features.applications.helpPanel.tabs." +
-                                                "start.content.useSDK.title") }
-                                        </strong>
-                                    </Heading>
-                                    <Header.Subheader>
-                                        { t("console:develop.features.applications.helpPanel.tabs.start.content." +
-                                            "useSDK.subTitle") }
-                                    </Header.Subheader>
-                                    <Divider hidden/>
-                                    <Button.Group>
-                                        <SecondaryButton onClick={ () => { handleTabChange(3) } }>
-                                            { t("console:develop.features.applications.helpPanel.tabs.start." +
-                                                "content.useSDK.btns.withSDK") }
-                                        </SecondaryButton>
-                                    </Button.Group>
-                                </Grid.Column>
-                            </Grid.Row>
-                        )
-                        : null
-                }*/}
-                <Grid.Row>
-                    <Grid.Column>
-                        <Heading ellipsis as="h5">
-                            <strong>
-                                { t("console:develop.features.applications.helpPanel.tabs.start.content.endpoints." +
-                                "title") }
-                            </strong>
-                        </Heading>
-                        <Hint>
-                            { t("console:develop.features.applications.helpPanel.tabs.start.content.endpoints." +
-                                "subTitle") }
-                        </Hint>
-                        <Divider hidden/>
-                        {
-                            isOIDC && (
-                                <OIDCConfigurations oidcConfigurations={ oidcConfigurations }/>
-                            )
+            {
+                !isOIDCConfigsLoading ? (
+                    <Grid>
+                        { 
+                            /* 
+                                TODO : Check and remove the following if unnecssary
+                                applicationType && applicationType == ApplicationManagementConstants.SPA
+                                    ? (
+                                        <Grid.Row textAlign="center">
+                                            <Grid.Column width={ 16 }>
+                                                <Heading as="h5">
+                                                    <strong>
+                                                        { t("console:develop.features.applications." + 
+                                                            "helpPanel.tabs.start.content.trySample.title") }
+                                                    </strong>
+                                                </Heading>
+                                                <Header.Subheader>
+                                                    { t("console:develop.features.applications.helpPanel.tabs.start." +
+                                                        "content.trySample.subTitle") }
+                                                </Header.Subheader>
+                                                <Divider hidden/>
+                                                <PrimaryButton onClick={ () => { handleTabChange(2) } }>
+                                                    { t("console:develop.features.applications.helpPanel.tabs.start." +
+                                                        "content.trySample.btn") }
+                                                </PrimaryButton>
+                                                <Divider hidden/>
+                                                <Divider horizontal>Or</Divider>
+                                                <Heading ellipsis as="h5">
+                                                    <strong>
+                                                        { t("console:develop.features.applications.helpPanel.tabs." +
+                                                            "start.content.useSDK.title") }
+                                                    </strong>
+                                                </Heading>
+                                                <Header.Subheader>
+                                                    { t("console:develop.features.applications.helpPanel." +
+                                                        "tabs.start.content.useSDK.subTitle") }
+                                                </Header.Subheader>
+                                                <Divider hidden/>
+                                                <Button.Group>
+                                                    <SecondaryButton onClick={ () => { handleTabChange(3) } }>
+                                                        { t("console:develop.features.applications." + 
+                                                            "helpPanel.tabs.start.content.useSDK.btns.withSDK") }
+                                                    </SecondaryButton>
+                                                </Button.Group>
+                                            </Grid.Column>
+                                        </Grid.Row>
+                                    )
+                                    : null
+                            */ 
                         }
-                        {
-                            isOIDC && isSAML
-                                ? (
-                                    <>
-                                        <Divider hidden />
-                                        <Divider/>
-                                        <Divider hidden />
-                                    </>
-                                ) : null
-                        }
-                        {
-                            isSAML && (
-                                <SAMLConfigurations samlConfigurations={ samlConfigurations }/>
-                            )
-                        }
-                    </Grid.Column>
-                </Grid.Row>
-            </Grid>
+                        <Grid.Row>
+                            <Grid.Column>
+                                <Heading ellipsis as="h5">
+                                    <strong>
+                                        { t("console:develop.features.applications.helpPanel.tabs.start.content" +
+                                            ".endpoints.title") }
+                                    </strong>
+                                </Heading>
+                                <Hint>
+                                    { t("console:develop.features.applications.helpPanel.tabs.start.content" +
+                                        ".endpoints.subTitle") }
+                                </Hint>
+                                <Divider hidden/>
+                                {
+                                    isOIDC && (
+                                        <OIDCConfigurations oidcConfigurations={ oidcConfigurations }/>
+                                    )
+                                }
+                                {
+                                    isOIDC && isSAML
+                                        ? (
+                                            <>
+                                                <Divider hidden />
+                                                <Divider/>
+                                                <Divider hidden />
+                                            </>
+                                        ) : null
+                                }
+                                {
+                                    isSAML && (
+                                        <SAMLConfigurations samlConfigurations={ samlConfigurations }/>
+                                    )
+                                }
+                            </Grid.Column>
+                        </Grid.Row>
+                    </Grid>
+                ) : null
+            }
         </>
     );
 };

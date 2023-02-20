@@ -25,9 +25,10 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { Grid, Icon } from "semantic-ui-react";
 import { SqlEditor } from "..";
+import { userstoresConfig } from "../../../../extensions/configs/userstores";
 import { patchUserStore } from "../../api";
-import { RequiredBinary, TypeProperty, UserstoreType } from "../../models";
 import { CONSUMER_USERSTORE_ID } from "../../constants";
+import { RequiredBinary, TypeProperty, UserstoreType } from "../../models";
 
 /**
  * Prop types of `EditUserDetails` component
@@ -71,6 +72,7 @@ export const EditUserDetails: FunctionComponent<EditUserDetailsPropsInterface> =
 
     const [ showMore, setShowMore ] = useState(false);
     const [ sql, setSql ] = useState<Map<string, string>>(null);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
 
     const dispatch = useDispatch();
 
@@ -182,6 +184,8 @@ export const EditUserDetails: FunctionComponent<EditUserDetailsPropsInterface> =
             ]
             : requiredData;
 
+        setIsSubmitting(true);
+
         patchUserStore(id, data)
             .then(() => {
                 dispatch(addAlert<AlertInterface>({
@@ -192,7 +196,7 @@ export const EditUserDetails: FunctionComponent<EditUserDetailsPropsInterface> =
                         "updateUserstore.success.message")
                 }));
 
-                // ATM, userstore operations run as an async task in the backend. Hence, The changes aren't 
+                // ATM, userstore operations run as an async task in the backend. Hence, The changes aren't
                 // applied at once. As a temp solution, a notification informing the delay is shown here.
                 // See https://github.com/wso2/product-is/issues/9767 for updates on the backend improvement.
                 // TODO: Remove delay notification once the backend is fixed.
@@ -214,6 +218,9 @@ export const EditUserDetails: FunctionComponent<EditUserDetailsPropsInterface> =
                     message: error?.message || t("console:manage.features.userstores.notifications." +
                         "updateUserstore.genericError.message")
                 }));
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
     };
 
@@ -232,7 +239,7 @@ export const EditUserDetails: FunctionComponent<EditUserDetailsPropsInterface> =
                                         .find(attribute => attribute.name === "type").value === "password";
                                     const toggle = property.attributes
                                         .find(attribute => attribute.name === "type")?.value === "boolean";
-    
+
                                     return (
                                         isPassword
                                             ? (
@@ -290,14 +297,45 @@ export const EditUserDetails: FunctionComponent<EditUserDetailsPropsInterface> =
                                                         data-testid={ `${ testId }-form-toggle-${ property.name }` }
                                                     />
                                                 ) :
-                                                (
+                                                property.name == "DisplayNameAttribute" ?
+                                                    (
+                                                        (userstoresConfig.userstoreEdit.userDetails.showDisplayName
+                                                        && id !== CONSUMER_USERSTORE_ID)
+                                                        && (
+                                                            <Field
+                                                                name={ property.name }
+                                                                value={ property.value ?? property.defaultValue }
+                                                                type="text"
+                                                                key={ index }
+                                                                required={ true }
+                                                                label={ property.description.split("#")[ 0 ] }
+                                                                requiredErrorMessage={
+                                                                    t("console:manage.features.userstores.forms." +
+                                                                        "custom.requiredErrorMessage",
+                                                                        {
+                                                                            name: property.description.split("#")[ 0 ]
+                                                                        })
+                                                                }
+                                                                placeholder={
+                                                                    t("console:manage.features.userstores.forms." +
+                                                                        "custom.placeholder",
+                                                                        {
+                                                                            name: property.description.split("#")[ 0 ]
+                                                                        })
+                                                                }
+                                                                data-testid={
+                                                                    `${ testId }-form-text-input-${ property.name }`
+                                                                }
+                                                            />
+                                                        )
+                                                    )
+                                                : (
                                                     <Field
                                                         name={ property.name }
                                                         value={ property.value ?? property.defaultValue }
                                                         type="text"
                                                         key={ index }
                                                         required={ true }
-                                                        disabled={ id === CONSUMER_USERSTORE_ID }
                                                         label={ property.description.split("#")[ 0 ] }
                                                         requiredErrorMessage={
                                                             t("console:manage.features.userstores.forms." +
@@ -319,15 +357,16 @@ export const EditUserDetails: FunctionComponent<EditUserDetailsPropsInterface> =
                                     );
                                 })
                             }
-    
+
                         </Grid.Column>
                     </Grid.Row>
                 </Grid>
-    
+
                 { (properties?.optional.sql.delete.length > 0
                     || properties?.optional.sql.insert.length > 0
                     || properties?.optional.sql.select.length > 0
                     || properties?.optional.sql.update.length > 0)
+                    && (id !== CONSUMER_USERSTORE_ID)
                     && (
                         <Grid columns={ 1 }>
                             <Grid.Column width={ 8 } textAlign="center">
@@ -431,21 +470,25 @@ export const EditUserDetails: FunctionComponent<EditUserDetailsPropsInterface> =
                                                                     disabled={ id === CONSUMER_USERSTORE_ID }
                                                                     label={ property.description.split("#")[ 0 ] }
                                                                     requiredErrorMessage={
-                                                                        t("console:manage.features.userstores.forms.edit." +
-                                                                            "connection.custom.requiredErrorMessage",
+                                                                        t("console:manage.features.userstores" +
+                                                                            ".forms.edit.connection.custom" +
+                                                                            ".requiredErrorMessage",
                                                                             {
-                                                                                name: property.description.split("#")[ 0 ]
+                                                                                name: property.description.
+                                                                                split("#")[ 0 ]
                                                                             })
                                                                     }
                                                                     placeholder={
-                                                                        t("console:manage.features.userstores.forms." +
-                                                                            "custom.placeholder",
+                                                                        t("console:manage.features.userstores." +
+                                                                            "forms.custom.placeholder",
                                                                             {
-                                                                                name: property.description.split("#")[ 0 ]
+                                                                                name: property.description.
+                                                                                split("#")[ 0 ]
                                                                             })
                                                                     }
-                                                                    data-testid={ `${ testId }-form-non-sql-text-input-${
-                                                                        property.name }` }
+                                                                    data-testid={
+                                                                        `${ testId }-form-non-sql-text-input-${
+                                                                            property.name }` }
                                                                 />
                                                             )
                                                             : (
@@ -458,21 +501,25 @@ export const EditUserDetails: FunctionComponent<EditUserDetailsPropsInterface> =
                                                                     disabled={ id === CONSUMER_USERSTORE_ID }
                                                                     label={ property.description.split("#")[ 0 ] }
                                                                     requiredErrorMessage={
-                                                                        t("console:manage.features.userstores.forms.edit." +
-                                                                            "connection.custom.requiredErrorMessage",
+                                                                        t("console:manage.features.userstores." +
+                                                                            "forms.edit.connection.custom." +
+                                                                            "requiredErrorMessage",
                                                                             {
-                                                                                name: property.description.split("#")[ 0 ]
+                                                                                name: property.description.
+                                                                                split("#")[ 0 ]
                                                                             })
                                                                     }
                                                                     placeholder={
                                                                         t("console:manage.features.userstores.forms." +
                                                                             "custom.placeholder",
                                                                             {
-                                                                                name: property.description.split("#")[ 0 ]
+                                                                                name: property.description.
+                                                                                split("#")[ 0 ]
                                                                             })
                                                                     }
-                                                                    data-testid={ `${ testId }-form-non-sql-text-input-${
-                                                                        property.name }` }
+                                                                    data-testid={
+                                                                        `${ testId }-form-non-sql-text-input-${
+                                                                            property.name }` }
                                                                 />
                                                             )
                                                 )
@@ -512,7 +559,12 @@ export const EditUserDetails: FunctionComponent<EditUserDetailsPropsInterface> =
                 }
                 <Grid columns={ 1 }>
                     <Grid.Column width={ 8 }>
-                        <PrimaryButton type="submit" data-testid={ `${ testId }-form-submit-button` }>
+                        <PrimaryButton
+                            type="submit"
+                            data-testid={ `${ testId }-form-submit-button` }
+                            loading={ isSubmitting }
+                            disabled={ isSubmitting }
+                        >
                             Update
                         </PrimaryButton>
                     </Grid.Column>

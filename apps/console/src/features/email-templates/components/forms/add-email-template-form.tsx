@@ -19,12 +19,13 @@
 import { AlertInterface, AlertLevels, TestableComponentInterface } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
 import { Field, FormValue, Forms } from "@wso2is/forms";
+import { Message } from "@wso2is/react-components";
 import { AxiosError, AxiosResponse } from "axios";
 import * as CountryLanguage from "country-language";
 import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { Button, DropdownItemProps, Form, Grid, Message } from "semantic-ui-react";
+import { Button, DropdownItemProps, Form, Grid } from "semantic-ui-react";
 import { AppConstants, history } from "../../../core";
 import { createLocaleTemplate, getTemplateDetails, replaceLocaleTemplateContent } from "../../api";
 import { EmailTemplate, EmailTemplateFormModes, EmailTemplateType } from "../../models";
@@ -77,6 +78,7 @@ export const AddEmailTemplateForm: FunctionComponent<AddEmailTemplateFormPropsIn
     const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
     const [ bodyError, setBodyError ] = useState<boolean>(false);
     const [ footerError, setFooterError ] = useState<boolean>(false);
+    const [ isLoading, setIsLoading ] = useState<boolean>(false);
 
     /**
      * This will load the locales to the dropdown.
@@ -141,6 +143,8 @@ export const AddEmailTemplateForm: FunctionComponent<AddEmailTemplateFormPropsIn
             subject: values.get("emailSubject").toString()
         };
 
+        setIsLoading(true);
+
         createLocaleTemplate(templateTypeId, templateDate)
             .then((response: AxiosResponse<EmailTemplateType>) => {
                 if (response.status === 201) {
@@ -166,6 +170,9 @@ export const AddEmailTemplateForm: FunctionComponent<AddEmailTemplateFormPropsIn
                         "console:manage.features.emailTemplates.notifications.createTemplate.genericError.message"
                     )
                 }));
+            })
+            .finally(() => {
+                setIsLoading(false);
             });
     };
 
@@ -183,6 +190,8 @@ export const AddEmailTemplateForm: FunctionComponent<AddEmailTemplateFormPropsIn
             id: templateId,
             subject: values.get("emailSubject").toString()
         };
+
+        setIsLoading(true);
 
         replaceLocaleTemplateContent(templateTypeId, templateId, templateDate)
             .then((response: AxiosResponse) => {
@@ -206,6 +215,9 @@ export const AddEmailTemplateForm: FunctionComponent<AddEmailTemplateFormPropsIn
                         "console:manage.features.emailTemplates.notifications.updateTemplate.genericError.message"
                     )
                 }));
+            })
+            .finally(() => {
+                setIsLoading(false);
             });
     };
 
@@ -290,7 +302,8 @@ export const AddEmailTemplateForm: FunctionComponent<AddEmailTemplateFormPropsIn
                             }
                             required={ true }
                             requiredErrorMessage={
-                                t("console:manage.features.emailLocale.forms.addLocale.fields.subject.validations.empty")
+                                t("console:manage.features.emailLocale." +
+                                    "forms.addLocale.fields.subject.validations.empty")
                             }
                             placeholder={
                                 t("console:manage.features.emailLocale.forms.addLocale.fields.subject.placeholder")
@@ -320,10 +333,14 @@ export const AddEmailTemplateForm: FunctionComponent<AddEmailTemplateFormPropsIn
                             />
                             {
                                 isSubmitting && bodyError && (
-                                    <Message attached error>
-                                        { t("console:manage.features.emailLocale.forms.addLocale.fields." +
-                                            "bodyEditor.validations.empty") }
-                                    </Message>
+                                    <Message
+                                        attached
+                                        type="error"
+                                        content={
+                                            t("console:manage.features.emailLocale.forms.addLocale.fields." +
+                                            "bodyEditor.validations.empty")
+                                        }
+                                    />
                                 )
                             }
                         </Form.Field>
@@ -350,10 +367,14 @@ export const AddEmailTemplateForm: FunctionComponent<AddEmailTemplateFormPropsIn
                             />
                             {
                                 isSubmitting && footerError && (
-                                    <Message attached error>
-                                        { t("console:manage.features.emailLocale.forms.addLocale.fields." +
-                                            "signatureEditor.validations.empty") }
-                                    </Message>
+                                    <Message
+                                        attached
+                                        type="error"
+                                        content={
+                                            t("console:manage.features.emailLocale.forms.addLocale.fields." +
+                                            "signatureEditor.validations.empty")
+                                        }
+                                    />
                                 )
                             }
                         </Form.Field>
@@ -365,6 +386,8 @@ export const AddEmailTemplateForm: FunctionComponent<AddEmailTemplateFormPropsIn
                             primary
                             type="submit"
                             size="small"
+                            loading={ isLoading }
+                            disabled={ isLoading }
                             className="form-button"
                             data-testid={ `${ testId }-submit-button` }
                         >

@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.wso2.identity.apps</groupId>
         <artifactId>identity-apps</artifactId>
-        <version>1.2.111-SNAPSHOT</version>
+        <version>1.6.227-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -53,6 +53,10 @@
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.application.common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.application.mgt</artifactId>
         </dependency>
         <dependency>
@@ -67,6 +71,10 @@
             <groupId>org.wso2.carbon.commons</groupId>
             <artifactId>org.wso2.carbon.tenant.common</artifactId>
             <version>${carbon.commons.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.organization.management.core</groupId>
+            <artifactId>org.wso2.carbon.identity.organization.management.service</artifactId>
         </dependency>
         <!-- To fix travis build -->
         <dependency>
@@ -106,7 +114,8 @@
             org.wso2.carbon.identity.core.*; version="${carbon.identity.framework.imp.pkg.version.range}",
             org.wso2.carbon.identity.core.util.*; version="${carbon.identity.framework.imp.pkg.version.range}",
             org.wso2.carbon.identity.application.mgt.*; version="${carbon.identity.framework.imp.pkg.version.range}",
-            org.wso2.carbon.identity.application.common.*; version="${carbon.identity.framework.imp.pkg.version.range}"
+            org.wso2.carbon.identity.application.common.*; version="${carbon.identity.framework.imp.pkg.version.range}",
+            org.wso2.carbon.identity.organization.management.service; version="${identity.org.mgt.core.version.range}"
         </import.package>
         <dsannotations>*</dsannotations>
     </properties>

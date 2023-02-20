@@ -16,15 +16,20 @@
  * under the License.
  */
 
-import { AppConstants } from "../../core/constants";
+import {  FunctionComponent, SVGProps } from "react";
+import {
+    ReactComponent as PendingApprovalOutlineIcon
+} from "../../../themes/default/assets/images/icons/outline-icons/pending-approval-outline.svg";
 
-export const getTableIcons = () => {
-
-    const theme: string = AppConstants && AppConstants.getAppTheme() && AppConstants.getAppTheme().name;
+export const getTableIcons = (): {
+    header: {
+        default: FunctionComponent<SVGProps<SVGSVGElement>>;
+    }
+} => {
 
     return {
         header: {
-            default: import(`../../../themes/${ theme }/assets/images/icons/outline-icons/pending-approval-outline.svg`)
+            default: PendingApprovalOutlineIcon
         }
     };
 };

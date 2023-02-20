@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,7 @@
 import { TestableComponentInterface } from "@wso2is/core/models";
 import { EncodeDecodeUtils } from "@wso2is/core/utils";
 import { AppAvatar, UserAvatar } from "@wso2is/react-components";
-import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import React, { FunctionComponent, ReactElement, ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Grid, Label } from "semantic-ui-react";
 import { getInboundProtocolLogos } from "../../configs";
@@ -27,7 +27,7 @@ import { SubmitFormCustomPropertiesInterface, SupportedAuthProtocolTypes } from 
 import { ApplicationManagementUtils } from "../../utils";
 
 /**
- * Proptypes for the wizard summary component.
+ * Prop-types for the wizard summary component.
  */
 interface ProtocolWizardSummaryPropsInterface extends TestableComponentInterface {
     summary: any;
@@ -41,9 +41,8 @@ interface ProtocolWizardSummaryPropsInterface extends TestableComponentInterface
 /**
  * Wizard summary form component.
  *
- * @param {ProtocolWizardSummaryPropsInterface} props - Props injected to the component.
- *
- * @return {React.ReactElement}
+ * @param props - Props injected to the component.
+ * @returns Protocol wizard summary component.
  */
 export const ProtocolWizardSummary: FunctionComponent<ProtocolWizardSummaryPropsInterface> = (
     props: ProtocolWizardSummaryPropsInterface
@@ -61,7 +60,7 @@ export const ProtocolWizardSummary: FunctionComponent<ProtocolWizardSummaryProps
 
     const { t } = useTranslation();
 
-    const [protocolImage, setProtocolImage] = useState<string>("");
+    const [ protocolImage, setProtocolImage ] = useState<string>("");
 
     /**
      * Submits the form programmatically if triggered from outside.
@@ -75,12 +74,14 @@ export const ProtocolWizardSummary: FunctionComponent<ProtocolWizardSummaryProps
             const newSummary = {
                 metadataFile: summary?.metadataFile
             };
+
             onSubmit(newSummary);
+
             return;
         }
 
         onSubmit(summary);
-    }, [triggerSubmit]);
+    }, [ triggerSubmit ]);
 
     /**
      *  Set protocol image.
@@ -93,7 +94,7 @@ export const ProtocolWizardSummary: FunctionComponent<ProtocolWizardSummaryProps
         } else {
             setProtocolImage(image);
         }
-    }, [image]);
+    }, [ image ]);
 
     return (
         <Grid className="wizard-summary" data-testid={ testId }>
@@ -109,7 +110,7 @@ export const ProtocolWizardSummary: FunctionComponent<ProtocolWizardSummaryProps
                                             ApplicationManagementUtils.findIcon(
                                                 protocolImage,
                                                 getInboundProtocolLogos()
-                                            )
+                                            ) as ReactNode
                                         }
                                         size="tiny"
                                     />
@@ -125,7 +126,7 @@ export const ProtocolWizardSummary: FunctionComponent<ProtocolWizardSummaryProps
                         <Grid.Column mobile={ 16 } tablet={ 8 } computer={ 7 } textAlign="right">
                             <div className="label">
                                 { t("console:develop.features.applications.addWizard.steps.summary.sections.issuer" +
-                                    ".heading")}
+                                    ".heading") }
                             </div>
                         </Grid.Column>
                         <Grid.Column mobile={ 16 } tablet={ 8 } computer={ 8 } textAlign="left">
@@ -325,15 +326,15 @@ export const ProtocolWizardSummary: FunctionComponent<ProtocolWizardSummaryProps
             }
             {
                 customProtocol && summary?.properties.map((prop: SubmitFormCustomPropertiesInterface) => (
-                        <Grid.Row className="summary-field" columns={ 2 } key={ prop.key }>
-                            <Grid.Column mobile={ 16 } tablet={ 8 } computer={ 7 } textAlign="right">
-                                <div className="label">{ prop.key }</div>
-                            </Grid.Column>
-                            <Grid.Column mobile={ 16 } tablet={ 8 } computer={ 8 } textAlign="left">
-                                <div className="value url">{ prop.value }</div>
-                            </Grid.Column>
-                        </Grid.Row>
-                    )
+                    <Grid.Row className="summary-field" columns={ 2 } key={ prop.key }>
+                        <Grid.Column mobile={ 16 } tablet={ 8 } computer={ 7 } textAlign="right">
+                            <div className="label">{ prop.key }</div>
+                        </Grid.Column>
+                        <Grid.Column mobile={ 16 } tablet={ 8 } computer={ 8 } textAlign="left">
+                            <div className="value url">{ prop.value }</div>
+                        </Grid.Column>
+                    </Grid.Row>
+                )
                 )
             }
         </Grid>

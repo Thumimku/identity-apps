@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,8 +17,13 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
-import { Heading } from "@wso2is/react-components";
-import React, { FunctionComponent, ReactElement } from "react";
+import { Code, CopyInputField, Heading, Message } from "@wso2is/react-components";
+import React, { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import { Divider } from "semantic-ui-react";
+import { identityProviderConfig } from "../../../../../../extensions/configs";
+import { AppState, ConfigReducerStateInterface } from "../../../../../core";
 
 /**
  * Prop types of the component.
@@ -28,8 +33,8 @@ type GoogleIDPCreateWizardHelpPropsInterface = TestableComponentInterface
 /**
  * Help content for the custom IDP template creation wizard.
  *
- * @param {GoogleIDPCreateWizardHelpPropsInterface} props - Props injected into the component.
- * @return {React.ReactElement}
+ * @param props - Props injected into the component.
+ * @returns React Element for Google Create Wizard
  */
 const GoogleIDPCreateWizardHelp: FunctionComponent<GoogleIDPCreateWizardHelpPropsInterface> = (
     props: GoogleIDPCreateWizardHelpPropsInterface
@@ -39,11 +44,128 @@ const GoogleIDPCreateWizardHelp: FunctionComponent<GoogleIDPCreateWizardHelpProp
         [ "data-testid" ]: testId
     } = props;
 
+    const { t } = useTranslation();
+
+    const config: ConfigReducerStateInterface = useSelector((state: AppState) => state.config);
+
+    const [ useNewConnectionsView, setUseNewConnectionsView ] = useState<boolean>(undefined);
+
+    /**
+     * Checks if the listing view defined in the config is the new connections view.
+     */
+    useEffect(() => {
+
+        if (useNewConnectionsView !== undefined) {
+            return;
+        }
+
+        setUseNewConnectionsView(identityProviderConfig.useNewConnectionsView);
+    }, [ identityProviderConfig ]);
+
     return (
         <div data-testid={ testId }>
-            <Heading as="h5">Name</Heading>
-            <p>Provide a unique name for the IDP so that it can be easily identified.</p>
-            <p>E.g. Zoom, Salesforce, etc.</p>
+            <Message
+                type="info"
+                header={
+                    t("console:develop.features.authenticationProvider.templates.google.wizardHelp." +
+                        "preRequisites.heading")
+                }
+                content={
+                    (<>
+                        <p>
+                            <Trans
+                                i18nKey={
+                                    "console:develop.features.authenticationProvider.templates.google.wizardHelp." +
+                                    "preRequisites.getCredentials"
+                                }
+                            >
+                                Before you begin, create an <strong>OAuth credential</strong> on the <a
+                                    href="https://console.developers.google.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                > Google developer console</a>, and obtain a <strong>Client ID & secret</strong>.
+                            </Trans>
+                        </p>
+                        <p>
+
+                            <Trans
+                                i18nKey={
+                                    "console:develop.features.authenticationProvider.templates.google.wizardHelp" +
+                                    ".preRequisites.configureRedirectURL"
+                                }
+                            >
+                                Use the following URL as the <strong>Authorized Redirect URI</strong>.
+                            </Trans>
+
+                            <CopyInputField
+                                className="copy-input-dark spaced"
+                                value={ config?.deployment?.customServerHost + "/commonauth" }
+                            />
+
+                            <a
+                                href="https://support.google.com/googleapi/answer/6158849"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                {
+                                    t("console:develop.features.authenticationProvider.templates.google.wizardHelp." +
+                                        "preRequisites.configureOAuthApps")
+                                }
+                            </a>
+                        </p>
+                    </>)
+                }
+            />
+
+            <Heading as="h5">
+                {
+                    t("console:develop.features.authenticationProvider.templates.google" +
+                        ".wizardHelp.name.heading")
+                }
+            </Heading>
+            <p>
+                {
+                    useNewConnectionsView
+                        ? t("console:develop.features.authenticationProvider.templates.google." +
+                            "wizardHelp.name.connectionDescription")
+                        : t("console:develop.features.authenticationProvider.templates.google." +
+                            "wizardHelp.name.idpDescription")
+                }
+            </p>
+
+            <Divider/>
+
+            <Heading as="h5">
+                { t("console:develop.features.authenticationProvider.templates.google.wizardHelp.clientId.heading") }
+            </Heading>
+            <p>
+                <Trans
+                    i18nKey={
+                        "console:develop.features.authenticationProvider.templates.google" +
+                        ".wizardHelp.clientId.description"
+                    }
+                >
+                    Provide the <Code>Client ID</Code> obtained from Google.
+                </Trans>
+            </p>
+
+            <Divider/>
+
+            <Heading as="h5">
+                {
+                    t("console:develop.features.authenticationProvider.templates.google" +
+                        ".wizardHelp.clientSecret.heading")
+                }
+            </Heading>
+            <p>
+                <Trans
+                    i18nKey={
+                        "console:develop.features.authenticationProvider.templates.google" +
+                        ".wizardHelp.clientSecret.description"
+                    }
+                >
+                    Provide the <Code>Client Secret</Code> obtained from Google.
+                </Trans>
+            </p>
         </div>
     );
 };

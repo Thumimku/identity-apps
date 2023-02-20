@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { TestableComponentInterface } from "@wso2is/core/models";
+import { IdentifiableComponentInterface, TestableComponentInterface } from "@wso2is/core/models";
 import kebabCase from "lodash-es/kebabCase";
 import React, { FunctionComponent, PropsWithChildren, ReactElement, ReactNode } from "react";
 import { Card, Divider, HeaderProps } from "semantic-ui-react";
@@ -27,7 +27,7 @@ import { Heading } from "../typography";
  *
  * Proptypes for the stats insights widget.
  */
-interface StatsInsightsWidgetPropsInterface extends TestableComponentInterface {
+interface StatsInsightsWidgetPropsInterface extends IdentifiableComponentInterface, TestableComponentInterface {
     /**
      * Heading for the widget
      */
@@ -61,9 +61,9 @@ interface StatsInsightsWidgetPropsInterface extends TestableComponentInterface {
 /**
  * Statistics insights preview widget.
  *
- * @param {StatsInsightsWidgetPropsInterface} props - Props injected to the component.
+ * @param props - Props injected to the component.
  *
- * @return {React.ReactElement}
+ * @returns Statistics insights preview widget.
  */
 export const StatsInsightsWidget: FunctionComponent<PropsWithChildren<StatsInsightsWidgetPropsInterface>> = (
     props: PropsWithChildren<StatsInsightsWidgetPropsInterface>
@@ -78,6 +78,7 @@ export const StatsInsightsWidget: FunctionComponent<PropsWithChildren<StatsInsig
         showExtraContent,
         subHeading,
         subHeadingAs,
+        [ "data-componentid" ]: componentId,
         [ "data-testid" ]: testId
     } = props;
 
@@ -87,6 +88,7 @@ export const StatsInsightsWidget: FunctionComponent<PropsWithChildren<StatsInsig
                 <Heading
                     className="stats-insights-widget-heading inline ellipsis"
                     as={ headingAs }
+                    data-componentid={ `${ componentId }-heading` }
                     data-testid={ `${ testId }-heading` }
                     compact
                 >
@@ -96,6 +98,7 @@ export const StatsInsightsWidget: FunctionComponent<PropsWithChildren<StatsInsig
             { subHeading && (
                 <Heading
                     className="stats-insights-widget-sub-heading"
+                    data-componentid={ `${ componentId }-sub-heading` }
                     data-testid={ `${ testId }-sub-heading` }
                     as={ subHeadingAs }
                     subHeading
@@ -108,6 +111,7 @@ export const StatsInsightsWidget: FunctionComponent<PropsWithChildren<StatsInsig
             <Card
                 fluid
                 className="stats-insights-widget-card basic-card"
+                data-componentid={ `${ componentId }-${ kebabCase(heading) }-card` }
                 data-testid={ `${ testId }-${ kebabCase(heading) }-card` }
             >
                 <Card.Content className={ `main-content compact ${ !showExtraContent ? "hide-extra" : "" } ` }>
@@ -117,10 +121,15 @@ export const StatsInsightsWidget: FunctionComponent<PropsWithChildren<StatsInsig
                     <Card.Content
                         extra
                         className="selection"
+                        data-componentid={ `${ componentId }-${ kebabCase(heading) }-card-action` }
                         data-testid={ `${ testId }-${ kebabCase(heading) }-card-action` }
                         onClick={ onPrimaryActionClick }
                     >
-                        <LinkButton compact data-testid={ `${ testId }-${ kebabCase(heading) }-card-action-button` }>
+                        <LinkButton
+                            compact
+                            data-componentid={ `${ componentId }-${ kebabCase(heading) }-card-action-button` }
+                            data-testid={ `${ testId }-${ kebabCase(heading) }-card-action-button` }
+                        >
                             { primaryAction }
                         </LinkButton>
                     </Card.Content>
@@ -134,6 +143,7 @@ export const StatsInsightsWidget: FunctionComponent<PropsWithChildren<StatsInsig
  * Default props for the component.
  */
 StatsInsightsWidget.defaultProps = {
+    "data-componentid": "stats-insights-widget",
     "data-testid": "stats-insights-widget",
     headingAs: "h3",
     showExtraContent: true,
